@@ -1,0 +1,2 @@
+org.apache.solr:solr-cell:6.1.0
+com.rbmhtechnology.solr.test:test-jar:1.0

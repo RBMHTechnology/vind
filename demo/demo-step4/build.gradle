@@ -1,0 +1,6 @@
+description = 'Demo Step 4'
+uploadArchives.enabled = false
+
+dependencies {
+    compile project(':server:embedded-solr-server')
+}

@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.sparkjava:spark-core:2.5">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.sparkjava/spark-core/2.5/402827b22648364251d3695200876e65b81ed8bb/spark-core-2.5.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.sparkjava/spark-core/2.5/8bf1630d1073be7e8a3790e54f43ada3b0604b64/spark-core-2.5-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

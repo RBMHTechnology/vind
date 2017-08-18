@@ -1,0 +1,6 @@
+description = 'Annotations'
+
+dependencies {
+    compile "org.apache.commons:commons-lang3:$commonsLang3Version"
+    compile group: 'commons-beanutils', name: 'commons-beanutils', version: commonsBeanutilsVersion
+}

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/annotations/annotations.iml" filepath="$PROJECT_DIR$/annotations/annotations.iml" />
+      <module fileurl="file://$PROJECT_DIR$/api/api.iml" filepath="$PROJECT_DIR$/api/api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/backend/backend.iml" filepath="$PROJECT_DIR$/backend/backend.iml" />
+      <module fileurl="file://$PROJECT_DIR$/utils/collection-managment-tool/collection-managment-tool.iml" filepath="$PROJECT_DIR$/utils/collection-managment-tool/collection-managment-tool.iml" />
+      <module fileurl="file://$PROJECT_DIR$/demo/demo.iml" filepath="$PROJECT_DIR$/demo/demo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/demo/demo-dynamic/demo-dynamic.iml" filepath="$PROJECT_DIR$/demo/demo-dynamic/demo-dynamic.iml" />
+      <module fileurl="file://$PROJECT_DIR$/demo/demo-step1/demo-step1.iml" filepath="$PROJECT_DIR$/demo/demo-step1/demo-step1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/demo/demo-step2/demo-step2.iml" filepath="$PROJECT_DIR$/demo/demo-step2/demo-step2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/demo/demo-step3/demo-step3.iml" filepath="$PROJECT_DIR$/demo/demo-step3/demo-step3.iml" />
+      <module fileurl="file://$PROJECT_DIR$/demo/demo-step4/demo-step4.iml" filepath="$PROJECT_DIR$/demo/demo-step4/demo-step4.iml" />
+      <module fileurl="file://$PROJECT_DIR$/demo/demo-step5/demo-step5.iml" filepath="$PROJECT_DIR$/demo/demo-step5/demo-step5.iml" />
+      <module fileurl="file://$PROJECT_DIR$/server/embedded-solr-server/embedded-solr-server.iml" filepath="$PROJECT_DIR$/server/embedded-solr-server/embedded-solr-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/report/report-writer/log-report-writer/log-report-writer.iml" filepath="$PROJECT_DIR$/report/report-writer/log-report-writer/log-report-writer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/utils/mam-utils/mam-utils.iml" filepath="$PROJECT_DIR$/utils/mam-utils/mam-utils.iml" />
+      <module fileurl="file://$PROJECT_DIR$/backend/other/other.iml" filepath="$PROJECT_DIR$/backend/other/other.iml" />
+      <module fileurl="file://$PROJECT_DIR$/server/remote-solr-server/remote-solr-server.iml" filepath="$PROJECT_DIR$/server/remote-solr-server/remote-solr-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/report/report.iml" filepath="$PROJECT_DIR$/report/report.iml" />
+      <module fileurl="file://$PROJECT_DIR$/report/report-api/report-api.iml" filepath="$PROJECT_DIR$/report/report-api/report-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/report/report-writer/report-writer.iml" filepath="$PROJECT_DIR$/report/report-writer/report-writer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/server/server.iml" filepath="$PROJECT_DIR$/server/server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/backend/solr/solr.iml" filepath="$PROJECT_DIR$/backend/solr/solr.iml" />
+      <module fileurl="file://$PROJECT_DIR$/test/test.iml" filepath="$PROJECT_DIR$/test/test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/utils/utils.iml" filepath="$PROJECT_DIR$/utils/utils.iml" />
+      <module fileurl="file://$PROJECT_DIR$/vind.iml" filepath="$PROJECT_DIR$/vind.iml" />
+    </modules>
+  </component>
+</project>

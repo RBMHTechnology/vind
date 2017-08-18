@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.noggit:noggit:0.6">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.noggit/noggit/0.6/fa94a59c44b39ee710f3c9451750119e432326c0/noggit-0.6.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.noggit/noggit/0.6/dad5aae47552d001eb7ff6d38e3e3fb09c6ec3cd/noggit-0.6-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

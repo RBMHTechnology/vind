@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<config>
+
+    <luceneMatchVersion>5.5.2</luceneMatchVersion>
+
+    <dataDir>${solr.data.dir:}</dataDir>
+
+    <directoryFactory name="DirectoryFactory"
+                      class="${solr.directoryFactory:solr.NRTCachingDirectoryFactory}"/>
+
+    <codecFactory class="solr.SchemaCodecFactory"/>
+
+    <schemaFactory class="ClassicIndexSchemaFactory"/>
+
+    <indexConfig>
+      
+        <lockType>${solr.lock.type:native}</lockType>
+
+    </indexConfig>
+
+    <updateHandler class="solr.DirectUpdateHandler2">
+
+        <updateLog>
+            <str name="dir">${solr.ulog.dir:}</str>
+        </updateLog>
+
+        <autoCommit>
+            <maxTime>15000</maxTime>
+            <openSearcher>false</openSearcher>
+        </autoCommit>
+
+    </updateHandler>
+
+    
+    <query>
+       
+        <maxBooleanClauses>1024</maxBooleanClauses>
+
+        <filterCache class="solr.FastLRUCache"
+                     size="512"
+                     initialSize="512"
+                     autowarmCount="0"/>
+
+        <queryResultCache class="solr.LRUCache"
+                          size="512"
+                          initialSize="512"
+                          autowarmCount="0"/>
+
+        <documentCache class="solr.LRUCache"
+                       size="512"
+                       initialSize="512"
+                       autowarmCount="0"/>
+
+        <enableLazyFieldLoading>false</enableLazyFieldLoading>
+
+        <queryResultWindowSize>20</queryResultWindowSize>
+
+        <queryResultMaxDocsCached>200</queryResultMaxDocsCached>
+
+    </query>
+
+    <requestDispatcher handleSelect="false" >
+
+        <requestParsers enableRemoteStreaming="true"
+                        multipartUploadLimitInKB="2048000"
+                        formdataUploadLimitInKB="2048"/>
+
+        <httpCaching never304="true" />
+        
+    </requestDispatcher>
+
+    <requestHandler name="/handler" class="com.redbull.MyHandler" runtimeLib="true"/>
+
+    <requestHandler name="/select" class="solr.StandardRequestHandler" default="true"/>
+
+</config>

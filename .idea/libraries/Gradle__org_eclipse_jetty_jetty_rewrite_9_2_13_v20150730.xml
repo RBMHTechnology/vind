@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.eclipse.jetty:jetty-rewrite:9.2.13.v20150730">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-rewrite/9.2.13.v20150730/5e5be7a2d37dcd8dfbb62861dbfb05b48bb7ba54/jetty-rewrite-9.2.13.v20150730.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-rewrite/9.2.13.v20150730/f3bfc67a0c2ebe169479aad1ccf39ce80261a3cd/jetty-rewrite-9.2.13.v20150730-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

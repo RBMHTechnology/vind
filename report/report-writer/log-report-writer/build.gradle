@@ -1,0 +1,7 @@
+
+description = 'Log Report Writer'
+
+dependencies {
+    compile project(':report:report-api')
+    testCompile project(':test')
+}

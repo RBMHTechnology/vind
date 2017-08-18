@@ -1,0 +1,145 @@
+<?xml version="1.0" ?>
+
+<schema name="basic search lib core" version="1.5">
+
+    <!-- _____________________________  TYPES _______________________  -->
+
+    <!-- generic types -->
+    <fieldType name="string" class="solr.StrField" sortMissingLast="true" omitNorms="true"/>
+    <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true" omitNorms="true"/>
+    <fieldType name="int" class="solr.TrieIntField" precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
+    <fieldType name="float" class="solr.TrieFloatField" precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
+    <fieldType name="long" class="solr.TrieLongField" precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
+    <fieldType name="double" class="solr.TrieDoubleField" precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
+    <fieldType name="date" class="solr.TrieDateField" omitNorms="true" precisionStep="0" positionIncrementGap="0"/>
+
+    <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
+        <analyzer>
+            <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-FoldToASCII.txt"/>
+            <tokenizer class="solr.StandardTokenizerFactory"/>
+            <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="1"/>
+            <filter class="solr.LowerCaseFilterFactory"/>
+            <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt"/>
+            <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="false"/>
+        </analyzer>
+    </fieldType>
+
+    <fieldType name="text_en" class="solr.TextField" positionIncrementGap="100">
+        <analyzer>
+            <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-FoldToASCII.txt"/>
+            <tokenizer class="solr.StandardTokenizerFactory"/>
+            <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="1"/>
+            <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords_en.txt"/>
+            <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="false"/>
+            <filter class="solr.LowerCaseFilterFactory"/>
+            <filter class="solr.EnglishPossessiveFilterFactory"/>
+            <filter class="solr.PorterStemFilterFactory"/>
+        </analyzer>
+    </fieldType>
+
+    <fieldType name="text_de" class="solr.TextField" positionIncrementGap="100">
+        <analyzer>
+            <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-FoldToASCII.txt"/>
+            <tokenizer class="solr.StandardTokenizerFactory"/>
+            <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="1"/>
+            <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords_de.txt"/>
+            <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="false"/>
+            <filter class="solr.LowerCaseFilterFactory"/>
+            <filter class="solr.SnowballPorterFilterFactory" language="German2"/>
+        </analyzer>
+    </fieldType>
+
+    <fieldType name="text_es" class="solr.TextField" positionIncrementGap="100">
+        <analyzer>
+            <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-FoldToASCII.txt"/>
+            <tokenizer class="solr.StandardTokenizerFactory"/>
+            <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="1"/>
+            <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords_es.txt"/>
+            <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="false"/>
+            <filter class="solr.LowerCaseFilterFactory"/>
+            <filter class="solr.SnowballPorterFilterFactory" language="Spanish"/>
+        </analyzer>
+    </fieldType>
+
+    <fieldType name="path" class="solr.TextField" positionIncrementGap="100">
+        <analyzer>
+            <tokenizer class="solr.PathHierarchyTokenizerFactory"/>
+        </analyzer>
+    </fieldType>
+
+
+    <!-- currently not in use -->
+    <!--
+    <fieldType name="random" class="solr.RandomSortField" indexed="true" />
+    <fieldType name="location" class="solr.LatLonType" subFieldSuffix="_coordinate"/>
+    <fieldType name="point" class="solr.PointType" dimension="2" subFieldSuffix="_d"/>
+    -->
+
+
+    <!-- _____________________________  F I E L D S _______________________  -->
+
+    <field name="_version_" type="long" indexed="true" stored="true"/>
+
+    <field name="_id_" type="string" indexed="true" stored="true" multiValued="false" required="true"/>
+
+    <field name="_type_" type="string" indexed="true" stored="true" multiValued="false" required="true"/>
+
+    <field name="text" type="text_general" indexed="true" stored="false" multiValued="true"/>
+
+    <field name="facets" type="text_general" indexed="true" stored="false" multiValued="true"/>
+
+    <!-- dynamic stored multi language -->
+    <dynamicField name="dynamic_multi_none_*" type="text_general" indexed="true" stored="false" multiValued="true"/>
+    <dynamicField name="dynamic_multi_en_*" type="text_en" indexed="true" stored="false" multiValued="true"/>
+    <dynamicField name="dynamic_multi_de_*" type="text_de" indexed="true" stored="false" multiValued="true"/>
+    <dynamicField name="dynamic_multi_es_*" type="text_es" indexed="true" stored="false" multiValued="true"/>
+
+    <!-- dynamic stored multi language -->
+    <dynamicField name="dynamic_single_none_*" type="text_general" indexed="true" stored="false" multiValued="false"/>
+    <dynamicField name="dynamic_single_en_*" type="text_en" indexed="true" stored="false" multiValued="false"/>
+    <dynamicField name="dynamic_single_de_*" type="text_de" indexed="true" stored="false" multiValued="false"/>
+    <dynamicField name="dynamic_single_es_*" type="text_es" indexed="true" stored="false" multiValued="false"/>
+
+    <!-- dynamic stored multi -->
+    <dynamicField name="dynamic_multi_string_*" type="string" indexed="true" stored="true" multiValued="true"/>
+    <dynamicField name="dynamic_multi_date_*" type="date" indexed="true" stored="true" multiValued="true"/>
+    <dynamicField name="dynamic_multi_int_*" type="int" indexed="true" stored="true" multiValued="true"/>
+    <dynamicField name="dynamic_multi_long_*" type="long" indexed="true" stored="true" multiValued="true"/>
+    <dynamicField name="dynamic_multi_float_*" type="float" indexed="true" stored="true" multiValued="true"/>
+    <dynamicField name="dynamic_multi_boolean_*" type="boolean" indexed="true" stored="true" multiValued="true"/>
+
+    <!-- dynamic stored single -->
+    <dynamicField name="dynamic_single_string_*" type="string" indexed="true" stored="true" multiValued="false"/>
+    <dynamicField name="dynamic_single_date_*" type="date" indexed="true" stored="true" multiValued="false"/>
+    <dynamicField name="dynamic_single_int_*" type="int" indexed="true" stored="true" multiValued="false"/>
+    <dynamicField name="dynamic_single_long_*" type="long" indexed="true" stored="true" multiValued="false"/>
+    <dynamicField name="dynamic_single_float_*" type="float" indexed="true" stored="true" multiValued="false"/>
+    <dynamicField name="dynamic_single_boolean_*" type="boolean" indexed="true" stored="true" multiValued="false"/>
+
+    <!-- dynamic stored single docterm -->
+    <dynamicField name="dynamic_single_facet_string_*" type="string" indexed="true" stored="false" multiValued="false" docValues="true"/>
+    <dynamicField name="dynamic_single_facet_date_*" type="date" indexed="true" stored="false" multiValued="false" docValues="true"/>
+    <dynamicField name="dynamic_single_facet_int_*" type="int" indexed="true" stored="false" multiValued="false" docValues="true"/>
+    <dynamicField name="dynamic_single_facet_long_*" type="long" indexed="true" stored="false" multiValued="false" docValues="true"/>
+    <dynamicField name="dynamic_single_facet_float_*" type="float" indexed="true" stored="false" multiValued="false" docValues="true"/>
+    <dynamicField name="dynamic_single_facet_boolean_*" type="boolean" indexed="true" stored="false" multiValued="false"/>
+    <dynamicField name="dynamic_single_facet_path_*" type="path" indexed="true" stored="false" multiValued="false"/>
+
+    <!-- dynamic stored multi docterm -->
+    <dynamicField name="dynamic_multi_facet_string_*" type="string" indexed="true" stored="false" multiValued="true" docValues="true"/>
+    <dynamicField name="dynamic_multi_facet_date_*" type="date" indexed="true" stored="false" multiValued="true" docValues="true"/>
+    <dynamicField name="dynamic_multi_facet_int_*" type="int" indexed="true" stored="false" multiValued="true" docValues="true"/>
+    <dynamicField name="dynamic_multi_facet_long_*" type="long" indexed="true" stored="false" multiValued="true" docValues="true"/>
+    <dynamicField name="dynamic_multi_facet_float_*" type="float" indexed="true" stored="false" multiValued="true" docValues="true"/>
+    <dynamicField name="dynamic_multi_facet_boolean_*" type="boolean" indexed="true" stored="false" multiValued="true"/>
+    <dynamicField name="dynamic_multi_facet_path_*" type="path" indexed="true" stored="false" multiValued="true"/>
+
+    <!-- Copy fulltext -->
+    <copyField source="dynamic_*" dest="text"/>
+    <copyField source="dynamic_multi_facet_*" dest="facets"/>
+    <copyField source="dynamic_single_facet_*" dest="facets"/>
+
+    <uniqueKey>_id_</uniqueKey>
+
+</schema>
+

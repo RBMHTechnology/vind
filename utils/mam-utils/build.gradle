@@ -1,0 +1,10 @@
+description = 'MAM Utils'
+
+dependencies {
+    compile project(':api')
+    compile project(':backend:solr')
+    compile("org.apache.solr:solr-core:$solrVersion")
+    compile group: 'commons-httpclient', name: 'commons-httpclient', version: commonsHttpclientVersion
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
+    testCompile "org.mockito:mockito-all:$mockitoAllVersion"
+}

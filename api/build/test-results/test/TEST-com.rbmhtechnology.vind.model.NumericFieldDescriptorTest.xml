@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.rbmhtechnology.vind.model.NumericFieldDescriptorTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2017-08-18T16:41:16" hostname="kang" time="0.001">
+  <properties/>
+  <testcase name="numberBetweenTest" classname="com.rbmhtechnology.vind.model.NumericFieldDescriptorTest" time="0.001"/>
+  <testcase name="numberGreaterThanTest" classname="com.rbmhtechnology.vind.model.NumericFieldDescriptorTest" time="0.0"/>
+  <testcase name="numberLesserThanTest" classname="com.rbmhtechnology.vind.model.NumericFieldDescriptorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

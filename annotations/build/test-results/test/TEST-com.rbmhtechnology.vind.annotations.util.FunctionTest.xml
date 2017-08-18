@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.rbmhtechnology.vind.annotations.util.FunctionTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2017-08-18T16:41:14" hostname="kang" time="0.073">
+  <properties/>
+  <testcase name="getterFunctionTest" classname="com.rbmhtechnology.vind.annotations.util.FunctionTest" time="0.017"/>
+  <testcase name="concatFunctionTest" classname="com.rbmhtechnology.vind.annotations.util.FunctionTest" time="0.056"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

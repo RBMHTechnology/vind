@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.solr:solr-test-framework:5.5.1">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.solr/solr-test-framework/5.5.1/73ee86f8000f07bd9771866e1b8c10247724a159/solr-test-framework-5.5.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.solr/solr-test-framework/5.5.1/9cc5ae140db174827f4b95f73a8d3a0de12d4bbf/solr-test-framework-5.5.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

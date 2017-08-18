@@ -1,0 +1,9 @@
+# RB specific synonyms
+
+Red Bull, redbull
+X-Fighters, x-fighters, xfighters, x-fighter, xfighter, RBXF
+Crashed Ice, RBCI
+Cliff Diving, RBCD
+Air Race, Airrace, RBAR
+Music Academy, RBMA
+X-Alps, x-alps, Xalps, RBXA

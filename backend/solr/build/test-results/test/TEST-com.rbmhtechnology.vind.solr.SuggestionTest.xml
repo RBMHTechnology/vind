@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.rbmhtechnology.vind.solr.SuggestionTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2017-08-18T16:41:37" hostname="kang" time="0.007">
+  <properties/>
+  <testcase name="testSpellcheck" classname="com.rbmhtechnology.vind.solr.SuggestionTest" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[[Test worker] WARN com.rbmhtechnology.vind.solr.SolrSearchServer - Solr ping and schema validity check has been deactivated.
+]]></system-err>
+</testsuite>

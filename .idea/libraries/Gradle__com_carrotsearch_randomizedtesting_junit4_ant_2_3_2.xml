@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.carrotsearch.randomizedtesting:junit4-ant:2.3.2">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.carrotsearch.randomizedtesting/junit4-ant/2.3.2/dc8f03f6111974092491f35b8269eb0fc57f52f7/junit4-ant-2.3.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.carrotsearch.randomizedtesting/junit4-ant/2.3.2/a0fd300af8be28cce6108e56b045d2576f1ca85f/junit4-ant-2.3.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
