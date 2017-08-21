@@ -1,16 +1,24 @@
-# Compiled class file
+## Compiled class file
 *.class
 
-# Log file
+## Common files
+*.bak
+*.tmp
+*.temp
+*~
+*.orig
+.remote
+
+## Log file
 *.log
 
-# BlueJ files
+## BlueJ files
 *.ctxt
 
-# Mobile Tools for Java (J2ME)
+## Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
-# Package Files #
+## Package Files #
 *.jar
 *.war
 *.ear
@@ -18,8 +26,29 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+## virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
-# IDE files
+## IntelliJ
 *.iml
+.idea/
+
+## Eclipse files
+.classpath
+.deployment
+.project
+.settings
+
+## Maven template
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.gradle
+**/build/
+solr-5.5.1/

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.rbmhtechnology.vind.annotations.AnnotationUtilTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2017-08-18T16:41:16" hostname="kang" time="0.06">
-  <properties/>
-  <testcase name="testCreatePojo1" classname="com.rbmhtechnology.vind.annotations.AnnotationUtilTest" time="0.05"/>
-  <testcase name="testCreateDocument1" classname="com.rbmhtechnology.vind.annotations.AnnotationUtilTest" time="0.007"/>
-  <testcase name="testPojo2RoundTrip" classname="com.rbmhtechnology.vind.annotations.AnnotationUtilTest" time="0.003"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
