@@ -52,3 +52,4 @@ buildNumber.properties
 .gradle
 **/build/
 solr-5.5.1/
+test/src/test/resources/

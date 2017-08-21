@@ -52,13 +52,17 @@ public abstract class Filter {
     }
 
     public Scope getFilterScope(FieldDescriptor fd){
-        if(fd == null) {
-            logger.error("Cannot get scope for non existing field descriptor");
-            return DEFAULT_SCOPE;
+        if(this.filterScope != null) {
+            return this.filterScope;
         } else {
-            if(fd.isFacet() && !fd.isSuggest()) return Scope.Facet;
-            if(fd.isSuggest() && !fd.isFacet()) return Scope.Suggest;
-            else return DEFAULT_SCOPE;
+            if (fd == null) {
+                logger.error("Cannot get scope for non existing field descriptor");
+                return DEFAULT_SCOPE;
+            } else {
+                if (fd.isFacet() && !fd.isSuggest()) return Scope.Facet;
+                if (fd.isSuggest() && !fd.isFacet()) return Scope.Suggest;
+                else return DEFAULT_SCOPE;
+            }
         }
     }
 
