@@ -18,7 +18,7 @@ we tried to follow the concept: easy things should be easy, complex things can (
 
 The search lib is modular and implements the following layers:
 
-image::../../demo/img/layer_cake.png[vind architecture]
+image::images/layer_cake.png[vind architecture]
 
 We built a short tutorial to give you a smooth entry to all the functions of the search lib.
 The runnable code for each step can be found under `demo/demo-step{number}`.
