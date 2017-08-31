@@ -1,8 +1,8 @@
-## Step 2: Fulltext, Facets and Score
+## 3. Fulltext, Facets and Score
 
 This step shows extended annotations and gives an overview on search.
 
-### Extended Annotations
+### 3.1 Extended Annotations
 
 We extend the Pojo from Step 1 with some more values. Depending on the role to play,
  the field is annotated accordingly.
@@ -28,7 +28,7 @@ private String kind;
 private float score;
 ```
 
-### Search Building
+### 3.2 Search Building
 
 No let's try it out. You can see that the category field is used for fulltext search
 and it influences the score more than the title. The other searches in the examples show
@@ -55,7 +55,7 @@ result = server.execute(search, NewsItem.class);
 result = server.execute(Search.fulltext().filter(eq("kind","blog")), NewsItem.class);
 ```
 
-### Paging
+### 3.3 Paging
 
 Both the search and the result object supports paging.
 
@@ -81,7 +81,7 @@ while(result.hasNextPage()) {
 }
 ```
 
-### Slicing
+### 3.4 Slicing
 
 The search results can be also requested in the format of slices by specifying an offset and an
 slice size.
@@ -94,7 +94,7 @@ final FulltextSearch searchAll = Search.fulltext().slice(1, 10);
 final BeanSearchResult<NewsItem> result = server.execute(search, NewsItem.class);
 ```
 
-### Suggestions
+### 3.5 Suggestions
 
 Suggestions suggest values based on free text. The suggestions also supports spellchecking 
 (which is used automatically in the backend). If the term has to be spellchecked

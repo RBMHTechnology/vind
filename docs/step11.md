@@ -1,4 +1,4 @@
-## Step 11: Complex Fields
+## 12. Complex Fields
 
 There are special situations in which having the same value for every scope (storing, fulltext search, filtering,
 faceting, suggesting or sorting) may not be enough for the project requirements. Think of the scenario of a taxonomy 
@@ -31,7 +31,7 @@ String type return function.
 *Note*: Facet, FullText and Suggest are design to be always multivalued so the functions providing their values should return an array of 
 the expected type.   
 
-### Advance Filter
+### 12.1 Advance Filter
 
 A new scope has been added to the complex filter, which only purpose is to do filtering. This field values should have the same type 
 defined for faceting and it is always multivalued.
@@ -43,7 +43,7 @@ SingleValuedComplexField.NumericComplexField<Taxonomy,Integer,String> numericCom
 
 ```
   
-### Scoped filters
+### 12.2 Scoped filters
 
 As with the complex fields it is possible to have different values for different scopes, the filters support the option to 
 specify the scope in which they apply:

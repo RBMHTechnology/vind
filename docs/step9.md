@@ -1,4 +1,4 @@
-## Step 9: Partial Updates
+## 10. Partial Updates
 
 To be able to perform atomic updates in documents the DocumentFactory should be set as 
 'updatable' by seting the proper flag to _true_ as described below: 

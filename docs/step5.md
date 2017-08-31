@@ -1,11 +1,11 @@
-## Step 5: An overall Example
+## 6. An overall Example
 
 This example uses the Spark micro framework and implements a search over guardian
 news articles. Be aware that this is just for demo purposes and therefor very limited.
 Just browse the code or run the application and have fun ;)
 To get it running an apiKey should be provided as parameter when running the java application. 
 
-### API
+### 6.1 API
 
 HOST: http://localhost:4567/
 

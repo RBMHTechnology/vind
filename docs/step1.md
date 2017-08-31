@@ -1,8 +1,8 @@
-## Step 1: A simple Pojo search
+## 2. A simple Pojo search
 
 Step one shows you, how quick and easy the search lib allows you to create a proper search on data items.
 
-### The dependency
+### 2.1. The dependency
 
 The search lib is managed via maven/gradle repository. In our case we depend via maven dependency on the
 embedded solr server. For production we will change this dependency to a remote solr server later.
@@ -14,7 +14,7 @@ embedded solr server. For production we will change this dependency to a remote 
 </dependency>
 ```
 
-### The pojo
+### 2.2. The pojo
 
 Now we create a Pojo, which holds our data. To properly index it, we need at least an id-field.
 This field has to be annotated with @Id. All the other annotations that we introduce are optional.
@@ -31,7 +31,7 @@ private String title;
 private ZonedDateTime created;
 ```
 
-### Create and Index
+### 2.3. Create and Index
 
 We instantiate a search server just by getting an instance. As mentioned before, it is an instance
  of an Embedded Solr Server. This server will loose all data when the program exit, so don't
@@ -49,7 +49,7 @@ server.indexBean(new NewsItem("2", "Redbull Searchlib available", ZonedDateTime.
 server.commit();
 ```
 
-### Search and delete
+### 2.4 Search and delete
 
 Now we can retrieve the indexed documents via search. In addition we can delete existing News Items. After
 index and/or delete, the action has to be persisted via commit or is persisted automatically within

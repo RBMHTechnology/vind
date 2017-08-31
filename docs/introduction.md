@@ -1,4 +1,4 @@
-## Introduction
+## 1. Introduction
 
 This repository contains the modular Redbull Media House Technology *Vind* for java. 
 The lib was build to enable the integration of search facilities in several projects without getting too deep into the 
@@ -18,7 +18,7 @@ we tried to follow the concept: easy things should be easy, complex things can (
 
 The search lib is modular and implements the following layers:
 
-image::images/layer_cake.png[vind architecture]
+![vind architecture](images/layer_cake.png)
 
 We built a short tutorial to give you a smooth entry to all the functions of the search lib.
 The runnable code for each step can be found under `demo/demo-step{number}`.

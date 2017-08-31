@@ -1,8 +1,8 @@
-## Step 13: Search modifiers
+## 14. Search modifiers
 
 In this step the existing search modifiers are be described.
 
-### Strict search
+### 14.1 Strict search
 
 By default every search is a _strict_ search which means that, having nested documents, no filters or search can 
 be define for children using fields belonging just to the parent document factory.
@@ -16,7 +16,7 @@ FulltextSearch search = Search.fulltext().setStrict(false).filter(eq(parent_valu
 
 The previous example will return all the parent documents which field _parent_value_ has value "blue".
 
-### Geo distance
+### 14.2 Geo distance
 
 The distance to the specified LatLong point will be calculated and added to the search result for e Every document with the field _locationgSingle_.
 

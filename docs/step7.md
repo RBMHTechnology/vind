@@ -1,4 +1,4 @@
-## Step 7: Completable Search Server
+## 8. Completable Search Server
 
 In some cases a non-blocking search server is useful. the Completable Search Server uses Java CompletableFuture 
 and is implemented as a wrapper arround the existing search server. It can be instantiated

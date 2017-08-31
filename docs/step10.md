@@ -1,4 +1,4 @@
-## Step 10: Nested Documents
+## 11. Nested Documents
 
 Nested documents are supported by allowing to add documents as child fields of other documents. It is a 
 fixed restriction that the nested document type is not the same as the parent document, so each one has to 

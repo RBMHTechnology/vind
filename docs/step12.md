@@ -1,4 +1,4 @@
-## Step 12: Contextualized fields
+## 13. Contextualized fields
 
 Searchlib supports the definition of document fields which can have different values for different contexts, allowing to get
  

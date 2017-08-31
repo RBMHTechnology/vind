@@ -1,8 +1,8 @@
-## Step 4: Special Sorting, Filters and Facets
+## 5. Special Sorting, Filters and Facets
 
 In this step we show which kind of special filters, facets and sorting the searchlib provides.
 
-### Special Sorting
+### 5.1 Special Sorting
 
 ```java
 //special sort filter allows to combine a date with scoring, so
@@ -17,7 +17,7 @@ search.sort(desc(distance()));
 
 **Future Extensions:** Support more sortings
 
-### Type-aware filters
+### 5.2 Type-aware filters
 
 For numeric and date fields, special filters are supported.
 
@@ -43,7 +43,7 @@ This is list of the type specific filters currently supported by the field descr
 
 **Future Extensions:** Support more special filters 
 
-### Special Field Facets
+### 5.3 Special Field Facets
 
 The library support several kind of facets. Facets have names, so they can be referenced in the result.
 Do not use the same name for more than one facet (they will be overwritten). For names only alphanumeric chars are supported.

@@ -1,9 +1,9 @@
-## Step 3: Dynamic Fields
+## 4. Dynamic Fields
 
 It is often useful to make item creation configurable on runtime. In this step we learn
  how to use a dynamic document configuration.
 
-### Dynamic Configuration
+### 4.1 Dynamic Configuration
 
 We create an DocumentFactoryBuilder with some fields (similar fields like the News Item in the former
 steps) which is used to build a immutable DocumentFactory.The fields are used later for both indexing 

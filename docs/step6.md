@@ -1,9 +1,9 @@
-## Step 6: Use Solr Remote Backend
+## 7. Use Solr Remote Backend
 
 In this step we show how to use a Remote Solr Server as backend. Additionally we learn how
 change basic configurations of the search lib.
 
-### Dependencies
+### 7.1 Dependencies
 
 In order to use a Solr Remote Backend we have to switch the dependency to this.
 
@@ -15,7 +15,7 @@ In order to use a Solr Remote Backend we have to switch the dependency to this.
 </dependency>
 ```
 
-### Configuration
+### 7.2 Configuration
 
 The searchlib uses property files for configuration. It comes with some basic configurations (like pagesize) that can be changed. 
  For configuring the remote host you have to place a file called searchlib.properties in the classpath which includes
