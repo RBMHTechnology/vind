@@ -9,7 +9,7 @@ fill in that gap complex field descriptors where created.
 A complex field descriptor is a field storing a simplified view of a java class, and which it is declared by providing 
 the methods to calculate the values for each of the specific scopes desired.
 
-```
+```java
 SingleValuedComplexField.NumericComplexField<Taxonomy,Integer,String> numericComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,Integer,String>()
         .setFacet(true, tx -> Arrays.asList(tx.getId()))
         .setFullText(true, tx -> Arrays.asList(tx.getTerm()))
@@ -36,7 +36,7 @@ the expected type.
 A new scope has been added to the complex filter, which only purpose is to do filtering. This field values should have the same type 
 defined for faceting and it is always multivalued.
 
-```
+```java
 SingleValuedComplexField.NumericComplexField<Taxonomy,Integer,String> numericComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,Integer,String>()
         .setAdvanceFilter(true, tx -> Arrays.asList(tx.getTerm()))
         .buildNumericComplexField("numberFacetTaxonomy", Taxonomy.class, Integer.class, String.class);
@@ -51,7 +51,7 @@ specify the scope in which they apply:
 * Scope.Filter
 * Scope.Suggest
 
-```
+```java
 server.execute(Search.fulltext().filter(textComplexField.equals("uno",Scope.Filter)), assets);
 ```
 
