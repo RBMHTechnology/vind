@@ -20,7 +20,7 @@ we tried to follow the concept: easy things should be easy, complex things can (
 
 The search lib is modular and implements the following layers:
 
-![Search Lib Architecture](./docs/imges/layer_cake.png)
+![Search Lib Architecture](./docs/images/layer_cake.png)
 
 ## How to use
 
