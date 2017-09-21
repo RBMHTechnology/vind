@@ -24,14 +24,14 @@ The search lib is modular and implements the following layers:
 
 ## How to use
 
-The modules of the VIND lib are provided as Maven artifacts and thus can be seamlessly integrated in new and existing Java Software
-projects. VIND decouples API and the *real* indexing components. The first backend which is also the reference implementation is build
+The modules of the Vind lib are provided as Maven artifacts and thus can be seamlessly integrated in new and existing Java Software
+projects. Vind decouples API and the *real* indexing components. The first backend which is also the reference implementation is build
 on top of [Apache Solr](http://lucene.apache.org/solr/). The lib integrates an in-memory indexer on top of an Embedded Solr Server 
-which enables developers to start without setting up a complex infrastructure. Furthermore VIND includes a backend maintainance component
-which makes it easy to setup VIND index collections and keep them in sync with the VIND version.
+which enables developers to start without setting up a complex infrastructure. Furthermore Vind includes a backend maintainance component
+which makes it easy to setup Vind index collections and keep them in sync with the Vind version.
 
 [Get a detailed documentation of all functions and features](https://rbmhtechnology.github.io/vind/) 
-or [dive deeper in the API of the VIND with Javadoc](https://rbmhtechnology.github.io/vind/javadoc/). 
+or [dive deeper in the API of the Vind with Javadoc](https://rbmhtechnology.github.io/vind/javadoc/). 
 
 ## How to contribution
 
@@ -40,14 +40,14 @@ share new ideas with us. We have various ways for contribution:
 
 * use the issue tracker - report bugs, suggest features or give hints how we can improve the documentation.
 * discuss issues with the community - two brains are better than one.
-* write code - no patch is too small. So even fixing typos helps to improve VIND.
+* write code - no patch is too small. So even fixing typos helps to improve Vind.
 
 ## License
 Free use of this software is granted under the terms of the Apache License Version 2.0.
 See the [License](LICENSE.txt) for more details.
 
 ## Authors
-VIND is lead by [Red Bull Media House Technology](https://github.com/RBMHTechnology) and was initiated in 2017.
+Vind is lead by [Red Bull Media House Technology](https://github.com/RBMHTechnology) and was initiated in 2017.
 
 ## Changelog
 The [Changelog](./docs/changelog.adoc) provides a complete list of changes in older releases.
