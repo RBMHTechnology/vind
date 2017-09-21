@@ -1,13 +1,12 @@
 # VIND
 
-VIND (faɪnd) is a modular Java library that bundles functionality in the area of search. The lib was build to enable 
-the integration of search facilities in several projects without getting to deep into the 
-search topic. It should help programmers to come to a good solution in an assessable amount of time, improve the 
-maintainability of software projects, and simplify a centralized search service management including monitoring and reporting.
+VIND (faɪnd) is a modular Java library which aims to lower the hurdle of integrating information discovery facilities in Java projects.
+It should help programmers to come to a good solution in an assessable amount of time, improve the 
+maintainability of software projects, and simplify a centralized information discovery service management including monitoring and reporting.
  
 ## Design principles
 
-The work tried to consider the following design issues:
+Within Vind we consider the following design issues:
 
 **1. Versatility:** Vind will be used in many different projects, so it was an aim to keeping the dependency footprint small, 
 which avoids version-clashes in the downstream projects.
@@ -18,9 +17,15 @@ backend without migrating application software.
 **3. Flat learning curve:** It was an aim to keep the learning curve rather flat, so we tried to use Java built-in constructs whenever possible. Additionally
 we tried to follow the concept: easy things should be easy, complex things can (but does not have to) be complex.
 
-The search lib is modular and implements the following layers:
+The search lib is modular and currently implements the following layers:
 
 ![Search Lib Architecture](./docs/images/layer_cake.png)
+
+## Roadmap
+
+If you'd like to get a deeper look into the lib or if you are interested in our future goals just [have a look at 
+our blog series](https://rbmhtechnology.github.io/vind/blog/).
+There we give an outlook on the next development steps and introduce new features.
 
 ## How to use
 
@@ -33,9 +38,9 @@ which makes it easy to setup Vind index collections and keep them in sync with t
 [Get a detailed documentation of all functions and features](https://rbmhtechnology.github.io/vind/) 
 or [dive deeper in the API of the Vind with Javadoc](https://rbmhtechnology.github.io/vind/javadoc/). 
 
-## How to contribution
+## How to contribute
 
-VIND is an Open Source project so everyone is encouraged to improve it. Don't hesitate to report bugs, provide fixes or
+Vind is an Open Source project so everyone is encouraged to improve it. Don't hesitate to report bugs, provide fixes or
 share new ideas with us. We have various ways for contribution:
 
 * use the issue tracker - report bugs, suggest features or give hints how we can improve the documentation.
