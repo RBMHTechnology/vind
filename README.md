@@ -30,7 +30,8 @@ on top of [Apache Solr](http://lucene.apache.org/solr/). The lib integrates an i
 which enables developers to start without setting up a complex infrastructure. Furthermore VIND includes a backend maintainance component
 which makes it easy to setup VIND index collections and keep them in sync with the VIND version.
 
-[Get a detailed documentation of all functions and features!](https://rbmhtechnology.github.io/vind/)
+[Get a detailed documentation of all functions and features](https://rbmhtechnology.github.io/vind/) 
+or [dive deeper in the API of the VIND with Javadoc](https://rbmhtechnology.github.io/vind/javadoc/). 
 
 ## How to contribution
 
@@ -43,7 +44,7 @@ share new ideas with us. We have various ways for contribution:
 
 ## License
 Free use of this software is granted under the terms of the Apache License Version 2.0.
-See the link:LICENSE.txt[License] for more details.
+See the [License](LICENSE.txt) for more details.
 
 ## Authors
 VIND is lead by [Red Bull Media House Technology](https://github.com/RBMHTechnology) and was initiated in 2017.
