@@ -6,7 +6,7 @@ maintainability of software projects, and simplify a centralized information dis
  
 ## Design principles
 
-Within Vind we consider the following design issues:
+In Vind we try to design an API which follows this 3 design principles:
 
 **1. Versatility:** Vind will be used in many different projects, so it was an aim to keeping the dependency footprint small, 
 which avoids version-clashes in the downstream projects.
