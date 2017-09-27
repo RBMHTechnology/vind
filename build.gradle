@@ -6,6 +6,8 @@ allprojects {
 
     apply plugin: 'maven'
     apply plugin: 'java'
+    apply plugin: 'signing'
+
     group = group
     version = version
 
@@ -46,19 +48,43 @@ allprojects {
         archives javadocJar
     }
 
+    signing {
+        //required { gradle.taskGraph.hasTask("uploadArchives") }
+        sign configurations.archives
+    }
+
     uploadArchives {
-        repositories.mavenDeployer {
-            configuration = configurations.archives
-            snapshotRepository(url: snapshotRepositoryURL) {
-                authentication(userName: snapshotRepositoryUsername, password: snapshotRepositoryPassword)
-            }
-            repository(url: releaseRepositoryURL ) {
-                authentication(userName: releaseRepositoryUsername, password: releaseRepositoryPassword )
-            }
-            pom {
-                project {
+        repositories {
+            mavenDeployer {
+                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+                configuration = configurations.archives
+                snapshotRepository(url: snapshotRepositoryURL) {
+                    authentication(userName: ossrhRepositoryUsername, password: ossrhRepositoryPassword)
+                }
+                repository(url: releaseRepositoryURL ) {
+                    authentication(userName: ossrhRepositoryUsername, password: ossrhRepositoryPassword)
+                }
+                pom.project {
+                    packaging 'jar'
+                    description 'Vind is build to enable the integration of search facilities in java projects without getting to deep into the search topic'
+                    url 'https://rbmhtechnology.github.io/vind/'
+
                     properties {
                         'timestamp' String.valueOf(System.currentTimeMillis())
+                    }
+
+                    licenses {
+                        license {
+                            name 'The Apache License, Version 2.0'
+                            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+
+                    scm {
+                        connection 'scm:git:https://github.com/RBMHTechnology/vind.git'
+                        developerConnection 'scm:git:git@github.com:RBMHTechnology/vind.git'
+                        url 'https://github.com/RBMHTechnology/vind'
                     }
                 }
             }
