@@ -253,6 +253,7 @@ public abstract class SearchServer implements Closeable {
      * @throws SearchServerException if not possible to execute the suggestion search.
      */
     public abstract <T> SuggestionResult execute(ExecutableSuggestionSearch search, Class<T> c);
+
     /**
      * Executes a suggestion search based on an DocumentFactory.
      * @param search ExecutableSuggestionSearch object with the query configuration.
@@ -261,6 +262,16 @@ public abstract class SearchServer implements Closeable {
      * @throws SearchServerException if not possible to execute the suggestion search.
      */
     public abstract SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets);
+
+    /**
+     * Executes a suggestion search based on an DocumentFactory and its nested documents of factory childFactory.
+     * @param search ExecutableSuggestionSearch object with the query configuration.
+     * @param assets {@link DocumentFactory} mapping the index documents and the result type.
+     * @param childFactory {@link DocumentFactory} Document factory of the nested documents.
+     * @return {@link SuggestionResult} object storing the server results.
+     * @throws SearchServerException
+     */
+    public abstract SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets,DocumentFactory childFactory);
 
     /**
      * Executes a get query based on an annotated class.

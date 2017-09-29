@@ -218,4 +218,38 @@ public class ParentChildrenTest {
         assertEquals(3, result.getNumOfResults());
         assertEquals(Integer.valueOf(2),result.getResults().get(0).getChildCount());
     }
+
+    //MBDN-599
+    @Test
+    public void testFilterRandomOrderFailure() {
+        FulltextSearch search = Search.fulltext()
+                .setStrict(false)
+                .filter(and(eq(child_value, "blue"), eq(shared_value, "red")))
+                .orChildrenSearch(child);
+        SearchResult result = server.execute(search, parent);
+        assertEquals(2, result.getNumOfResults());
+        assertEquals(Integer.valueOf(0),result.getResults().get(0).getChildCount());//0 because none of the assets have the shared_value:red
+    }
+
+    //MBDN-599
+    @Test
+    public void testSubdocumentFacetCountsFailure() {
+        FulltextSearch search = Search.fulltext()
+                .setStrict(false)
+                .filter(eq(shared_value, "red"))
+                .orChildrenSearch(child);
+        SearchResult result = server.execute(search, parent);
+
+        assertEquals(1,result.getFacetResults().getSubdocumentFacets().stream().findFirst().get().getChildrenCount());
+        assertEquals(1,(long)result.getFacetResults().getSubdocumentFacets().stream().findFirst().get().getParentCount());
+
+        search = Search.fulltext()
+                .setStrict(false)
+                .filter(or(eq(shared_value, "yellow"),eq(child_value,"red")))
+                .orChildrenSearch(child);
+        result = server.execute(search, parent);
+
+        assertEquals(2,result.getFacetResults().getSubdocumentFacets().stream().findFirst().get().getChildrenCount());
+        assertEquals(1,(long)result.getFacetResults().getSubdocumentFacets().stream().findFirst().get().getParentCount());
+    }
 }

@@ -115,6 +115,8 @@ public abstract class Facet {
         }
     }
 
+
+
     /**
      * This class allows to perform ranged facet query on a numeric field. A facet ranged query returns all the
      * documents which have the specified field with a value included in a range defined by

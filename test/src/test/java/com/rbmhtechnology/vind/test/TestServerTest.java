@@ -427,15 +427,15 @@ public class TestServerTest {
     @Test
     public void testDoubleDependency() {
 
-        SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.solr.EmbeddedSolrServerProvider");
+        SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.solr.backend.EmbeddedSolrServerProvider");
         SearchServer server = SearchServer.getInstance();
 
         assertEquals("org.apache.solr.client.solrj.embedded.EmbeddedSolrServer", server.getBackend().getClass().getSuperclass().getCanonicalName());
 
-        SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.solr.RemoteSolrServerProvider");
+        SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.solr.backend.RemoteSolrServerProvider");
 
         expectedEx.expectCause(isA(RuntimeException.class));
-        expectedEx.expectMessage("Provider com.rbmhtechnology.vind.solr.SolrSearchServer could not be instantiated");
+        expectedEx.expectMessage("Provider com.rbmhtechnology.vind.solr.backend.SolrSearchServer could not be instantiated");
 
         SearchServer.getInstance();
     }
@@ -560,7 +560,7 @@ public class TestServerTest {
     @Test
     public void testZKConnection() {
 
-        SearchConfiguration.set(SearchConfiguration.SERVER_SOLR_PROVIDER, "com.rbmhtechnology.vind.solr.RemoteSolrServerProvider");
+        SearchConfiguration.set(SearchConfiguration.SERVER_SOLR_PROVIDER, "RemoteSolrServerProvider");
         SearchConfiguration.set(SearchConfiguration.SERVER_SOLR_CLOUD, true);
         SearchConfiguration.set(SearchConfiguration.SERVER_SOLR_HOST, "zkServerA:2181,zkServerB:2181,zkServerC:2181");
         SearchConfiguration.set(SearchConfiguration.SERVER_SOLR_COLLECTION, "my_collection");

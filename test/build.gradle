@@ -3,7 +3,6 @@ description = 'TestSuite'
 dependencies {
     compile project(':server:embedded-solr-server')
     compile project(':server:remote-solr-server')
-    compile project(':backend:other')
     compile project(':utils:mam-utils')
     compile "junit:junit:$junitVersion"
     testRuntime "org.slf4j:slf4j-simple:$slf4jVersion"

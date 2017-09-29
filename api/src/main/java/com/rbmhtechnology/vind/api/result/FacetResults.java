@@ -45,7 +45,8 @@ public class FacetResults {
                         HashMap<String, RangeFacetResult<?>> rangeFacets,
                         HashMap<String, IntervalFacetResult> intervalFacets,
                         HashMap<String, StatsFacetResult<?>> statsFacets,
-                        HashMap<String, List<PivotFacetResult<?>>> pivotFacets) {
+                        HashMap<String, List<PivotFacetResult<?>>> pivotFacets,
+                        Collection<SubdocumentFacetResult> subDocumentFacets) {
         this.factory = factory;
         this.termFacets = termFacets;
         this.typeFacet = typeFacet;
@@ -54,6 +55,7 @@ public class FacetResults {
         this.intervalFacets = intervalFacets;
         this.statsFacets = statsFacets;
         this.pivotFacets = pivotFacets;
+        this.subdocumentFacets = subDocumentFacets;
     }
 
     /**

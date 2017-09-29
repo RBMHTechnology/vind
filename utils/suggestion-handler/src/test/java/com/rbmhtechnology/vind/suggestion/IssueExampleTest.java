@@ -22,7 +22,7 @@ public class IssueExampleTest extends SolrTestCaseJ4 {
     @BeforeClass
     public static void init() throws Exception {
 
-        initCore("solrconfig.xml", "schema.xml", "../../backend/solr/src/main/resources/solrhome", "core");
+        initCore("solrconfig.xml", "schema.xml", "../../backend/solr-backend/src/main/resources/solrhome", "core");
         core = h.getCore();
 
         assertU(adoc("_id_", "1",

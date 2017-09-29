@@ -1,7 +1,0 @@
-description = 'Test Backend'
-
-dependencies {
-    compile project(':api')
-    testCompile ("commons-logging:commons-logging:$commonsLoggingVersion");
-    testCompile "org.mockito:mockito-all:$mockitoAllVersion"
-}

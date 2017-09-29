@@ -8,16 +8,16 @@ package com.rbmhtechnology.vind.api.result.facet;
  */
 public class SubdocumentFacetResult<String> implements FacetResult<String> {
 
-    private String parentId;
+    private Integer parentCount;
     private Integer childrenCount;
 
-    public SubdocumentFacetResult(String parentId, Integer childrenCount) {
-        this.parentId = parentId;
+    public SubdocumentFacetResult(Integer parentCount, Integer childrenCount) {
+        this.parentCount = parentCount;
         this.childrenCount = childrenCount;
     }
 
-    public String getParentId() {
-        return parentId;
+    public Integer getParentCount() {
+        return parentCount;
     }
 
     public int getChildrenCount() {

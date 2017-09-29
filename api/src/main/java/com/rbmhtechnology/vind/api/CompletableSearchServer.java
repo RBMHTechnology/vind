@@ -266,6 +266,11 @@ public class CompletableSearchServer extends SearchServer {
     }
 
     @Override
+    public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets, DocumentFactory childFactory) {
+        return backend.execute(search, assets, childFactory);
+    }
+
+    @Override
     public <T> GetResult execute(RealTimeGet search, Class<T> c) {
         return backend.execute(search, c);
     }

@@ -23,7 +23,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        initCore("solrconfig.xml", "schema.xml", "../../backend/solr/src/main/resources/solrhome", "core");
+        initCore("solrconfig.xml", "schema.xml", "../../backend/solr-backend/src/main/resources/solrhome", "core");
         core = h.getCore();
     }
 

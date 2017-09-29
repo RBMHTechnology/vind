@@ -139,6 +139,13 @@ public class ReportingSearchServer extends SearchServer {
     }
 
     @Override
+    public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets, DocumentFactory childFactory) {
+        SuggestionResult result = server.execute(search, assets, childFactory);
+        //TODO log
+        return result;
+    }
+
+    @Override
     public <T> GetResult execute(RealTimeGet search, Class<T> c) {
         final GetResult result = server.execute(search, c);
         //TODO log
