@@ -19,8 +19,12 @@ public class PivotRegexBasedSuggestionTest extends SolrTestCaseJ4 {
 
     @BeforeClass
     public static void init() throws Exception {
+        System.setProperty("runtimeLib","false");
+
         initCore("solrconfig.xml", "schema.xml", "../../backend/solr-backend/src/main/resources/solrhome", "core");
         core = h.getCore();
+
+        System.getProperties().remove("runtimeLib");
 
         assertU(adoc("_id_", "1",
                 "_type_","Asset",
@@ -78,6 +82,7 @@ public class PivotRegexBasedSuggestionTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"lo");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_name");
         params.add(SuggestionRequestParams.SUGGESTION_INTERVAL,"true");
@@ -123,6 +128,7 @@ public class PivotRegexBasedSuggestionTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"lo");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_name");
         params.add(SuggestionRequestParams.SUGGESTION_INTERVAL,"true");
@@ -161,6 +167,7 @@ public class PivotRegexBasedSuggestionTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"lo");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_name");
 
@@ -193,6 +200,7 @@ public class PivotRegexBasedSuggestionTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"se+lo");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_name");
 
@@ -209,6 +217,7 @@ public class PivotRegexBasedSuggestionTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"se");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_name");
         params.add(SuggestionRequestParams.SUGGESTION_TERM_LIMIT,"1");

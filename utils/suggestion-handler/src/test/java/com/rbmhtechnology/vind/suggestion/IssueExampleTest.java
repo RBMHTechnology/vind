@@ -21,9 +21,12 @@ public class IssueExampleTest extends SolrTestCaseJ4 {
 
     @BeforeClass
     public static void init() throws Exception {
+        System.setProperty("runtimeLib","false");
 
         initCore("solrconfig.xml", "schema.xml", "../../backend/solr-backend/src/main/resources/solrhome", "core");
         core = h.getCore();
+
+        System.getProperties().remove("runtimeLib");
 
         assertU(adoc("_id_", "1",
                 "_type_","Asset",
@@ -69,6 +72,7 @@ public class IssueExampleTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"loeb");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_name");
         params.add(SuggestionRequestParams.SUGGESTION_DF,"dynamic_multi_stored_facet_string_name");
@@ -105,6 +109,7 @@ public class IssueExampleTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION, "true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q, "xalps");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD, "dynamic_multi_stored_facet_string_name");
         params.add(SuggestionRequestParams.SUGGESTION_DF, "spellcheck");
@@ -125,6 +130,7 @@ public class IssueExampleTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"123");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_subtitle");
         params.add(SuggestionRequestParams.SUGGESTION_DF,"spellcheck");
@@ -158,6 +164,7 @@ public class IssueExampleTest extends SolrTestCaseJ4 {
         SolrQueryRequest req = new LocalSolrQueryRequest( core, params );
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"sepastian");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_name");
         params.add(SuggestionRequestParams.SUGGESTION_DF,"spellcheck");
@@ -186,6 +193,7 @@ public class IssueExampleTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION, "true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q, "1");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD, "dynamic_multi_stored_facet_string_index");
         params.add(SuggestionRequestParams.SUGGESTION_DF, "spellcheck");
@@ -202,6 +210,7 @@ public class IssueExampleTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"0");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_index");
         params.add(CommonParams.FQ,"notvalidfield:ASSET");
@@ -219,6 +228,7 @@ public class IssueExampleTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"MI123");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_id");
         params.add(SuggestionRequestParams.SUGGESTION_DF,"spellcheck");
@@ -236,6 +246,7 @@ public class IssueExampleTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"MI123-456-788");
         params.add(CommonParams.FQ,"dynamic_multi_stored_facet_string_id:MI123-456-788"); //filter for non existing facet -> no suggestion should be returned
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_id");
@@ -253,6 +264,7 @@ public class IssueExampleTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"tes");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_single_stored_facet_path_hierarchy1");
         params.add(SuggestionRequestParams.SUGGESTION_DF,"spellcheck");

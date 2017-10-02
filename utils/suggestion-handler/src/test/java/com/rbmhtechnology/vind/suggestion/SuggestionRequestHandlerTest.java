@@ -2,14 +2,24 @@ package com.rbmhtechnology.vind.suggestion;
 import org.apache.solr.SolrTestCaseJ4;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.ModifiableSolrParams;
+import org.apache.solr.common.util.NamedList;
+import org.apache.solr.core.ConfigSet;
+import org.apache.solr.core.SolrConfig;
 import org.apache.solr.core.SolrCore;
 import org.apache.solr.request.LocalSolrQueryRequest;
 import org.apache.solr.request.SolrQueryRequest;
+import org.apache.solr.schema.IndexSchema;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.rbmhtechnology.vind.suggestion.params.SuggestionRequestParams;
+import org.xml.sax.InputSource;
+
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.nio.file.Paths;
+import java.util.Properties;
 
 /**
  * http://svn.apache.org/viewvc/lucene/dev/trunk/solr/core/src/test/org/apache/solr/handler/MoreLikeThisHandlerTest.java?view=markup
@@ -23,8 +33,15 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
+
+        System.setProperty("runtimeLib","false");
+
         initCore("solrconfig.xml", "schema.xml", "../../backend/solr-backend/src/main/resources/solrhome", "core");
+
         core = h.getCore();
+
+        System.getProperties().remove("runtimeLib");
+
     }
 
     @Override
@@ -78,6 +95,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
 
         SolrQueryRequest req = new LocalSolrQueryRequest( core, params );
 
@@ -87,6 +105,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
 
 
         params.add(CommonParams.Q, "Sebastian");
+
         req = new LocalSolrQueryRequest( core, params );
 
         assertQ("suggester - without field params", req,
@@ -110,6 +129,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
         params.add(CommonParams.Q,"Sebastian");
+        params.add(CommonParams.QT,"/suggester");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_name");
 
         SolrQueryRequest req = new LocalSolrQueryRequest( core, params );
@@ -156,6 +176,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
         params.add(CommonParams.Q,"S");
+        params.add(CommonParams.QT,"/suggester");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_name");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_place");
 
@@ -175,9 +196,10 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"sepastian");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_name");
-        params.add(SuggestionRequestParams.SUGGESTION_DF,"spellcheck");
+        params.add(SuggestionRequestParams.SUGGESTION_DF,"suggestions");
 
         SolrQueryRequest req = new LocalSolrQueryRequest( core, params );
 
@@ -194,6 +216,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"sebastian");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_name");
         params.add(CommonParams.FQ,"dynamic_multi_stored_facet_string_place:\"(1328869589310-619798898)\"");
@@ -211,8 +234,10 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"citroën");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_brand");
+        params.add(SuggestionRequestParams.SUGGESTION_DF,"suggestions");
 
         SolrQueryRequest req = new LocalSolrQueryRequest( core, params );
 
@@ -240,6 +265,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"s");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_name");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_place");
@@ -273,6 +299,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"s");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_name");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_place");
@@ -297,6 +324,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"ku");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_place");
 
@@ -313,6 +341,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"s");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_name");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_place");
@@ -332,6 +361,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
         ModifiableSolrParams params = new ModifiableSolrParams();
 
         params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
         params.add(CommonParams.Q,"xfighter");
         params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_facet_string_name");
 

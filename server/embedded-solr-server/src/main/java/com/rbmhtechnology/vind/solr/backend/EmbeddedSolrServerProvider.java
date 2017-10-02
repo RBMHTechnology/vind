@@ -34,7 +34,6 @@ public class EmbeddedSolrServerProvider implements SolrServerProvider {
             final Path tmpSolrConfig = tmpSolrHome.resolve(SolrXmlConfig.SOLR_XML_FILE);
 
             final CoreContainer container = CoreContainer.createAndLoad(tmpSolrHome, tmpSolrConfig);
-
             return new SolrClientWrapper(container, CORE_NAME, tmpSolrHome);
 
         } catch (URISyntaxException | IOException e) {

@@ -6,4 +6,5 @@ dependencies {
     compile "org.apache.commons:commons-lang3:$commonsLang3Version"
     testCompile ("commons-logging:commons-logging:$commonsLoggingVersion");
     testCompile "org.mockito:mockito-all:$mockitoAllVersion"
+    compile project(':utils:suggestion-handler')
 }

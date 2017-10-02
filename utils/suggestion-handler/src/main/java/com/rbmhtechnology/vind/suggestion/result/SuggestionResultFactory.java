@@ -146,9 +146,9 @@ public class SuggestionResultFactory {
                             List<NamedList> fieldValues = (List) (((NamedList) fieldResults.get(fieldName)).get("buckets"));
                             fieldValues.forEach(
                                     value -> {
-                                        Matcher matcher = word.matcher(FieldAnalyzerService.analyzeString(core, df, (String) value.get("val")));
+                                        Matcher matcher = word.matcher(FieldAnalyzerService.analyzeString(core, df, value.get("val").toString()));
                                         if (matcher.find()) {
-                                            intervalResult.addFacet(intervalName,fieldName, (String) value.get("val"), (Integer) value.get("count"), matcher.start());
+                                            intervalResult.addFacet(intervalName,fieldName, value.get("val").toString(), (Integer) value.get("count"), matcher.start());
                                         }
                                     }
                             );
@@ -166,9 +166,9 @@ public class SuggestionResultFactory {
                     List<NamedList> fieldValues = (List) (((NamedList) fieldResults.get(fieldName)).get("buckets"));
                     fieldValues.forEach(
                             value -> {
-                                Matcher matcher = word.matcher(FieldAnalyzerService.analyzeString(core, df, (String) value.get("val")));
+                                Matcher matcher = word.matcher(FieldAnalyzerService.analyzeString(core, df, value.get("val").toString()));
                                 if (matcher.find()) {
-                                    result.addFacet(fieldName, (String) value.get("val"), (Integer) value.get("count"), matcher.start());
+                                    result.addFacet(fieldName, value.get("val").toString(), (Integer) value.get("count"), matcher.start());
                                 }
                             }
                     );

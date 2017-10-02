@@ -149,9 +149,8 @@ public class SuggestionRequestHandler extends SearchHandler implements SolrCoreA
 
             String[] multivalue_fields = params.getParams(SuggestionRequestParams.SUGGESTION_MULTIVALUE_FIELD) != null ? params.getParams(SuggestionRequestParams.SUGGESTION_MULTIVALUE_FIELD) : MULTIVALUE_FIELDS;
 
-            String df = params.get(SuggestionRequestParams.SUGGESTION_DF,DF);
-            if(df == null) {
-                rsp.add("error",error(400,"SuggestionRequest needs to have a 'df' parameter"));
+            if(single_fields == null && multivalue_fields == null) {
+                rsp.add("error",error(400,"SuggestionRequest needs to have at least one 'suggestion.field' parameter or one 'suggestion.multivalue.field' parameter defined."));
                 return;
             }
 
@@ -167,6 +166,12 @@ public class SuggestionRequestHandler extends SearchHandler implements SolrCoreA
                 return;
             }
 
+            String df = params.get(SuggestionRequestParams.SUGGESTION_DF,DF);
+            if(df == null) {
+                rsp.add("error",error(400,"SuggestionRequest needs to have a 'df' parameter"));
+                return;
+            }
+
             Strategy strategy = Strategy.parse(params.get(SuggestionRequestParams.SUGGESTION_STRATEGY, null), STRATEGY);
 
             LimitType limitType = LimitType.parse(params.get(SuggestionRequestParams.SUGGESTION_LIMIT_TYPE, null), LIMIT_TYPE);
@@ -174,11 +179,6 @@ public class SuggestionRequestHandler extends SearchHandler implements SolrCoreA
             String[] fqs = params.getParams(CommonParams.FQ) != null ? params.getParams(CommonParams.FQ) : FQS;
 
             Type type;
-
-            if(single_fields == null && multivalue_fields == null) {
-                rsp.add("error",error(400,"SuggestionRequest needs to have at least one 'suggestion.field' parameter or one 'suggestion.multivalue.field' parameter defined."));
-                return;
-            }
 
             if(single_fields != null && multivalue_fields == null) {
                 type = Type.single;
