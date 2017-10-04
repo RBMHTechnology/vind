@@ -1,7 +1,0 @@
-
-description = 'API'
-
-dependencies {
-    compile project(':annotations')
-    compile "org.apache.commons:commons-lang3:$commonsLang3Version"
-}

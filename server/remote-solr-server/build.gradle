@@ -1,6 +1,0 @@
-description = 'Remote Solr Server'
-
-dependencies {
-    compile project(':backend:solr-backend')
-    testCompile "org.mockito:mockito-all:$mockitoAllVersion"
-}

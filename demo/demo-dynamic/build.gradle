@@ -1,8 +1,0 @@
-description = 'Demo Dynamic'
-uploadArchives.enabled = false
-
-dependencies {
-    compile project(':api')
-    runtime project(':server:embedded-solr-server')
-    runtime "org.slf4j:slf4j-simple:$slf4jVersion"
-}

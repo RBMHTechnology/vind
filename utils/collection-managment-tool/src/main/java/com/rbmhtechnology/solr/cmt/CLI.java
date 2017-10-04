@@ -1,6 +1,6 @@
 package com.rbmhtechnology.solr.cmt;
 
-import com.carrotsearch.ant.tasks.junit4.dependencies.com.google.common.base.Strings;
+import com.google.common.base.Strings;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

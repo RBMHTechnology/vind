@@ -22,6 +22,6 @@ The search lib is modular and currently implements the following layers:
 We built a short tutorial to give you a smooth entry to all the functions of the lib.
 The runnable code for each step can be found under `demo/demo-step{number}`.
 
-For a deeper dive in the API of Vind [have a look at the Javadoc](https://rbmhtechnology.github.io/vind/javadoc/).
+For a deeper dive in the API of Vind [have a look at the Javadoc](https://www.javadoc.io/doc/com.rbmhtechnology.vind/vind).
 
 

@@ -1,8 +1,0 @@
-
-description = 'Report API'
-
-dependencies {
-    compile project(':api')
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
-    testCompile project(':test')
-}
