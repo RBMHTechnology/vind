@@ -1,4 +1,4 @@
-package com.rbmhtechnology.vind.report.session;
+package com.rbmhtechnology.vind.report.model.session;
 
 /**
  * @author Thomas Kurz (tkurz@apache.org)

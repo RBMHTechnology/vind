@@ -1,4 +1,4 @@
-package com.rbmhtechnology.vind.report.application;
+package com.rbmhtechnology.vind.report.model.application;
 
 /**
  * @author Thomas Kurz (tkurz@apache.org)

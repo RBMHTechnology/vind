@@ -43,6 +43,10 @@ public abstract class Filter {
 
     private Scope filterScope;
 
+    public String getType() {
+        return this.getClass().getSimpleName();
+    }
+
     public Scope getFilterScope(String fieldname, DocumentFactory factory){
         if(this.filterScope != null) {
             return this.filterScope;
