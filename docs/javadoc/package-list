@@ -28,6 +28,11 @@ com.rbmhtechnology.vind.report.logger
 com.rbmhtechnology.vind.report.session
 com.rbmhtechnology.vind.report.writer
 com.rbmhtechnology.vind.solr
+com.rbmhtechnology.vind.suggestion
+com.rbmhtechnology.vind.suggestion.jsonfacetmodel
+com.rbmhtechnology.vind.suggestion.params
+com.rbmhtechnology.vind.suggestion.result
+com.rbmhtechnology.vind.suggestion.service
 com.rbmhtechnology.vind.test
 com.rbmhtechnology.vind.utils
 com.rbmhtechnology.vind.utils.mam
