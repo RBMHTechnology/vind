@@ -414,7 +414,7 @@
  -->
   <searchComponent name="spellcheck" class="solr.SpellCheckComponent">
 
-    <str name="queryAnalyzerFieldType">facets</str>
+    <str name="queryAnalyzerFieldType">suggestions</str>
 
     <!-- Multiple "Spell Checkers" can be declared and used by this
          component
@@ -422,7 +422,7 @@
 
     <lst name="spellchecker">
       <str name="name">default</str>
-      <str name="field">facets</str>
+      <str name="field">suggestions</str>
       <str name="spellcheckIndexDir">spellchecker</str>
       <str name="buildOnOptimize">true</str>
       <!-- uncomment this to require terms to occur in 1% of the documents in order to be included in the dictionary

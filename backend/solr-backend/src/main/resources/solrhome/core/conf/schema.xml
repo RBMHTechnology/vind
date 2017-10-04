@@ -58,12 +58,21 @@
       <filter class="solr.SynonymFilterFactory" expand="false" ignoreCase="true" synonyms="synonyms.txt"/>
     </analyzer>
   </fieldType>
+
+  <fieldType name="text_suggest" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer class="solr.ClassicTokenizerFactory"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+      <filter class="solr.SynonymFilterFactory" expand="false" ignoreCase="true" synonyms="synonyms.txt"/>
+    </analyzer>
+  </fieldType>
+
   <field name="_id_" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
   <field name="_root_" type="string" indexed="true" stored="false"/>
   <field name="_type_" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
   <field name="_version_" type="long" indexed="true" stored="true"/>
   <field name="facets" type="text_general" multiValued="true" indexed="true" stored="false"/>
-  <field name="suggestions" type="text_general" multiValued="true" indexed="true" stored="false"/>
+  <field name="suggestions" type="text_suggest" multiValued="true" indexed="true" stored="false"/>
   <field name="text" type="text_general" multiValued="true" indexed="true" stored="false"/>
   <dynamicField name="dynamic_single_stored_suggest_location_*" type="location" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_suggest_boolean_*" type="boolean" multiValued="false" indexed="true" stored="true"/>

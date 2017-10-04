@@ -41,6 +41,8 @@ public class SuggestionService {
     private static final String IGNORE_CASE_REGEX = "[%s|%s]";
     private static final String PREFIX_REGEX = "/(%s.*)|(.* +%s.*)/";
     private static final String INTERVAL_QUERY = "%s:[%s TO %s]";
+    private static final Collection<String> SOLR_REGEX_ESCAPE_CHARS = Arrays.asList("-",".","*","+");
+
     private String internalFacetLimit = "50";
 
     private boolean spellcheck_enabled = false;
@@ -199,7 +201,12 @@ public class SuggestionService {
         List<String> queryPreffixes = terms.stream()
                 .map(term -> term.chars()
                         .mapToObj(i -> (char)i)
-                        .map(letter -> String.format(IGNORE_CASE_REGEX, letter, StringUtils.upperCase(letter.toString())))
+                        .map(letter -> {
+                            //Escaping regex special characters
+                            final String str = SOLR_REGEX_ESCAPE_CHARS.contains(letter.toString())?
+                                    "\\" + letter.toString(): letter.toString();
+                            return  String.format(IGNORE_CASE_REGEX, letter, StringUtils.upperCase(str));
+                        })
                         .collect(Collectors.joining()))
                 .map(prefix -> String.format(PREFIX_REGEX, prefix, prefix))
                 .collect(Collectors.toList());
@@ -292,6 +299,10 @@ public class SuggestionService {
             params.add("spellcheck","true");
             params.add("spellcheck.q",String.join(" ",terms).concat("*") );
             params.add("spellcheck.collate","true");
+            final String accuarcy = original_params.get("spellcheck.accuracy");
+            if(Objects.nonNull(accuarcy)) {
+                params.add("spellcheck.accuracy", accuarcy);
+            }
         }
 
         final Map<String,Object> jsonFacet = new HashMap<>();
@@ -302,8 +313,6 @@ public class SuggestionService {
             jsonFacet.put("facet", filterMapNamed);
             req.setJSON(jsonFacet);
         }
-
-
 
         try {
             log.info("internal request: {}", req.toString());
