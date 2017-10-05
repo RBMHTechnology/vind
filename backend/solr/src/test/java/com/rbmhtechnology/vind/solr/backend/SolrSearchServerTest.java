@@ -6,8 +6,7 @@ import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.model.*;
-import com.rbmhtechnology.vind.solr.backend.SolrSearchServer;
-import com.rbmhtechnology.vind.solr.backend.SolrUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -15,6 +14,8 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SolrPingResponse;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
+import org.apache.solr.common.SolrInputField;
+import org.hamcrest.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -25,6 +26,7 @@ import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.Date;
 
 import static com.rbmhtechnology.vind.api.query.filter.Filter.eq;
 import static com.rbmhtechnology.vind.api.query.filter.Filter.or;
@@ -95,21 +97,22 @@ public class SolrSearchServerTest {
     @Test
     public void testIndex() throws Exception {
 
-        FieldDescriptor<String> title = new FieldDescriptorBuilder().setFullText(true).buildTextField("title");
-        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder().setFacet(true).buildDateField("created");
-        MultiValueFieldDescriptor.NumericFieldDescriptor<Integer> category = new FieldDescriptorBuilder().setFacet(true).buildMultivaluedNumericField("category", Integer.class);
+        FieldDescriptor<String> title = new FieldDescriptorBuilder<>().setFullText(true).buildTextField("title");
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder<>().setFacet(true).buildDateField("created");
+        MultiValueFieldDescriptor.NumericFieldDescriptor<Integer> category = new FieldDescriptorBuilder<>().setFacet(true).buildMultivaluedNumericField("category", Integer.class);
 
         final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("asset");
         DocumentFactory documents = docFactoryBuilder.addField(title).addField(created).addField(category).build();
 
+        final ZonedDateTime creationDate = ZonedDateTime.of(2016, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault());
         Document d1 = documents.createDoc("1")
                 .setValue(title, "Hello World")
-                .setValue(created, ZonedDateTime.of(2016, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()))
+                .setValue(created, creationDate)
                 .setValues(category, Arrays.asList(1, 2));
 
         Document d2 = documents.createDoc("2")
                 .setValue(title, "Hello Austria")
-                .setValue(created, ZonedDateTime.of(2016, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()))
+                .setValue(created, creationDate)
                 .setValue(category, 4);
 
         server.index(d1);
@@ -117,11 +120,11 @@ public class SolrSearchServerTest {
         verify(solrClient).add(argument.capture());
 
         SolrInputDocument doc = argument.getValue();
-        assertEquals("_id_=1", doc.get(SolrUtils.Fieldname.ID).toString());
-        assertEquals("_type_=asset", doc.get(SolrUtils.Fieldname.TYPE).toString());
-        assertEquals("dynamic_multi_int_category=[1, 2]", doc.get("dynamic_multi_int_category").toString());
-        assertEquals("dynamic_single_string_title=Hello World", doc.get("dynamic_single_string_title").toString());
-        assertEquals("dynamic_single_date_created=Fri Jan 01 00:00:00 CET 2016", doc.get("dynamic_single_date_created").toString());
+        assertThat(doc.get(SolrUtils.Fieldname.ID), solrInputField(SolrUtils.Fieldname.ID, "1"));
+        assertThat(doc.get(SolrUtils.Fieldname.TYPE), solrInputField(SolrUtils.Fieldname.TYPE, "asset"));
+        assertThat(doc.get("dynamic_multi_int_category"), solrInputField("dynamic_multi_int_category", Matchers.containsInAnyOrder(1,2)));
+        assertThat(doc.get("dynamic_single_string_title"), solrInputField("dynamic_single_string_title", "Hello World"));
+        assertThat(doc.get("dynamic_single_date_created"), solrInputField("dynamic_single_date_created", Date.from(creationDate.toInstant())));
 
         server.commit();
 
@@ -129,5 +132,58 @@ public class SolrSearchServerTest {
                 .fulltext("hello")
                 .filter(or(category.between(3, 5), created.before(ZonedDateTime.now())))
                 , documents);
+    }
+
+
+    public static <T> Matcher<SolrInputField> solrInputField(String fieldName, T value) {
+        return new TypeSafeMatcher<SolrInputField>() {
+            @Override
+            protected boolean matchesSafely(SolrInputField item) {
+                // check the name
+                if (!StringUtils.equals(fieldName, item.getName())) {
+                    return false;
+                }
+
+                // check value for null
+                final Object itemValue = item.getFirstValue();
+                if (itemValue == null) {
+                    return value == null;
+                }
+
+                // check the type
+                if (!value.getClass().isAssignableFrom(itemValue.getClass())) {
+                    return false;
+                }
+
+                // compare the values
+                return value.equals(itemValue);
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("SolrInputField(")
+                        .appendValue(fieldName)
+                        .appendText("=").appendValue(value)
+                        .appendText(")");
+            }
+        };
+    }
+
+    public static <T> Matcher<SolrInputField> solrInputField(String fieldName, Matcher<T> valueMatcher) {
+        return new TypeSafeMatcher<SolrInputField>() {
+            @Override
+            protected boolean matchesSafely(SolrInputField item) {
+                return StringUtils.equals(fieldName, item.getName()) && valueMatcher.matches(item.getValue());
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("SolrInputField(")
+                        .appendValue(fieldName)
+                        .appendText(" value matching ")
+                        .appendDescriptionOf(valueMatcher)
+                        .appendText(")");
+            }
+        };
     }
 }
