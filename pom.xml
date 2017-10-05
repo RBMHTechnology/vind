@@ -46,20 +46,32 @@
             <id>tkurz</id>
             <name>Thomas Kurz</name>
             <email>thomas.kurz@redlink.co</email>
+            <organization>Redlink GmbH</organization>
+            <organizationUrl>http://redlink.co/</organizationUrl>
         </developer>
         <developer>
             <id>alfonso-noriega</id>
             <name>Alfonso Noriega</name>
             <email>alfonso.noriega@redlink.co</email>
+            <organization>Redlink GmbH</organization>
+            <organizationUrl>http://redlink.co/</organizationUrl>
         </developer>
         <developer>
             <id>ja-fra</id>
             <name>Jakob Frank</name>
             <email>jakob.frank@redlink.co</email>
+            <organization>Redlink GmbH</organization>
+            <organizationUrl>http://redlink.co/</organizationUrl>
         </developer>
     </developers>
 
     <contributors>
+        <contributor>
+            <name>Paul Urthaler</name>
+            <email>paul.urthaler@at.redbullmediahouse.com</email>
+            <organization>Red Bull Media House</organization>
+            <organizationUrl>http://www.redbullmediahouse.com/</organizationUrl>
+        </contributor>
     </contributors>
 
     <properties>
