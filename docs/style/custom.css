@@ -1,3 +1,12 @@
+.blog #header {
+    box-shadow: 0 0 20px grey;
+}
+
+.blog #content {
+    background-color: white;
+    box-shadow: 0 0 20px grey;
+}
+
 .highlight {
     border-radius: 3px;
     background: #f7f7f8;
@@ -6,4 +15,39 @@
 
 #toc {
     background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.blog {
+    padding-right: 0 !important;
+}
+
+.blog #header {
+    background-image: url('../images/blog-header.png');
+    background-size: cover;
+    height: 240px;
+    background-position: center;
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+}
+
+.blog #content {
+    margin-top: 0;
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+}
+
+.blog #content h2 {
+    margin-top: 0;
+}
+
+.blog #footer {
+    text-align: center;
+    color: rgba(0, 0, 0, 0.2);
+}
+.blog #footer p {
+    margin-bottom: 3px;
+}
+.blog #footer img {
+    width: 100px;
 }
