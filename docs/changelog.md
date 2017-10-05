@@ -1,3 +1,7 @@
+---
+layout: rbmht-layout
+---
+
 ## Changelog
 
 This document shows the changes that are introduced into Vind with the releases.

@@ -1,0 +1,554 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.rbmhtechnology.vind</groupId>
+    <artifactId>vind</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>Vind</name>
+    <description>Vind is build to enable the integration of search facilities in java projects without getting to deep into the search topic</description>
+    <url>https://rbmhtechnology.github.io/vind/</url>
+    <inceptionYear>2017</inceptionYear>
+
+    <modules>
+        <module>annotations</module>
+        <module>api</module>
+
+        <module>backend</module>
+        <module>server</module>
+        <module>report</module>
+
+        <module>utils</module>
+
+        <module>test</module>
+
+        <module>demo</module>
+    </modules>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+            <comments>A business-friendly OSS license</comments>
+        </license>
+    </licenses>
+
+    <organization>
+        <name>Red Bull Media House Technology GmbH</name>
+        <url>http://www.rbmhtechnology.com/</url>
+    </organization>
+
+    <developers>
+        <developer>
+            <id>tkurz</id>
+            <name>Thomas Kurz</name>
+            <email>thomas.kurz@redlink.co</email>
+            <organization>Redlink GmbH</organization>
+            <organizationUrl>http://redlink.co/</organizationUrl>
+        </developer>
+        <developer>
+            <id>alfonso-noriega</id>
+            <name>Alfonso Noriega</name>
+            <email>alfonso.noriega@redlink.co</email>
+            <organization>Redlink GmbH</organization>
+            <organizationUrl>http://redlink.co/</organizationUrl>
+        </developer>
+        <developer>
+            <id>ja-fra</id>
+            <name>Jakob Frank</name>
+            <email>jakob.frank@redlink.co</email>
+            <organization>Redlink GmbH</organization>
+            <organizationUrl>http://redlink.co/</organizationUrl>
+        </developer>
+    </developers>
+
+    <contributors>
+        <contributor>
+            <name>Paul Urthaler</name>
+            <email>paul.urthaler@at.redbullmediahouse.com</email>
+            <organization>Red Bull Media House</organization>
+            <organizationUrl>http://www.redbullmediahouse.com/</organizationUrl>
+        </contributor>
+    </contributors>
+
+    <properties>
+        <finalName>vind</finalName>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>1.8</java.version>
+
+        <slf4j.version>1.7.7</slf4j.version>
+        <solr.version>5.5.1</solr.version>
+        <guava.version>21.0</guava.version>
+
+        <commons-logging.version>1.2</commons-logging.version>
+        <commons-beanutils.version>1.9.3</commons-beanutils.version>
+        <commons-lang3.version>3.5</commons-lang3.version>
+        <commons-httpclient.version>3.1</commons-httpclient.version>
+        <commons-cli.version>1.4</commons-cli.version>
+        <commons-codec.version>1.10</commons-codec.version>
+
+        <jackson.version>2.7.5</jackson.version>
+        <sparkjava.version>2.5</sparkjava.version>
+
+        <junit.version>4.12</junit.version>
+        <hamcrest.version>1.3</hamcrest.version>
+        <mockito.version>1.10.19</mockito.version>
+    </properties>
+
+    <scm>
+        <connection>scm:git:https://github.com/RBMHTechnology/vind.git</connection>
+        <developerConnection>scm:git:git@github.com:RBMHTechnology/vind.git</developerConnection>
+        <url>https://github.com/RBMHTechnology/vind/</url>
+        <tag>HEAD</tag>
+    </scm>
+    <issueManagement>
+        <system>github</system>
+        <url>https://github.com/RBMHTechnology/vind/issues</url>
+    </issueManagement>
+
+    <repositories>
+
+    </repositories>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>${slf4j.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>${commons-beanutils.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-httpclient</groupId>
+                <artifactId>commons-httpclient</artifactId>
+                <version>${commons-httpclient.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-cli</groupId>
+                <artifactId>commons-cli</artifactId>
+                <version>${commons-cli.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${commons-codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>1.2</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.solr</groupId>
+                <artifactId>solr-core</artifactId>
+                <version>${solr.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.solr</groupId>
+                <artifactId>solr-solrj</artifactId>
+                <version>${solr.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-library</artifactId>
+                <version>${hamcrest.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-core</artifactId>
+                <version>${hamcrest.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-all</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.solr</groupId>
+                <artifactId>solr-test-framework</artifactId>
+                <version>${solr.version}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>1.4.1</version>
+                <executions>
+                    <execution>
+                        <id>check-prerequisites</id>
+                        <goals><goal>enforce</goal></goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.0.5</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>${java.version}</version>
+                                </requireJavaVersion>
+                                <dependencyConvergence/>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>aggreagte</id>
+                        <goals>
+                            <goal>aggregate-jar</goal>
+                        </goals>
+                        <inherited>false</inherited>
+                        <configuration>
+                            <excludePackageNames>*.test:*.demo</excludePackageNames>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+        </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>3.0.0</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.5.1</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>2.7</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>2.6</version>
+                </plugin>
+                <plugin>
+                    <groupId>pl.project13.maven</groupId>
+                    <artifactId>git-commit-id-plugin</artifactId>
+                    <version>2.2.1</version>
+                    <executions>
+                        <execution>
+                            <id>git.properties</id>
+                            <goals>
+                                <goal>revision</goal>
+                            </goals>
+                            <phase>process-resources</phase>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                        <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+                        <dateFormat>yyyy-MM-dd'T'HH:mm:ssXX</dateFormat>
+                        <includeOnlyProperties>
+                            <includeOnlyProperty>^git\.build\..*</includeOnlyProperty>
+                            <includeOnlyProperty>^git\.commit\.id.*</includeOnlyProperty>
+                            <includeOnlyProperty>^git\.branch</includeOnlyProperty>
+                            <includeOnlyProperty>^git\.tags</includeOnlyProperty>
+                        </includeOnlyProperties>
+                        <gitDescribe>
+                            <always>true</always>
+                            <abbrev>8</abbrev>
+                            <dirty>*</dirty>
+                        </gitDescribe>
+                        <failOnNoGitDirectory>false</failOnNoGitDirectory>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>2.5.3</version>
+                    <configuration>
+                        <pushChanges>false</pushChanges>
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
+                        <tagNameFormat>${project.artifactId}-@{project.version}</tagNameFormat>
+                        <localCheckout>true</localCheckout>
+                        <connectionUrl>scm:git:file://${project.basedir}/</connectionUrl>
+                        <indentSize>4</indentSize>
+
+                        <useReleaseProfile>false</useReleaseProfile>
+                        <releaseProfiles>release</releaseProfiles>
+                        <goals>deploy</goals>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>1.12</version>
+                    <configuration>
+                        <licenseMerges>
+                            <licenseMerge>
+                                Apache License, Version 2.0
+                                |Apache License Version 2.0|Apache License 2.0|ASL, version 2|Apache 2|Apache 2.0|Apache 2.0 license
+                                |Apache License|Apache Software Licenses
+                                |The Apache Software License, Version 2.0|Apache License v2
+                            </licenseMerge>
+                            <licenseMerge>
+                                Apache License, Version 1.1
+                                |Apache Software License, Version 1.1
+                                |The Apache Software License, Version 1.1
+                            </licenseMerge>
+                            <licenseMerge>
+                                BSD License
+                                |BSD|BSD 3-Clause License|New BSD License|New BSD license
+                                |The BSD License
+                                |The New BSD License
+                            </licenseMerge>
+                            <licenseMerge>
+                                BSD-style License
+                            </licenseMerge>
+                            <licenseMerge>
+                                Common Development and Distribution License (CDDL) v1.1
+                                |CDDL 1.1
+                                |Dual license consisting of the CDDL v1.1 and GPL v2
+                            </licenseMerge>
+                            <licenseMerge>
+                                Common Development and Distribution License (CDDL) v1.0
+                                |CDDL 1.0|CDDL, v1.0|CDDL 1.0 license
+                                |CDDL License
+                                |CDDL/GPLv2+CE|CDDL or GPLv2 with exceptions|CDDL + GPLv2 with classpath exception
+                            </licenseMerge>
+                            <licenseMerge>
+                                GPL 2.0 with Classpath Exception
+                                |GPL2 w/ CPE
+                            </licenseMerge>
+                            <licenseMerge>
+                                LGPL
+                                |Lesser General Public License (LGPL)
+                                |GNU LESSER GENERAL PUBLIC LICENSE|GNU Lesser General Public License
+                            </licenseMerge>
+                            <licenseMerge>
+                                LGPL 2.1
+                                |LGPL, v2.1 or later|LGPL, version 2.1|LGPL 2.1 license
+                                |GNU Lesser General Public License (LGPL), Version 2.1
+                                |GNU LESSER GENERAL PUBLIC LICENSE, Version 2.1
+                                |The GNU Lesser General Public License, Version 2.1
+                            </licenseMerge>
+                            <licenseMerge>
+                                LGPL 3.0
+                                |LGPL 3.0 license
+                            </licenseMerge>
+                            <licenseMerge>
+                                MIT License
+                                |MIT License (MIT)
+                                |The MIT License
+                            </licenseMerge>
+                            <licenseMerge>
+                                Mozilla Public License 1.1
+                                |MPL 1.1
+                                |Mozilla Public License 1.1 (MPL 1.1)
+                            </licenseMerge>
+                            <licenseMerge>
+                                Eclipse Public License Version 1.0
+                                |Eclipse Public License - v 1.0
+                                |EPL 1.0 license
+                            </licenseMerge>
+                            <licenseMerge>
+                                Public Domain
+                                |The SAX License
+                            </licenseMerge>
+                            <!-- These are critical licenses -->
+                            <licenseMerge>
+                                GPL 3.0
+                                |GNU General Public License Version 3
+                            </licenseMerge>
+                        </licenseMerges>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>2.2.1</version>
+                    <executions>
+                        <execution>
+                            <id>attach-sources</id>
+                            <goals>
+                                <goal>jar-no-fork</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>2.9.1</version>
+                    <executions>
+                        <execution>
+                            <id>attach-javadocs</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>2.5.2</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>3.5.1</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>2.10</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.19.1</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>2.8.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>2.19.1</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonatype.plugins</groupId>
+                    <artifactId>nexus-staging-maven-plugin</artifactId>
+                    <version>1.6.8</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <serverId>ossrh</serverId>
+                        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                        <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>quick</id>
+            <activation>
+                <property>
+                    <name>quick</name>
+                </property>
+            </activation>
+            <properties>
+                <skipTests>true</skipTests>
+                <skipTTs>true</skipTTs>
+            </properties>
+        </profile>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>

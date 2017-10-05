@@ -1,6 +1,0 @@
-description = 'Embedded Solr Server'
-
-dependencies {
-    compile project(':backend:solr-backend')
-    compile("org.apache.solr:solr-core:$solrVersion")
-}

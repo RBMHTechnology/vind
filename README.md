@@ -36,7 +36,7 @@ which enables developers to start without setting up a complex infrastructure. F
 which makes it easy to setup Vind index collections and keep them in sync with the Vind version.
 
 [Get a detailed documentation of all functions and features](https://rbmhtechnology.github.io/vind/) 
-or [dive deeper in the API of the Vind with Javadoc](https://rbmhtechnology.github.io/vind/javadoc/). 
+or [dive deeper in the API of the Vind with Javadoc](https://www.javadoc.io/doc/com.rbmhtechnology.vind/vind). 
 
 ## How to contribute
 
@@ -55,4 +55,4 @@ See the [License](LICENSE.txt) for more details.
 Vind is lead by [Red Bull Media House Technology](https://github.com/RBMHTechnology) and was initiated in 2017.
 
 ## Changelog
-The [Changelog](./docs/changelog.adoc) provides a complete list of changes in older releases.
+The [Changelog](https://rbmhtechnology.github.io/vind/changelog) provides a complete list of changes in older releases.
