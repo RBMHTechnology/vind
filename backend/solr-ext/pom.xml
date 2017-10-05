@@ -8,14 +8,16 @@
         <groupId>com.rbmhtechnology.vind</groupId>
         <artifactId>vind</artifactId>
         <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../../</relativePath>
     </parent>
 
-    <artifactId>vind-utils</artifactId>
-    <name>Vind - Utils</name>
+    <artifactId>solr-ext</artifactId>
+    <name>Vind - Apache Solr Extensions/Tools</name>
     <packaging>pom</packaging>
 
     <modules>
-        <module>mam-utils</module>
+        <module>collection-managment-tool</module>
+        <module>suggestion-handler</module>
     </modules>
 
     <build>

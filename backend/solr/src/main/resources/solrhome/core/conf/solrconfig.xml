@@ -389,7 +389,7 @@
       </lst>
   </requestHandler>
 
-  <requestHandler runtimeLib="${runtimeLib:true}" name="/suggester" class="com.rbmhtechnology.vind.suggestion.SuggestionRequestHandler">
+  <requestHandler runtimeLib="${runtimeLib:true}" name="/suggester" class="com.rbmhtechnology.vind.solr.suggestion.SuggestionRequestHandler">
       <lst name="defaults">
           <str name="echoParams">explicit</str>
           <str name="suggestion">true</str>
