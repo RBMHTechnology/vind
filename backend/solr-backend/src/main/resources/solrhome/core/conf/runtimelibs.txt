@@ -1,1 +1,0 @@
-com.redbullmediabase.solr:suggestion-request-handler:2.1.2

@@ -10,7 +10,7 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>demo</artifactId>
+    <artifactId>vind-demos</artifactId>
     <name>Vind - Demos</name>
     <packaging>pom</packaging>
 

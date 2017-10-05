@@ -6,8 +6,9 @@
 
     <parent>
         <groupId>com.rbmhtechnology.vind</groupId>
-        <artifactId>demo</artifactId>
+        <artifactId>vind</artifactId>
         <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../../</relativePath>
     </parent>
 
     <artifactId>demo-dynamic</artifactId>
@@ -16,7 +17,7 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>api</artifactId>
+            <artifactId>vind-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -31,4 +32,22 @@
         </dependency>
 
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-install-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

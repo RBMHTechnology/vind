@@ -11,8 +11,8 @@
         <relativePath>../../</relativePath>
     </parent>
 
-    <artifactId>suggestion-handler</artifactId>
-    <name>Vind Utils - Suggestion Handler</name>
+    <artifactId>solr-suggestion-handler</artifactId>
+    <name>Vind Utils - Solr Suggestion Handler</name>
 
     <dependencies>
         <dependency>
@@ -28,6 +28,18 @@
         <dependency>
             <groupId>org.apache.solr</groupId>
             <artifactId>solr-test-framework</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>backend-solr</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.redlink.utils</groupId>
+            <artifactId>utils</artifactId>
+            <version>1.0.1</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

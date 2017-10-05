@@ -1,5 +1,7 @@
 package com.rbmhtechnology.vind.suggestion;
 import com.rbmhtechnology.vind.suggestion.params.SuggestionRequestParams;
+import io.redlink.utils.PathUtils;
+import io.redlink.utils.ResourceLoaderUtils;
 import org.apache.solr.SolrTestCaseJ4;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.params.CommonParams;
@@ -8,8 +10,15 @@ import org.apache.solr.core.SolrCore;
 import org.apache.solr.request.LocalSolrQueryRequest;
 import org.apache.solr.request.SolrQueryRequest;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.nio.file.Path;
 
 /**
  * ...
@@ -18,13 +27,19 @@ import org.junit.Test;
  */
 public class IssueExampleTest extends SolrTestCaseJ4 {
 
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     static private SolrCore core;
 
     @BeforeClass
     public static void init() throws Exception {
         System.setProperty("runtimeLib","false");
 
-        initCore("solrconfig.xml", "schema.xml", "../../backend/solr-backend/src/main/resources/solrhome", "core");
+        final File solrhome = temporaryFolder.newFolder("solrhome");
+        PathUtils.copyRecursive(ResourceLoaderUtils.getResourceAsPath("solrhome").toAbsolutePath(), solrhome.toPath());
+
+        initCore("solrconfig.xml", "schema.xml", solrhome.getAbsolutePath(), "core");
         core = h.getCore();
 
         System.getProperties().remove("runtimeLib");

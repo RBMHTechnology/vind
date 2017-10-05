@@ -10,12 +10,12 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>backend</artifactId>
+    <artifactId>vind-backend</artifactId>
     <name>Vind - Backends</name>
     <packaging>pom</packaging>
 
     <modules>
-        <module>solr-backend</module>
+        <module>solr</module>
     </modules>
 
     <build>

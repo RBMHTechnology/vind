@@ -11,7 +11,7 @@
         <relativePath>../../</relativePath>
     </parent>
 
-    <artifactId>report-writer</artifactId>
+    <artifactId>report-writers</artifactId>
     <name>Vind - Reporting Writers</name>
     <packaging>pom</packaging>
 

@@ -10,7 +10,7 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>test</artifactId>
+    <artifactId>vind-testsuite</artifactId>
     <name>Vind - Testsuite</name>
 
     <dependencies>
@@ -26,7 +26,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>suggestion-handler</artifactId>
+            <artifactId>solr-suggestion-handler</artifactId>
             <version>${project.version}</version>
         </dependency>
 

@@ -17,12 +17,12 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>api</artifactId>
+            <artifactId>vind-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>solr</artifactId>
+            <artifactId>backend-solr</artifactId>
             <version>${project.version}</version>
         </dependency>
 

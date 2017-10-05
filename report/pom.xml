@@ -10,7 +10,7 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>report</artifactId>
+    <artifactId>vind-reporting</artifactId>
     <name>Vind - Reporting</name>
     <packaging>pom</packaging>
 

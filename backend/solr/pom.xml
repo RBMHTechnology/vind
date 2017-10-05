@@ -11,13 +11,13 @@
         <relativePath>../../</relativePath>
     </parent>
 
-    <artifactId>solr</artifactId>
+    <artifactId>backend-solr</artifactId>
     <name>Vind Backend - Apache Solr</name>
 
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>api</artifactId>
+            <artifactId>vind-api</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -48,5 +48,24 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>runtimelibs.txt</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>runtimelibs.txt</exclude>
+                </excludes>
+            </resource>
+        </resources>
+    </build>
 
 </project>
