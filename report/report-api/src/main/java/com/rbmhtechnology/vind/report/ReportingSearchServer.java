@@ -7,6 +7,7 @@ import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
+import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.BeanSearchResult;
 import com.rbmhtechnology.vind.api.result.GetResult;
@@ -14,11 +15,12 @@ import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
-import com.rbmhtechnology.vind.report.application.Application;
-import com.rbmhtechnology.vind.report.application.SimpleApplication;
+import com.rbmhtechnology.vind.report.logger.entry.FullTextEntry;
+import com.rbmhtechnology.vind.report.model.application.Application;
+import com.rbmhtechnology.vind.report.model.application.SimpleApplication;
 import com.rbmhtechnology.vind.report.logger.Log;
 import com.rbmhtechnology.vind.report.logger.ReportWriter;
-import com.rbmhtechnology.vind.report.session.Session;
+import com.rbmhtechnology.vind.report.model.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +41,8 @@ public class ReportingSearchServer extends SearchServer {
     private final SearchServer server;
 
     private Session session;
+
+    private String source;
 
     private Application application;
 
@@ -110,44 +114,63 @@ public class ReportingSearchServer extends SearchServer {
 
     @Override
     public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
-        BeanSearchResult<T> result = server.execute(search, c);
-        //TODO log
+        final ZonedDateTime start = ZonedDateTime.now();
+        final BeanSearchResult<T> result = server.execute(search, c);
+        final ZonedDateTime end = ZonedDateTime.now();
+        logger.log(new Log(new FullTextEntry(application, source ,search, result, start, end, session)));
         return result;
     }
 
     @Override
     public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
-        ZonedDateTime start = ZonedDateTime.now();
-        SearchResult result = server.execute(search, factory);
-        //TODO log: this is just a simple test
-        logger.log(new Log(application, search, factory.getType(), result, start, session));
+        final ZonedDateTime start = ZonedDateTime.now();
+        final SearchResult result = server.execute(search, factory);
+        final ZonedDateTime end = ZonedDateTime.now();
+        logger.log(new Log(new FullTextEntry(application, source ,search, result, start, end, session)));
         return result;
     }
 
     @Override
     public <T> SuggestionResult execute(ExecutableSuggestionSearch search, Class<T> c) {
+        final ZonedDateTime start = ZonedDateTime.now();
         SuggestionResult result = server.execute(search, c);
-        //TODO log
+        final ZonedDateTime end = ZonedDateTime.now();
+        logger.log(new Log(application, (SuggestionSearch) search, result, start, end, session));
         return result;
     }
 
     @Override
     public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets) {
-        SuggestionResult result = server.execute(search, assets);
-        //TODO log
+        final ZonedDateTime start = ZonedDateTime.now();
+        final SuggestionResult result = server.execute(search, assets);
+        final ZonedDateTime end = ZonedDateTime.now();
+        logger.log(new Log(application, (SuggestionSearch) search, result, start, end, session));
+        return result;
+    }
+
+    @Override
+    public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets, DocumentFactory childFactory) {
+        final ZonedDateTime start = ZonedDateTime.now();
+        final SuggestionResult result = server.execute(search, assets, childFactory);
+        final ZonedDateTime end = ZonedDateTime.now();
+        logger.log(new Log(application, (SuggestionSearch) search, result, start, end, session));
         return result;
     }
 
     @Override
     public <T> GetResult execute(RealTimeGet search, Class<T> c) {
+        final ZonedDateTime start = ZonedDateTime.now();
         final GetResult result = server.execute(search, c);
+        final ZonedDateTime end = ZonedDateTime.now();
         //TODO log
         return result;
     }
 
     @Override
     public GetResult execute(RealTimeGet search, DocumentFactory assets) {
+        final ZonedDateTime start = ZonedDateTime.now();
         final GetResult result = server.execute(search, assets);
+        final ZonedDateTime end = ZonedDateTime.now();
         //TODO log
         return result;
     }
@@ -169,5 +192,13 @@ public class ReportingSearchServer extends SearchServer {
 
     public void setSession(Session session) {
         this.session = session;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
     }
 }

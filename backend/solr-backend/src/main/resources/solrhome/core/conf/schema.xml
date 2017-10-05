@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Solr managed schema - automatically generated - DO NOT EDIT -->
+<schema name="basic search lib core" version="1.5">
+  <uniqueKey>_id_</uniqueKey>
+  <fieldType name="binary" class="solr.BinaryField"/>
+  <fieldType name="boolean" class="solr.BoolField" omitNorms="true" sortMissingLast="true"/>
+  <fieldType name="date" class="solr.TrieDateField" omitNorms="true" positionIncrementGap="0" precisionStep="0"/>
+  <fieldType name="double" class="solr.TrieDoubleField" omitNorms="true" positionIncrementGap="0" precisionStep="8"/>
+  <fieldType name="float" class="solr.TrieFloatField" omitNorms="true" positionIncrementGap="0" precisionStep="8"/>
+  <fieldType name="int" class="solr.TrieIntField" omitNorms="true" positionIncrementGap="0" precisionStep="8"/>
+  <fieldType name="location" class="solr.SpatialRecursivePrefixTreeFieldType" maxDistErr="0.000009" distErrPct="0.025" distanceUnits="kilometers"/>
+  <fieldType name="long" class="solr.TrieLongField" omitNorms="true" positionIncrementGap="0" precisionStep="8"/>
+  <fieldType name="path" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer class="solr.PathHierarchyTokenizerFactory"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="string" class="solr.StrField" omitNorms="true" sortMissingLast="true"/>
+  <fieldType name="text_de" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-FoldToASCII.txt"/>
+      <tokenizer class="solr.StandardTokenizerFactory"/>
+      <filter class="solr.WordDelimiterFilterFactory" catenateNumbers="0" generateNumberParts="1" splitOnCaseChange="1" generateWordParts="1" catenateAll="0" catenateWords="0"/>
+      <filter class="solr.StopFilterFactory" words="stopwords_de.txt" ignoreCase="true"/>
+      <filter class="solr.SynonymFilterFactory" expand="false" ignoreCase="true" synonyms="synonyms.txt"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+      <filter class="solr.SnowballPorterFilterFactory" language="German2"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_en" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-FoldToASCII.txt"/>
+      <tokenizer class="solr.StandardTokenizerFactory"/>
+      <filter class="solr.WordDelimiterFilterFactory" catenateNumbers="0" generateNumberParts="1" splitOnCaseChange="1" generateWordParts="1" catenateAll="0" catenateWords="0"/>
+      <filter class="solr.StopFilterFactory" words="stopwords_en.txt" ignoreCase="true"/>
+      <filter class="solr.SynonymFilterFactory" expand="false" ignoreCase="true" synonyms="synonyms.txt"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+      <filter class="solr.EnglishPossessiveFilterFactory"/>
+      <filter class="solr.PorterStemFilterFactory"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_es" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-FoldToASCII.txt"/>
+      <tokenizer class="solr.StandardTokenizerFactory"/>
+      <filter class="solr.WordDelimiterFilterFactory" catenateNumbers="0" generateNumberParts="1" splitOnCaseChange="1" generateWordParts="1" catenateAll="0" catenateWords="0"/>
+      <filter class="solr.StopFilterFactory" words="stopwords_es.txt" ignoreCase="true"/>
+      <filter class="solr.SynonymFilterFactory" expand="false" ignoreCase="true" synonyms="synonyms.txt"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+      <filter class="solr.SnowballPorterFilterFactory" language="Spanish"/>
+    </analyzer>
+  </fieldType>
+  <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-FoldToASCII.txt"/>
+      <tokenizer class="solr.ClassicTokenizerFactory"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+      <filter class="solr.SynonymFilterFactory" expand="false" ignoreCase="true" synonyms="synonyms.txt"/>
+    </analyzer>
+  </fieldType>
+
+  <fieldType name="text_suggest" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer class="solr.ClassicTokenizerFactory"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+      <filter class="solr.SynonymFilterFactory" expand="false" ignoreCase="true" synonyms="synonyms.txt"/>
+    </analyzer>
+  </fieldType>
+
+  <field name="_id_" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
+  <field name="_root_" type="string" indexed="true" stored="false"/>
+  <field name="_type_" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
+  <field name="_version_" type="long" indexed="true" stored="true"/>
+  <field name="facets" type="text_general" multiValued="true" indexed="true" stored="false"/>
+  <field name="suggestions" type="text_suggest" multiValued="true" indexed="true" stored="false"/>
+  <field name="text" type="text_general" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_stored_suggest_location_*" type="location" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_suggest_boolean_*" type="boolean" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_suggest_location_*" type="location" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_filter_location_*" type="location" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_facet_location_*" type="location" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_suggest_string_*" type="string" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_suggest_boolean_*" type="boolean" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_filter_boolean_*" type="boolean" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_filter_location_*" type="location" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_stored_facet_boolean_*" type="boolean" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_suggest_float_*" type="float" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_suggest_string_*" type="string" docValues="true" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_facet_location_*" type="location" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_sort_location_*" type="location" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_filter_string_*" type="string" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_filter_boolean_*" type="boolean" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_stored_facet_string_*" type="string" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_suggest_date_*" type="date" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_suggest_long_*" type="long" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_suggest_path_*" type="path" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_suggest_float_*" type="float" docValues="true" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_facet_boolean_*" type="boolean" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_sort_boolean_*" type="boolean" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_filter_float_*" type="float" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_filter_string_*" type="string" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_stored_facet_float_*" type="float" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_suggest_int_*" type="int" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_suggest_date_*" type="date" docValues="true" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_suggest_long_*" type="long" docValues="true" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_suggest_path_*" type="path" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_facet_string_*" type="string" docValues="true" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_sort_string_*" type="string" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_filter_date_*" type="date" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_filter_long_*" type="long" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_filter_path_*" type="path" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_filter_float_*" type="float" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_stored_facet_date_*" type="date" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_facet_long_*" type="long" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_facet_path_*" type="path" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_suggest_int_*" type="int" docValues="true" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_facet_float_*" type="float" docValues="true" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_sort_float_*" type="float" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_filter_int_*" type="int" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_filter_date_*" type="date" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_stored_filter_long_*" type="long" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_stored_filter_path_*" type="path" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_stored_facet_int_*" type="int" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_suggest_location_*" type="location" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_stored_facet_date_*" type="date" docValues="true" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_facet_long_*" type="long" docValues="true" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_facet_path_*" type="path" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_sort_date_*" type="date" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_sort_long_*" type="long" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_filter_int_*" type="int" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_suggest_boolean_*" type="boolean" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_suggest_location_*" type="location" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_stored_facet_int_*" type="int" docValues="true" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_sort_int_*" type="int" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_filter_location_*" type="location" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_facet_location_*" type="location" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_suggest_string_*" type="string" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_suggest_boolean_*" type="boolean" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_filter_boolean_*" type="boolean" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_filter_location_*" type="location" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_facet_boolean_*" type="boolean" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_facet_location_*" type="location" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_suggest_float_*" type="float" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_suggest_string_*" type="string" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_sort_location_*" type="location" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_filter_string_*" type="string" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_filter_boolean_*" type="boolean" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_facet_string_*" type="string" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_facet_boolean_*" type="boolean" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_suggest_date_*" type="date" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_suggest_long_*" type="long" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_suggest_path_*" type="path" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_suggest_float_*" type="float" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_sort_boolean_*" type="boolean" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_filter_float_*" type="float" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_filter_string_*" type="string" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_stored_none_*" type="text_general" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_facet_float_*" type="float" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_facet_string_*" type="string" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_suggest_int_*" type="int" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_suggest_date_*" type="date" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_suggest_long_*" type="long" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_suggest_path_*" type="path" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_sort_string_*" type="string" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_filter_date_*" type="date" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_filter_long_*" type="long" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_filter_path_*" type="path" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_filter_float_*" type="float" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_stored_none_*" type="text_general" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_facet_date_*" type="date" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_facet_long_*" type="long" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_facet_path_*" type="path" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_facet_float_*" type="float" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_suggest_int_*" type="int" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_sort_float_*" type="float" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_filter_int_*" type="int" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_filter_date_*" type="date" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_filter_long_*" type="long" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_filter_path_*" type="path" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_stored_en_*" type="text_en" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_de_*" type="text_de" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_es_*" type="text_es" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_facet_int_*" type="int" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_facet_date_*" type="date" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_facet_long_*" type="long" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_facet_path_*" type="path" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_sort_date_*" type="date" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_sort_long_*" type="long" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_filter_int_*" type="int" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_stored_en_*" type="text_en" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_de_*" type="text_de" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_es_*" type="text_es" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_location_*" type="location" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_facet_int_*" type="int" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_sort_int_*" type="int" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_location_*" type="location" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_boolean_*" type="boolean" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_boolean_*" type="boolean" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_string_*" type="string" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_binary_*" type="binary" multiValued="false" indexed="false" stored="true"/>
+  <dynamicField name="dynamic_multi_string_*" type="string" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_binary_*" type="binary" multiValued="true" indexed="false" stored="true"/>
+  <dynamicField name="dynamic_single_float_*" type="float" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_none_*" type="text_general" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_float_*" type="float" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_date_*" type="date" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_long_*" type="long" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_none_*" type="text_general" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_date_*" type="date" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_long_*" type="long" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_int_*" type="int" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_en_*" type="text_en" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_de_*" type="text_de" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_es_*" type="text_es" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_int_*" type="int" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_en_*" type="text_en" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_de_*" type="text_de" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_es_*" type="text_es" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="*_coordinate" type="double" indexed="true" stored="false" useDocValuesAsStored="false"/>
+  <copyField source="dynamic_*" dest="text"/>
+  <copyField source="dynamic_multi_facet_*" dest="facets"/>
+  <copyField source="dynamic_multi_stored_facet_*" dest="facets"/>
+  <copyField source="dynamic_single_facet_*" dest="facets"/>
+  <copyField source="dynamic_single_stored_facet_*" dest="facets"/>
+  <copyField source="dynamic_multi_suggest_*" dest="suggestions"/>
+  <copyField source="dynamic_multi_stored_suggest_*" dest="suggestions"/>
+  <copyField source="dynamic_single_suggest_*" dest="suggestions"/>
+  <copyField source="dynamic_single_stored_suggest_*" dest="suggestions"/>
+</schema>

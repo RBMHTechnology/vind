@@ -3,6 +3,7 @@ package com.rbmhtechnology.solr.cmt;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -54,6 +55,7 @@ public class CollectionManagementServiceUtilsTest {
     }
 
     @Test
+    @Ignore
     public void testDownloadConfiguration() throws IOException {
         Path configDir = service.downloadConfiguration("com.rbmhtechnology.vind:solr:1.0.0");
         assertTrue(configDir.toString().endsWith("/unzipped/solrhome/core/conf"));
