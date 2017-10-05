@@ -3,6 +3,11 @@
 Vind (faɪnd) is a modular Java library which aims to lower the hurdle of integrating information discovery facilities in Java projects.
 It should help programmers to come to a good solution in an assessable amount of time, improve the 
 maintainability of software projects, and simplify a centralized information discovery service management including monitoring and reporting.
+
+[![Build Status](https://travis-ci.org/RBMHTechnology/vind.svg?branch=master)](https://travis-ci.org/RBMHTechnology/vind)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.rbmhtechnology.vind/vind/badge.png)](https://maven-badges.herokuapp.com/maven-central/com.rbmhtechnology.vind/vind)
+[![Javadocs](https://www.javadoc.io/badge/com.rbmhtechnology.vind/vind.svg)](https://www.javadoc.io/doc/com.rbmhtechnology.vind/vind)
+[![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
  
 ## Design principles
 
@@ -49,7 +54,7 @@ share new ideas with us. We have various ways for contribution:
 
 ## License
 Free use of this software is granted under the terms of the Apache License Version 2.0.
-See the [License](LICENSE.txt) for more details.
+See the [License](LICENSE) for more details.
 
 ## Authors
 Vind is lead by [Red Bull Media House Technology](https://github.com/RBMHTechnology) and was initiated in 2017.
