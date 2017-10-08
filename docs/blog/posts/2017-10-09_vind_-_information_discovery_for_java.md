@@ -1,8 +1,8 @@
 ---
-layout: rbmht-blog-layout
+layout: rbmht-blogentry-layout
 ---
 
-
+{:.blogtitle}
 ## Vind - Information Discovery for Java
 
 <h3 class="author author-thomas">
@@ -10,7 +10,5 @@ layout: rbmht-blog-layout
     <span class="date">2017-10-09</span>
 </h3>
 
+{:.summary} 
 :summary
-
-{:.more}
-[READ MORE](posts/2017-10-09_vind_-_information_discovery_for_java.html)
