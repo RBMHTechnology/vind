@@ -8,7 +8,8 @@ maintainability of software projects, and simplify a centralized information dis
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.rbmhtechnology.vind/vind/badge.png)](https://maven-badges.herokuapp.com/maven-central/com.rbmhtechnology.vind/vind)
 [![Javadocs](https://www.javadoc.io/badge/com.rbmhtechnology.vind/vind.svg)](https://www.javadoc.io/doc/com.rbmhtechnology.vind/vind)
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
- 
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/RBMHTechnology/vind)
+
 ## Design principles
 
 In Vind we try to design an API which follows this 3 design principles:
