@@ -30,7 +30,7 @@ The search lib is modular and currently implements the following layers:
 ## Roadmap
 
 If you'd like to get a deeper look into the lib or if you are interested in our future goals just [have a look at 
-our blog series](https://rbmhtechnology.github.io/vind/blog/).
+our blog series](http://rbmhtechnology.github.io/blog/tag/vind/).
 There we give an outlook on the next development steps and introduce new features.
 
 ## How to use
