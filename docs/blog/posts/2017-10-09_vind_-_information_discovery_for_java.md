@@ -138,8 +138,4 @@ There are several ways, how you can get familiar with the whole Vind modules.
 * [Follow the blog posts](https://rbmhtechnology.github.io/vind/blog/)
 * [Contact us on gitter](https://gitter.im/RBMHTechnology/vind)
 
-Have fun, I hope you enjoy Vind! And if you have any question, feature request or bug report: Please contact me or anybody of the team! 
-
-Best regards
-
-**Thomas**
+Have fun, we hope you enjoy Vind! And if you have any questions, feature requests or bug report: Please get in touch with us!
