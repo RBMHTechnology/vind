@@ -14,15 +14,14 @@ layout: rbmht-blogentry-layout
 
 We all know it. When dealing with application development we often face the same problem again and again.
 When a problem comes up for the first time you study it, think about a proper solution, search for fitting technology
-and build the solution which fits best. On the second time, you reuse some code (by copy-paste), debug it and make it
-fitting. Latest at the third time this approach... sucks. Copy-pasting often produces sub-optimal results and
+and build the solution which fits best. For the second time, you reuse some code (by copy-paste), debug it and make it
+fitting. No later than for the third time this approach... sucks. Copy-pasting often produces sub-optimal results and
 (which is even worse) causes bugs that you have to find and fix. Additionally this enlarges the codebase you have to
-maintain and forces you to develop and test new features for all the applications individually. 
+maintain and forces you to develop and test new features for all applications individually. 
 
 In our case the recurring problem was the integration of custom search facilities including reporting, analysis,
 personalization and recommendation - a topic that we call *Information Discovery* (ID) on which we have been working on for almost a decade.
-What we did is: we sat down, thought about proper scenarios and packaged these into a modular framework which provides you with an easy to use API, abstracts the
-complexity of the real ID tasks and thus let you focus on the other parts of your application - things that you are experts in.
+What we did is: we sat down, thought about proper scenarios and packaged these into a modular framework which provides you with an easy to use API, abstracts the complexity of the real ID tasks and thus lets you focus on the other parts of your application - things that you are expert in.
 
 So let me kindly introduce to you Vind (faɪnd) - a modular Java framework for Information Discovery.
 
@@ -87,18 +86,18 @@ FulltextSearch search = Search
 BeanSearchResult<Post> result = server.execute(search, Post.class);
 ```
 
-That's it, your applications now includes a simple search functionality.
-Of your course, Vind can do much more things, but we follow a simple paradigm:
+That's it. Your applications now includes a simple search functionality.
+Of course, Vind can do much more things, but we follow a simple paradigm:
 
 > No expert? No problem! Which means: easy things should be easy to do.
 
-So if your applications has more sophisticated requirements on ID, Vind can still support
-many of them whereby the code may be more complex. But we still try to keep it simple ;)
+So if your application has more sophisticated requirements on ID, Vind can still support
+many of them, whereby the code may be more complex. But we still try to keep it simple ;)
 
 ## Mhh, Vind - interesting. But what's its real power?
 
 Vind does not only provide you with annotation based indexing and simple search facilities.
-It is rather meant to support you with the whole *Information Discovery* environment, that includes also logging,
+It is rather meant to support you with the whole *Information Discovery* environment, that also includes logging,
 adaption, evolution, and recommendation. This stack shows all the components that are planned
 for Vind.
 
@@ -106,9 +105,9 @@ for Vind.
 ![Vind Modules](../../images/vind-modules.png)
 
 As it is the basis for all the further work we started with the definition and implementation of the
-basic feature - index and search. Vind can be splitted into two parts, client and server. The lib thereby
+basic features - indexing and searching. Vind can be splitted into two parts, client and server. The lib thereby
 has the goal to be backend agnostic but we started with [Apache Solr](http://lucene.apache.org/solr/),
-a widespread and enterprise proofen search server, as a first implementation basis.
+a widespread and enterprise proven search server, as a first implementation basis.
 
 ### Already in place
 
