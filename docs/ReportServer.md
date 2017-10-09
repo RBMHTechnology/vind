@@ -45,7 +45,7 @@ final SearchServer reportingServer = new ReportingSearchServer(SearchServer.getI
 **_Note:_** If no configuration is provided for the application the ReportingSearchServer will try to load from the Vind
  configuration the property _'reporting.application.id'_. If it does not exist an exception will be thrown.
  
- ### 15.2 How to use it
+### 15.2 How to use it
    
 Once configured, using is as simple as using a basic Searchserver: define your document fields, document factory and 
 execute: 
