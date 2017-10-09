@@ -98,7 +98,7 @@ many of them whereby the code may be more complex. But we try to keep it still s
 ## Mhh, Vind - interesting. But what's its real power?
 
 Vind does not only provide you with annotation based indexing and simple search facilities.
-It is rather meant to support you with the while DI environment, that includes also logging,
+It is rather meant to support you with the whole *Information Discovery* environment, that includes also logging,
 adaption, evolution, and recommendation. This stack shows all the components that are planned
 for Vind.
 
