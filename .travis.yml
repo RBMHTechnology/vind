@@ -19,6 +19,6 @@ before_cache:
 jobs:
   include:
     - stage: deploy
-      if: branch = develop
+      if: branch = develop AND type IN (push, api)
       jdk: openjdk8
       script: mvn -s .travis/maven-settings.xml deploy -Dquick
