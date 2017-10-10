@@ -6,12 +6,19 @@ cache:
 
 env:
   global:
+  - secure: v7trWkSEy8zrWO3Fxqe3k1QIQwD+Din/94Y8YlCBQM5is74QnTje+kWtUmMcoSbQBZXzq/44HJES9Lm8ZxrWrSivAMVoYUZFfLRdY7uPgFA7xknUGpQcPpm7hqRz3u85Ac/bnPFB4g2Bh/jIF/hndy8Yzq64lVyDq12cL1x3ahcOtAr7qaoxckrqfm4x/vclJiv4rwcUHLBq9whNLS79sP0bjUGMAtvjKdu3OJ6A6d4opFrWxPNqSLcK9+O4stxc2bXCuR6pI70B3FFXY6mSd9AgHKecXDOCHaKttkpTYHoEkYDriEcKt3EMRNpZq0Rx87fsAFhtD/mjckFyy1QvgrXKTcfP7Rvpovf6t88J0plHySOVw97nF12We3T4oEtlpMUHTSZccrIKwD7zAPCMljyEqjPId1cZURiDpAdLsc1Xhj1xavEC7IjZRrFmqXuW2i4XQ6fzxecb2q9mtzQGsYjfxE3bs4okuzzohZvO44LLBQrE2Pe5RMO4HCVt8Ro7rlpBs4/CTjKZHxeoVphgyoB4YdTXwnqLimI6pia3qr9CT4SlF2IlZsdJ3KDv71Dn+znORT9497ytCamrbDR+2NE+8Q1HgVXE9s9bbL1cbbb45QJ05rK3Yc4PZ/VYjxXVgPL+nXwvItKy4hqrdFvP58FvuNsFNZ7QnBjpApemxbE=
+  - secure: jFcFnn0LMobQjgxu8wdOMId4KJ+PExt2ZKBsxA/l5akvJC63aJAFst87Rs/TlFTw6jYLOo4mONU+wf8NQoNb+mPKVrKsR2mi6hgjwJuhCgwrziMqjVCQpp0HWkFu5AZrOq183uCZP6SY+wDe4AEVrgr4Kmmm3wuMh5QaJl8bIAzl3O6Z7YXpC5bQiD5TmE+XYHQG/OnsX7FAsOMO0QPc9IYWyHp71udUMqXcll9kDt3/H0zfosJArVi321Fp53esMkwZ5SEy03MhNPI1SVqF/HXs9oYBpjd8US22UPIk4LADoZw8KMQNcBXEfJSiJDIo8HoJm0I9uKW8CDDkD2M+yMmKHtvOp07a3XHMBPXlG18M6pq7ajz5cW5QFU/geybx8tIfc49E0xtS4pz0oria3uCEgPH41jIBPQ7nW67xfMgcLpHx3wDmrtoUBtkwpmHqYS+ZeMgx3A/BrBU75MKUPp8ySp8WUt55tosF4c+g+BaBl0pKF3zpkg33Kp+gGQ4+lR2qtr6CUDfDMiN3xvWmtgYmbJVlz+XVu4sQhL8SZTEePUe5QNBJkTZTJhGzwByn3YowSvRwURqkQMCC4nxfo1Btv7fHJxsieulhoHcgpunH326PS8zxgak5ItyRBhgdEleQEamD/pONx6v9mfW7g7Bxq30CRer9FckACQ0Dzx8=
 
 jdk:
 - openjdk8
 - oraclejdk8
 
-after_success:
-- test ${TRAVIS_PULL_REQUEST:-true} = false -a ${TRAVIS_BRANCH:-HEAD} = develop &&
-  test "${OSSRH_USERNAME:}" &&
-  mvn -s .travis/maven-settings.xml deploy -Dquick
+before_cache:
+- rm -rf "$HOME/.m2/repository/com/rbmhtechnology/vind"
+
+jobs:
+  include:
+    -stage: Deploy
+     if: branch = develop AND type IN (push, api) AND env(OSSRH_USERNAME) IS present
+     jdk: openjdk8
+     script: mvn -s .travis/maven-settings.xml deploy -Dquick
