@@ -18,7 +18,7 @@ before_cache:
 
 jobs:
   include:
-    - stage: Deploy
-      if: branch = develop AND type IN (push, api) AND env(OSSRH_USERNAME) IS present
+    - stage: deploy
+      if: branch = develop
       jdk: openjdk8
       script: mvn -s .travis/maven-settings.xml deploy -Dquick
