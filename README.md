@@ -8,7 +8,8 @@ maintainability of software projects, and simplify a centralized information dis
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.rbmhtechnology.vind/vind/badge.png)](https://maven-badges.herokuapp.com/maven-central/com.rbmhtechnology.vind/vind)
 [![Javadocs](https://www.javadoc.io/badge/com.rbmhtechnology.vind/vind.svg)](https://www.javadoc.io/doc/com.rbmhtechnology.vind/vind)
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
- 
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/RBMHTechnology/vind)
+
 ## Design principles
 
 In Vind we try to design an API which follows this 3 design principles:
@@ -29,7 +30,7 @@ The search lib is modular and currently implements the following layers:
 ## Roadmap
 
 If you'd like to get a deeper look into the lib or if you are interested in our future goals just [have a look at 
-our blog series](https://rbmhtechnology.github.io/vind/blog/).
+our blog series](http://rbmhtechnology.github.io/blog/tag/vind/).
 There we give an outlook on the next development steps and introduce new features.
 
 ## How to use

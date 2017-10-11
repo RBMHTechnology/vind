@@ -1,10 +1,10 @@
-## 15. Extension: Utils
+## 16. Extension: Utils
 
 **This is a work is in an alpha state**
 
 In order to support developers we provide some Utilities.
 
-### 15.1 MAM Metadata Provider
+### 16.1 MAM Metadata Provider
 
 The MAM Metadata Provider allows to *fill* properties of a Pojo by MAM field id.
 To use it you have to add the dependency:
