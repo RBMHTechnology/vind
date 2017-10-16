@@ -8,11 +8,15 @@ import org.apache.solr.core.SolrXmlConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.EnumSet;
+import java.util.Properties;
 
 /**
  * @author Thomas Kurz (tkurz@apache.org)
@@ -22,6 +26,7 @@ public class EmbeddedSolrServerProvider implements SolrServerProvider {
 
     public static final String CORE_NAME = "core";
     public static final String HOME_PATH = "/solrhome";
+    public static final String CORE_PROPERTIES_FILE = "core.properties";
 
     @Override
     public SolrClient getInstance() {
@@ -32,6 +37,21 @@ public class EmbeddedSolrServerProvider implements SolrServerProvider {
             Files.walkFileTree(solrHome, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new TreeCopier(solrHome, tmpSolrHome));
 
             final Path tmpSolrConfig = tmpSolrHome.resolve(SolrXmlConfig.SOLR_XML_FILE);
+
+            // Needed for the tests. For some reason Solr is not replacing the solrConfig.xml ${runtimeLib} property with
+            // the system property value but with the defined in the core.properties file.
+            if (System.getProperty("runtimeLib").equals("false")){
+                final Properties properties = new Properties();
+                final String corePropertiesFile = String.join("/",tmpSolrHome.toAbsolutePath().toString(),CORE_NAME,CORE_PROPERTIES_FILE);
+                final FileInputStream iS = new FileInputStream(corePropertiesFile);
+                properties.load(iS);
+                iS.close();
+                properties.setProperty("runtimeLib", "false");
+
+                final FileOutputStream oS = new FileOutputStream(tmpSolrHome.toAbsolutePath().toString()+ "/core/" + CORE_PROPERTIES_FILE);
+                properties.store(oS, null);
+                oS.close();
+            }
 
             final CoreContainer container = CoreContainer.createAndLoad(tmpSolrHome, tmpSolrConfig);
             return new SolrClientWrapper(container, CORE_NAME, tmpSolrHome);
