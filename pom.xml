@@ -349,7 +349,7 @@
                     <configuration>
                         <pushChanges>false</pushChanges>
                         <autoVersionSubmodules>true</autoVersionSubmodules>
-                        <tagNameFormat>${project.artifactId}-@{project.version}</tagNameFormat>
+                        <tagNameFormat>${project.artifactId}-v@{project.version}</tagNameFormat>
                         <localCheckout>true</localCheckout>
                         <connectionUrl>scm:git:file://${project.basedir}/</connectionUrl>
                         <indentSize>4</indentSize>
