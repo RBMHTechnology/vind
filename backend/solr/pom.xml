@@ -53,14 +53,14 @@
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
                 <includes>
-                    <include>runtimelibs.txt</include>
+                    <include>**/runtimelibs.txt</include>
                 </includes>
             </resource>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
                 <excludes>
-                    <exclude>runtimelibs.txt</exclude>
+                    <exclude>**/runtimelibs.txt</exclude>
                 </excludes>
             </resource>
         </resources>
