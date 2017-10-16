@@ -16,6 +16,7 @@ import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -40,7 +41,8 @@ public class EmbeddedSolrServerProvider implements SolrServerProvider {
 
             // Needed for the tests. For some reason Solr is not replacing the solrConfig.xml ${runtimeLib} property with
             // the system property value but with the defined in the core.properties file.
-            if (System.getProperty("runtimeLib").equals("false")){
+            final String runtimeLib = System.getProperty("runtimeLib");
+            if (Objects.nonNull(runtimeLib) && runtimeLib.equals("false")){
                 final Properties properties = new Properties();
                 final String corePropertiesFile = String.join("/",tmpSolrHome.toAbsolutePath().toString(),CORE_NAME,CORE_PROPERTIES_FILE);
                 final FileInputStream iS = new FileInputStream(corePropertiesFile);
