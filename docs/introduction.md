@@ -17,7 +17,7 @@ we tried to follow the concept: easy things should be easy, complex things can (
 
 The search lib is modular and currently implements the following layers:
 
-![Search Lib Architecture](./images/layer_cake.png)
+![Vind Architecture](./images/layer_cake.png)
 
 We built a short tutorial to give you a smooth entry to all the functions of the lib.
 The runnable code for each step can be found under `demo/demo-step{number}`.
