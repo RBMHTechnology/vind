@@ -32,8 +32,7 @@ public class ReportingSearchServerTest extends SearchTestcase {
     @Test
     public void testSuggestionQueryReporting() {
         thrown.expect(RuntimeException.class);
-        thrown.expectMessage("No ReportWriter in classpath");
-        SearchServer server = new ReportingSearchServer(testSearchServer.getSearchServer());
+        final SearchServer server = new ReportingSearchServer(testSearchServer.getSearchServer());
     }
 
     @Test
