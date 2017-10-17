@@ -54,6 +54,18 @@ share new ideas with us. We have various ways for contribution:
 * discuss issues with the community - two brains are better than one.
 * write code - no patch is too small. So even fixing typos helps to improve Vind.
 
+## Release Process
+
+* **Snapshot**: Pushes to branch `develop` are automatically deployed to [sonatype snapshots](https://oss.sonatype.org/content/repositories/snapshots/com/rbmhtechnology/vind/).
+  Current version: [![Sonatype Nexus (Snapshots)](https://img.shields.io/nexus/s/https/oss.sonatype.org/com.rbmhtechnology.vind/vind.png)](https://oss.sonatype.org/#nexus-search;gav~com.rbmhtechnology.vind~~~~)
+
+* **Release**: Stable releases need to be performed manually:
+    1. make sure all changes have been pushed to the repository and all tests are working fine.
+    1. run `mvn release:prepare`
+    1. run `mvn release:perform`
+    1. run `(cd target/checkout; mvn nexus-staging:release)`
+    1. push changes to the repository `git push && git push --tags`
+
 ## License
 Free use of this software is granted under the terms of the Apache License Version 2.0.
 See the [License](LICENSE) for more details.
