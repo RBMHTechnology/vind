@@ -4,7 +4,7 @@
 
     <groupId>com.rbmhtechnology.vind</groupId>
     <artifactId>vind</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.1</version>
     <packaging>pom</packaging>
 
     <name>Vind</name>
@@ -104,7 +104,7 @@
         <connection>scm:git:https://github.com/RBMHTechnology/vind.git</connection>
         <developerConnection>scm:git:git@github.com:RBMHTechnology/vind.git</developerConnection>
         <url>https://github.com/RBMHTechnology/vind/</url>
-        <tag>HEAD</tag>
+        <tag>vind-v1.0.1</tag>
     </scm>
     <issueManagement>
         <system>github</system>
@@ -349,7 +349,7 @@
                     <configuration>
                         <pushChanges>false</pushChanges>
                         <autoVersionSubmodules>true</autoVersionSubmodules>
-                        <tagNameFormat>${project.artifactId}-@{project.version}</tagNameFormat>
+                        <tagNameFormat>${project.artifactId}-v@{project.version}</tagNameFormat>
                         <localCheckout>true</localCheckout>
                         <connectionUrl>scm:git:file://${project.basedir}/</connectionUrl>
                         <indentSize>4</indentSize>

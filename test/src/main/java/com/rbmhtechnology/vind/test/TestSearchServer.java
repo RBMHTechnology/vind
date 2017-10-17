@@ -24,6 +24,7 @@ public class TestSearchServer extends ExternalResource {
         //SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.solr.backend.RemoteSolrServerProvider");
         //SearchConfiguration.set(SearchConfiguration.SERVER_HOST, "http://localhost:8983/solr/core");
 
+        System.setProperty("runtimeLib", "false");
         searchServer = SearchServer.getInstance();
     }
 
@@ -33,9 +34,11 @@ public class TestSearchServer extends ExternalResource {
             searchServer.close();
         } catch (SearchServerException e) {
             log.error("Error closing SearchServer: {}", e.getMessage(), e);
+        } finally {
+            System.getProperties().remove("runtimeLib");
+            super.after();
         }
 
-        super.after();
     }
 
     public SearchServer getSearchServer() {
