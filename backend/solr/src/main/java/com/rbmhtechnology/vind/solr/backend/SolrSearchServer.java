@@ -29,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.util.Asserts;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.request.schema.SchemaRequest;
 import org.apache.solr.client.solrj.response.QueryResponse;
@@ -283,7 +284,7 @@ public class SolrSearchServer extends SearchServer {
         //query
         try {
             solrClientLogger.debug(">>> query({})", query.toString());
-            final QueryResponse response = solrClient.query(query);
+            final QueryResponse response = solrClient.query(query, SolrRequest.METHOD.POST);
             if(response!=null){
 
                 final Map<String,Integer> childCounts = SolrUtils.getChildCounts(response);
@@ -595,7 +596,7 @@ public class SolrSearchServer extends SearchServer {
                 //Get the nested documents for the document to update
                 final NamedList<Object> paramList = new NamedList<>();
                 paramList.add(CommonParams.Q, "!( _id_:"+ update.getId()+")&(_root_:"+ update.getId()+")");
-                final QueryResponse query = solrClient.query(SolrParams.toSolrParams(paramList));
+                final QueryResponse query = solrClient.query(SolrParams.toSolrParams(paramList), SolrRequest.METHOD.POST);
 
                 //Reindex the updated document with its nested document so they are all index together
                 if (CollectionUtils.isNotEmpty(query.getResults())) {
@@ -652,7 +653,7 @@ public class SolrSearchServer extends SearchServer {
 
         try {
             log.debug(">>> query({})", query.toString());
-            QueryResponse response = solrClient.query(query);
+            QueryResponse response = solrClient.query(query, SolrRequest.METHOD.POST);
             if(response!=null){
                 return SolrUtils.Result.buildSuggestionResult(response, assets, childFactory, search.getSearchContext());
             }else {
@@ -747,7 +748,7 @@ public class SolrSearchServer extends SearchServer {
 
         try {
             log.debug(">>> query({})", query.toString());
-            QueryResponse response = solrClient.query(query);
+            QueryResponse response = solrClient.query(query, SolrRequest.METHOD.POST);
             if(response!=null){
                 return SolrUtils.Result.buildRealTimeGetResult(response, search, assets);
             }else {

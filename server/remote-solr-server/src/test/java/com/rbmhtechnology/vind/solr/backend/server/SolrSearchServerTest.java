@@ -14,6 +14,7 @@ import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
 import com.rbmhtechnology.vind.solr.backend.SolrSearchServer;
 import com.rbmhtechnology.vind.solr.backend.utils.Asset;
 import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SolrPingResponse;
@@ -71,7 +72,7 @@ public class SolrSearchServerTest {
         when(solrPingResponse.getStatus()).thenReturn(0);
         when(solrPingResponse.getQTime()).thenReturn(10);
 
-        when(solrClient.query(any())).thenReturn(response);
+        when(solrClient.query(any(), any(SolrRequest.METHOD.class))).thenReturn(response);
         when(response.getResults()).thenReturn(new SolrDocumentList());
         when(response.getResponse()).thenReturn(responseObject);
         when(responseObject.get("responseHeader")).thenReturn(responseObject);

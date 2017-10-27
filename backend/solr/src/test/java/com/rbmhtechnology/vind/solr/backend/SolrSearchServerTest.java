@@ -9,12 +9,15 @@ import com.rbmhtechnology.vind.model.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SolrPingResponse;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.SolrInputField;
+import org.apache.solr.common.params.CommonParams;
+import org.apache.solr.common.params.SolrParams;
 import org.hamcrest.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,7 +65,7 @@ public class SolrSearchServerTest {
         when(solrPingResponse.getQTime()).thenReturn(10);
 
 
-        when(solrClient.query(any())).thenReturn(response);
+        when(solrClient.query(any(), any(SolrRequest.METHOD.class))).thenReturn(response);
         when(response.getResults()).thenReturn(new SolrDocumentList());
         when(response.getResults()).thenReturn(new SolrDocumentList());
 
@@ -82,7 +85,7 @@ public class SolrSearchServerTest {
 
         ArgumentCaptor<SolrQuery> argument = ArgumentCaptor.forClass(SolrQuery.class);
 
-        verify(solrClient).query(argument.capture());
+        verify(solrClient).query(argument.capture(), any(SolrRequest.METHOD.class));
 
         SolrQuery query = argument.getValue();
         assertEquals("hello world", query.getQuery());
@@ -133,8 +136,7 @@ public class SolrSearchServerTest {
                 .filter(or(category.between(3, 5), created.before(ZonedDateTime.now())))
                 , documents);
     }
-
-
+    
     public static <T> Matcher<SolrInputField> solrInputField(String fieldName, T value) {
         return new TypeSafeMatcher<SolrInputField>() {
             @Override
@@ -186,4 +188,5 @@ public class SolrSearchServerTest {
             }
         };
     }
+
 }
