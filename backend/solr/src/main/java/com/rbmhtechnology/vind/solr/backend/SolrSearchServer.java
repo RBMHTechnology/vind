@@ -683,8 +683,14 @@ public class SolrSearchServer extends SearchServer {
                             final FieldDescriptor<?> field = Objects.nonNull(assets.getField(name))?
                                     assets.getField(name):
                                     childFactory.getField(name);
+                            if(Objects.isNull(field)) {
+                                log.warn("No field descriptor found for field name {} in factories: {}, {}", name,assets.getType(), childFactory.getType());
+                            }
                             return SolrUtils.Fieldname.getFieldname(field, SolrUtils.Fieldname.UseCase.Suggest, searchContext);
                         } else {
+                            if(Objects.isNull(assets.getField(name))) {
+                                log.warn("No field descriptor found for field name {} in factory: {}", name,assets.getType());
+                            }
                             return SolrUtils.Fieldname.getFieldname(assets.getField(name), SolrUtils.Fieldname.UseCase.Suggest, searchContext);
                             }
                     })

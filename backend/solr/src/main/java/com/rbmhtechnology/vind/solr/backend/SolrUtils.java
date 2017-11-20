@@ -614,6 +614,11 @@ public class SolrUtils {
 
         public static String getFieldname(FieldDescriptor descriptor, UseCase useCase, String context) {
 
+            if (Objects.isNull(descriptor)){
+                log.warn("Trying to get name of null field descriptor.");
+                return null;
+            }
+
             final String contextPrefix;
             if (Objects.isNull(context) || !descriptor.isContextualized()) {
                 contextPrefix = "";
@@ -646,6 +651,7 @@ public class SolrUtils {
                         }
 
                     } else {
+                        log.warn("Descriptor {} is not configured for full text search.", descriptor.getName());
                         return null;
                     }
                 }
@@ -660,6 +666,7 @@ public class SolrUtils {
                             return fieldName + _FACET + type.getName() + contextPrefix + descriptor.getName();
                         }
                     } else {
+                        log.warn("Descriptor {} is not configured for facet search.", descriptor.getName());
                         return null;
                     }
                 }
@@ -674,6 +681,7 @@ public class SolrUtils {
                             return fieldName + _SUGGEST + type.getName() + contextPrefix + descriptor.getName();
                         }
                     } else {
+                        log.warn("Descriptor {} is not configured for suggestion search.", descriptor.getName());
                         return null;
                     }
                 }
@@ -700,6 +708,7 @@ public class SolrUtils {
                     } else if(isComplexField && descriptor.isStored() && !descriptor.isMultiValue() && Objects.nonNull(type)){
                         return fieldName.replaceFirst(_MULTI,_SINGLE) + _SORT + type.getName() + contextPrefix + descriptor.getName();
                     } else {
+                        log.warn("Descriptor {} is not configured for sorting.", descriptor.getName());
                         return null; //TODO: throw runtime exception?
                     }
                 }
@@ -709,10 +718,14 @@ public class SolrUtils {
                         return fieldName.replace(_SINGLE,_MULTI) + _FILTER + type.getName() + contextPrefix + descriptor.getName();
 
                     } else {
+                        log.warn("Descriptor {} is not configured for advance filter search.", descriptor.getName());
                         return null;
                     }
                 }
-                default: return null;//TODO: throw runtime exception
+                default: {
+                    log.warn("Unsupported use case {}.", useCase);
+                    return null;//TODO: throw runtime exception
+                }
             }
         }
     }
