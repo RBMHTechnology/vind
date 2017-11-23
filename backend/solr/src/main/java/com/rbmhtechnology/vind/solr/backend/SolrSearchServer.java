@@ -290,7 +290,7 @@ public class SolrSearchServer extends SearchServer {
                 final Map<String,Integer> childCounts = SolrUtils.getChildCounts(response);
 
                 final List<Document> documents = SolrUtils.Result.buildResultList(response.getResults(), childCounts, factory, search.getSearchContext());
-                final FacetResults facetResults = SolrUtils.Result.buildFacetResult(response, factory,search.getFacets(),search.getSearchContext());
+                final FacetResults facetResults = SolrUtils.Result.buildFacetResult(response, factory, search.getChildrenFactory(), search.getFacets(),search.getSearchContext());
 
                 switch(search.getResultSet().getType()) {
                     case page:{
@@ -469,12 +469,13 @@ public class SolrSearchServer extends SearchServer {
                     });
 
             //facet fields
-            query.addFacetField(SolrUtils.Query.buildFacetFieldList(search.getFacets(), factory, searchContext));
+            final HashMap<String, Object> strings = SolrUtils.Query.buildJsonTermFacet(search.getFacets(), factory, search.getChildrenFactory(), searchContext);
 
+            query.add("json.facet", strings.toString().replaceAll("=",":"));
             //facet Subdocument count
             final String subdocumentFacetString = SolrUtils.Query.buildSubdocumentFacet(search, factory, searchContext);
             if(Objects.nonNull(subdocumentFacetString)) {
-                query.set("json.facet", subdocumentFacetString);
+                query.add("json.facet", subdocumentFacetString);
             }
         }
 

@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrResponse;
 import org.apache.solr.client.solrj.response.*;
+import org.apache.solr.client.solrj.response.IntervalFacet;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.CommonParams;
@@ -44,6 +45,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.rbmhtechnology.vind.api.query.facet.Facet.*;
 import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.UseCase.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -94,7 +96,7 @@ public class SolrUtils {
                 log.debug("Parsing subdocument facet result from JSON ");
 
                 final int facetCount = (int) ((SimpleOrderedMap) subDocumentFacetResult).get("count");
-                if (facetCount > 0) {
+                if (facetCount > 0 && Objects.nonNull(((SimpleOrderedMap) subDocumentFacetResult).get("parent_facet"))) {
                     final List<SimpleOrderedMap> parentDocs = (ArrayList) ((SimpleOrderedMap) ((SimpleOrderedMap) subDocumentFacetResult).get("parent_facet")).get("buckets");
                     childCounts = parentDocs.stream().collect(Collectors.toMap(p -> (String) p.get("val"), p -> ((Integer) ((SimpleOrderedMap) p.get("children_facet")).get("count"))));
                 }
@@ -117,7 +119,7 @@ public class SolrUtils {
                 log.debug("Parsing subdocument facet result from JSON ");
 
                 final int facetCount = (int) ((SimpleOrderedMap) subDocumentFacetResult).get("count");
-                if (facetCount > 0) {
+                if (facetCount > 0 && Objects.nonNull(((SimpleOrderedMap) subDocumentFacetResult).get("childrenCount"))) {
                     final SimpleOrderedMap parentDocs = ((SimpleOrderedMap) ((SimpleOrderedMap) subDocumentFacetResult).get("childrenCount"));
                     final Integer childCount = (Integer) parentDocs.get("count");
                     final Integer parentCount;
@@ -238,23 +240,78 @@ public class SolrUtils {
                     .collect(Collectors.joining(" "));
         }
 
-        public static String[] buildFacetFieldList(Map<String, Facet> facets, DocumentFactory factory, String searchContext) {
+        public static String[] buildFacetFieldList(Map<String, Facet> facets, DocumentFactory factory, DocumentFactory childFactory, String searchContext) {
             final List<String> termFacetQuery = facets.values().stream()
-                    .filter(facet -> facet instanceof Facet.TermFacet)
-                    .map(facet -> (Facet.TermFacet) facet)
-                    .map(facet -> Objects.nonNull(facet.getFieldDescriptor()) ? facet : new Facet.TermFacet(factory.getField(facet.getName())))
+                    .filter(facet -> facet instanceof TermFacet)
+                    .map(facet -> (TermFacet) facet)
+                    .map(facet -> {
+                        if(Objects.nonNull(facet.getFieldDescriptor())) {
+                            return facet;
+                        } else {
+                            FieldDescriptor<?> field = factory.getField(facet.getName());
+                            if(Objects.isNull(field) && Objects.nonNull(childFactory)) {
+                                field = childFactory.getField(facet.getName());
+                            }
+                            return new TermFacet(field);
+                        }
+                    })
                     .map(facet -> Fieldname.getFieldname(facet.getFieldDescriptor(), Facet, searchContext))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
             final List<String> typeFacet = facets.values().stream()
-                    .filter(facet -> facet instanceof Facet.TypeFacet)
+                    .filter(facet -> facet instanceof TypeFacet)
                     .map(facet -> Fieldname.TYPE)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
             termFacetQuery.addAll(typeFacet);
             return termFacetQuery.stream().toArray(String[]::new);
+        }
+
+        public static HashMap<String, Object> buildJsonTermFacet(Map<String, Facet> facets, DocumentFactory factory, DocumentFactory childFactory, String searchContext) {
+            final List<HashMap<String, String>> termFacetQuery = facets.entrySet().stream()
+                    .filter(facet -> facet.getValue() instanceof TermFacet)
+                    //.map(facet -> facet.setValue((Facet.TermFacet) facet.getValue()))
+                    .map(facet -> {
+                        final HashMap<String, String> termFacet = new HashMap<>();
+                        termFacet.put("type","terms");
+                        final TermFacet value = (TermFacet) facet.getValue();
+                        FieldDescriptor<?> field = factory.getField(value.getName());
+                        if(Objects.isNull(field) && Objects.nonNull(childFactory)) {
+                            field = childFactory.getField(value.getName());
+                            termFacet.put("domain",
+                                    "{blockChildren:\"" + Fieldname.TYPE +":" +factory.getType() + "\"}");
+                        }
+
+                        final String fieldName = Fieldname.getFieldname(field, Facet, searchContext);
+                        if(StringUtils.isEmpty(fieldName)) {
+                            log.warn("Field {} is not set for faceting", fieldName);
+                            return null;
+                        }
+                        termFacet.put("field", fieldName);
+
+                        return termFacet;
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            final List<HashMap<String, String>> typeFacet = facets.values().stream()
+                    .filter(facet -> facet instanceof TypeFacet)
+                    .map(facet ->{
+                        final HashMap<String, String> termFacet = new HashMap<>();
+                        termFacet.put("type","terms");
+                        termFacet.put("field", Fieldname.TYPE);
+                        return termFacet;
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            termFacetQuery.addAll(typeFacet);
+
+            final HashMap<String, Object> jsonFieldFacet = new HashMap<>();
+            termFacetQuery.stream().forEach( facet -> jsonFieldFacet.put(facet.get("field"),facet));
+            return jsonFieldFacet;
         }
 
         public static String buildSolrQueryValue(Object o){
@@ -310,7 +367,7 @@ public class SolrUtils {
             return StringUtils.join("{!query='", name,"' stats='", name,"' range='", name,"' ","ex=dt key='", name, "'}", StringUtils.join(fields,','));
         }
 
-        public static String buildSolrStatsQuery(String solrfieldName, Facet.StatsFacet stats){
+        public static String buildSolrStatsQuery(String solrfieldName, StatsFacet stats){
             String query = buildSolrFacetCustomName(solrfieldName,stats);
 
             String statsQuery = "{!";
@@ -364,8 +421,8 @@ public class SolrUtils {
         public static String buildSubdocumentFacet(FulltextSearch search, DocumentFactory factory,String searchContext) {
 
             final Optional<String> facetOptional = search.getFacets().values().stream()
-                    .filter(facet -> Facet.SubdocumentFacet.class.isAssignableFrom(facet.getClass()))
-                    .map(genericFacet -> (Facet.SubdocumentFacet) genericFacet)
+                    .filter(facet -> SubdocumentFacet.class.isAssignableFrom(facet.getClass()))
+                    .map(genericFacet -> (SubdocumentFacet) genericFacet)
                     .map(facet -> {
                         final String type = facet.getName();
                         final String filter;
@@ -849,37 +906,73 @@ public class SolrUtils {
 
                 return document;
             }).collect(Collectors.toList());
-            }
+        }
 
-        public static FacetResults buildFacetResult(QueryResponse response, DocumentFactory factory, Map<String,Facet>  facetsQuery, String searchContext) {
-
+        private static HashMap<FieldDescriptor, TermFacetResult<?>> getTermFacetResults(QueryResponse response, DocumentFactory factory, DocumentFactory childFactory, Map<String,Facet>  facetsQuery, String searchContext) {
             final HashMap<FieldDescriptor, TermFacetResult<?>> facets = new HashMap<>();
-            final TermFacetResult typeFacetResults = new TermFacetResult();
             //term facets
-            if (Objects.nonNull(response.getFacetFields()))
-                response.getFacetFields().stream().forEach(field -> {
-                    final Matcher internalFacetFieldMatcher = Pattern.compile(INTERNAL_FACET_FIELD_PREFIX).matcher(field.getName());
-                    final String contextPrefix = searchContext != null ? searchContext + "_" : "";
-                    final String contextualizedName = internalFacetFieldMatcher.replaceFirst("");
-                    final String fieldName = contextualizedName.replace(contextPrefix, "");
-                    final FieldDescriptor<?> descriptor = factory.getField(fieldName);
-                    if (Objects.nonNull(descriptor) ) {
-                        final TermFacetResult facet = new TermFacetResult(field.getValues().stream()
-                                .map(count -> new FacetValue<>(castForDescriptor(count.getName(), descriptor, Facet), count.getCount()))
-                                .collect(Collectors.toList()));
-                        facets.put(descriptor, facet);
-                    } else {
-                        if(fieldName.equals(Fieldname.TYPE)){
-                            field.getValues()
-                                    .stream()
-                                    .forEach(count -> typeFacetResults
-                                            .addFacetValue(new FacetValue<> (castForDescriptor(count.getName(), descriptor, Facet), count.getCount())));
-                        } else {
-                            log.error("Unable to create a facet result: the field '{}' is not configured as facet.", fieldName);
-                            throw new RuntimeException("Unable to create a faceted result: the field '" + fieldName + "' is not configured as facet.");
+            if (Objects.nonNull(response.getResponse())) {
+                final SimpleOrderedMap jsonFacetResult = (SimpleOrderedMap) response.getResponse().get("facets");
+                if (Objects.nonNull(jsonFacetResult)) {
+                    for (int i = 0; i < jsonFacetResult.size(); i++) {
+                        if (jsonFacetResult.getName(i).startsWith("dynamic_")) {
+                            final Matcher internalFacetFieldMatcher = Pattern.compile(INTERNAL_FACET_FIELD_PREFIX).matcher(jsonFacetResult.getName(i));
+                            final String contextPrefix = searchContext != null ? searchContext + "_" : "";
+                            final String contextualizedName = internalFacetFieldMatcher.replaceFirst("");
+                            final String fieldName = contextualizedName.replace(contextPrefix, "");
+                            FieldDescriptor<?> fieldDesc = factory.getField(fieldName);
+                            if (Objects.isNull(fieldDesc) && Objects.nonNull(childFactory)) {
+                                fieldDesc = childFactory.getField(fieldName);
+                            }
+                            final FieldDescriptor<?> descriptor = fieldDesc;
+
+                            final ArrayList<SimpleOrderedMap> termFacet =
+                                    ((ArrayList<SimpleOrderedMap>) ((SimpleOrderedMap) jsonFacetResult.get(jsonFacetResult.getName(i))).get("buckets"));
+
+                            if (Objects.nonNull(descriptor)) {
+                                final TermFacetResult<?> facet = new TermFacetResult(termFacet.stream()
+                                        .map(f -> new FacetValue<>(castForDescriptor(f.get("val"), descriptor, Facet), ((Integer)f.get("count")).longValue()))
+                                        .collect(Collectors.toList()));
+
+                                facets.put(descriptor, facet);
+                            } else {
+                                log.error("Unable to create a facet result: the field '{}' is not configured as facet.", fieldName);
+                                throw new RuntimeException("Unable to create a faceted result: the field '" + fieldName + "' is not configured as facet.");
+                            }
                         }
                     }
-            });
+                }
+            }
+            return facets;
+        }
+
+        private static TermFacetResult<?> getTypeFacetResults(QueryResponse response) {
+            final TermFacetResult typeFacetResults = new TermFacetResult();
+            //term facets
+            if (Objects.nonNull(response.getResponse())) {
+                final SimpleOrderedMap jsonFacetResult = (SimpleOrderedMap) response.getResponse().get("facets");
+                if (Objects.nonNull(jsonFacetResult)) {
+                    for (int i = 0; i < jsonFacetResult.size(); i++) {
+                        if (jsonFacetResult.getName(i).equals(Fieldname.TYPE)) {
+                            final ArrayList<SimpleOrderedMap> termFacet =
+                                    ((ArrayList<SimpleOrderedMap>) ((SimpleOrderedMap) jsonFacetResult.get(jsonFacetResult.getName(i))).get("buckets"));
+
+                            termFacet.stream().forEach(f -> typeFacetResults
+                                    .addFacetValue(new FacetValue<>((String) f.get("val"), ((Integer)f.get("count")).longValue())));
+
+                        }
+                    }
+                }
+            }
+            return typeFacetResults;
+        }
+
+        public static FacetResults buildFacetResult(QueryResponse response, DocumentFactory factory, DocumentFactory childFactory, Map<String,Facet>  facetsQuery, String searchContext) {
+
+            final HashMap<FieldDescriptor, TermFacetResult<?>> facets =
+                    getTermFacetResults(response, factory, childFactory, facetsQuery, searchContext);
+
+            final TermFacetResult typeFacetResults = getTypeFacetResults(response);
 
             HashMap<String, QueryFacetResult<?>> queryFacetResults = new HashMap<>();
             if(response.getFacetQuery()!=null) {
@@ -934,7 +1027,7 @@ public class SolrUtils {
             HashMap<String, StatsFacetResult<?>> statsResults = new HashMap<>();
             entries.stream()
                     .forEach(statsInfoEntry -> {
-                        FieldDescriptor field = ((Facet.StatsFacet) facetsQuery.get(statsInfoEntry.getKey())).getField();
+                        FieldDescriptor field = ((StatsFacet) facetsQuery.get(statsInfoEntry.getKey())).getField();
                         FieldStatsInfo statsInfo = statsInfoEntry.getValue();
                         Object typedMean;
                         //Mean can be either Double or date. In the latest scenario it can be casted to the specific type
@@ -968,7 +1061,7 @@ public class SolrUtils {
             HashMap<String, QueryFacetResult<?>> queryFacetResults = new HashMap<>();
             solrFacetQueries.stream()
                     .forEach(queryFacet -> {
-                        QueryFacetResult facet = new QueryFacetResult<>(((Facet.QueryFacet)facetsQuery.get(queryFacet.getKey())).getFilter(),queryFacet.getValue());
+                        QueryFacetResult facet = new QueryFacetResult<>(((QueryFacet)facetsQuery.get(queryFacet.getKey())).getFilter(),queryFacet.getValue());
                         queryFacetResults.put(queryFacet.getKey(), facet);
                     });
             return queryFacetResults;
@@ -1011,7 +1104,7 @@ public class SolrUtils {
             return new PivotFacetResult(pivot, pivotField.getValue(), descriptor, pivotField.getCount(),pivotQueryResult, pivotStatsResults, pivotRangeResult);
         }
 
-        private static  HashMap<String, IntervalFacetResult> getIntervalFacetResult(List<IntervalFacet> facetIntervals, QueryResponse response,DocumentFactory factory) {
+        private static  HashMap<String, IntervalFacetResult> getIntervalFacetResult(List<IntervalFacet> facetIntervals, QueryResponse response, DocumentFactory factory) {
             HashMap<String, IntervalFacetResult> intervalFacetResults = new HashMap<>();
             facetIntervals.stream()
                     .forEach(intervalFacet -> {
