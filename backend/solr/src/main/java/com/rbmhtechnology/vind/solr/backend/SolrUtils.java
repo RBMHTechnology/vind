@@ -651,7 +651,7 @@ public class SolrUtils {
                         }
 
                     } else {
-                        log.warn("Descriptor {} is not configured for full text search.", descriptor.getName());
+                        log.debug("Descriptor {} is not configured for full text search.", descriptor.getName());
                         return null;
                     }
                 }
@@ -666,7 +666,7 @@ public class SolrUtils {
                             return fieldName + _FACET + type.getName() + contextPrefix + descriptor.getName();
                         }
                     } else {
-                        log.warn("Descriptor {} is not configured for facet search.", descriptor.getName());
+                        log.debug("Descriptor {} is not configured for facet search.", descriptor.getName());
                         return null;
                     }
                 }
@@ -681,7 +681,7 @@ public class SolrUtils {
                             return fieldName + _SUGGEST + type.getName() + contextPrefix + descriptor.getName();
                         }
                     } else {
-                        log.warn("Descriptor {} is not configured for suggestion search.", descriptor.getName());
+                        log.debug("Descriptor {} is not configured for suggestion search.", descriptor.getName());
                         return null;
                     }
                 }
@@ -708,7 +708,7 @@ public class SolrUtils {
                     } else if(isComplexField && descriptor.isStored() && !descriptor.isMultiValue() && Objects.nonNull(type)){
                         return fieldName.replaceFirst(_MULTI,_SINGLE) + _SORT + type.getName() + contextPrefix + descriptor.getName();
                     } else {
-                        log.warn("Descriptor {} is not configured for sorting.", descriptor.getName());
+                        log.debug("Descriptor {} is not configured for sorting.", descriptor.getName());
                         return null; //TODO: throw runtime exception?
                     }
                 }
@@ -718,7 +718,7 @@ public class SolrUtils {
                         return fieldName.replace(_SINGLE,_MULTI) + _FILTER + type.getName() + contextPrefix + descriptor.getName();
 
                     } else {
-                        log.warn("Descriptor {} is not configured for advance filter search.", descriptor.getName());
+                        log.debug("Descriptor {} is not configured for advance filter search.", descriptor.getName());
                         return null;
                     }
                 }
