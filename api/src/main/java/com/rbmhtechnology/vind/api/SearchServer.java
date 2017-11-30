@@ -201,7 +201,7 @@ public abstract class SearchServer implements Closeable {
      * @param factory {@link DocumentFactory} factory with the document schema.
      * @throws SearchServerException if not possible to execute the update.
      */
-    public abstract void execute(Update update, DocumentFactory factory);
+    public abstract boolean execute(Update update, DocumentFactory factory);
 
     /**
      * Deletes Documents which match the {@link Delete} filter configuration.

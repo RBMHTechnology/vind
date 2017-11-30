@@ -90,9 +90,9 @@ public class ReportingSearchServer extends SearchServer {
     }
 
     @Override
-    public void execute(Update update, DocumentFactory factory) {
+    public boolean execute(Update update, DocumentFactory factory) {
         //currently not logged
-        server.execute(update, factory);
+        return server.execute(update, factory);
     }
 
     @Override

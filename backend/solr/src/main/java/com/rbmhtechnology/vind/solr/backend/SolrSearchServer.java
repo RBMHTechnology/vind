@@ -17,6 +17,7 @@ import com.rbmhtechnology.vind.api.query.suggestion.DescriptorSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.StringSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
+import com.rbmhtechnology.vind.api.query.update.Update.UpdateOperations;
 import com.rbmhtechnology.vind.api.query.update.UpdateOperation;
 import com.rbmhtechnology.vind.api.result.*;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
@@ -31,6 +32,7 @@ import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.request.schema.SchemaRequest;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SolrPingResponse;
@@ -47,12 +49,15 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.rbmhtechnology.vind.api.query.update.Update.UpdateOperations.set;
 import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Query.buildFilterString;
 
 /**
@@ -551,7 +556,7 @@ public class SolrSearchServer extends SearchServer {
     }
 
     @Override
-    public void execute(Update update,DocumentFactory factory) {
+    public boolean execute(Update update,DocumentFactory factory) {
         //MBDN-434
         final boolean isUpdatable = factory.isUpdatable() && factory.getFields().values().stream()
                                         .allMatch( descriptor -> descriptor.isUpdate());
@@ -572,9 +577,9 @@ public class SolrSearchServer extends SearchServer {
                                     if (fieldName != null) {
                                         final Map<String, Object> fieldModifiers = new HashMap<>();
                                         updateOptions.get(fieldDescriptor).get(context).stream().forEach(entry -> {
-                                            Update.UpdateOperations opType = entry.getType();
-                                            if(fieldName.startsWith("dynamic_single_") && useCase.equals(SolrUtils.Fieldname.UseCase.Sort) && opType.equals(Update.UpdateOperations.add)) {
-                                                opType = Update.UpdateOperations.set;
+                                            UpdateOperations opType = entry.getType();
+                                            if(fieldName.startsWith("dynamic_single_") && useCase.equals(SolrUtils.Fieldname.UseCase.Sort) && opType.equals(UpdateOperations.add)) {
+                                                opType = set;
                                             }
                                             fieldModifiers.put(opType.name(),
                                                     toSolrJType(SolrUtils.FieldValue.getFieldCaseValue(entry.getValue(), fieldDescriptor, useCase)));
@@ -592,25 +597,94 @@ public class SolrSearchServer extends SearchServer {
                 } else {
                     solrClientLogger.debug(">>> add({})", update.getId());
                 }
-                solrClient.add(sdoc);
+
+                //solrClient.add(sdoc);
+                final SolrDocument updatedDoc = solrClient.getById(update.getId());
 
                 //Get the nested documents for the document to update
                 final NamedList<Object> paramList = new NamedList<>();
                 paramList.add(CommonParams.Q, "!( _id_:"+ update.getId()+")&(_root_:"+ update.getId()+")");
                 final QueryResponse query = solrClient.query(SolrParams.toSolrParams(paramList), SolrRequest.METHOD.POST);
 
+                SolrInputDocument finalDoc = sdoc;
+
                 //Reindex the updated document with its nested document so they are all index together
                 if (CollectionUtils.isNotEmpty(query.getResults())) {
-                    //get the updated document
-                    final SolrDocument updatedDoc = solrClient.getById(update.getId());
 
+                    final List<SolrInputDocument> childDocs = query.getResults().stream()
+                            .map(nestedDoc -> ClientUtils.toSolrInputDocument(nestedDoc))
+                            .collect(Collectors.toList());
+                    //get the updated document
                     //TODO:find a better way - non deprecated way
                     final SolrInputDocument inputDoc = ClientUtils.toSolrInputDocument(updatedDoc);
-                    inputDoc.addChildDocuments(query.getResults().stream().map(nestedDoc -> ClientUtils.toSolrInputDocument(nestedDoc)).collect(Collectors.toList()));
-                    solrClient.add(inputDoc);
+                    inputDoc.addChildDocuments(childDocs);
 
+                    sdoc.getFieldNames().stream()
+                            .filter(fn -> !fn.equals(SolrUtils.Fieldname.ID) && !fn.equals(SolrUtils.Fieldname.TYPE))
+                            .forEach( fn -> {
+                                final ArrayList fieldOp = (ArrayList) sdoc.getFieldValues(fn);
+                                fieldOp.stream()
+                                        //.map( op -> (HashMap<String, String>)op)
+                                        .forEach( op -> {
+                                            final Set<String> keys = ((HashMap<String, String>) op).keySet();
+                                            keys.stream()
+                                                    .forEach(k -> {
+                                                        switch (UpdateOperations.valueOf(k)) {
+                                                            case set:
+                                                                inputDoc.setField(fn, ((HashMap<String, String>) op).get(k) );
+                                                                break;
+                                                            case add:
+                                                                inputDoc.addField(fn, ((HashMap<String, String>) op).get(k) );
+                                                                break;
+                                                            case inc:
+                                                                final Number fieldValue;
+                                                                try {
+                                                                    fieldValue = NumberFormat.getInstance().parse((String)inputDoc.getFieldValue(fn));
+
+                                                                } catch (ParseException e) {
+                                                                    throw new RuntimeException();
+                                                                }
+                                                                inputDoc.setField(fn,String.valueOf(fieldValue.floatValue()+1));
+                                                                break;
+                                                            case remove:
+                                                                inputDoc.removeField(fn);
+                                                                break;
+                                                            case removeregex:
+                                                                final String fieldStringValue = (String)inputDoc.getFieldValue(fn);
+                                                                final String regex = ((HashMap<String, String>) op).get(k);
+                                                                if (regex.matches(fieldStringValue)) {
+                                                                    inputDoc.removeField(fn);
+                                                                }
+                                                                break;
+                                                        }
+                                                    });
+                                            }
+                                        );
+
+                                }
+                            );
+
+                    finalDoc = inputDoc;
+                }
+
+                final Object version = updatedDoc.getFieldValue("_version_");
+                finalDoc.setField("_version_",updatedDoc.getFieldValue("_version_"));
+
+                try {
+                    if(Thread.currentThread().getName().equals("pinkThread")) {
+                        System.out.println("Thread Pink Sleeping");
+                        Thread.sleep(1 * 60 * 1000);
+                        System.out.println("Thread Pink awakening");
+                    }
+                    solrClient.add(finalDoc);
                     //MBDN-579: Delete the duplicated document created by solr with old _version_
-                    solrClient.deleteByQuery("_version_:" + inputDoc.getField("_version_").getValue() + " AND _id_:" + update.getId());
+                    //solrClient.deleteByQuery("_version_:[ * TO " + version + "] AND _id_:" + update.getId());
+                    return true;
+                } catch (InterruptedException e ) {
+                    e.printStackTrace();
+                } catch (HttpSolrClient.RemoteSolrException e) {
+                    log.warn("Error updating document {}: {}", finalDoc.getFieldValue(SolrUtils.Fieldname.ID),e.getMessage(), e);
+                    return false;
                 }
 
             } catch (SolrServerException | IOException e) {
@@ -622,7 +696,7 @@ public class SolrSearchServer extends SearchServer {
             log.error("Unable to perform solr partial update on document with id [{}]", update.getId(), e);
             throw new RuntimeException("Can not execute solr partial update.", e);
         }
-
+    return false;
     }
 
     @Override

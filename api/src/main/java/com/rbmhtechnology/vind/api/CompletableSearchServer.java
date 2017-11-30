@@ -226,8 +226,8 @@ public class CompletableSearchServer extends SearchServer {
     }
 
     @Override
-    public void execute(Update update, DocumentFactory factory) {
-        backend.execute(update, factory);
+    public boolean execute(Update update, DocumentFactory factory) {
+        return backend.execute(update, factory);
     }
 
     @Override
