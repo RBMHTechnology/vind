@@ -101,7 +101,8 @@ public class CollectionManagementService {
             }
 
         } catch (SolrServerException | IOException e) {
-            throw new IOException("Cannot ping server", e);
+            logger.error("Error in collection management service: {}",e.getMessage(), e);
+            throw new IOException("Error in collection management service: "+ e.getMessage(), e);
         }
     }
 
