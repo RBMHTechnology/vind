@@ -98,7 +98,7 @@
   <dynamicField name="dynamic_multi_stored_facet_boolean_*" type="boolean" multiValued="true" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_sort_boolean_*" type="boolean" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_filter_float_*" type="float" docValues="true" multiValued="false" indexed="true" stored="true"/>
-  <dynamicField name="dynamic_multi_stored_filter_string_*" type="string" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_stored_filter_string_*" type="string" docValues="true" multiValued="true" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_facet_float_*" type="float" docValues="true" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_suggest_int_*" type="int" docValues="true" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="dynamic_multi_stored_suggest_date_*" type="date" docValues="true" multiValued="true" indexed="true" stored="true"/>
