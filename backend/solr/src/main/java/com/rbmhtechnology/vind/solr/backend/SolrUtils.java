@@ -413,8 +413,6 @@ public class SolrUtils {
             return query;
         }
         public static Object buildUpdateQuery(FieldDescriptor field, Object value){
-            //Map.Entry<String, Object> entry =  Maps.immutableEntry(field.getName(),SolrUtils.Result.castForDescriptor(value, field));
-
             return SolrUtils.Result.castForDescriptor(value, field);
         }
 

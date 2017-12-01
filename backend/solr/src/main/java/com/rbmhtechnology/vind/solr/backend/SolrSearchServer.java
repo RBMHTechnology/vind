@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.rbmhtechnology.vind.api.query.update.Update.UpdateOperations.set;
-import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Query.buildFilterString;
+import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.*;
 
 /**
  * @author Thomas Kurz (tkurz@apache.org)
@@ -162,7 +162,7 @@ public class SolrSearchServer extends SearchServer {
             }
             this.solrClient.add(document);
         } catch (SolrServerException | IOException e) {
-            log.error("Cannot index document {}", document.getField(SolrUtils.Fieldname.ID) , e);
+            log.error("Cannot index document {}", document.getField(ID) , e);
             throw new SearchServerException("Cannot index document", e);
         }
     }
@@ -194,9 +194,9 @@ public class SolrSearchServer extends SearchServer {
                 //TODO: move again to an approach where we do not go through all the use cases but based on which flags the descriptor has set to true
                 .forEach(descriptor ->
                         doc.getFieldContexts(descriptor).stream().forEach(context ->
-                                Stream.of(SolrUtils.Fieldname.UseCase.values())
+                                Stream.of(UseCase.values())
                                         .forEach(useCase -> {
-                                                    final String fieldname = SolrUtils.Fieldname.getFieldname(descriptor, useCase, context);
+                                                    final String fieldname = getFieldname(descriptor, useCase, context);
                                                     if (Objects.nonNull(fieldname)) {
                                                         final Object value = doc.getContextualizedValue(descriptor, context);
                                                         final Object caseValue = SolrUtils.FieldValue.getFieldCaseValue(value, descriptor, useCase);
@@ -218,8 +218,8 @@ public class SolrSearchServer extends SearchServer {
             );
         }
 
-        document.addField(SolrUtils.Fieldname.ID, doc.getId());
-        document.addField(SolrUtils.Fieldname.TYPE, doc.getType());
+        document.addField(ID, doc.getId());
+        document.addField(TYPE, doc.getType());
 
         return document;
     }
@@ -337,9 +337,9 @@ public class SolrSearchServer extends SearchServer {
         if(search.getGeoDistance() != null) {
             final FieldDescriptor descriptor = factory.getField(search.getGeoDistance().getFieldName());
             if (Objects.nonNull(descriptor)) {
-                query.setParam(CommonParams.FL, query.get(CommonParams.FL) + "," + SolrUtils.Fieldname.DISTANCE + ":geodist()");
+                query.setParam(CommonParams.FL, query.get(CommonParams.FL) + "," + DISTANCE + ":geodist()");
                 query.setParam("pt", search.getGeoDistance().getLocation().toString());
-                query.setParam("sfield", SolrUtils.Fieldname.getFieldname(descriptor, SolrUtils.Fieldname.UseCase.Facet, searchContext));
+                query.setParam("sfield", getFieldname(descriptor, UseCase.Facet, searchContext));
             }
         }
 
@@ -349,7 +349,7 @@ public class SolrSearchServer extends SearchServer {
             query.setParam("defType","edismax");
 
         } else {
-            query.setParam(CommonParams.DF, SolrUtils.Fieldname.TEXT);
+            query.setParam(CommonParams.DF, TEXT);
         }
 
         //filters
@@ -364,9 +364,9 @@ public class SolrSearchServer extends SearchServer {
             //append childCount facet
             search.facet(new Facet.SubdocumentFacet(factory));
             //TODO: move to SolrUtils
-            final String parentSearchQuery = "(" + query.get(CommonParams.Q) + " AND " + SolrUtils.Fieldname.TYPE + ":" + factory.getType() + ")";
+            final String parentSearchQuery = "(" + query.get(CommonParams.Q) + " AND " + TYPE + ":" + factory.getType() + ")";
 
-            final String childrenSearchQuery = "_query_:\"{!parent which="+ SolrUtils.Fieldname.TYPE+":"+factory.getType()+"}(" + SolrUtils.Fieldname.TYPE+":"+search.getChildrenFactory().getType()+" AND ("+search.getChildrenSearchString().getEscapedSearchString()+"))\"";
+            final String childrenSearchQuery = "_query_:\"{!parent which="+ TYPE+":"+factory.getType()+"}(" + TYPE+":"+search.getChildrenFactory().getType()+" AND ("+search.getChildrenSearchString().getEscapedSearchString()+"))\"";
 
             query.set(CommonParams.Q, String.join(" ",parentSearchQuery, search.getChildrenSearchOperator().name(), childrenSearchQuery));
 
@@ -401,7 +401,7 @@ public class SolrSearchServer extends SearchServer {
                     .filter(facet -> Facet.NumericRangeFacet.class.isAssignableFrom(facet.getClass()))
                     .map(genericFacet -> (Facet.NumericRangeFacet) genericFacet)
                     .forEach(numericRangeFacet -> {
-                        String fieldName = SolrUtils.Fieldname.getFieldname(numericRangeFacet.getFieldDescriptor(), SolrUtils.Fieldname.UseCase.Facet, searchContext);
+                        String fieldName = getFieldname(numericRangeFacet.getFieldDescriptor(), UseCase.Facet, searchContext);
 
                         query.add(FacetParams.FACET_RANGE,SolrUtils.Query.buildSolrFacetCustomName(fieldName, numericRangeFacet));
                         query.add(String.format(Locale.ROOT, "f.%s.%s", fieldName,
@@ -425,7 +425,7 @@ public class SolrSearchServer extends SearchServer {
                     .map(genericFacet -> (Facet.IntervalFacet) genericFacet)
                     .forEach(intervalFacet -> {
 
-                        String fieldName = SolrUtils.Fieldname.getFieldname(intervalFacet.getFieldDescriptor(), SolrUtils.Fieldname.UseCase.Facet, searchContext);
+                        String fieldName = getFieldname(intervalFacet.getFieldDescriptor(), UseCase.Facet, searchContext);
 
                         query.add(FacetParams.FACET_INTERVAL, SolrUtils.Query.buildSolrFacetKey(intervalFacet.getName()) + fieldName);
 
@@ -455,7 +455,7 @@ public class SolrSearchServer extends SearchServer {
                     .map(genericFacet -> (Facet.StatsFacet)genericFacet)
                     .forEach(statsFacet -> {
 
-                        String fieldName = SolrUtils.Fieldname.getFieldname(statsFacet.getField(), SolrUtils.Fieldname.UseCase.Facet, searchContext);
+                        String fieldName = getFieldname(statsFacet.getField(), UseCase.Facet, searchContext);
 
                         query.add(StatsParams.STATS, "true");
                         query.add(StatsParams.STATS_FIELD, SolrUtils.Query.buildSolrStatsQuery(fieldName, statsFacet));
@@ -467,7 +467,7 @@ public class SolrSearchServer extends SearchServer {
                     .forEach(pivotFacet -> {
                         String[] fieldNames=
                                 pivotFacet.getFieldDescriptors().stream()
-                                        .map(fieldDescriptor -> SolrUtils.Fieldname.getFieldname(fieldDescriptor, SolrUtils.Fieldname.UseCase.Facet, searchContext))
+                                        .map(fieldDescriptor -> getFieldname(fieldDescriptor, UseCase.Facet, searchContext))
                                         .toArray(String[]::new);
 
                         query.add(FacetParams.FACET_PIVOT,SolrUtils.Query.buildSolrPivotSubFacetName(pivotFacet.getName(),fieldNames));
@@ -516,7 +516,7 @@ public class SolrSearchServer extends SearchServer {
     }
 
     private void generateDateRangeQuery(Facet.DateRangeFacet dateRangeFacet, SolrQuery query, String searchContext) {
-        final String fieldName = SolrUtils.Fieldname.getFieldname(dateRangeFacet.getFieldDescriptor(), SolrUtils.Fieldname.UseCase.Facet, searchContext);
+        final String fieldName = getFieldname(dateRangeFacet.getFieldDescriptor(), UseCase.Facet, searchContext);
 
         query.add(FacetParams.FACET_RANGE,SolrUtils.Query.buildSolrFacetCustomName(fieldName, dateRangeFacet));
 
@@ -557,28 +557,29 @@ public class SolrSearchServer extends SearchServer {
 
     @Override
     public boolean execute(Update update,DocumentFactory factory) {
-        //MBDN-434
+
+        //Check if document is updatable and all its fields are stored.
         final boolean isUpdatable = factory.isUpdatable() && factory.getFields().values().stream()
                                         .allMatch( descriptor -> descriptor.isUpdate());
         if (isUpdatable) {
             final SolrInputDocument sdoc = new SolrInputDocument();
-            sdoc.addField(SolrUtils.Fieldname.ID, update.getId());
-            sdoc.addField(SolrUtils.Fieldname.TYPE, factory.getType());
+            sdoc.addField(ID, update.getId());
+            sdoc.addField(TYPE, factory.getType());
 
             HashMap<FieldDescriptor<?>, HashMap<String, SortedSet<UpdateOperation>>> updateOptions = update.getOptions();
             updateOptions.keySet()
                     .forEach(fieldDescriptor ->
-                        Stream.of(SolrUtils.Fieldname.UseCase.values()).forEach(useCase ->
+                        Stream.of(UseCase.values()).forEach(useCase ->
                             updateOptions.get(fieldDescriptor).keySet()
                                 .stream().forEach(context -> {
                                     //NOTE: Backwards compatibility
                                     final String updateContext = Objects.isNull(context)? update.getUpdateContext() : context;
-                                    final String fieldName = SolrUtils.Fieldname.getFieldname(fieldDescriptor, useCase, updateContext);
+                                    final String fieldName = getFieldname(fieldDescriptor, useCase, updateContext);
                                     if (fieldName != null) {
                                         final Map<String, Object> fieldModifiers = new HashMap<>();
                                         updateOptions.get(fieldDescriptor).get(context).stream().forEach(entry -> {
                                             UpdateOperations opType = entry.getType();
-                                            if(fieldName.startsWith("dynamic_single_") && useCase.equals(SolrUtils.Fieldname.UseCase.Sort) && opType.equals(UpdateOperations.add)) {
+                                            if(fieldName.startsWith("dynamic_single_") && useCase.equals(UseCase.Sort) && opType.equals(UpdateOperations.add)) {
                                                 opType = set;
                                             }
                                             fieldModifiers.put(opType.name(),
@@ -598,7 +599,6 @@ public class SolrSearchServer extends SearchServer {
                     solrClientLogger.debug(">>> add({})", update.getId());
                 }
 
-                //solrClient.add(sdoc);
                 final SolrDocument updatedDoc = solrClient.getById(update.getId());
 
                 //Get the nested documents for the document to update
@@ -608,19 +608,22 @@ public class SolrSearchServer extends SearchServer {
 
                 SolrInputDocument finalDoc = sdoc;
 
-                //Reindex the updated document with its nested document so they are all index together
+                //if the document has nested docs solr does not support atomic updates
                 if (CollectionUtils.isNotEmpty(query.getResults())) {
 
                     final List<SolrInputDocument> childDocs = query.getResults().stream()
                             .map(nestedDoc -> ClientUtils.toSolrInputDocument(nestedDoc))
                             .collect(Collectors.toList());
-                    //get the updated document
+
                     //TODO:find a better way - non deprecated way
                     final SolrInputDocument inputDoc = ClientUtils.toSolrInputDocument(updatedDoc);
+
+                    //Add nested documents to the doc
                     inputDoc.addChildDocuments(childDocs);
 
+                    //Update the original document
                     sdoc.getFieldNames().stream()
-                            .filter(fn -> !fn.equals(SolrUtils.Fieldname.ID) && !fn.equals(SolrUtils.Fieldname.TYPE))
+                            .filter(fn -> !fn.equals(ID) && !fn.equals(TYPE))
                             .forEach( fn -> {
                                 final ArrayList fieldOp = (ArrayList) sdoc.getFieldValues(fn);
                                 fieldOp.stream()
@@ -668,22 +671,13 @@ public class SolrSearchServer extends SearchServer {
                 }
 
                 final Object version = updatedDoc.getFieldValue("_version_");
-                finalDoc.setField("_version_",updatedDoc.getFieldValue("_version_"));
+                finalDoc.setField("_version_",version);
 
                 try {
-                    if(Thread.currentThread().getName().equals("pinkThread")) {
-                        System.out.println("Thread Pink Sleeping");
-                        Thread.sleep(1 * 60 * 1000);
-                        System.out.println("Thread Pink awakening");
-                    }
                     solrClient.add(finalDoc);
-                    //MBDN-579: Delete the duplicated document created by solr with old _version_
-                    //solrClient.deleteByQuery("_version_:[ * TO " + version + "] AND _id_:" + update.getId());
                     return true;
-                } catch (InterruptedException e ) {
-                    e.printStackTrace();
                 } catch (HttpSolrClient.RemoteSolrException e) {
-                    log.warn("Error updating document {}: {}", finalDoc.getFieldValue(SolrUtils.Fieldname.ID),e.getMessage(), e);
+                    log.warn("Error updating document {}: {}", finalDoc.getFieldValue(ID),e.getMessage(), e);
                     return false;
                 }
 
@@ -696,7 +690,6 @@ public class SolrSearchServer extends SearchServer {
             log.error("Unable to perform solr partial update on document with id [{}]", update.getId(), e);
             throw new RuntimeException("Can not execute solr partial update.", e);
         }
-    return false;
     }
 
     @Override
@@ -761,12 +754,12 @@ public class SolrSearchServer extends SearchServer {
                             if(Objects.isNull(field)) {
                                 log.warn("No field descriptor found for field name {} in factories: {}, {}", name,assets.getType(), childFactory.getType());
                             }
-                            return SolrUtils.Fieldname.getFieldname(field, SolrUtils.Fieldname.UseCase.Suggest, searchContext);
+                            return getFieldname(field, UseCase.Suggest, searchContext);
                         } else {
                             if(Objects.isNull(assets.getField(name))) {
                                 log.warn("No field descriptor found for field name {} in factory: {}", name,assets.getType());
                             }
-                            return SolrUtils.Fieldname.getFieldname(assets.getField(name), SolrUtils.Fieldname.UseCase.Suggest, searchContext);
+                            return getFieldname(assets.getField(name), UseCase.Suggest, searchContext);
                             }
                     })
                     .filter(Objects::nonNull)
@@ -776,7 +769,7 @@ public class SolrSearchServer extends SearchServer {
 
             query.setParam("suggestion.field", s.getSuggestionFields()
                     .stream()
-                    .map(descriptor -> SolrUtils.Fieldname.getFieldname(descriptor, SolrUtils.Fieldname.UseCase.Suggest, searchContext))
+                    .map(descriptor -> getFieldname(descriptor, UseCase.Suggest, searchContext))
                     .filter(Objects::nonNull)
                     .toArray(String[]::new));
         }
