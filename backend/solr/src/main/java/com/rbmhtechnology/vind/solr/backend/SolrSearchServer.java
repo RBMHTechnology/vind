@@ -160,6 +160,7 @@ public class SolrSearchServer extends SearchServer {
             } else {
                 solrClientLogger.debug(">>> add({})", doc.getId());
             }
+            removeNonParentDocument(doc);
             this.solrClient.add(document);
         } catch (SolrServerException | IOException e) {
             log.error("Cannot index document {}", document.getField(ID) , e);
@@ -177,10 +178,25 @@ public class SolrSearchServer extends SearchServer {
             } else {
                 solrClientLogger.debug(">>> add({})", solrDocs);
             }
+            for(Document doc : docs){
+                removeNonParentDocument(doc);
+            }
             this.solrClient.add(solrDocs);
         } catch (SolrServerException | IOException e) {
             log.error("Cannot index documents {}", solrDocs, e);
             throw new SearchServerException("Cannot index documents", e);
+        }
+    }
+
+    private void removeNonParentDocument(Document doc) throws SolrServerException, IOException {
+        if(CollectionUtils.isNotEmpty(doc.getChildren())) {
+            //Get the nested docs of the document if existing
+            final NamedList<Object> paramList = new NamedList<>();
+            paramList.add(CommonParams.Q, "!( _id_:"+ doc.getId()+")&(_root_:"+ doc.getId()+")");
+            final QueryResponse query = solrClient.query(SolrParams.toSolrParams(paramList), SolrRequest.METHOD.POST);
+            if (CollectionUtils.isEmpty(query.getResults()))
+                log.info("Deleting document `{}`: document is becoming parent.",doc.getId());
+                this.solrClient.deleteById(doc.getId());
         }
     }
 
@@ -624,11 +640,18 @@ public class SolrSearchServer extends SearchServer {
 
                 //if the document has nested docs solr does not support atomic updates
                 if (CollectionUtils.isNotEmpty(query.getResults())) {
+                    log.info("Update document `{}`: doc has {} nested documents, changing from partial update to full index.",
+                            finalDoc.getFieldValue(SolrUtils.Fieldname.ID), query.getResults().size());
+                    //Get the list of nested documents
+                    final List<SolrInputDocument> childDocs = query.getResults().stream()
+                            .map(nestedDoc -> ClientUtils.toSolrInputDocument(nestedDoc))
+                            .collect(Collectors.toList());
 
-                    finalDoc = this.getUpdatedSolrDocument(sdoc, updatedDoc, query);
+                    finalDoc = this.getUpdatedSolrDocument(sdoc, updatedDoc, childDocs);
                 }
 
                 try {
+                    log.info("Updating document `{}`: current version `{}`", finalDoc.getFieldValue(SolrUtils.Fieldname.ID), version);
                     solrClient.add(finalDoc);
                     return true;
                 } catch (HttpSolrClient.RemoteSolrException e) {
@@ -647,19 +670,14 @@ public class SolrSearchServer extends SearchServer {
         }
     }
 
-    private SolrInputDocument getUpdatedSolrDocument(SolrInputDocument sdoc, SolrDocument updatedDoc, QueryResponse query) {
+    private SolrInputDocument getUpdatedSolrDocument(SolrInputDocument sdoc, SolrDocument updatedDoc, List<SolrInputDocument> nestedDocs) {
 
         //TODO:find a better way - non deprecated way
         //Create an input document from the original doc to be updated
         final SolrInputDocument inputDoc = ClientUtils.toSolrInputDocument(updatedDoc);
 
-        //Get the list of nested documents
-        final List<SolrInputDocument> childDocs = query.getResults().stream()
-                .map(nestedDoc -> ClientUtils.toSolrInputDocument(nestedDoc))
-                .collect(Collectors.toList());
-
         //Add nested documents to the doc
-        inputDoc.addChildDocuments(childDocs);
+        inputDoc.addChildDocuments(nestedDocs);
 
         //TODO: think about a cleaner solution
         //Update the original document
