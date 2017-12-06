@@ -277,6 +277,8 @@ public class SolrSearchServer extends SearchServer {
         try {
             solrClientLogger.debug(">>> delete({})", doc.getId());
             solrClient.deleteById(doc.getId());
+            //Deleting nested documents
+            solrClient.deleteByQuery("_root_:" + doc.getId());
         } catch (SolrServerException | IOException e) {
             log.error("Cannot delete document {}", doc.getId() , e);
             throw new SearchServerException("Cannot delete document", e);
@@ -599,79 +601,32 @@ public class SolrSearchServer extends SearchServer {
                     solrClientLogger.debug(">>> add({})", update.getId());
                 }
 
+                SolrInputDocument finalDoc = sdoc;
+
+                //Get the original document
                 final SolrDocument updatedDoc = solrClient.getById(update.getId());
 
-                //Get the nested documents for the document to update
+                //Setting the document version for optimistic concurrency
+                final Object version = updatedDoc.getFieldValue("_version_");
+                if (Objects.nonNull(version)) {
+                    finalDoc.setField("_version_", version);
+                } else {
+                    log.warn("Error updating document '{}': " +
+                            "Atomic updates in nested documents are not supported by Solr", updatedDoc.get(ID));
+
+                    return false;
+                }
+
+                //Get the nested docs of the document if existing
                 final NamedList<Object> paramList = new NamedList<>();
                 paramList.add(CommonParams.Q, "!( _id_:"+ update.getId()+")&(_root_:"+ update.getId()+")");
                 final QueryResponse query = solrClient.query(SolrParams.toSolrParams(paramList), SolrRequest.METHOD.POST);
 
-                SolrInputDocument finalDoc = sdoc;
-
                 //if the document has nested docs solr does not support atomic updates
                 if (CollectionUtils.isNotEmpty(query.getResults())) {
 
-                    final List<SolrInputDocument> childDocs = query.getResults().stream()
-                            .map(nestedDoc -> ClientUtils.toSolrInputDocument(nestedDoc))
-                            .collect(Collectors.toList());
-
-                    //TODO:find a better way - non deprecated way
-                    final SolrInputDocument inputDoc = ClientUtils.toSolrInputDocument(updatedDoc);
-
-                    //Add nested documents to the doc
-                    inputDoc.addChildDocuments(childDocs);
-
-                    //Update the original document
-                    sdoc.getFieldNames().stream()
-                            .filter(fn -> !fn.equals(ID) && !fn.equals(TYPE))
-                            .forEach( fn -> {
-                                final ArrayList fieldOp = (ArrayList) sdoc.getFieldValues(fn);
-                                fieldOp.stream()
-                                        //.map( op -> (HashMap<String, String>)op)
-                                        .forEach( op -> {
-                                            final Set<String> keys = ((HashMap<String, String>) op).keySet();
-                                            keys.stream()
-                                                    .forEach(k -> {
-                                                        switch (UpdateOperations.valueOf(k)) {
-                                                            case set:
-                                                                inputDoc.setField(fn, ((HashMap<String, String>) op).get(k) );
-                                                                break;
-                                                            case add:
-                                                                inputDoc.addField(fn, ((HashMap<String, String>) op).get(k) );
-                                                                break;
-                                                            case inc:
-                                                                final Number fieldValue;
-                                                                try {
-                                                                    fieldValue = NumberFormat.getInstance().parse((String)inputDoc.getFieldValue(fn));
-
-                                                                } catch (ParseException e) {
-                                                                    throw new RuntimeException();
-                                                                }
-                                                                inputDoc.setField(fn,String.valueOf(fieldValue.floatValue()+1));
-                                                                break;
-                                                            case remove:
-                                                                inputDoc.removeField(fn);
-                                                                break;
-                                                            case removeregex:
-                                                                final String fieldStringValue = (String)inputDoc.getFieldValue(fn);
-                                                                final String regex = ((HashMap<String, String>) op).get(k);
-                                                                if (regex.matches(fieldStringValue)) {
-                                                                    inputDoc.removeField(fn);
-                                                                }
-                                                                break;
-                                                        }
-                                                    });
-                                            }
-                                        );
-
-                                }
-                            );
-
-                    finalDoc = inputDoc;
+                    finalDoc = this.getUpdatedSolrDocument(sdoc, updatedDoc, query);
                 }
-
-                final Object version = updatedDoc.getFieldValue("_version_");
-                finalDoc.setField("_version_",version);
 
                 try {
                     solrClient.add(finalDoc);
@@ -692,12 +647,86 @@ public class SolrSearchServer extends SearchServer {
         }
     }
 
+    private SolrInputDocument getUpdatedSolrDocument(SolrInputDocument sdoc, SolrDocument updatedDoc, QueryResponse query) {
+
+        //TODO:find a better way - non deprecated way
+        //Create an input document from the original doc to be updated
+        final SolrInputDocument inputDoc = ClientUtils.toSolrInputDocument(updatedDoc);
+
+        //Get the list of nested documents
+        final List<SolrInputDocument> childDocs = query.getResults().stream()
+                .map(nestedDoc -> ClientUtils.toSolrInputDocument(nestedDoc))
+                .collect(Collectors.toList());
+
+        //Add nested documents to the doc
+        inputDoc.addChildDocuments(childDocs);
+
+        //TODO: think about a cleaner solution
+        //Update the original document
+        sdoc.getFieldNames().stream()
+                .filter(fn -> !fn.equals(ID) && !fn.equals(TYPE) && !fn.equals("_version_") )//TODO: Add all the special fields or do the oposite check, whether it fits a dynamic Vind field
+                .forEach( fn -> {
+                    final ArrayList fieldOp = (ArrayList) sdoc.getFieldValues(fn);
+                    fieldOp.stream()
+                            .forEach( op -> {
+                                final Set<String> keys = ((HashMap<String, String>) op).keySet();
+                                keys.stream()
+                                        .forEach(k -> {
+                                            switch (UpdateOperations.valueOf(k)) {
+                                                case set:
+                                                    inputDoc.setField(fn, ((HashMap<String, String>) op).get(k) );
+                                                    break;
+                                                case add:
+                                                    inputDoc.addField(fn, ((HashMap<String, String>) op).get(k) );
+                                                    break;
+                                                case inc:
+                                                    final Number fieldValue;
+                                                    try {
+                                                        fieldValue = NumberFormat.getInstance().parse((String)inputDoc.getFieldValue(fn));
+
+                                                    } catch (ParseException e) {
+                                                        throw new RuntimeException();
+                                                    }
+                                                    inputDoc.setField(fn,String.valueOf(fieldValue.floatValue()+1));
+                                                    break;
+                                                case remove:
+                                                    inputDoc.removeField(fn);
+                                                    break;
+                                                case removeregex:
+                                                    final String fieldStringValue = (String)inputDoc.getFieldValue(fn);
+                                                    final String regex = ((HashMap<String, String>) op).get(k);
+                                                    if (regex.matches(fieldStringValue)) {
+                                                        inputDoc.removeField(fn);
+                                                    }
+                                                    break;
+                                            }
+                                        });
+                                }
+                            );
+
+                    }
+                );
+
+        return inputDoc;
+    }
+
     @Override
     public void execute(Delete delete, DocumentFactory factory) {
         String query = SolrUtils.Query.buildFilterString(delete.getQuery(), factory, delete.getUpdateContext(),true);
         try {
             solrClientLogger.debug(">>> delete query({})", query);
-            solrClient.deleteByQuery(query);
+            //Finding the ID of the documents to delete
+            final SolrQuery solrQuery = new SolrQuery();
+            solrQuery.setParam(CommonParams.Q, "*:*");
+            solrQuery.setParam(CommonParams.FQ,query.trim().replaceAll("^\\+","").split("\\+"));
+            final QueryResponse response = solrClient.query(solrQuery, SolrRequest.METHOD.POST);
+            if(Objects.nonNull(response) && CollectionUtils.isNotEmpty(response.getResults())){
+                final List<String> idList = response.getResults().stream().map(doc -> (String) doc.get(ID)).collect(Collectors.toList());
+                solrClient.deleteById(idList);
+                //Deleting nested documents
+                solrClient.deleteByQuery("_root_:("+StringUtils.join(idList, " OR ")+")");
+            }
+
         } catch (SolrServerException | IOException e) {
             log.error("Cannot delete with query {}", query, e);
             throw new SearchServerException("Cannot delete with query", e);
