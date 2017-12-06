@@ -12,5 +12,5 @@ This includes also the loading of runtime libs.
 
 * download solr (version 5.5.4)
 * start it in cloud mode, the easiest ways is to use the `./bin/solr start -c` (one node)
-* create a collection, e.g. `java -jar build/libs/collection-managment-tool-2.0.15.jar -cc test -from com.rbmhtechnology.searchlib:solr:1.0.0 -in localhost:9983`
-* update a collection, e.g. `java -jar build/libs/collection-managment-tool-2.0.15.jar -uc test -from com.rbmhtechnology.searchlib:solr:2.0.15 -in localhost:9983`
+* create a collection, e.g. `java -jar build/libs/collection-managment-tool-2.0.15.jar -cc test -from com.rbmhtechnology.vind:backend-solr:jar:1.0.2 -in localhost:9983`
+* update a collection, e.g. `java -jar build/libs/collection-managment-tool-2.0.15.jar -uc test -from com.rbmhtechnology.vind:backend-solr:jar:1.0.2 -in localhost:9983`
