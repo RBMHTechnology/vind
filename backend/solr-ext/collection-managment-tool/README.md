@@ -5,7 +5,7 @@ This includes also the loading of runtime libs.
 
 ## Usage
 
-* build a runnable jar with `gradle build` 
+* build a runnable jar with `mvn package` 
 * run `java -jar build/libs/collection-managment-tool-{version}.jar` in order to get more information
 
 ## For beginners
