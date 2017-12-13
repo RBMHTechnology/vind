@@ -9,10 +9,7 @@ import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
-import com.rbmhtechnology.vind.api.result.BeanSearchResult;
-import com.rbmhtechnology.vind.api.result.GetResult;
-import com.rbmhtechnology.vind.api.result.SearchResult;
-import com.rbmhtechnology.vind.api.result.SuggestionResult;
+import com.rbmhtechnology.vind.api.result.*;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.report.logger.entry.FullTextEntry;
@@ -158,9 +155,9 @@ public class ReportingSearchServer extends SearchServer {
     }
 
     @Override
-    public <T> GetResult execute(RealTimeGet search, Class<T> c) {
+    public <T> BeanGetResult<T> execute(RealTimeGet search, Class<T> c) {
         final ZonedDateTime start = ZonedDateTime.now();
-        final GetResult result = server.execute(search, c);
+        final BeanGetResult<T> result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
         //TODO log
         return result;

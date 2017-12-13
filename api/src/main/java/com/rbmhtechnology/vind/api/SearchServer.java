@@ -7,10 +7,7 @@ import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
-import com.rbmhtechnology.vind.api.result.BeanSearchResult;
-import com.rbmhtechnology.vind.api.result.GetResult;
-import com.rbmhtechnology.vind.api.result.SearchResult;
-import com.rbmhtechnology.vind.api.result.SuggestionResult;
+import com.rbmhtechnology.vind.api.result.*;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import org.slf4j.Logger;
@@ -281,7 +278,7 @@ public abstract class SearchServer implements Closeable {
      * @return SuggestionResult object storing the server results.
      * @throws SearchServerException if not possible to execute the real time get.
      */
-    public abstract <T> GetResult execute(RealTimeGet search, Class<T> c);
+    public abstract <T> BeanGetResult<T> execute(RealTimeGet search, Class<T> c);
     /**
      * Executes a suggestion search based on an DocumentFactory.
      * @param search ExecutableSuggestionSearch object with the query configuration.

@@ -1,6 +1,5 @@
 package com.rbmhtechnology.vind.api.result;
 
-import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.model.DocumentFactory;
@@ -10,39 +9,38 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * This class stores the search result documents as instances of {@link Document}.
  */
-public class GetResult {
+public class BeanGetResult<T> {
 
     protected Logger log = LoggerFactory.getLogger(getClass());
 
     private final long numOfResults;
-    private final List<Document> results;
+    private final List<T> results;
     private final RealTimeGet query;
-    private final DocumentFactory factory;
+    private final Class <T> clazz;
 
-    public GetResult() {
+    public BeanGetResult() {
         this.numOfResults = 0L;
         this.results = Collections.emptyList();
         this.query = new RealTimeGet();
-        this.factory = new DocumentFactoryBuilder("empty").build();
+        this.clazz = null;
     }
 
     /**
-     * Creates a new instance of {@link GetResult}.
+     * Creates a new instance of {@link BeanGetResult}.
      * @param numOfResults Number of documents returned by the search server instance.
      * @param results A list of results parsed to Document.
      * @param getQuery The fulltext query executed to retrieve this set of results.
-     * @param docFactory document factory holding the schema configuration of documents to parse the results to.
+     * @param clazz Bean class to get as result.
      */
-    public GetResult(long numOfResults, List<Document> results, RealTimeGet getQuery, DocumentFactory docFactory) {
+    public BeanGetResult(long numOfResults, List<T> results, RealTimeGet getQuery, Class<T> clazz) {
         this.numOfResults = numOfResults;
         this.results = results;
         this.query = getQuery;
-        this.factory = docFactory;
+        this.clazz = clazz;
 
     }
     /**
@@ -57,7 +55,7 @@ public class GetResult {
      * Gets the list of results stored.
      * @return A list of results parsed as T
      */
-    public List<Document> getResults() {
+    public List<T> getResults() {
         return Collections.unmodifiableList(results);
     }
 
@@ -67,14 +65,6 @@ public class GetResult {
                 "numOfResults=" + numOfResults +
                 ", results=" + results +
                 '}';
-    }
-
-    public  <P> BeanGetResult<P> toPojoResult(GetResult getResult, Class<P> clazz) {
-        return new BeanGetResult<>(getResult.numOfResults,
-                getResult.results.stream().map(d -> AnnotationUtil.createPojo(d, clazz)).collect(Collectors.toList()),
-                getResult.query,
-                clazz
-        );
     }
 
 

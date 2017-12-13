@@ -858,9 +858,10 @@ public class SolrSearchServer extends SearchServer {
     }
 
     @Override
-    public <T> GetResult execute(RealTimeGet search, Class<T> c) {
+    public <T> BeanGetResult<T> execute(RealTimeGet search, Class<T> c) {
         DocumentFactory documentFactory = AnnotationUtil.createDocumentFactory(c);
-        return this.execute(search,documentFactory);
+        final GetResult result = this.execute(search, documentFactory);
+        return result.toPojoResult(result,c);
     }
 
     @Override

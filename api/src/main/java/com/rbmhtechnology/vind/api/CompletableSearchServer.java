@@ -6,10 +6,7 @@ import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
-import com.rbmhtechnology.vind.api.result.BeanSearchResult;
-import com.rbmhtechnology.vind.api.result.GetResult;
-import com.rbmhtechnology.vind.api.result.SearchResult;
-import com.rbmhtechnology.vind.api.result.SuggestionResult;
+import com.rbmhtechnology.vind.api.result.*;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 
@@ -271,7 +268,7 @@ public class CompletableSearchServer extends SearchServer {
     }
 
     @Override
-    public <T> GetResult execute(RealTimeGet search, Class<T> c) {
+    public <T> BeanGetResult<T> execute(RealTimeGet search, Class<T> c) {
         return backend.execute(search, c);
     }
 
