@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.solr.backend;
 
 import com.rbmhtechnology.vind.api.Document;
+import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
@@ -16,7 +17,10 @@ import com.rbmhtechnology.vind.model.value.LatLng;
 import com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.UseCase;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.lucene.search.Query;
+import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrResponse;
 import org.apache.solr.client.solrj.response.*;
@@ -24,9 +28,16 @@ import org.apache.solr.client.solrj.response.IntervalFacet;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.CommonParams;
+import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.util.DateUtil;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.SimpleOrderedMap;
+import org.apache.solr.core.SolrCore;
+import org.apache.solr.request.LocalSolrQueryRequest;
+import org.apache.solr.search.ExtendedDismaxQParser;
+import org.apache.solr.request.SolrQueryRequest;
+import org.apache.solr.search.QParser;
+import org.apache.solr.search.SyntaxError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +58,6 @@ import java.util.stream.StreamSupport;
 
 import static com.rbmhtechnology.vind.api.query.facet.Facet.*;
 import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.UseCase.*;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 
@@ -428,10 +438,10 @@ public class SolrUtils {
                         if(Objects.nonNull(search.getChildrenSearchString().hasFilter())){
                           //filter = search.getFilter().accept(new SolrChildrenSerializerVisitor(factory,search.getChildrenFactory(),searchContext)).replaceAll("\\+_type_:" + type + " \\+","").replaceAll("\"", "")+ " AND " + search.getSearchString();
                             childrenFilterSerialized = serializeFacetFilter(search.getChildrenSearchString().getFilter(), search.getChildrenFactory(), searchContext, search.getStrict()).replaceAll("\"", "\\\\\"");;
-                            filter = childrenFilterSerialized + " AND " + search.getSearchString();
+                            filter = childrenFilterSerialized + " AND " + StringEscapeUtils.escapeJson(search.getSearchString());
                         } else {
                             childrenFilterSerialized ="";
-                            filter = search.getSearchString();
+                            filter = StringEscapeUtils.escapeJson(search.getSearchString());
                         }
                         //TODO this should be done by an inner component (paging!!)
                         return String.format(
