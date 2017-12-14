@@ -6,6 +6,7 @@ import com.rbmhtechnology.vind.annotations.util.FunctionHelpers;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
+import com.rbmhtechnology.vind.api.result.BeanGetResult;
 import com.rbmhtechnology.vind.api.result.BeanSearchResult;
 import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
@@ -129,12 +130,12 @@ public class TestServerPojoTest {
         server.indexBean(new SimplePojo("2","Hello Thomas",2,"foo","bar"));
         server.commit();
 
-        GetResult result = server.execute(Search.getById("2"), SimplePojo.class);
+        BeanGetResult<SimplePojo> result = server.execute(Search.getById("2"), SimplePojo.class);
 
         assertEquals(1, result.getResults().size());
         assertEquals("2", result.getResults().get(0).getId());
 
-        GetResult multiResult = server.execute(Search.getById("1","2","42"), SimplePojo.class);
+        BeanGetResult<SimplePojo> multiResult = server.execute(Search.getById("1","2","42"), SimplePojo.class);
 
         assertEquals(2, multiResult.getResults().size());
         assertEquals("1", multiResult.getResults().get(0).getId());

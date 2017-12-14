@@ -382,11 +382,14 @@ public class SolrSearchServer extends SearchServer {
             //append childCount facet
             search.facet(new Facet.SubdocumentFacet(factory));
             //TODO: move to SolrUtils
-            final String parentSearchQuery = "(" + query.get(CommonParams.Q) + " AND " + TYPE + ":" + factory.getType() + ")";
+            final String parentSearchQuery = "((" + query.get(CommonParams.Q) + ") AND " + TYPE + ":" + factory.getType() + ")";
 
             final String childrenSearchQuery = "_query_:\"{!parent which="+ TYPE+":"+factory.getType()+"}(" + TYPE+":"+search.getChildrenFactory().getType()+" AND ("+search.getChildrenSearchString().getEscapedSearchString()+"))\"";
 
-            query.set(CommonParams.Q, String.join(" ",parentSearchQuery, search.getChildrenSearchOperator().name(), childrenSearchQuery));
+            query.set(CommonParams.Q, String.join(" ",
+                    parentSearchQuery,
+                    search.getChildrenSearchOperator().name(),
+                    childrenSearchQuery));
 
             if(search.getChildrenSearchString().hasFilter()){
 
@@ -395,7 +398,11 @@ public class SolrSearchServer extends SearchServer {
                 final String childrenFilterQuery = search.getChildrenSearchString()
                         .getFilter().accept(new SolrChildrenSerializerVisitor(factory,search.getChildrenFactory(),searchContext, search.getStrict()));
 
-                query.set(CommonParams.FQ, String.join(" ", parentFilterQuery, search.getChildrenSearchOperator().name(), "("+childrenFilterQuery+")"));
+                query.set(CommonParams.FQ,
+                        String.join(" ",
+                                parentFilterQuery,
+                                search.getChildrenSearchOperator().name(),
+                                "(" + childrenFilterQuery + ")"));
             }
 
         }

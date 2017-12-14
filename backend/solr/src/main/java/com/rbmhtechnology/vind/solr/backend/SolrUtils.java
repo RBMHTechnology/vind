@@ -427,19 +427,19 @@ public class SolrUtils {
                     .map(genericFacet -> (SubdocumentFacet) genericFacet)
                     .map(facet -> {
                         final String type = facet.getName();
-                        final String filter;
+                        String filter;
                         final String childrenFilterSerialized;
                         if(Objects.nonNull(search.getChildrenSearchString().hasFilter())){
-                          //filter = search.getFilter().accept(new SolrChildrenSerializerVisitor(factory,search.getChildrenFactory(),searchContext)).replaceAll("\\+_type_:" + type + " \\+","").replaceAll("\"", "")+ " AND " + search.getSearchString();
                             childrenFilterSerialized = serializeFacetFilter(search.getChildrenSearchString().getFilter(), search.getChildrenFactory(), searchContext, search.getStrict()).replaceAll("\"", "\\\\\"");;
                             filter = childrenFilterSerialized + " AND " + StringEscapeUtils.escapeJson(search.getSearchString());
                         } else {
                             childrenFilterSerialized ="";
                             filter = StringEscapeUtils.escapeJson(search.getSearchString());
                         }
-                        //TODO this should be done by an inner component (paging!!)
+
+                        filter = "{!edismax}" + filter;
                         return String.format(
-                                "{" +
+                                "{" +//TODO this should be done by an inner component (paging!!)
                                     "parent_facet:{" +
                                         "type:terms," +
                                         "field:%s," +
