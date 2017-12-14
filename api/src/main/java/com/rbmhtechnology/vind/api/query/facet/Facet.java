@@ -19,6 +19,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.rbmhtechnology.vind.api.query.filter.Filter.*;
+
 /**
  * Abstract class to be implemented by the specific facet query classes {@link TermFacet}, {@link NumericRangeFacet},
  * {@link DateRangeFacet}, {@link PivotFacet}, {@link QueryFacet} and {@link StatsFacet}.
@@ -30,6 +32,7 @@ public abstract class Facet {
 
     private Logger log = LoggerFactory.getLogger(getClass());
 
+    protected Scope scope = Scope.Facet;
     protected String name;
     protected String[] tagedPivots = new String[0];
 
@@ -43,6 +46,15 @@ public abstract class Facet {
 
     public String[] getTagedPivots() {
         return tagedPivots;
+    }
+
+    public Scope getScope() {
+        return scope;
+    }
+
+    public Facet setScope(Scope scope) {
+        this.scope = scope;
+        return this;
     }
 
     /**
@@ -774,6 +786,13 @@ public abstract class Facet {
             );
         }
 
+        @Override
+        public StatsFacet<T> setScope(Scope scope) {
+            this.scope = scope;
+            return this;
+
+        }
+
         static public StatsFacet createFacet(String name, FieldDescriptor field, String ...pivotNames) {
 
             if (MultiValueFieldDescriptor.NumericFieldDescriptor.class.isAssignableFrom(field.getClass())) {
@@ -933,6 +952,13 @@ public abstract class Facet {
             return this;
         }
 
+        @Override
+        public StatsNumericFacet<T> setScope(Scope scope) {
+            this.scope = scope;
+            return this;
+
+        }
+
     }
 
     /**
@@ -1038,6 +1064,13 @@ public abstract class Facet {
             this.stddev=true;
             return this;
         }
+
+        @Override
+        public StatsDateFacet<T> setScope(Scope scope) {
+            this.scope = scope;
+            return this;
+
+        }
     }
 
     /**
@@ -1142,6 +1175,13 @@ public abstract class Facet {
         public StatsUtilDateFacet<T> stddev() {
             this.stddev=true;
             return this;
+        }
+
+        @Override
+        public StatsUtilDateFacet<T> setScope(Scope scope) {
+            this.scope = scope;
+            return this;
+
         }
     }
 

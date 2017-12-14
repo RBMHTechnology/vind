@@ -419,7 +419,9 @@ public class SolrSearchServer extends SearchServer {
                     .filter(facet -> Facet.NumericRangeFacet.class.isAssignableFrom(facet.getClass()))
                     .map(genericFacet -> (Facet.NumericRangeFacet) genericFacet)
                     .forEach(numericRangeFacet -> {
-                        String fieldName = getFieldname(numericRangeFacet.getFieldDescriptor(), UseCase.Facet, searchContext);
+                        final UseCase useCase = UseCase.valueOf(numericRangeFacet.getScope().name());
+                        final String fieldName =
+                                getFieldname(numericRangeFacet.getFieldDescriptor(), useCase, searchContext);
 
                         query.add(FacetParams.FACET_RANGE,SolrUtils.Query.buildSolrFacetCustomName(fieldName, numericRangeFacet));
                         query.add(String.format(Locale.ROOT, "f.%s.%s", fieldName,
@@ -442,8 +444,8 @@ public class SolrSearchServer extends SearchServer {
                     .filter(facet -> Facet.IntervalFacet.class.isAssignableFrom(facet.getClass()))
                     .map(genericFacet -> (Facet.IntervalFacet) genericFacet)
                     .forEach(intervalFacet -> {
-
-                        String fieldName = getFieldname(intervalFacet.getFieldDescriptor(), UseCase.Facet, searchContext);
+                        final UseCase useCase = UseCase.valueOf(intervalFacet.getScope().name());
+                        final String fieldName = getFieldname(intervalFacet.getFieldDescriptor(), useCase, searchContext);
 
                         query.add(FacetParams.FACET_INTERVAL, SolrUtils.Query.buildSolrFacetKey(intervalFacet.getName()) + fieldName);
 
@@ -473,7 +475,8 @@ public class SolrSearchServer extends SearchServer {
                     .map(genericFacet -> (Facet.StatsFacet)genericFacet)
                     .forEach(statsFacet -> {
 
-                        String fieldName = getFieldname(statsFacet.getField(), UseCase.Facet, searchContext);
+                        final UseCase useCase = UseCase.valueOf(statsFacet.getScope().name());
+                        String fieldName = getFieldname(statsFacet.getField(), useCase, searchContext);
 
                         query.add(StatsParams.STATS, "true");
                         query.add(StatsParams.STATS_FIELD, SolrUtils.Query.buildSolrStatsQuery(fieldName, statsFacet));
@@ -534,7 +537,9 @@ public class SolrSearchServer extends SearchServer {
     }
 
     private void generateDateRangeQuery(Facet.DateRangeFacet dateRangeFacet, SolrQuery query, String searchContext) {
-        final String fieldName = getFieldname(dateRangeFacet.getFieldDescriptor(), UseCase.Facet, searchContext);
+
+        final UseCase useCase = UseCase.valueOf(dateRangeFacet.getScope().name());
+        final String fieldName = getFieldname(dateRangeFacet.getFieldDescriptor(), useCase, searchContext);
 
         query.add(FacetParams.FACET_RANGE,SolrUtils.Query.buildSolrFacetCustomName(fieldName, dateRangeFacet));
 
