@@ -51,7 +51,7 @@ public class FullTextRequestTest {
 
     @Test
     public void testCreateFullTextRequest(){
-        final FullTextRequest fullTextRequest = new FullTextRequest(search, "test");
+        final FullTextRequest fullTextRequest = new FullTextRequest(search, "q=*.*","test");
 
         assertEquals("mocked Query", fullTextRequest.getQuery());
         assertEquals("andFilter", fullTextRequest.getFilter().toString());

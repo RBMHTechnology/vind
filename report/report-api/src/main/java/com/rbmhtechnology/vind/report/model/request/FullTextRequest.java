@@ -24,7 +24,7 @@ public class FullTextRequest implements SearchRequest{
     private String solrQuery;
     private String source;
 
-    public FullTextRequest(FulltextSearch search, String source) {
+    public FullTextRequest(FulltextSearch search, String solrQuery, String source) {
         this.search = search;
         this.query = Objects.nonNull(this.search.getSearchString()) ? this.search.getSearchString() : "*";
         if (Objects.nonNull(this.search.getFilter())) {
@@ -32,6 +32,7 @@ public class FullTextRequest implements SearchRequest{
         }
         this.facets = this.search.getFacets();
         this.source = source;
+        this.solrQuery = solrQuery;
     }
 
     @Override
