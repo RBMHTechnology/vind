@@ -36,6 +36,10 @@ public abstract class Facet {
     protected String name;
     protected String[] tagedPivots = new String[0];
 
+    public String getType() {
+        return this.getClass().getSimpleName();
+    }
+
     /**
      * Returns the name of the facet.
      * @return String custom name of the specific facet.
@@ -80,6 +84,10 @@ public abstract class Facet {
          */
         public FieldDescriptor<T> getFieldDescriptor() {
             return fieldDescriptor;
+        }
+
+        public String getFieldName() {
+            return fieldDescriptor.getName();
         }
 
         @Override
@@ -176,6 +184,10 @@ public abstract class Facet {
             return fieldDescriptor;
         }
 
+        public String getFieldName() {
+            return fieldDescriptor.getName();
+        }
+
         /**
          * Get the starting value of the range.
          * @return T Numeric value. T must extend {@link Number}.
@@ -235,6 +247,10 @@ public abstract class Facet {
          */
         public FieldDescriptor getFieldDescriptor() {
             return fieldDescriptor;
+        }
+
+        public String getFieldName() {
+            return fieldDescriptor.getName();
         }
 
         /**
@@ -428,6 +444,10 @@ public abstract class Facet {
             return fieldDescriptor;
         }
 
+        public String getFieldName() {
+            return fieldDescriptor.getName();
+        }
+
         public Set<Interval<T>> getIntervals() {
             return intervals;
         }
@@ -469,6 +489,10 @@ public abstract class Facet {
          */
         public FieldDescriptor getFieldDescriptor() {
             return fieldDescriptor;
+        }
+
+        public String getFieldName() {
+            return fieldDescriptor.getName();
         }
     }
 

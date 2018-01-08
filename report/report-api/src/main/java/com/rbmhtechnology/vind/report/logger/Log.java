@@ -1,18 +1,19 @@
 package com.rbmhtechnology.vind.report.logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rbmhtechnology.vind.api.query.FulltextSearch;
-import com.rbmhtechnology.vind.api.query.division.Page;
-import com.rbmhtechnology.vind.api.query.division.ResultSubset;
-import com.rbmhtechnology.vind.api.query.division.Slice;
+import com.rbmhtechnology.vind.api.query.facet.Facet;
+import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
-import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.report.logger.entry.FullTextEntry;
 import com.rbmhtechnology.vind.report.model.application.Application;
 import com.rbmhtechnology.vind.report.model.interaction.Interaction;
-import com.rbmhtechnology.vind.report.model.request.FullTextRequest;
-import com.rbmhtechnology.vind.report.model.request.SuggestionRequest;
+import com.rbmhtechnology.vind.report.model.request.*;
+import com.rbmhtechnology.vind.report.model.request.facet.FacetMixin;
+import com.rbmhtechnology.vind.report.model.request.filter.AndFilterMixIn;
+import com.rbmhtechnology.vind.report.model.request.filter.FilterMixIn;
+import com.rbmhtechnology.vind.report.model.request.filter.NotFilterMixIn;
+import com.rbmhtechnology.vind.report.model.request.filter.OrFilterMixIn;
 import com.rbmhtechnology.vind.report.model.response.Response;
 import com.rbmhtechnology.vind.report.model.session.Session;
 
@@ -30,7 +31,13 @@ import java.util.Map;
 public class Log {
 
     public static final String SOLR_DATE_TIME_FORMAT = "yyyy-MM-dd'T'hh:mm:ss'Z'";
-    private ObjectMapper mapper = new ObjectMapper();
+    private ObjectMapper mapper = new ObjectMapper()
+            .addMixIn(Filter.class, FilterMixIn.class)
+            .addMixIn(Filter.AndFilter.class, AndFilterMixIn.class)
+            .addMixIn(Filter.OrFilter.class, OrFilterMixIn.class)
+            .addMixIn(Filter.NotFilter.class, NotFilterMixIn.class)
+            .addMixIn(Facet.class, FacetMixin.class)
+            ;
 
     private Map<String,Object> values;
 
@@ -72,7 +79,7 @@ public class Log {
         try {
             return mapper.writeValueAsString(values);
         } catch (Exception e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
 

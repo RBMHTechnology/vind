@@ -3,9 +3,12 @@
  */
 package com.rbmhtechnology.vind.report.logger.entry;
 
+import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
+import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.api.result.BeanSearchResult;
 import com.rbmhtechnology.vind.api.result.SearchResult;
+import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.report.model.application.Application;
 import com.rbmhtechnology.vind.report.model.request.FullTextRequest;
 import com.rbmhtechnology.vind.report.model.request.Paging;
@@ -15,6 +18,7 @@ import com.rbmhtechnology.vind.report.model.session.Session;
 
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 /**
  * Created on 03.10.17.
@@ -27,27 +31,28 @@ public class FullTextEntry implements LogEntry{
     private ZonedDateTime timeStamp;
     private FullTextRequest request;
     private Response response;
-    private String sorting;
+    private List<Sort> sorting;
     private Paging paging;
 
 
-    public FullTextEntry(Application application, String source, FulltextSearch search, SearchResult result, ZonedDateTime start, ZonedDateTime end, Session session) {
+    public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, String source, FulltextSearch search, SearchResult result, ZonedDateTime start, ZonedDateTime end, Session session) {
         this.application = application;
         this.session = session;
         this.timeStamp = start;
-        this.request = new FullTextRequest(search,source);
+        this.request = new FullTextRequest(search,server.getRawQuery(search,factory), source);
         this.response = new Response(result.getNumOfResults(), start.until(end, ChronoUnit.MILLIS));
-        this.sorting = search.getSorting().toString();
+        this.sorting = search.getSorting();
         this.paging = new Paging(search.getResultSet());
     }
 
-    public FullTextEntry(Application application, String source, FulltextSearch search, BeanSearchResult result, ZonedDateTime start, ZonedDateTime end, Session session) {
+    public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, String source, FulltextSearch search, BeanSearchResult result, ZonedDateTime start, ZonedDateTime end, Session session) {
         this.application = application;
         this.session = session;
         this.timeStamp = start;
-        this.request = new FullTextRequest(search,source);
+        this.request = new FullTextRequest(search,server.getRawQuery(search,factory), source);
         this.response = new Response(result.getNumOfResults(), start.until(end, ChronoUnit.MILLIS));
-        this.sorting = search.getSorting().toString();
+        this.sorting = search.getSorting();
+        this.paging = new Paging(search.getResultSet());
     }
 
     @Override
@@ -79,7 +84,7 @@ public class FullTextEntry implements LogEntry{
         return response;
     }
 
-    public String getSorting() {
+    public List<Sort> getSorting() {
         return sorting;
     }
 

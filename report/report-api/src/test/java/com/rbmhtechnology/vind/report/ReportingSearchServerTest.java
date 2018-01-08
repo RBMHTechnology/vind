@@ -3,6 +3,7 @@ package com.rbmhtechnology.vind.report;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.model.*;
 import com.rbmhtechnology.vind.report.model.application.SimpleApplication;
 import com.rbmhtechnology.vind.report.logger.Log;
@@ -16,6 +17,7 @@ import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 
 import static com.rbmhtechnology.vind.api.query.filter.Filter.*;
 import static org.junit.Assert.assertEquals;
@@ -32,8 +34,7 @@ public class ReportingSearchServerTest extends SearchTestcase {
     @Test
     public void testSuggestionQueryReporting() {
         thrown.expect(RuntimeException.class);
-        thrown.expectMessage("No ReportWriter in classpath");
-        SearchServer server = new ReportingSearchServer(testSearchServer.getSearchServer());
+        final SearchServer server = new ReportingSearchServer(testSearchServer.getSearchServer());
     }
 
     @Test
@@ -54,8 +55,8 @@ public class ReportingSearchServerTest extends SearchTestcase {
 
         server.setSession(new SimpleSession("456"));
 
-        server.execute(Search.fulltext("Hello World").filter(or(eq(textField,"testFilter"), not(prefix("textField","pref")))).facet(textField),factory);
-
+        server.execute(Search.fulltext("Hello World").filter(or(eq(textField,"testFilter"), not(prefix("textField","pref")))).facet(textField).sort(Sort.desc(textField)),factory);
+        logger.logs.get(1).toJson();
         assertEquals(2, logger.logs.size());
         assertEquals("app", ((SimpleApplication) logger.logs.get(0).getValues().get("application")).getId());
         assertEquals("123", ((SimpleSession)logger.logs.get(0).getValues().get("session")).getSessionId());
@@ -71,6 +72,11 @@ public class ReportingSearchServerTest extends SearchTestcase {
         @Override
         public void log(Log log) {
             logs.add(log);
+        }
+
+        @Override
+        public Collection<Log> getLogs() {
+            return logs;
         }
     }
 

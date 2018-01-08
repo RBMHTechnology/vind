@@ -2,6 +2,7 @@ package com.rbmhtechnology.vind.report.logger;
 
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 
@@ -27,5 +28,7 @@ public abstract class ReportWriter { //TODO could be an interface
     }
 
     public abstract void log(Log log);
+
+    public abstract Collection<Log> getLogs();
 
 }

@@ -3,6 +3,7 @@
  */
 package com.rbmhtechnology.vind.report.model.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.rbmhtechnology.vind.api.query.division.Page;
 import com.rbmhtechnology.vind.api.query.division.ResultSubset;
 import com.rbmhtechnology.vind.api.query.division.Slice;
@@ -10,6 +11,7 @@ import com.rbmhtechnology.vind.api.query.division.Slice;
 /**
  * Created on 03.10.17.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Paging {
 
     private long index;
@@ -31,5 +33,17 @@ public class Paging {
 
             default: break;
         }
+    }
+
+    public long getIndex() {
+        return index;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public String getType() {
+        return type.name();
     }
 }
