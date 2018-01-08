@@ -3,22 +3,23 @@
  */
 package com.rbmhtechnology.vind.report.model.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 
 /**
  * Created on 02.10.17.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class FullTextRequest implements SearchRequest{
 
     private FulltextSearch search;
     private String query;
-    private Filter filter;
+    private com.rbmhtechnology.vind.api.query.filter.Filter filter;
     private Map<String, Facet> facets;
     private String solrQuery;
     private String source;
@@ -27,7 +28,7 @@ public class FullTextRequest implements SearchRequest{
         this.search = search;
         this.query = Objects.nonNull(this.search.getSearchString()) ? this.search.getSearchString() : "*";
         if (Objects.nonNull(this.search.getFilter())) {
-            this.filter = this.search.getFilter();
+            this.filter = this.search.getFilter();//com.rbmhtechnology.vind.report.model.request.filter.Filter.logFilter(this.search.getFilter()) ;
         }
         this.facets = this.search.getFacets();
         this.source = source;

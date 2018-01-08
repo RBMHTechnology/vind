@@ -54,7 +54,7 @@ public class ReportingSearchServerTest extends SearchTestcase {
         server.setSession(new SimpleSession("456"));
 
         server.execute(Search.fulltext("Hello World").filter(or(eq(textField,"testFilter"), not(prefix("textField","pref")))).facet(textField),factory);
-
+        logger.logs.get(1).toJson();
         assertEquals(2, logger.logs.size());
         assertEquals("app", ((SimpleApplication) logger.logs.get(0).getValues().get("application")).getId());
         assertEquals("123", ((SimpleSession)logger.logs.get(0).getValues().get("session")).getSessionId());
