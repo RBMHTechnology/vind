@@ -34,4 +34,16 @@ public class Paging {
             default: break;
         }
     }
+
+    public long getIndex() {
+        return index;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public String getType() {
+        return type.name();
+    }
 }
