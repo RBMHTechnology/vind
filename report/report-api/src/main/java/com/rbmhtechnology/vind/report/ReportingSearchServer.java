@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.report;
 
+import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.ServiceProvider;
@@ -117,7 +118,7 @@ public class ReportingSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final BeanSearchResult<T> result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new Log(new FullTextEntry(application, source ,search, result, start, end, session)));
+        logger.log(new Log(new FullTextEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, source ,search, result, start, end, session)));
         return result;
     }
 
@@ -126,8 +127,18 @@ public class ReportingSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SearchResult result = server.execute(search, factory);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new Log(new FullTextEntry(application, source ,search, result, start, end, session)));
+        logger.log(new Log(new FullTextEntry(this.server, factory, application, source ,search, result, start, end, session)));
         return result;
+    }
+
+    @Override
+    public String getRawQuery(FulltextSearch search, DocumentFactory factory) {
+        return server.getRawQuery(search,factory);
+    }
+
+    @Override
+    public <T> String getRawQuery(FulltextSearch search, Class<T> c) {
+        return server.getRawQuery(search,c);
     }
 
     @Override

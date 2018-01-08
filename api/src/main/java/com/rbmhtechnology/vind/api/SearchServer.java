@@ -245,6 +245,23 @@ public abstract class SearchServer implements Closeable {
     public abstract SearchResult execute(FulltextSearch search, DocumentFactory factory);
 
     /**
+     * Return the raw query sent produced by the server implementation.
+     * @param search {@link FulltextSearch} search query configuration object.
+     * @param factory {@link DocumentFactory} mapping the index documents and the result type.
+     * @return {@link String} Raw query
+     */
+    public abstract String getRawQuery(FulltextSearch search, DocumentFactory factory);
+
+    /**
+     * Return the raw query sent produced by the server implementation.
+     * @param search {@link FulltextSearch} search query configuration object.
+     * @param c annotated class mapping the index documents and the result type.
+     * @param <T> annotated class type.
+     * @return {@link String} Raw query
+     */
+    public abstract <T> String getRawQuery(FulltextSearch search, Class<T> c);
+
+    /**
      * Executes a suggestion search based on an annotated class.
      * @param search ExecutableSuggestionSearch object with the query configuration.
      * @param c Annotated class type to be used as mapping.

@@ -310,6 +310,19 @@ public class SolrSearchServer extends SearchServer {
         }
     }
 
+    @Override
+    public String getRawQuery(FulltextSearch search, DocumentFactory factory) {
+        final SolrQuery query = buildSolrQuery(search, factory);
+        return query.toString();
+    }
+
+    @Override
+    public <T> String getRawQuery(FulltextSearch search, Class<T> c) {
+        final DocumentFactory factory = AnnotationUtil.createDocumentFactory(c);
+        final SolrQuery query = buildSolrQuery(search, factory);
+        return query.toString();
+    }
+
     protected SolrQuery buildSolrQuery(FulltextSearch search, DocumentFactory factory) {
         //build query
         final SolrQuery query = new SolrQuery();
