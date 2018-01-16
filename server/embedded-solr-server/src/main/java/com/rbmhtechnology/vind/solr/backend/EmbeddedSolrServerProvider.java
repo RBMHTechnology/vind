@@ -41,19 +41,17 @@ public class EmbeddedSolrServerProvider implements SolrServerProvider {
 
             // Needed for the tests. For some reason Solr is not replacing the solrConfig.xml ${runtimeLib} property with
             // the system property value but with the defined in the core.properties file.
-            final String runtimeLib = System.getProperty("runtimeLib");
-            if (Objects.nonNull(runtimeLib) && runtimeLib.equals("false")){
-                final Properties properties = new Properties();
-                final String corePropertiesFile = String.join("/",tmpSolrHome.toAbsolutePath().toString(),CORE_NAME,CORE_PROPERTIES_FILE);
-                final FileInputStream iS = new FileInputStream(corePropertiesFile);
-                properties.load(iS);
-                iS.close();
-                properties.setProperty("runtimeLib", "false");
+            //TODO could be nicer ...
+            final Properties properties = new Properties();
+            final String corePropertiesFile = String.join("/",tmpSolrHome.toAbsolutePath().toString(),CORE_NAME,CORE_PROPERTIES_FILE);
+            final FileInputStream iS = new FileInputStream(corePropertiesFile);
+            properties.load(iS);
+            iS.close();
+            properties.setProperty("runtimeLib", "false");
 
-                final FileOutputStream oS = new FileOutputStream(tmpSolrHome.toAbsolutePath().toString()+ "/core/" + CORE_PROPERTIES_FILE);
-                properties.store(oS, null);
-                oS.close();
-            }
+            final FileOutputStream oS = new FileOutputStream(tmpSolrHome.toAbsolutePath().toString()+ "/core/" + CORE_PROPERTIES_FILE);
+            properties.store(oS, null);
+            oS.close();
 
             final CoreContainer container = CoreContainer.createAndLoad(tmpSolrHome, tmpSolrConfig);
             return new SolrClientWrapper(container, CORE_NAME, tmpSolrHome);
