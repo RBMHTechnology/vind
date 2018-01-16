@@ -3,6 +3,7 @@ package com.rbmhtechnology.vind.report.logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.report.logger.entry.FullTextEntry;
@@ -14,6 +15,7 @@ import com.rbmhtechnology.vind.report.model.request.filter.AndFilterMixIn;
 import com.rbmhtechnology.vind.report.model.request.filter.FilterMixIn;
 import com.rbmhtechnology.vind.report.model.request.filter.NotFilterMixIn;
 import com.rbmhtechnology.vind.report.model.request.filter.OrFilterMixIn;
+import com.rbmhtechnology.vind.report.model.request.sort.SortMixIn;
 import com.rbmhtechnology.vind.report.model.response.Response;
 import com.rbmhtechnology.vind.report.model.session.Session;
 
@@ -37,6 +39,7 @@ public class Log {
             .addMixIn(Filter.OrFilter.class, OrFilterMixIn.class)
             .addMixIn(Filter.NotFilter.class, NotFilterMixIn.class)
             .addMixIn(Facet.class, FacetMixin.class)
+            .addMixIn(Sort.class, SortMixIn.class)
             ;
 
     private Map<String,Object> values;
