@@ -29,7 +29,7 @@ public class SearchApplication {
 		server.commit();
 
 		//this search should retrieve news items that should match the search term best
-		FulltextSearch search = Search.fulltext("redbull release");
+		FulltextSearch search = Search.fulltext("vind release");
 
 		BeanSearchResult<NewsItem> result = server.execute(search, NewsItem.class);
 
@@ -40,7 +40,7 @@ public class SearchApplication {
 
 		//now we want to have also the facets for category and kind.
 		//additionally we change the query
-		search.text("redbull");
+		search.text("vind");
 		search.facet("category","kind");
 
 		result = server.execute(search, NewsItem.class);
