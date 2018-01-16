@@ -39,7 +39,6 @@ public class SearchService implements AutoCloseable {
 
         //a single value date field
         this.created = new FieldDescriptorBuilder()
-                .setFacet(true)
                 .buildDateField("created");
 
         //a multivalue text field used for fulltext and facet.
@@ -64,8 +63,8 @@ public class SearchService implements AutoCloseable {
     }
 
     public void index() {
-        server.index(createNewsItem("1", "New Vind instance needed", ZonedDateTime.now().minusMonths(3), 1, "coding"));
-        server.index(createNewsItem("2", "Vind instance available", ZonedDateTime.now(), 2, "coding", "release"));
+        server.indexBean(createNewsItem("1", "New Vind instance needed", ZonedDateTime.now().minusMonths(3), 1, "coding"));
+        server.indexBean(createNewsItem("2", "Vind instance available", ZonedDateTime.now(), 2, "coding", "release"));
         server.commit();
     }
 
