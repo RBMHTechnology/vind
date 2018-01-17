@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
+import com.rbmhtechnology.vind.api.query.suggestion.DescriptorSuggestionSearch;
+import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
+import com.rbmhtechnology.vind.api.query.suggestion.StringSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.report.logger.entry.FullTextEntry;
@@ -42,10 +45,9 @@ public class Log {
             .addMixIn(Sort.class, SortMixIn.class)
             ;
 
-    private Map<String,Object> values;
+    private final Map<String,Object> values = new HashMap<>();
 
     public Log(FullTextEntry logEntry) {
-        values = new HashMap<>();
         values.put("application", logEntry.getApplication());
         values.put("session", logEntry.getSession());
         //values.put("module", module);
@@ -57,8 +59,7 @@ public class Log {
         values.put("response",logEntry.getResponse());
     }
 
-    public Log(Application application, SuggestionSearch search, SuggestionResult result, ZonedDateTime start, ZonedDateTime end, Session session) {
-        values = new HashMap<>();
+    public Log(Application application, ExecutableSuggestionSearch search, SuggestionResult result, ZonedDateTime start, ZonedDateTime end, Session session) {
         values.put("application", application);
         values.put("session", session);
         //values.put("module", module);
@@ -69,7 +70,6 @@ public class Log {
     }
 
     public Log(Application application, Interaction interaction, ZonedDateTime start, Session session) {
-        values = new HashMap<>();
         values.put("application", application);
         values.put("session", session);
         //values.put("module", module);

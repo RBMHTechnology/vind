@@ -143,7 +143,7 @@ public class ReportingSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         SuggestionResult result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new Log(application, (SuggestionSearch) search, result, start, end, session));
+        logger.log(new Log(application, search, result, start, end, session));
         return result;
     }
 
@@ -152,7 +152,7 @@ public class ReportingSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SuggestionResult result = server.execute(search, assets);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new Log(application, (SuggestionSearch) search, result, start, end, session));
+        logger.log(new Log(application, search, result, start, end, session));
         return result;
     }
 
@@ -161,7 +161,7 @@ public class ReportingSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SuggestionResult result = server.execute(search, assets, childFactory);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new Log(application, (SuggestionSearch) search, result, start, end, session));
+        logger.log(new Log(application, search, result, start, end, session));
         return result;
     }
 

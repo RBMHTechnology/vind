@@ -45,6 +45,7 @@ public class FullTextRequest implements SearchRequest{
         return filter;
     }
 
+    @Override
     public Map<String, Facet> getFacets() {
         return facets;
     }
