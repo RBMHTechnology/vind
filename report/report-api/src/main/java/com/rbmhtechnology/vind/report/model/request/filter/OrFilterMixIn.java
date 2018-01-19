@@ -14,7 +14,7 @@ import java.util.Set;
 public abstract class OrFilterMixIn extends Filter.OrFilter {
 
     /**
-     * Creates an instance of {@link OrFilter} of two given filters.
+     * Creates an instance of {@link com.rbmhtechnology.vind.api.query.filter.Filter.OrFilter OrFilter} of two given filters.
      *
      * @param a {@link Filter} to be one part of the OR query.
      * @param b {@link Filter} to be one part of the OR query.
