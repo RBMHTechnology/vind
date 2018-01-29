@@ -271,7 +271,7 @@ public class SolrUtils {
             return termFacetQuery.stream().toArray(String[]::new);
         }
 
-        public static HashMap<String, Object> buildJsonTermFacet(Map<String, Facet> facets, DocumentFactory factory, DocumentFactory childFactory, String searchContext) {
+        public static HashMap<String, Object> buildJsonTermFacet(Map<String, Facet> facets, int facetLimit, DocumentFactory factory, DocumentFactory childFactory, String searchContext) {
             final List<HashMap<String, String>> termFacetQuery = facets.entrySet().stream()
                     .filter(facet -> facet.getValue() instanceof TermFacet)
                     //.map(facet -> facet.setValue((Facet.TermFacet) facet.getValue()))
@@ -294,6 +294,7 @@ public class SolrUtils {
                             return null;
                         }
                         termFacet.put("field", fieldName);
+                        termFacet.put("limit", String.valueOf(facetLimit));
 
                         return termFacet;
                     })
@@ -306,6 +307,7 @@ public class SolrUtils {
                         final HashMap<String, String> termFacet = new HashMap<>();
                         termFacet.put("type","terms");
                         termFacet.put("field", Fieldname.TYPE);
+                        termFacet.put("limit", String.valueOf(facetLimit));
                         return termFacet;
                     })
                     .filter(Objects::nonNull)

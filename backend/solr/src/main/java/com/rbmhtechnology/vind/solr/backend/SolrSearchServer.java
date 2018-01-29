@@ -515,7 +515,7 @@ public class SolrSearchServer extends SearchServer {
                     });
 
             //facet fields
-            final HashMap<String, Object> strings = SolrUtils.Query.buildJsonTermFacet(search.getFacets(), factory, search.getChildrenFactory(), searchContext);
+            final HashMap<String, Object> strings = SolrUtils.Query.buildJsonTermFacet(search.getFacets(), search.getFacetLimit(), factory, search.getChildrenFactory(), searchContext);
 
             query.add("json.facet", strings.toString().replaceAll("=",":"));
             //facet Subdocument count
