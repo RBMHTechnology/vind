@@ -2,6 +2,7 @@ package com.rbmhtechnology.vind.solr.backend;
 
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.solr.backend.SolrServerProvider;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
@@ -38,12 +39,24 @@ public class RemoteSolrServerProvider implements SolrServerProvider {
             collection = solrCollection;
         }
 
+        final String connectionTimeout = SearchConfiguration.get(SearchConfiguration.SERVER_CONNECTION_TIMEOUT);
+        final String soTimeout = SearchConfiguration.get(SearchConfiguration.SERVER_SO_TIMEOUT);
+
         if(SearchConfiguration.get(SearchConfiguration.SERVER_SOLR_CLOUD, false)) {
             log.info("Instantiating solr cloud client: {}", host);
 
             if(collection != null) {
                 CloudSolrClient client = new CloudSolrClient(host);
                 client.setDefaultCollection(collection);
+
+                if(StringUtils.isNotEmpty(connectionTimeout)) {
+                    client.setZkConnectTimeout(Integer.valueOf(connectionTimeout));
+                }
+
+                if(StringUtils.isNotEmpty(soTimeout)) {
+                    client.setZkClientTimeout(Integer.valueOf(soTimeout));
+                }
+
                 return client;
             } else {
                 log.error(SearchConfiguration.SERVER_COLLECTION + " has to be set");

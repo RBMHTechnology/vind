@@ -19,6 +19,8 @@ public class SearchConfiguration {
     public static final String SERVER_COLLECTION = "server.collection";
     public static final String SERVER_HOST = "server.host";
     public static final String SERVER_PROVIDER = "server.provider";
+    public static final String SERVER_CONNECTION_TIMEOUT = "server.connection.timeout";
+    public static final String SERVER_SO_TIMEOUT = "server.so.timeout";
 
     public static final String SERVER_SOLR_CLOUD = "server.solr.cloud";
     @Deprecated
