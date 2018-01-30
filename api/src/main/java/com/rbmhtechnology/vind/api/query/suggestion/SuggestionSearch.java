@@ -4,7 +4,9 @@ import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Class to prepare suggestion queries.
@@ -23,6 +25,24 @@ public class SuggestionSearch {
      */
     public SuggestionSearch() {
         this.input = "*";
+    }
+
+    /**
+     * Creates a clone of the actual suggestion search query.
+     * @return A new {@link SuggestionSearch} instance.
+     */
+    public SuggestionSearch copy() {
+        final SuggestionSearch copy = new SuggestionSearch();
+
+        copy.input = new String(this.input);
+        copy.limit = limit;
+        if (Objects.nonNull(this.getFilter())) {
+            copy.filter = this.getFilter().clone();
+        }
+        copy.suggestionFields = this.suggestionFields;
+        copy.suggestionStringFields = this.suggestionStringFields;
+        copy.searchContext = this.searchContext;
+        return copy;
     }
 
     /**

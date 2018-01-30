@@ -21,6 +21,9 @@ public abstract class Sort {
 
     private String type;
 
+    @Override
+    public abstract Sort clone();
+
     /**
      * Sets a {@link SpecialSort} object direction to ascending.
      * @param sort specific {@link SpecialSort} object.
@@ -188,6 +191,12 @@ public abstract class Sort {
                 return String.format(scoreString,this.direction,this.descriptor.getName());
             }
 
+            @Override
+            public Sort clone() {
+                final ScoredDate copy = new ScoredDate(this.descriptor);
+                copy.direction = this.direction;
+                return copy;
+            }
         }
 
         public static class DistanceSort extends SpecialSort {
@@ -212,6 +221,13 @@ public abstract class Sort {
         }
 
         public abstract void setDirection(Direction direction);
+
+        @Override
+        public Sort clone() {
+            final DistanceSort copy = new DistanceSort();
+            copy.direction = this.direction;
+            return copy;
+        }
     }
 
     /**
@@ -246,6 +262,12 @@ public abstract class Sort {
                     "'field':'%s'" +
                     "}";
             return String.format(scoreString,this.direction,this.field);
+        }
+
+        @Override
+        public Sort clone() {
+            final SimpleSort copy = new SimpleSort(new String(this.field), this.direction);
+            return copy;
         }
     }
     /**
@@ -284,6 +306,12 @@ public abstract class Sort {
                     "\"field\":\"%s\"" +
                     "}";
             return String.format(scoreString,this.direction,this.descriptor.getName());
+        }
+
+        @Override
+        public Sort clone() {
+            final DescriptorSort copy = new DescriptorSort(this.descriptor, this.direction);
+            return copy;
         }
     }
 

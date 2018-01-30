@@ -53,17 +53,22 @@ public class FulltextSearch {
     }
 
     /**
-     * Creates a copy of the actual fulltext search query.
+     * Creates a clone of the actual fulltext search query.
      * @return A new {@link FulltextSearch} instance.
      */
     public FulltextSearch copy() {
         final FulltextSearch copy = new FulltextSearch();
-        copy.searchString = this.searchString;
+
+        copy.searchString = new String(this.searchString);
         copy.resultSet = resultSet.copy();
-        copy.filter = this.getFilter();
-        copy.sorting = this.getSorting();
-        copy.facets = this.getFacets();
-        //TODO there are some copy fields missing?
+        if (Objects.nonNull(this.getFilter())) {
+            copy.filter = this.getFilter().clone();
+        }
+        copy.sorting = this.getSorting().stream().map( s -> s.clone()).collect(Collectors.toList());
+
+
+        this.getFacets().keySet().stream().forEach(k -> copy.facets.put(k,this.getFacets().get(k).clone()));
+        
         return copy;
     }
 
