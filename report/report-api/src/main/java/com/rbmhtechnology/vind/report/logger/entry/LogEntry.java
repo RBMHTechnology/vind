@@ -20,7 +20,7 @@ public interface LogEntry {
     ZonedDateTime getTimeStamp();
     SearchRequest getRequest();
 
-    public enum EntryType {
+    enum EntryType {
         fulltext, suggestion, interaction
     }
 }

@@ -64,7 +64,7 @@ public class ReportingSearchServer extends SearchServer {
 
             if(applicationId == null) {
                 log.error("property '{}' has to be set for report logger", APPLICATION_ID);
-                throw new RuntimeException("property '" + APPLICATION_ID + "' has to be set for report logger");
+                throw new RuntimeException("Property '" + APPLICATION_ID + "' has to be set for report logger");
             }
 
             application = new SimpleApplication(applicationId);

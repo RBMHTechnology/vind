@@ -724,7 +724,7 @@ public abstract class Facet {
 
         @Override
         public Facet clone() {
-            return new PivotFacet(this.name, (FieldDescriptor<?>[])this.fieldDescriptors.toArray());
+            return new PivotFacet(this.name, this.fieldDescriptors.toArray(new FieldDescriptor<?>[this.fieldDescriptors.size()]));
         }
     }
 

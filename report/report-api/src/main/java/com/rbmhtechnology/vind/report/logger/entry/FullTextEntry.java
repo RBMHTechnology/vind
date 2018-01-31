@@ -39,7 +39,7 @@ public class FullTextEntry implements LogEntry{
         this.application = application;
         this.session = session;
         this.timeStamp = start;
-        this.request = new FullTextRequest(search,server.getRawQuery(search,factory), source);
+        this.request = new FullTextRequest(search.copy(), server.getRawQuery(search,factory), source);
         this.response = new Response(result.getNumOfResults(), start.until(end, ChronoUnit.MILLIS));
         this.sorting = search.getSorting();
         this.paging = new Paging(search.getResultSet());
@@ -49,7 +49,8 @@ public class FullTextEntry implements LogEntry{
         this.application = application;
         this.session = session;
         this.timeStamp = start;
-        this.request = new FullTextRequest(search,server.getRawQuery(search,factory), source);
+
+        this.request = new FullTextRequest(search.copy(), server.getRawQuery(search,factory), source);
         this.response = new Response(result.getNumOfResults(), start.until(end, ChronoUnit.MILLIS));
         this.sorting = search.getSorting();
         this.paging = new Paging(search.getResultSet());
