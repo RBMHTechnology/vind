@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.report.logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
@@ -34,6 +35,7 @@ public class Log {
 
     public static final String SOLR_DATE_TIME_FORMAT = "yyyy-MM-dd'T'hh:mm:ss'Z'";
     private ObjectMapper mapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
             .addMixIn(Filter.class, FilterMixIn.class)
             .addMixIn(Filter.AndFilter.class, AndFilterMixIn.class)
             .addMixIn(Filter.OrFilter.class, OrFilterMixIn.class)
