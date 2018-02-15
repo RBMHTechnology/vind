@@ -28,7 +28,4 @@ public abstract class ReportWriter { //TODO could be an interface
     }
 
     public abstract void log(Log log);
-
-    public abstract Collection<Log> getLogs();
-
 }

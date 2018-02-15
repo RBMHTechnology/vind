@@ -16,16 +16,12 @@ import java.util.List;
 public class LogReportWriter extends ReportWriter {
 
     Logger logger = LoggerFactory.getLogger(LogReportWriter.class);
-    private List<Log> logs = new ArrayList<>();
+
+    public LogReportWriter() {}
 
     @Override
     public void log(Log log) {
-        logs.add(log);
         logger.info(log.toJson());
     }
 
-    @Override
-    public Collection<Log> getLogs() {
-        return logs;
-    }
 }

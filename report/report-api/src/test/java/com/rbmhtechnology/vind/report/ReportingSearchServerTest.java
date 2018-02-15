@@ -3,14 +3,16 @@ package com.rbmhtechnology.vind.report;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.Search;
-import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.api.result.BeanSearchResult;
-import com.rbmhtechnology.vind.model.*;
-import com.rbmhtechnology.vind.report.model.NewsItem;
-import com.rbmhtechnology.vind.report.model.application.SimpleApplication;
+import com.rbmhtechnology.vind.model.DocumentFactory;
+import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
+import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
+import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
 import com.rbmhtechnology.vind.report.logger.Log;
 import com.rbmhtechnology.vind.report.logger.ReportWriter;
+import com.rbmhtechnology.vind.report.model.NewsItem;
+import com.rbmhtechnology.vind.report.model.application.SimpleApplication;
 import com.rbmhtechnology.vind.report.model.request.SearchRequest;
 import com.rbmhtechnology.vind.report.model.session.SimpleSession;
 import com.rbmhtechnology.vind.test.SearchTestcase;
@@ -101,11 +103,6 @@ public class ReportingSearchServerTest extends SearchTestcase {
         @Override
         public void log(Log log) {
             logs.add(log);
-        }
-
-        @Override
-        public Collection<Log> getLogs() {
-            return logs;
         }
     }
 
