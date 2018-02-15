@@ -13,7 +13,7 @@ public class SearchApplication {
 			searchService.index();
 
 			//search
-			SearchResult result = searchService.search("redbull", 1);
+			SearchResult result = searchService.search("vind", 1);
 
 			System.out.println(result);
 		}

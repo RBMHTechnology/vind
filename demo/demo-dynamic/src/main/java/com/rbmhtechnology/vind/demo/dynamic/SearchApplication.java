@@ -4,6 +4,9 @@ import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.model.*;
+import com.rbmhtechnology.vind.report.ReportingSearchServer;
+import com.rbmhtechnology.vind.report.logger.ReportWriter;
+import com.rbmhtechnology.vind.report.writer.LogReportWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +37,8 @@ public class SearchApplication {
 
         //get an instance of a server (in this case a embedded solr server)
         try (SearchServer server = SearchServer.getInstance()) {
+            final ReportWriter writer = new LogReportWriter();
+            final ReportingSearchServer reportingSearchServer = new ReportingSearchServer(server);
             log.info("Indexing some data");
             server.index(news.createDoc("1")
                             .setValue(title, "Headline 1")
@@ -46,11 +51,11 @@ public class SearchApplication {
             server.commit();
 
 
-            final SuggestionResult fullSuggest = server.execute(Search.suggest().fields(title, category), news);
+            final SuggestionResult fullSuggest = reportingSearchServer.execute(Search.suggest().fields(title, category), news);
             log.info("Suggestion: {}", fullSuggest.get(title));
             log.info("Suggestion: {}", fullSuggest.get(category));
 
-            final SuggestionResult titleSuggestions = server.execute(Search.suggest().text("Ar").fields(title, category), news);
+            final SuggestionResult titleSuggestions = reportingSearchServer.execute(Search.suggest().text("Ar").fields(title, category), news);
             log.info("Suggestion: {}", titleSuggestions.get(title));
 
         }
