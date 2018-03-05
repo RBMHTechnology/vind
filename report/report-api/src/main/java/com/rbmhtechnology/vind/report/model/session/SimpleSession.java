@@ -12,6 +12,7 @@ public class SimpleSession implements Session {
         this.sessionId = sessionId;
     }
 
+    @Override
     public String getSessionId() {
         return sessionId;
     }

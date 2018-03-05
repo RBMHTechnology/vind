@@ -1,8 +1,8 @@
 package com.rbmhtechnology.vind.report.logger;
 
+import com.rbmhtechnology.vind.report.logger.entry.LogEntry;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 
@@ -27,5 +27,5 @@ public abstract class ReportWriter { //TODO could be an interface
         return server;
     }
 
-    public abstract void log(Log log);
+    public abstract void log(LogEntry log);
 }

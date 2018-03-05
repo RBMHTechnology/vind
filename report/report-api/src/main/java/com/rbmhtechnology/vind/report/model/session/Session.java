@@ -6,4 +6,6 @@ package com.rbmhtechnology.vind.report.model.session;
  */
 public interface Session {
 
+    String getSessionId();
+
 }

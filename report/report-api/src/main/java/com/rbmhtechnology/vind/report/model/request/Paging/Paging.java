@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2017 Redlink GmbH.
  */
-package com.rbmhtechnology.vind.report.model.request;
+package com.rbmhtechnology.vind.report.model.request.Paging;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.rbmhtechnology.vind.api.query.division.Page;
@@ -17,6 +17,9 @@ public class Paging {
     private long index;
     private long size;
     private ResultSubset.DivisionType type;
+
+    public Paging() {
+    }
 
     public Paging(ResultSubset resultSet) {
         this.type = resultSet.getType();

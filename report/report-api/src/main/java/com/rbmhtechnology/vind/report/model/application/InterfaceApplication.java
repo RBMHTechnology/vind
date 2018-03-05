@@ -14,6 +14,9 @@ public class InterfaceApplication implements Application {
     @JsonProperty("interface")
     private Interface iface;
 
+    public InterfaceApplication() {
+    }
+
     public InterfaceApplication(String name, String version, Interface iface) {
         this.name = name;
         this.version = version;
@@ -30,5 +33,17 @@ public class InterfaceApplication implements Application {
 
     public Interface getIface() {
         return iface;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public void setIface(Interface iface) {
+        this.iface = iface;
     }
 }

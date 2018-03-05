@@ -11,6 +11,8 @@ import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
 import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
 import com.rbmhtechnology.vind.report.logger.Log;
 import com.rbmhtechnology.vind.report.logger.ReportWriter;
+import com.rbmhtechnology.vind.report.logger.entry.FullTextEntry;
+import com.rbmhtechnology.vind.report.logger.entry.LogEntry;
 import com.rbmhtechnology.vind.report.model.NewsItem;
 import com.rbmhtechnology.vind.report.model.application.SimpleApplication;
 import com.rbmhtechnology.vind.report.model.request.SearchRequest;
@@ -64,11 +66,11 @@ public class ReportingSearchServerTest extends SearchTestcase {
         server.execute(Search.fulltext("Hello World").filter(or(eq(textField,"testFilter"), not(prefix("textField","pref")))).facet(textField).sort(Sort.desc(textField)),factory);
         //logger.logs.get(1).toJson();
         assertEquals(2, logger.logs.size());
-        assertEquals("app", ((SimpleApplication) logger.logs.get(0).getValues().get("application")).getId());
-        assertEquals("123", ((SimpleSession)logger.logs.get(0).getValues().get("session")).getSessionId());
-        assertEquals("*", ((SearchRequest)logger.logs.get(0).getValues().get("request")).getQuery());
-        assertEquals("456", ((SimpleSession)logger.logs.get(1).getValues().get("session")).getSessionId());
-        assertEquals("Hello World", ((SearchRequest)logger.logs.get(1).getValues().get("request")).getQuery());
+        assertEquals("app", ((SimpleApplication) logger.logs.get(0).getApplication()).getId());
+        assertEquals("123", logger.logs.get(0).getSession().getSessionId());
+        assertEquals("*", ((FullTextEntry)logger.logs.get(0)).getRequest().getQuery());
+        assertEquals("456", logger.logs.get(1).getSession().getSessionId());
+        assertEquals("Hello World", ((FullTextEntry)logger.logs.get(0)).getRequest().getQuery());
     }
 
     @Test
@@ -98,10 +100,10 @@ public class ReportingSearchServerTest extends SearchTestcase {
 
     public class TestReportWriter extends ReportWriter {
 
-        public ArrayList<Log> logs = new ArrayList<>();
+        public ArrayList<LogEntry> logs = new ArrayList<>();
 
         @Override
-        public void log(Log log) {
+        public void log(LogEntry log) {
             logs.add(log);
         }
     }

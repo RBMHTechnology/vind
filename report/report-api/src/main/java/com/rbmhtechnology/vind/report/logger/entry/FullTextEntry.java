@@ -3,6 +3,7 @@
  */
 package com.rbmhtechnology.vind.report.logger.entry;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
@@ -11,7 +12,7 @@ import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.report.model.application.Application;
 import com.rbmhtechnology.vind.report.model.request.FullTextRequest;
-import com.rbmhtechnology.vind.report.model.request.Paging;
+import com.rbmhtechnology.vind.report.model.request.Paging.Paging;
 import com.rbmhtechnology.vind.report.model.request.SearchRequest;
 import com.rbmhtechnology.vind.report.model.response.Response;
 import com.rbmhtechnology.vind.report.model.session.Session;
@@ -23,7 +24,9 @@ import java.util.List;
 /**
  * Created on 03.10.17.
  */
-public class FullTextEntry implements LogEntry{
+public class FullTextEntry extends LogEntry{
+
+    private ObjectMapper mapper = LogEntry.getMapper();
 
     final private EntryType type = EntryType.fulltext;
     private Application application;
@@ -34,6 +37,8 @@ public class FullTextEntry implements LogEntry{
     private List<Sort> sorting;
     private Paging paging;
 
+    public FullTextEntry() {
+    }
 
     public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, String source, FulltextSearch search, SearchResult result, ZonedDateTime start, ZonedDateTime end, Session session) {
         this.application = application;
@@ -76,7 +81,6 @@ public class FullTextEntry implements LogEntry{
         return timeStamp;
     }
 
-    @Override
     public SearchRequest getRequest() {
         return request;
     }
@@ -91,5 +95,10 @@ public class FullTextEntry implements LogEntry{
 
     public Paging getPaging() {
         return paging;
+    }
+
+    @Override
+    public String toString() {
+        return toJson();
     }
 }

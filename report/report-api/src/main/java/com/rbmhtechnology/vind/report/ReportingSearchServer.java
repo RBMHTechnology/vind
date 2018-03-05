@@ -14,6 +14,7 @@ import com.rbmhtechnology.vind.api.result.*;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.report.logger.entry.FullTextEntry;
+import com.rbmhtechnology.vind.report.logger.entry.SuggestionEntry;
 import com.rbmhtechnology.vind.report.model.application.Application;
 import com.rbmhtechnology.vind.report.model.application.SimpleApplication;
 import com.rbmhtechnology.vind.report.logger.Log;
@@ -48,6 +49,10 @@ public class ReportingSearchServer extends SearchServer {
 
     public ReportingSearchServer(SearchServer server) {
         this(server, null, null, ReportWriter.getInstance()); //TODO should maybe replaced by service loader?
+    }
+
+    public ReportingSearchServer(SearchServer server, ReportWriter logger) {
+        this(server, null, null, logger); //TODO should maybe replaced by service loader?
     }
 
     public ReportingSearchServer(SearchServer server, Application application, Session session) {
@@ -115,7 +120,7 @@ public class ReportingSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final BeanSearchResult<T> result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new Log(new FullTextEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, source ,search, result, start, end, session)));
+        logger.log(new FullTextEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, source ,search, result, start, end, session));
         return result;
     }
 
@@ -124,7 +129,7 @@ public class ReportingSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SearchResult result = server.execute(search, factory);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new Log(new FullTextEntry(this.server, factory, application, source ,search, result, start, end, session)));
+        logger.log(new FullTextEntry(this.server, factory, application, source ,search, result, start, end, session));
         return result;
     }
 
@@ -143,7 +148,7 @@ public class ReportingSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         SuggestionResult result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new Log(application, search, result, start, end, session));
+        logger.log(new SuggestionEntry(application, search, result, start, end, session));
         return result;
     }
 
@@ -152,7 +157,7 @@ public class ReportingSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SuggestionResult result = server.execute(search, assets);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new Log(application, search, result, start, end, session));
+        logger.log(new SuggestionEntry(application, search, result, start, end, session));
         return result;
     }
 
@@ -161,7 +166,7 @@ public class ReportingSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SuggestionResult result = server.execute(search, assets, childFactory);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new Log(application, search, result, start, end, session));
+        logger.log(new SuggestionEntry(application, search, result, start, end, session));
         return result;
     }
 

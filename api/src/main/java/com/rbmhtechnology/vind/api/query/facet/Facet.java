@@ -90,7 +90,7 @@ public abstract class Facet {
         }
 
         public String getFieldName() {
-            return fieldDescriptor.getName();
+            return this.name;
         }
 
         @Override

@@ -18,4 +18,10 @@ public class UserSession extends SimpleSession {
     public User getUser() {
         return user;
     }
+
+    @Override
+    public String getSessionId(){
+        return user.getName();
+    }
+
 }
