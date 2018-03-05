@@ -1,0 +1,38 @@
+{
+    "size":0,
+    "query":{
+        "filtered":{
+            "query":{
+                "query_string":{
+                    "query":"type:fulltext AND application.id:%s"
+                }
+            },
+            "filter":{
+                "bool":{
+                    "must":[
+                        {
+                            "range":{
+                                "timeStamp":{
+                                    "gte":%d,
+                                    "lte":%d,
+                                    "format":"epoch_millis"
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "aggs":{
+        "person":{
+            "terms":{
+                "field":"session.user.name",
+                "size":10,
+                "order":{
+                    "_count":"desc"
+                }
+            }
+        }
+    }
+}

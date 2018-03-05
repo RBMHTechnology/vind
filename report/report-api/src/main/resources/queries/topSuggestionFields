@@ -1,0 +1,23 @@
+{
+    "size":0,
+    "query":{
+        "filtered":{
+            "query":{
+                "query_string":{
+                    "query":"type:suggestion AND application.id:%s"
+                }
+            }
+        }
+    },
+    "aggs":{
+        "suggestionFields":{
+            "terms":{
+                "field":"request.suggestionFields",
+                "size":100,
+                "order":{
+                    "_count":"desc"
+                }
+            }
+        }
+    }
+}

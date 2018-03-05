@@ -1,0 +1,23 @@
+{
+    "size":0,
+    "query":{
+        "filtered":{
+            "query":{
+                "query_string":{
+                    "query":"type:fulltext AND application.id:%s"
+                }
+            }
+        }
+    },
+    "aggs":{
+        "fields":{
+            "terms":{
+                "field":"request.facets.name",
+                "size":100,
+                "order":{
+                    "_count":"desc"
+                }
+            }
+        }
+    }
+}
