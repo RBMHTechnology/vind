@@ -11,6 +11,7 @@ import com.rbmhtechnology.vind.api.query.suggestion.StringSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -26,6 +27,9 @@ public class SuggestionRequest implements SearchRequest {
     private Filter filter;
     private String solrQuery;
     private String source;
+
+    public SuggestionRequest() {
+    }
 
     public SuggestionRequest(ExecutableSuggestionSearch search, String source) {
         if(StringSuggestionSearch.class.isAssignableFrom(search.getClass())) {
@@ -66,7 +70,7 @@ public class SuggestionRequest implements SearchRequest {
     }
 
     @Override
-    public Map<String, Facet> getFacets() {
+    public List<Facet> getFacets() {
         return null;
     }
 

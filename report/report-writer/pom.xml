@@ -15,6 +15,7 @@
 
     <modules>
         <module>log-report-writer</module>
+        <module>report-writer-elastic</module>
     </modules>
 
     <build>

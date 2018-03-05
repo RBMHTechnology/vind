@@ -27,7 +27,13 @@
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
-
+        <!-- Elasticsearch client-->
+        <dependency>
+            <groupId>io.searchbox</groupId>
+            <artifactId>jest</artifactId>
+            <version>5.3.3</version>
+        </dependency>
+        <!--Test-->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>vind-testsuite</artifactId>

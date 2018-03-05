@@ -7,9 +7,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import org.apache.commons.collections.CollectionUtils;
 
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Created on 02.10.17.
@@ -20,9 +20,12 @@ public class FullTextRequest implements SearchRequest{
     private FulltextSearch search;
     private String query;
     private com.rbmhtechnology.vind.api.query.filter.Filter filter;
-    private Map<String, Facet> facets;
+    private List<Facet> facets;
     private String solrQuery;
     private String source;
+
+    public FullTextRequest() {
+    }
 
     public FullTextRequest(FulltextSearch search, String solrQuery, String source) {
         this.search = search;
@@ -30,7 +33,7 @@ public class FullTextRequest implements SearchRequest{
         if (Objects.nonNull(this.search.getFilter())) {
             this.filter = this.search.getFilter();//com.rbmhtechnology.vind.report.model.request.filter.Filter.logFilter(this.search.getFilter()) ;
         }
-        this.facets = this.search.getFacets();
+        this.facets = new ArrayList<>(this.search.getFacets().values());
         this.source = source;
         this.solrQuery = solrQuery;
     }
@@ -46,7 +49,7 @@ public class FullTextRequest implements SearchRequest{
     }
 
     @Override
-    public Map<String, Facet> getFacets() {
+    public List<Facet> getFacets() {
         return facets;
     }
 

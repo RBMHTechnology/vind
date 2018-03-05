@@ -6,6 +6,7 @@ package com.rbmhtechnology.vind.report.model.request;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -16,7 +17,7 @@ public interface SearchRequest {
     String getQuery();
     Filter getFilter();
 
-    Map<String, Facet> getFacets();
+    List<Facet> getFacets();
 
     String getSolrQuery();
     String getSource();
