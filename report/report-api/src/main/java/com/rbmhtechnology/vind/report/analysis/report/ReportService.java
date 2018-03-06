@@ -95,7 +95,7 @@ public abstract class ReportService implements AutoCloseable {
     //Total number of requests
     public abstract long getTotalRequests();
     //Top Day
-    public abstract LinkedHashMap<Integer, ZonedDateTime> getTopDays();
+    public abstract LinkedHashMap<ZonedDateTime, Integer> getTopDays();
 
     //Top users
     public abstract LinkedHashMap<String, Long> getTopUsers();
