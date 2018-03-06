@@ -3,29 +3,63 @@
  */
 package com.rbmhtechnology.vind.report.analysis.report;
 
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Created on 01.03.18.
  */
 public class Report {
-  
+
+    private String dateFormat = "dd/MM/yyyy zzzz";
+    private String longDateFormat = "EEEE, MMMM dd, yyyy hh:mm a - VV";
+    private ZoneId zoneId = ZoneOffset.UTC;
+
+    private ZonedDateTime today = ZonedDateTime.now();
+    private String applicationName;
     private ZonedDateTime from;
     private ZonedDateTime to;
     private long requests;
-    private LinkedHashMap<Integer, ZonedDateTime> topDays;
-    private  LinkedHashMap<String, Long> topUsers;
-    private  LinkedHashMap<String, Long> topFaceFields;
-    private  LinkedHashMap<String, List<Object>> faceFieldsValues;
-    private  LinkedHashMap<String, Long> topSuggestionFields;
-    private  LinkedHashMap<String, List<Object>> suggestionFieldsValues;
-    private  LinkedHashMap<String, Long> topQueries;
-    private  LinkedHashMap<String, Long> topFilteredQueries;
+    private  LinkedHashMap<ZonedDateTime, Long> topDays = new LinkedHashMap<>();
+    private  LinkedHashMap<String, Long> topUsers = new LinkedHashMap<>();
+    private  LinkedHashMap<String, Long> topFacetFields = new LinkedHashMap<>();
+    private  LinkedHashMap<String, List<Object>> faceFieldsValues = new LinkedHashMap<>();
+    private  LinkedHashMap<String, Long> topSuggestionFields = new LinkedHashMap<>();
+    private  LinkedHashMap<String, List<Object>> suggestionFieldsValues = new LinkedHashMap<>();
+    private  LinkedHashMap<String, Long> topQueries = new LinkedHashMap<>();
+    private  LinkedHashMap<String, Long> topFilteredQueries = new LinkedHashMap<>();
+
+
+    public ZonedDateTime getToday() {
+        return today;
+    }
+
+    public String getPrettyToday() {
+        return DateTimeFormatter.ofPattern(longDateFormat).format(today.withZoneSameInstant(zoneId));
+
+    }
+
+    public String getApplicationName() {
+        return applicationName;
+    }
+
+    public Report setApplicationName(String applicationName) {
+        this.applicationName = applicationName;
+        return this;
+    }
 
     public ZonedDateTime getFrom() {
         return from;
+    }
+
+    public String getPrettyFrom() {
+        return DateTimeFormatter.ofPattern(this.dateFormat).format(from.withZoneSameInstant(zoneId));
     }
 
     public Report setFrom(ZonedDateTime from) {
@@ -35,6 +69,10 @@ public class Report {
 
     public ZonedDateTime getTo() {
         return to;
+    }
+
+    public String getPrettyTo() {
+        return DateTimeFormatter.ofPattern(this.dateFormat).format(to.withZoneSameInstant(zoneId));
     }
 
     public Report setTo(ZonedDateTime to) {
@@ -51,11 +89,19 @@ public class Report {
         return this;
     }
 
-    public LinkedHashMap<Integer, ZonedDateTime> getTopDays() {
+    public LinkedHashMap<ZonedDateTime, Long> getTopDays() {
         return topDays;
     }
 
-    public Report setTopDays(LinkedHashMap<Integer, ZonedDateTime> topDays) {
+    public LinkedHashMap<String, Long> getFormattedTopDays() {
+        final LinkedHashMap<String, Long> formattedTopDays = new LinkedHashMap<>();
+        topDays.entrySet().stream()
+                .sorted(Comparator.comparingLong(Map.Entry::getValue))
+                .forEach( entry -> formattedTopDays.put(DateTimeFormatter.ofPattern(this.dateFormat).format(entry.getKey().withZoneSameInstant(zoneId)),entry.getValue()));
+        return formattedTopDays;
+    }
+
+    public Report setTopDays(LinkedHashMap<ZonedDateTime, Long> topDays) {
         this.topDays = topDays;
         return this;
     }
@@ -69,12 +115,12 @@ public class Report {
         return this;
     }
 
-    public LinkedHashMap<String, Long> getTopFaceFields() {
-        return topFaceFields;
+    public LinkedHashMap<String, Long> getTopFacetFields() {
+        return topFacetFields;
     }
 
-    public Report setTopFaceFields(LinkedHashMap<String, Long> topFaceFields) {
-        this.topFaceFields = topFaceFields;
+    public Report setTopFacetFields(LinkedHashMap<String, Long> topFaceFields) {
+        this.topFacetFields = topFaceFields;
         return this;
     }
 
@@ -107,6 +153,10 @@ public class Report {
 
     public LinkedHashMap<String, Long> getTopQueries() {
         return topQueries;
+    }
+
+    public Long getTotalTopQueries() {
+        return topQueries.values().stream().reduce(0l, Long::sum);
     }
 
     public Report setTopQueries(LinkedHashMap<String, Long> topQueries) {
