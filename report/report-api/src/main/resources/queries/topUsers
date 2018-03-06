@@ -1,34 +1,29 @@
 {
     "size":0,
     "query":{
-        "filtered":{
-            "query":{
-                "query_string":{
-                    "query":"type:fulltext AND application.id:%s"
-                }
-            },
-            "filter":{
-                "bool":{
-                    "must":[
-                        {
-                            "range":{
-                                "timeStamp":{
-                                    "gte":%d,
-                                    "lte":%d,
-                                    "format":"epoch_millis"
-                                }
-                            }
+        "bool":{
+            "must":[
+                {"term":{"type.keyword":"fulltext"}},
+                {"term":{"application.id.keyword":"%s"}}
+            ],
+            "filter": [
+                {
+                    "range":{
+                        "timeStamp":{
+                            "gte":%d,
+                            "lte":%d,
+                            "format":"epoch_millis"
                         }
-                    ]
+                    }
                 }
-            }
+            ]
         }
     },
     "aggs":{
-        "person":{
+        "user":{
             "terms":{
-                "field":"session.user.name",
-                "size":10,
+                "field":"session.user.name.keyword",
+                "size":100,
                 "order":{
                     "_count":"desc"
                 }
