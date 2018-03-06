@@ -15,6 +15,7 @@ public class SimpleApplication implements Application {
         this.id = id;
     }
 
+    @Override
     public String getId() {
         return id;
     }

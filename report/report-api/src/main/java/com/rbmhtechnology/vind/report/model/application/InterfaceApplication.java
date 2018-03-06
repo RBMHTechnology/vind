@@ -46,4 +46,9 @@ public class InterfaceApplication implements Application {
     public void setIface(Interface iface) {
         this.iface = iface;
     }
+
+    @Override
+    public String getId() {
+        return name + " - " + version;
+    }
 }

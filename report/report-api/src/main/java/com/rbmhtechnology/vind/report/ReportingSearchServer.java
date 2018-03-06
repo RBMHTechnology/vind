@@ -8,17 +8,15 @@ import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
-import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.*;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
+import com.rbmhtechnology.vind.report.logger.ReportWriter;
 import com.rbmhtechnology.vind.report.logger.entry.FullTextEntry;
 import com.rbmhtechnology.vind.report.logger.entry.SuggestionEntry;
 import com.rbmhtechnology.vind.report.model.application.Application;
 import com.rbmhtechnology.vind.report.model.application.SimpleApplication;
-import com.rbmhtechnology.vind.report.logger.Log;
-import com.rbmhtechnology.vind.report.logger.ReportWriter;
 import com.rbmhtechnology.vind.report.model.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +51,14 @@ public class ReportingSearchServer extends SearchServer {
 
     public ReportingSearchServer(SearchServer server, ReportWriter logger) {
         this(server, null, null, logger); //TODO should maybe replaced by service loader?
+    }
+
+    public ReportingSearchServer(SearchServer server, Application application) {
+        this(server, application, null, ReportWriter.getInstance()); //TODO should maybe replaced by service loader?
+    }
+
+    public ReportingSearchServer(SearchServer server, Application application, ReportWriter logger) {
+        this(server, application, null, logger); //TODO should maybe replaced by service loader?
     }
 
     public ReportingSearchServer(SearchServer server, Application application, Session session) {

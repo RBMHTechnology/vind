@@ -5,4 +5,6 @@ package com.rbmhtechnology.vind.report.model.application;
  * @since 01.08.16.
  */
 public interface Application {
+
+    String getId();
 }

@@ -3,12 +3,11 @@
  */
 package com.rbmhtechnology.vind.report.analysis.report;
 
-import com.google.common.collect.Multiset;
 import com.rbmhtechnology.vind.report.utils.ElasticSearchClient;
 import com.rbmhtechnology.vind.report.utils.ElasticSearchClientBuilder;
 import io.searchbox.core.SearchResult;
+import io.searchbox.core.search.aggregation.DateHistogramAggregation;
 import io.searchbox.core.search.aggregation.TermsAggregation;
-import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,9 +16,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 /**
  * Created on 28.02.18.
@@ -60,17 +61,18 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     }
 
     @Override
-    public LinkedHashMap<Integer, ZonedDateTime> getTopDays() {
+    public LinkedHashMap<ZonedDateTime, Integer> getTopDays() {
         final String query = this.loadQueryFromFile("topDays",
                 this.getApplicationId(),
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli());
 
         final SearchResult searchResult = elasticClient.getQuery(query);
-        final LinkedHashMap<Integer, ZonedDateTime> result = new LinkedHashMap<>();
+        final LinkedHashMap<ZonedDateTime, Integer> result = new LinkedHashMap<>();
         searchResult.getAggregations().getDateHistogramAggregation("days" )
-                .getBuckets().stream().sorted()
-                .forEach( dateHistogram -> result.put(dateHistogram.getCount().intValue(), ZonedDateTime.ofInstant(Instant.ofEpochMilli(dateHistogram.getTime()), this.getZoneId())));
+                .getBuckets().stream().sorted(Comparator.comparingLong(DateHistogramAggregation.DateHistogram::getCount).reversed())
+                .forEach( dateHistogram ->
+                        result.put(ZonedDateTime.ofInstant(Instant.ofEpochMilli(dateHistogram.getTime()), this.getZoneId()), dateHistogram.getCount().intValue()));
         return result;
     }
 
@@ -82,9 +84,9 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 this.getTo().toInstant().toEpochMilli());
 
         final SearchResult searchResult = elasticClient.getQuery(query);
-        final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("person").getBuckets();
+        final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("user").getBuckets();
         final LinkedHashMap<String, Long> result = new LinkedHashMap<>();
-        termEntries.stream().sorted()
+        termEntries.stream().sorted(Comparator.comparingLong(TermsAggregation.Entry::getCount).reversed())
                 .forEach(entry -> result.put(entry.getKey(), entry.getCount()));
 
         return result;
@@ -100,7 +102,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         final SearchResult searchResult = elasticClient.getQuery(query);
         final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("fields").getBuckets();
         final LinkedHashMap<String, Long> result = new LinkedHashMap<>();
-        termEntries.stream().sorted(Comparator.comparingLong(TermsAggregation.Entry::getCount))
+        termEntries.stream().sorted(Comparator.comparingLong(TermsAggregation.Entry::getCount).reversed())
                 .forEach(entry -> result.put(entry.getKey(), entry.getCount()));
 
         return result;
@@ -121,7 +123,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         final SearchResult searchResult = elasticClient.getQuery(query);
         final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("suggestionFields").getBuckets();
         final LinkedHashMap<String, Long> result = new LinkedHashMap<>();
-        termEntries.stream().sorted(Comparator.comparingLong(TermsAggregation.Entry::getCount))
+        termEntries.stream().sorted(Comparator.comparingLong(TermsAggregation.Entry::getCount).reversed())
                 .forEach(entry -> result.put(entry.getKey(), entry.getCount()));
 
         return result;
@@ -142,7 +144,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         final SearchResult searchResult = elasticClient.getQuery(query);
         final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("queries").getBuckets();
         final LinkedHashMap<String, Long> result = new LinkedHashMap<>();
-        termEntries.stream().sorted(Comparator.comparingLong(TermsAggregation.Entry::getCount))
+        termEntries.stream().sorted(Comparator.comparingLong(TermsAggregation.Entry::getCount).reversed())
                 .forEach(entry -> result.put(entry.getKey(), entry.getCount()));
 
         return result;
