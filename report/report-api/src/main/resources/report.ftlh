@@ -174,7 +174,7 @@
                 <td>
                     <ol>
                         <#list topUsers?keys as user>
-                            <li>user (topUsers[user])</li>
+                            <li>${user} (${topUsers[user]})</li>
                         </#list>
                     </ol>
                 </td>
