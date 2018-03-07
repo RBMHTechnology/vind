@@ -105,13 +105,13 @@ public abstract class ReportService implements AutoCloseable {
     public abstract LinkedHashMap<String, Long> getTopFaceFields();
 
     ///Facet Values per field?
-    public abstract LinkedHashMap<String, List<Object>> getFaceFieldsValues(List<String> fields);
+    public abstract LinkedHashMap<String, LinkedHashMap<Object,Long>> getFaceFieldsValues(List<String> fields);
 
     //Suggestions
     ///Suggestion fields
     public abstract LinkedHashMap<String, Long> getTopSuggestionFields();
     ///Suggestion values per field
-    public abstract LinkedHashMap<String, List<Object>> getSuggestionFieldsValues(List<String> fields);
+    public abstract LinkedHashMap<String, List<LinkedHashMap<String,Long>>> getSuggestionFieldsValues(List<String> fields);
 
     //Advanced search?
     ///Advanced search fields

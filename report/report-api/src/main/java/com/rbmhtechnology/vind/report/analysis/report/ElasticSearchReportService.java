@@ -3,6 +3,7 @@
  */
 package com.rbmhtechnology.vind.report.analysis.report;
 
+import com.google.common.base.Joiner;
 import com.rbmhtechnology.vind.report.utils.ElasticSearchClient;
 import com.rbmhtechnology.vind.report.utils.ElasticSearchClientBuilder;
 import io.searchbox.core.SearchResult;
@@ -17,10 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created on 28.02.18.
@@ -109,8 +107,28 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     }
 
     @Override
-    public LinkedHashMap<String, List<Object>> getFaceFieldsValues(List<String> fields) {
-        return null;
+    public LinkedHashMap<String, LinkedHashMap<Object,Long>> getFaceFieldsValues(List<String> fields) {
+
+        final String query = this.loadQueryFromFile("topFacetFieldsValues",
+                this.getApplicationId(),
+                "\"".concat(Joiner.on("\", \"").skipNulls().join(fields)).concat("\""),
+                this.getFrom().toInstant().toEpochMilli(),
+                this.getTo().toInstant().toEpochMilli());
+
+        final SearchResult searchResult = elasticClient.getQuery(query);
+        final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("fields").getBuckets();
+        final LinkedHashMap<String, LinkedHashMap<Object,Long>> result = new LinkedHashMap<>();
+        termEntries.stream().sorted(Comparator.comparingLong(TermsAggregation.Entry::getCount).reversed())
+                .forEach(entry -> {
+                    LinkedHashMap<Object,Long> valuesMap = new LinkedHashMap<>();
+                    entry.getTermsAggregation("values").getBuckets().stream()
+                        .sorted(Comparator.comparingLong(TermsAggregation.Entry::getCount).reversed())
+                        .forEach(valueEntry -> valuesMap.put(valueEntry.getKey(),valueEntry.getCount()));
+
+                    result.put(entry.getKey(),valuesMap);
+                    }
+                );
+        return result;
     }
 
     @Override
@@ -130,7 +148,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     }
 
     @Override
-    public LinkedHashMap<String, List<Object>> getSuggestionFieldsValues(List<String> fields) {
+    public LinkedHashMap<String, List<LinkedHashMap<String,Long>>> getSuggestionFieldsValues(List<String> fields) {
         return null;
     }
 

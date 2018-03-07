@@ -29,9 +29,9 @@ public class Report {
     private  LinkedHashMap<ZonedDateTime, Long> topDays = new LinkedHashMap<>();
     private  LinkedHashMap<String, Long> topUsers = new LinkedHashMap<>();
     private  LinkedHashMap<String, Long> topFacetFields = new LinkedHashMap<>();
-    private  LinkedHashMap<String, List<Object>> faceFieldsValues = new LinkedHashMap<>();
+    private  LinkedHashMap<String, LinkedHashMap<Object,Long>> facetFieldsValues = new LinkedHashMap<>();
     private  LinkedHashMap<String, Long> topSuggestionFields = new LinkedHashMap<>();
-    private  LinkedHashMap<String, List<Object>> suggestionFieldsValues = new LinkedHashMap<>();
+    private  LinkedHashMap<String, LinkedHashMap<Object,Long>> suggestionFieldsValues = new LinkedHashMap<>();
     private  LinkedHashMap<String, Long> topQueries = new LinkedHashMap<>();
     private  LinkedHashMap<String, Long> topFilteredQueries = new LinkedHashMap<>();
 
@@ -124,12 +124,12 @@ public class Report {
         return this;
     }
 
-    public LinkedHashMap<String, List<Object>> getFaceFieldsValues() {
-        return faceFieldsValues;
+    public LinkedHashMap<String, LinkedHashMap<Object,Long>> getFacetFieldsValues() {
+        return facetFieldsValues;
     }
 
-    public Report setFaceFieldsValues(LinkedHashMap<String, List<Object>> faceFieldsValues) {
-        this.faceFieldsValues = faceFieldsValues;
+    public Report setFacetFieldsValues(LinkedHashMap<String, LinkedHashMap<Object,Long>> faceFieldsValues) {
+        this.facetFieldsValues = faceFieldsValues;
         return this;
     }
 
@@ -142,11 +142,11 @@ public class Report {
         return this;
     }
 
-    public LinkedHashMap<String, List<Object>> getSuggestionFieldsValues() {
+    public LinkedHashMap<String, LinkedHashMap<Object,Long>> getSuggestionFieldsValues() {
         return suggestionFieldsValues;
     }
 
-    public Report setSuggestionFieldsValues(LinkedHashMap<String, List<Object>> suggestionFieldsValues) {
+    public Report setSuggestionFieldsValues(LinkedHashMap<String, LinkedHashMap<Object,Long>> suggestionFieldsValues) {
         this.suggestionFieldsValues = suggestionFieldsValues;
         return this;
     }

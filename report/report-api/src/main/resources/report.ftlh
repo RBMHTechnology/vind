@@ -173,9 +173,9 @@
                 <th>Top Searchers</th>
                 <td>
                     <ol>
-                        <#list topUsers?keys as user>
-                            <li>${user} (${topUsers[user]})</li>
-                        </#list>
+                    <#list topUsers as user, count>
+                        <li>${user} (${count})</li>
+                    </#list>
                     </ol>
                 </td>
             </tr>
@@ -195,131 +195,92 @@
             <tr>
                 <th>Ranking</th>
                 <th>Name</th>
-                <th>Position</th>
                 <th>#Usages</th>
-                <th>#Usages as 1.</th>
-                <th>#Usages as 2.</th>
-                <th>#Usages as 3.</th>
-                <th>#Usages all Logs</th>
-                <th>#Values</th>
-                <th>#stdV</th>
             </tr>
             </thead>
             <tbody>
-                <#list topFacetFields?keys as field>
-                    <tr>
-                        <td>${field?counter}</td>
-                        <td>${field}</td>
-                        <td>N/A</td>
-                        <td>${topFacetFields[field]}</td>
-                        <td>N/A</td>
-                        <td>N/A</td>
-                        <td>N/A</td>
-                        <td>N/A</td>
-                        <td>N/A</td>
-                        <td>N/A</td>
-                    </tr>
-                </#list>
+            <#list topFacetFields as field, count>
+                <tr>
+                    <td>${field?counter}</td>
+                    <td>${field}</td>
+                    <td>${count}</td>
+                </tr>
+            </#list>
             </tbody>
         </table>
         <h4>Facet Values</h4>
         <p>Only considers fields with a standard deviation greater than 10, only considers top 25 values of the first 3
             search steps.
-        <h5>Top 10 values for<i>Content Type</i></h5>
+        <#list facetFieldsValues as field, values>
+        <h5>Top 10 values for <i>${field}</i></h5>
         <table class="data">
             <thead>
-            <tr>
-                <th>Ranking</th>
-                <th>Value</th>
-                <th>#Usages in 1</th>
-                <th>#Usages in 2</th>
-                <th>#Usages in 3</th>
-                <th>#Usages</th>
-            </tr>
+                <tr>
+                    <th>Ranking</th>
+                    <th>Value</th>
+                    <th>#Usages</th>
+                </tr>
             </thead>
             <tbody>
+            <#list values as value, count>
                 <tr>
-                    <td>1</td>
-                    <td>VIDEO</td>
-                    <td>1740</td>
-                    <td>8311</td>
-                    <td>579</td>
-                    <td>10630</td>
+                    <td>${value?counter}</td>
+                    <td>${value}</td>
+                    <td>${count}</td>
                 </tr>
+            </#list>
             </tbody>
         </table>
-
+        </#list>
         </p>
-        <h4>Facet Tips</h4>
-        <p>We would suggest:</p>
-        <ul>
-            <li><u>Video Version</u> should be pushed down, we suggest position 5</li>
-        </ul>
     </div>
     <div class="section"><h3>Suggestions</h3><h4>Suggestion Fields</h4>
         <table class="data">
             <thead>
-            <tr>
-                <th>Ranking</th>
-                <th>Name</th>
-                <th>Position</th>
-                <th>#Usages</th>
-                <th>#Usages as 1.</th>
-                <th>#Usages as 2.</th>
-                <th>#Usages as 3.</th>
-                <th>#Usages all Logs</th>
-                <th>#Values</th>
-                <th>#stdV</th>
-            </tr>
+                <tr>
+                    <th>Ranking</th>
+                    <th>Name</th>
+                    <th>#Usages</th>
+                </tr>
             </thead>
             <tbody>
-                <#list topSuggestionFields?keys as field>
-                    <tr>
-                        <td>${field?counter}</td>
-                        <td>${field}</td>
-                        <td>N/A</td>
-                        <td>${topSuggestionFields[field]}</td>
-                        <td>N/A</td>
-                        <td>N/A</td>
-                        <td>N/A</td>
-                        <td>N/A</td>
-                        <td>-</td>
-                        <td>N/A</td>
-                    </tr>
-                </#list>
+            <#list topSuggestionFields as field, count>
+                <tr>
+                    <td>${field?counter}</td>
+                    <td>${field}</td>
+                    <td>${count}</td>
+                </tr>
+            </#list>
             </tbody>
         </table>
         <h4>Suggestion Values</h4>
         <p>Only considers fields with a standard deviation greater than 10, only considers top 25 values of the first 3
-            search steps.<h5>Top 10 values for<i>Content Model Structure</i></h5>
-        <table class="data">
-            <thead>
-            <tr>
-                <th>Ranking</th>
-                <th>Value</th>
-                <th>#Usages in 1</th>
-                <th>#Usages in 2</th>
-                <th>#Usages in 3</th>
-                <th>#Usages</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td>1</td>
-                <td>- (Main Dummy) / Red Bull King of the Rock</td>
-                <td>190</td>
-                <td>0</td>
-                <td>0</td>
-                <td>190</td>
-            </tr>
+            search steps.
+            <h5>Top 10 values for<i>Content Model Structure</i></h5>
+            <table class="data">
+                <thead>
+                <tr>
+                    <th>Ranking</th>
+                    <th>Value</th>
+                    <th>#Usages in 1</th>
+                    <th>#Usages in 2</th>
+                    <th>#Usages in 3</th>
+                    <th>#Usages</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>- (Main Dummy) / Red Bull King of the Rock</td>
+                    <td>190</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>190</td>
+                </tr>
 
-            </tbody>
-        </table>
-        </p><h4>Suggestions Tips</h4>
-        <p>We would suggest:</p>
-        <ul>
-            <li><u>Leisure Time</u> is not in used and might be removed from index</li>
-        </ul>
+                </tbody>
+            </table>
+        </p>
     </div>
     <div class="section"><h3>Advanced Search</h3><h4>Advanced Search Fields</h4>
         <table class="data">
@@ -379,39 +340,28 @@
 
             </tbody>
         </table>
-        </p><h4>Advanced Search Tips</h4>
-        <p>We would suggest:</p>
-        <ul>
-            <li><u>Watchers</u> is not in used and can maybe be removed from index</li>
-        </ul>
+        </p>
     </div>
-    <div class="section"><h2>Fulltext</h2>
+    <div class="section">
+        <h2>Fulltext</h2>
         <h3>Fulltext Queries (Top 100)</h3>
         <p>${totalTopQueries} queries with ${topQueries?size} distinct search terms.</p>
         <table class="data">
             <thead>
-            <tr>
-                <th>Ranking</th>
-                <th>Value</th>
-                <th>#Usages as 1.</th>
-                <th>#Usages as 2.</th>
-                <th>#Usages as 3.</th>
-                <th>#Usages</th>
-                <th>#Users</th>
-            </tr>
+                <tr>
+                    <th>Ranking</th>
+                    <th>Value</th>
+                    <th>#Usages</th>
+                </tr>
             </thead>
             <tbody>
-                <#list topQueries?keys as query>
+            <#list topQueries as query, count>
                 <tr>
                     <td>${query?counter}</td>
                     <td>${query}</td>
-                    <td>N/A</td>
-                    <td>N/A</td>
-                    <td>N/A</td>
-                    <td>${topQueries[query]}</td>
-                    <td>N/A</td>
+                    <td>${count}</td>
                 </tr>
-                </#list>
+            </#list>
             </tbody>
         </table>
         <h3>Filtered Fulltext Queries (Top 100)</h3>
