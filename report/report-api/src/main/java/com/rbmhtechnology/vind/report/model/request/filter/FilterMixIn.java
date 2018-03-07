@@ -12,16 +12,12 @@ import com.rbmhtechnology.vind.api.query.filter.Filter;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonPropertyOrder({"type"})
 @JsonIgnoreProperties(ignoreUnknown = true, value = {
-        "descriptor", "term","field","start", "end", "date", "number", "upperLeft", "lowerRight", "center", "distance", "parentDocType", "nestedDocType" })
+        "descriptor", "filterQuery" })
 public abstract class FilterMixIn extends Filter {
 
     @JsonProperty("type")
     @Override
     public abstract String getType();
-
-    @JsonProperty("filterQuery")
-    @Override
-    public abstract String toString();
 
 }
 

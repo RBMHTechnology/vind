@@ -736,6 +736,7 @@ public abstract class Filter {
 
         private final T term;
         private final FieldDescriptor descriptor;
+        private final String field;
 
         /**
          * Creates a {@link DescriptorFilter} object based on a given field descriptor parameter and a value.
@@ -749,6 +750,7 @@ public abstract class Filter {
             this.descriptor = descriptor;
             this.term = term;
             super.filterScope = scope;
+            this.field = descriptor.getName();
         }
 
         @Override
