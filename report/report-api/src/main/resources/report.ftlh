@@ -140,14 +140,12 @@
             <th>App:</th>
             <td>${applicationName}</td>
         </tr>
+        <#list configuration.generalFilters as name, value>
         <tr>
-            <th>Workspace:</th>
-            <td>N/A</td>
+            <th>${name}</th>
+            <td>${value}</td>
         </tr>
-        <tr>
-            <th>Module:</th>
-            <td>N/A</td>
-        </tr>
+        </#list>
         <tr>
             <th>from:</th>
             <td>${prettyFrom}</td>
@@ -196,6 +194,9 @@
                 <th>Ranking</th>
                 <th>Name</th>
                 <th>#Usages</th>
+                <#list configuration.facetFieldsExtension?keys as name>
+                <th>${name}</th>
+                </#list>
             </tr>
             </thead>
             <tbody>
@@ -204,6 +205,9 @@
                     <td>${field?counter}</td>
                     <td>${field}</td>
                     <td>${count}</td>
+                    <#list configuration.facetFieldsExtension as column, fields>
+                    <td>${fields[field]!"-"}</td>
+                    </#list>
                 </tr>
             </#list>
             </tbody>
@@ -241,6 +245,9 @@
                     <th>Ranking</th>
                     <th>Name</th>
                     <th>#Usages</th>
+                    <#list configuration.suggestionFieldsExtension?keys as name>
+                    <th>${name}</th>
+                    </#list>
                 </tr>
             </thead>
             <tbody>
@@ -249,98 +256,13 @@
                     <td>${field?counter}</td>
                     <td>${field}</td>
                     <td>${count}</td>
+                    <#list configuration.suggestionFieldsExtension as column, fields>
+                    <td>${fields[field]!"-"}</td>
+                    </#list>
                 </tr>
             </#list>
             </tbody>
         </table>
-        <h4>Suggestion Values</h4>
-        <p>Only considers fields with a standard deviation greater than 10, only considers top 25 values of the first 3
-            search steps.
-            <h5>Top 10 values for<i>Content Model Structure</i></h5>
-            <table class="data">
-                <thead>
-                <tr>
-                    <th>Ranking</th>
-                    <th>Value</th>
-                    <th>#Usages in 1</th>
-                    <th>#Usages in 2</th>
-                    <th>#Usages in 3</th>
-                    <th>#Usages</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <td>1</td>
-                    <td>- (Main Dummy) / Red Bull King of the Rock</td>
-                    <td>190</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>190</td>
-                </tr>
-
-                </tbody>
-            </table>
-        </p>
-    </div>
-    <div class="section"><h3>Advanced Search</h3><h4>Advanced Search Fields</h4>
-        <table class="data">
-            <thead>
-            <tr>
-                <th>Ranking</th>
-                <th>Name</th>
-                <th>Position</th>
-                <th>#Usages</th>
-                <th>#Usages as 1.</th>
-                <th>#Usages as 2.</th>
-                <th>#Usages as 3.</th>
-                <th>#Usages all Logs</th>
-                <th>#Values</th>
-                <th>#stdV</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td>1</td>
-                <td>Content Model Structure</td>
-                <td>28</td>
-                <td>20932</td>
-                <td>13395</td>
-                <td>5898</td>
-                <td>1215</td>
-                <td>25242</td>
-                <td>-</td>
-                <td>35.32</td>
-            </tr>
-
-            </tbody>
-        </table>
-        <h4>Advanced Search Values</h4>
-        <p>Only considers fields with a standard deviation greater than 10, only considers top 25 values of the first 3
-            search steps.<h5>Top 10 values for<i>Content Model Structure</i></h5>
-        <table class="data">
-            <thead>
-            <tr>
-                <th>Ranking</th>
-                <th>Value</th>
-                <th>#Usages in 1</th>
-                <th>#Usages in 2</th>
-                <th>#Usages in 3</th>
-                <th>#Usages</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td>1</td>
-                <td>Season 2</td>
-                <td>340</td>
-                <td>0</td>
-                <td>0</td>
-                <td>340</td>
-            </tr>
-
-            </tbody>
-        </table>
-        </p>
     </div>
     <div class="section">
         <h2>Fulltext</h2>
@@ -352,6 +274,9 @@
                     <th>Ranking</th>
                     <th>Value</th>
                     <th>#Usages</th>
+                    <#list configuration.fulltextQueryExtension?keys as name>
+                    <th>${name}</th>
+                    </#list>
                 </tr>
             </thead>
             <tbody>
@@ -360,35 +285,32 @@
                     <td>${query?counter}</td>
                     <td>${query}</td>
                     <td>${count}</td>
+                    <#list configuration.fulltextQueryExtension as column, queries>
+                    <td>${queries[query]!"-"}</td>
+                    </#list>
                 </tr>
             </#list>
             </tbody>
         </table>
         <h3>Filtered Fulltext Queries (Top 100)</h3>
-        <p>Filter: without MI*, SI*, BU*, AA* and number-based IDs</p>
+        <p>Filter: without <#list configuration.queryFilters as filter>${filter}  </#list></p>
         <p>14769 queries with 3133 distinct search terms.</p>
         <table class="data">
             <thead>
             <tr>
                 <th>Ranking</th>
                 <th>Value</th>
-                <th>#Usages as 1.</th>
-                <th>#Usages as 2.</th>
-                <th>#Usages as 3.</th>
                 <th>#Usages</th>
-                <th>#Users</th>
             </tr>
             </thead>
             <tbody>
+            <#list topFilteredQueries as query, count>
             <tr>
-                <td>1</td>
-                <td title="recap">recap</td>
-                <td>0</td>
-                <td>21</td>
-                <td>6</td>
-                <td>30</td>
-                <td>10</td>
+                <td>${query?counter}</td>
+                <td>${query}</td>
+                <td>${count}</td>
             </tr>
+            </#list>
             </tbody>
         </table>
     </div>

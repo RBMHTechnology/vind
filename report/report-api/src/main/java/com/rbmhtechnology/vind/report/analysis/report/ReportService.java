@@ -122,6 +122,6 @@ public abstract class ReportService implements AutoCloseable {
     public abstract LinkedHashMap<String, Long> getTopQueries();
 
     //Filtered fulltext top queries?
-    public abstract LinkedHashMap<String, Long> getTopFilteredQueries();
+    public abstract LinkedHashMap<String, Long> getTopFilteredQueries(String regexFilter);
 
 }

@@ -169,8 +169,20 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     }
 
     @Override
-    public LinkedHashMap<String, Long> getTopFilteredQueries() {
-        return null;
+    public LinkedHashMap<String, Long> getTopFilteredQueries(String regexFilter) {
+        final String query = this.loadQueryFromFile("topFilteredQueries",
+                this.getApplicationId(),
+                regexFilter,
+                this.getFrom().toInstant().toEpochMilli(),
+                this.getTo().toInstant().toEpochMilli());
+
+        final SearchResult searchResult = elasticClient.getQuery(query);
+        final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("queries").getBuckets();
+        final LinkedHashMap<String, Long> result = new LinkedHashMap<>();
+        termEntries.stream().sorted(Comparator.comparingLong(TermsAggregation.Entry::getCount).reversed())
+                .forEach(entry -> result.put(entry.getKey(), entry.getCount()));
+
+        return result;
     }
 
     @Override
