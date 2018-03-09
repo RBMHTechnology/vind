@@ -17,9 +17,11 @@ import java.util.Map;
  */
 public class Report {
 
-    private String dateFormat = "dd/MM/yyyy zzzz";
+    private String dateFormat = "dd/MM/yyyy VV";
     private String longDateFormat = "EEEE, MMMM dd, yyyy hh:mm a - VV";
     private ZoneId zoneId = ZoneOffset.UTC;
+
+    private final ReportConfiguration configuration = new ReportConfiguration();
 
     private ZonedDateTime today = ZonedDateTime.now();
     private String applicationName;
@@ -171,5 +173,9 @@ public class Report {
     public Report setTopFilteredQueries(LinkedHashMap<String, Long> topFilteredQueries) {
         this.topFilteredQueries = topFilteredQueries;
         return this;
+    }
+
+    public ReportConfiguration getConfiguration() {
+        return configuration;
     }
 }
