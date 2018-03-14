@@ -15,9 +15,9 @@ import com.rbmhtechnology.vind.api.query.filter.Filter;
         "descriptor", "filterQuery" })
 public abstract class FilterMixIn extends Filter {
 
-    @JsonProperty("type")
+    @JsonProperty("scope")
     @Override
-    public abstract String getType();
+    public abstract Scope getFilterScope();
 
 }
 
