@@ -154,7 +154,7 @@ public class ReportingSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         SuggestionResult result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new SuggestionEntry(application, search, result, start, end, session));
+        logger.log(new SuggestionEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, session));
         return result;
     }
 
@@ -163,7 +163,7 @@ public class ReportingSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SuggestionResult result = server.execute(search, assets);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new SuggestionEntry(application, search, result, start, end, session));
+        logger.log(new SuggestionEntry(this.server, assets, application, search, result, start, end, session));
         return result;
     }
 
@@ -172,9 +172,25 @@ public class ReportingSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SuggestionResult result = server.execute(search, assets, childFactory);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new SuggestionEntry(application, search, result, start, end, session));
+        logger.log(new SuggestionEntry(this.server, assets, application, search, result, start, end, session));
         return result;
     }
+
+    @Override
+    public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
+        return server.getRawQuery(search,factory);
+    }
+
+    @Override
+    public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory, DocumentFactory childFactory) {
+        return server.getRawQuery(search,factory, childFactory);
+    }
+
+    @Override
+    public <T> String getRawQuery(ExecutableSuggestionSearch search, Class<T> c) {
+        return server.getRawQuery(search, c);
+    }
+
 
     @Override
     public <T> BeanGetResult<T> execute(RealTimeGet search, Class<T> c) {

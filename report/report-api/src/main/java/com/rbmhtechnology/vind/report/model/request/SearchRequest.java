@@ -19,7 +19,7 @@ public interface SearchRequest {
 
     List<Facet> getFacets();
 
-    String getSolrQuery();
+    String getRawQuery();
     String getSource();
 
 }

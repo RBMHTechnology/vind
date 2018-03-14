@@ -23,21 +23,21 @@ public class SuggestionRequest implements SearchRequest {
     private String query;
     private Collection<String> suggestionFields;
     private Filter filter;
-    private String solrQuery;
+    private String rawQuery;
     private String source;
 
     public SuggestionRequest() {
     }
 
-    public SuggestionRequest(ExecutableSuggestionSearch search, String source) {
+    public SuggestionRequest(ExecutableSuggestionSearch search, String rawQuery,String source) {
         if(StringSuggestionSearch.class.isAssignableFrom(search.getClass())) {
-            createSuggestionRequest((StringSuggestionSearch)search,source);
+            createSuggestionRequest((StringSuggestionSearch)search, rawQuery, source);
         } else {
-            createSuggestionRequest((DescriptorSuggestionSearch)search,source);
+            createSuggestionRequest((DescriptorSuggestionSearch)search, rawQuery, source);
         }
     }
 
-    public void createSuggestionRequest(StringSuggestionSearch search, String source) {
+    public void createSuggestionRequest(StringSuggestionSearch search, String rawQuery, String source) {
         this.search = search;
         this.query = this.search.getInput();
         this.suggestionFields = search.getSuggestionFields();
@@ -45,9 +45,10 @@ public class SuggestionRequest implements SearchRequest {
             this.filter = this.search.getFilter();
         }
         this.source = source;
+        this.rawQuery = rawQuery;
     }
 
-    public void createSuggestionRequest(DescriptorSuggestionSearch search, String source) {
+    public void createSuggestionRequest(DescriptorSuggestionSearch search, String rawQuery,String source) {
         this.search = search;
         this.query = this.search.getInput();
         this.suggestionFields = search.getSuggestionFields().stream().map( f -> f.getName()).collect(Collectors.toList());
@@ -55,6 +56,7 @@ public class SuggestionRequest implements SearchRequest {
             this.filter = this.search.getFilter();
         }
         this.source = source;
+        this.rawQuery = rawQuery;
     }
 
     @Override
@@ -77,8 +79,8 @@ public class SuggestionRequest implements SearchRequest {
     }
 
     @Override
-    public String getSolrQuery() {
-        return solrQuery;
+    public String getRawQuery() {
+        return rawQuery;
     }
 
     @Override

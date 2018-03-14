@@ -278,6 +278,21 @@ public class CompletableSearchServer extends SearchServer {
     }
 
     @Override
+    public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
+        return backend.getRawQuery(search, factory);
+    }
+
+    @Override
+    public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory, DocumentFactory childFactory) {
+        return backend.getRawQuery(search, factory, childFactory);
+    }
+
+    @Override
+    public <T> String getRawQuery(ExecutableSuggestionSearch search, Class<T> c) {
+        return backend.getRawQuery(search, c);
+    }
+
+    @Override
     public <T> BeanGetResult<T> execute(RealTimeGet search, Class<T> c) {
         return backend.execute(search, c);
     }

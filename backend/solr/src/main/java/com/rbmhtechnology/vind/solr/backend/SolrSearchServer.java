@@ -807,6 +807,25 @@ public class SolrSearchServer extends SearchServer {
         }
     }
 
+    @Override
+    public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
+        final SolrQuery query = buildSolrQuery(search, factory, null);
+        return query.toString();
+    }
+
+    @Override
+    public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory, DocumentFactory childFactory) {
+        final SolrQuery query = buildSolrQuery(search, factory, childFactory);
+        return query.toString();
+    }
+
+    @Override
+    public <T> String getRawQuery(ExecutableSuggestionSearch search, Class<T> c) {
+        final DocumentFactory factory = AnnotationUtil.createDocumentFactory(c);
+        final SolrQuery query = buildSolrQuery(search, factory, null);
+        return query.toString();
+    }
+
     protected SolrQuery buildSolrQuery(ExecutableSuggestionSearch search, DocumentFactory assets, DocumentFactory childFactory) {
         final String searchContext = search.getSearchContext();
 

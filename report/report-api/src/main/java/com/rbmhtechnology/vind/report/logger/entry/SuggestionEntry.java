@@ -39,16 +39,16 @@ public class SuggestionEntry extends LogEntry{
         this.session = session;
         this.timeStamp = start;
 
-        this.request = new SuggestionRequest(search/*.copy()*/, source);//TODO add copy to suggestion search
+        this.request = new SuggestionRequest(search/*.copy()*/, server.getRawQuery(search, factory),source);//TODO add copy to suggestion search
         this.response = new Response(result.size(), result.getSuggestedFields().size() ,start.until(end, ChronoUnit.MILLIS));
     }
 
-    public SuggestionEntry(Application application, ExecutableSuggestionSearch search, SuggestionResult result, ZonedDateTime start, ZonedDateTime end, Session session) {
+    public SuggestionEntry(SearchServer server, DocumentFactory factory, Application application, ExecutableSuggestionSearch search, SuggestionResult result, ZonedDateTime start, ZonedDateTime end, Session session) {
         this.application = application;
         this.session = session;
         this.timeStamp = start;
 
-        this.request = new SuggestionRequest(search/*.copy()*/, this.type.name());//TODO add copy to suggestion search
+        this.request = new SuggestionRequest(search/*.copy()*/,server.getRawQuery(search, factory), this.type.name());//TODO add copy to suggestion search
         this.response = new Response(result.size(), result.getSuggestedFields().size() ,start.until(end, ChronoUnit.MILLIS));
     }
 

@@ -21,7 +21,7 @@ public class FullTextRequest implements SearchRequest{
     private String query;
     private com.rbmhtechnology.vind.api.query.filter.Filter filter;
     private List<Facet> facets;
-    private String solrQuery;
+    private String rawQuery;
     private String source;
 
     public FullTextRequest() {
@@ -35,7 +35,7 @@ public class FullTextRequest implements SearchRequest{
         }
         this.facets = new ArrayList<>(this.search.getFacets().values());
         this.source = source;
-        this.solrQuery = solrQuery;
+        this.rawQuery = solrQuery;
     }
 
     @Override
@@ -54,8 +54,8 @@ public class FullTextRequest implements SearchRequest{
     }
 
     @Override
-    public String getSolrQuery() {
-        return solrQuery;
+    public String getRawQuery() {
+        return rawQuery;
     }
 
     @Override
