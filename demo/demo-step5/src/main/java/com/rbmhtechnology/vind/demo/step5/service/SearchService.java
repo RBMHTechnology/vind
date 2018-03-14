@@ -7,10 +7,10 @@ import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
-import com.rbmhtechnology.vind.log.writer.LogReportWriter;
+import com.rbmhtechnology.vind.monitoring.log.writer.LogWriter;
 import com.rbmhtechnology.vind.model.*;
-import com.rbmhtechnology.vind.report.ReportingSearchServer;
-import com.rbmhtechnology.vind.report.logger.ReportWriter;
+import com.rbmhtechnology.vind.monitoring.MonitoringSearchServer;
+import com.rbmhtechnology.vind.monitoring.logger.MonitoringWriter;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -43,8 +43,8 @@ public class SearchService implements AutoCloseable {
 
     private String guardianApiKey;
     private SearchServer server;
-    private final ReportWriter writer = new LogReportWriter();
-    private final ReportingSearchServer reportingSearchServer;
+    private final MonitoringWriter writer = new LogWriter();
+    private final MonitoringSearchServer monitoringSearchServer;
 
 
     private SingleValueFieldDescriptor.TextFieldDescriptor<String> title;
@@ -61,7 +61,7 @@ public class SearchService implements AutoCloseable {
 
         this.server = SearchServer.getInstance();
 
-        this.reportingSearchServer = new ReportingSearchServer(server, writer);
+        this.monitoringSearchServer = new MonitoringSearchServer(server, writer);
 
 
         this.title = new FieldDescriptorBuilder()
@@ -123,7 +123,7 @@ public class SearchService implements AutoCloseable {
 
         if (categories != null) Arrays.stream(categories).map(c -> eq(category, c)).forEach(search::filter);
 
-        return reportingSearchServer.execute(search, newsItems);
+        return monitoringSearchServer.execute(search, newsItems);
     }
 
     public Object suggest(String query, String... categories) {
@@ -132,7 +132,7 @@ public class SearchService implements AutoCloseable {
 
         if (categories != null) Arrays.stream(categories).map(c -> eq(category, c)).forEach(search::filter);
 
-        return reportingSearchServer.execute(search, newsItems);
+        return monitoringSearchServer.execute(search, newsItems);
     }
 
     public Object search(String query, int page, Sort sort) {
@@ -161,7 +161,7 @@ public class SearchService implements AutoCloseable {
                 )
         );
 
-        return reportingSearchServer.execute(search, newsItems);
+        return monitoringSearchServer.execute(search, newsItems);
 
     }
 

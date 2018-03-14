@@ -1,6 +1,5 @@
 package com.rbmhtechnology.vind.demo.step2;
 
-import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.demo.step2.model.NewsItem;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
@@ -8,13 +7,14 @@ import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.result.BeanPageResult;
 import com.rbmhtechnology.vind.api.result.BeanSearchResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
-import com.rbmhtechnology.vind.log.elastic.writer.ElasticReportWriter;
-import com.rbmhtechnology.vind.report.ReportingSearchServer;
-import com.rbmhtechnology.vind.report.logger.ReportWriter;
-import com.rbmhtechnology.vind.report.model.Interface.Interface;
-import com.rbmhtechnology.vind.report.model.application.InterfaceApplication;
-import com.rbmhtechnology.vind.report.model.session.UserSession;
-import com.rbmhtechnology.vind.report.model.user.User;
+import com.rbmhtechnology.vind.monitoring.elastic.writer.ElasticWriter;
+import com.rbmhtechnology.vind.monitoring.MonitoringSearchServer;
+import com.rbmhtechnology.vind.monitoring.log.writer.LogWriter;
+import com.rbmhtechnology.vind.monitoring.logger.MonitoringWriter;
+import com.rbmhtechnology.vind.monitoring.model.Interface.Interface;
+import com.rbmhtechnology.vind.monitoring.model.application.InterfaceApplication;
+import com.rbmhtechnology.vind.monitoring.model.session.UserSession;
+import com.rbmhtechnology.vind.monitoring.model.user.User;
 
 import java.time.ZonedDateTime;
 
@@ -29,11 +29,11 @@ public class SearchApplication {
 		SearchServer server = SearchServer.getInstance();
 
 
-		final ReportWriter writer = new ElasticReportWriter("localhost", "9200", "logindex");
+		final MonitoringWriter writer = new LogWriter();
 		final InterfaceApplication application = new InterfaceApplication("Application name", "0.0.0", new Interface("sugar-love","0.0.0"));
-		final ReportingSearchServer reportingSearchServer = new ReportingSearchServer(server, application, writer);
+		final MonitoringSearchServer monitoringSearchServer = new MonitoringSearchServer(server, application, writer);
 
-		reportingSearchServer.setSession( new UserSession("session-ID-1234567",new User("user 2","user-ID-2")));
+		monitoringSearchServer.setSession( new UserSession("session-ID-1234567",new User("user 2","user-ID-2")));
 
 		//index 2 news items
 		NewsItem i1 = new NewsItem("1", "New Vind instance needed", ZonedDateTime.now().minusMonths(3), "article", "coding");
@@ -46,7 +46,7 @@ public class SearchApplication {
 		//this search should retrieve news items that should match the search term best
 		FulltextSearch search = Search.fulltext("vind release");
 
-		BeanSearchResult<NewsItem> result = reportingSearchServer.execute(search, NewsItem.class);
+		BeanSearchResult<NewsItem> result = monitoringSearchServer.execute(search, NewsItem.class);
 
 		//lets log the results
 		System.out.println("\n--- Search 1: Fulltext ---");
@@ -58,7 +58,7 @@ public class SearchApplication {
 		search.text("vind");
 		search.facet("category","kind");
 
-		result = reportingSearchServer.execute(search, NewsItem.class);
+		result = monitoringSearchServer.execute(search, NewsItem.class);
 
 		System.out.println("\n--- Search 2.1: Category Facets ---");
 		result.getFacetResults().getTermFacet("category",String.class).getValues().forEach(System.out::println);
@@ -68,18 +68,18 @@ public class SearchApplication {
 		result.getFacetResults().getTermFacet("kind",String.class).getValues().forEach(System.out::println);
 		System.out.println();
 
-		reportingSearchServer.setSession( new UserSession("session-ID-12345678",new User("user 3","user-ID-3")));
+		monitoringSearchServer.setSession( new UserSession("session-ID-12345678",new User("user 3","user-ID-3")));
 
 		//new we define a search order based on the 'created ' field
 		search.sort(desc("created"));
-		result = reportingSearchServer.execute(search, NewsItem.class);
+		result = monitoringSearchServer.execute(search, NewsItem.class);
 
 		System.out.println("\n--- Search 3: Sort by created descending ---");
 		result.getResults().forEach(System.out::println);
 		System.out.println();
 
 		//now we want to filter for all items with the kind 'blog'.
-		result = reportingSearchServer.execute(Search.fulltext().filter(eq("kind","blog")), NewsItem.class);
+		result = monitoringSearchServer.execute(Search.fulltext().filter(eq("kind","blog")), NewsItem.class);
 
 		System.out.println("\n--- Search 4: Filtered by kind=blog ---");
 		result.getResults().forEach(System.out::println);
@@ -87,7 +87,7 @@ public class SearchApplication {
 
 		//this search should retrieve news items
 		//we set the page to 1 and the pagesize to 1
-		result = reportingSearchServer.execute(Search.fulltext().page(1, 1), NewsItem.class);
+		result = monitoringSearchServer.execute(Search.fulltext().page(1, 1), NewsItem.class);
 
 		//lets log the results
 		System.out.println("\n--- Search 5.1: Paging (Page 1) ---");
@@ -103,7 +103,7 @@ public class SearchApplication {
 		}
 
 		//suggest
-		SuggestionResult suggestions = reportingSearchServer.execute(Search.suggest("c").fields("category"), NewsItem.class);
+		SuggestionResult suggestions = monitoringSearchServer.execute(Search.suggest("c").fields("category"), NewsItem.class);
 		System.out.println("\n--- Suggestions: ---");
 		System.out.println(suggestions.get("category").getValues());
 		System.out.println();
