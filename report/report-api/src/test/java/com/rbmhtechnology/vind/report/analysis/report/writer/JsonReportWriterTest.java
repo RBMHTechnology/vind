@@ -3,13 +3,14 @@
  */
 package com.rbmhtechnology.vind.report.analysis.report.writer;
 
+import com.google.common.collect.Maps;
 import com.rbmhtechnology.vind.report.analysis.report.Report;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.LinkedHashMap;
 
 /**
  * Created on 01.03.18.
@@ -22,16 +23,21 @@ public class JsonReportWriterTest {
     @Before
     public void setUp() {
 
-        final LinkedHashMap<String, List<Object>> fieldValuesMap = new LinkedHashMap<>();
-        fieldValuesMap.put("field1", Arrays.asList("value1","value2","value3"));
-        fieldValuesMap.put("field2", Arrays.asList("value4",5.00,"value6"));
-        fieldValuesMap.put("field3", Arrays.asList("value7","value8",9));
+        final LinkedHashMap<Object, Long> fieldsValues = new LinkedHashMap<>();
+        fieldsValues.put("value1", 8l);
+        fieldsValues.put("value2", 3l);
+        fieldsValues.put("value3", 1l);
+
+        final LinkedHashMap<String, LinkedHashMap<Object, Long>> suggestionFieldsValues = new LinkedHashMap<>();
+        suggestionFieldsValues.put("field1", fieldsValues);
+
+
 
         this.report = new Report()
                 .setFrom(ZonedDateTime.now().minusDays(1))
                 .setTo(ZonedDateTime.now().plusDays(1))
                 .setRequests(10000)
-                .setSuggestionFieldsValues(fieldValuesMap);
+                .setSuggestionFieldsValues(suggestionFieldsValues);
     }
 
     @Test

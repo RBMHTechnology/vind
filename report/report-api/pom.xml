@@ -32,6 +32,16 @@
             <groupId>io.searchbox</groupId>
             <artifactId>jest</artifactId>
             <version>5.3.3</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!--HTML templating-->
         <dependency>

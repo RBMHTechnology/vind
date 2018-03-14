@@ -29,6 +29,11 @@
             <artifactId>log-writer</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.rbmhtechnology.vind</groupId>
+            <artifactId>elastic-writer</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
     </dependencies>
 

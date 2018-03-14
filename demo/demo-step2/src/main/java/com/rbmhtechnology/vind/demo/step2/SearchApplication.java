@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.demo.step2;
 
+import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.demo.step2.model.NewsItem;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
@@ -7,9 +8,13 @@ import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.result.BeanPageResult;
 import com.rbmhtechnology.vind.api.result.BeanSearchResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
-import com.rbmhtechnology.vind.log.writer.LogReportWriter;
+import com.rbmhtechnology.vind.log.elastic.writer.ElasticReportWriter;
 import com.rbmhtechnology.vind.report.ReportingSearchServer;
 import com.rbmhtechnology.vind.report.logger.ReportWriter;
+import com.rbmhtechnology.vind.report.model.Interface.Interface;
+import com.rbmhtechnology.vind.report.model.application.InterfaceApplication;
+import com.rbmhtechnology.vind.report.model.session.UserSession;
+import com.rbmhtechnology.vind.report.model.user.User;
 
 import java.time.ZonedDateTime;
 
@@ -23,8 +28,12 @@ public class SearchApplication {
 		//get an instance of a server (in this case a embedded solr server)
 		SearchServer server = SearchServer.getInstance();
 
-		final ReportWriter writer = new LogReportWriter();
-		final ReportingSearchServer reportingSearchServer = new ReportingSearchServer(server, writer);
+
+		final ReportWriter writer = new ElasticReportWriter("localhost", "9200", "logindex");
+		final InterfaceApplication application = new InterfaceApplication("Application name", "0.0.0", new Interface("sugar-love","0.0.0"));
+		final ReportingSearchServer reportingSearchServer = new ReportingSearchServer(server, application, writer);
+
+		reportingSearchServer.setSession( new UserSession("session-ID-1234567",new User("user 2","user-ID-2")));
 
 		//index 2 news items
 		NewsItem i1 = new NewsItem("1", "New Vind instance needed", ZonedDateTime.now().minusMonths(3), "article", "coding");
@@ -58,6 +67,8 @@ public class SearchApplication {
 		System.out.println("--- Search 2.2: Kind Facets ---");
 		result.getFacetResults().getTermFacet("kind",String.class).getValues().forEach(System.out::println);
 		System.out.println();
+
+		reportingSearchServer.setSession( new UserSession("session-ID-12345678",new User("user 3","user-ID-3")));
 
 		//new we define a search order based on the 'created ' field
 		search.sort(desc("created"));
