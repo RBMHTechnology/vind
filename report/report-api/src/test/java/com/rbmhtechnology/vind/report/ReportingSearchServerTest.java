@@ -9,13 +9,11 @@ import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
 import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
-import com.rbmhtechnology.vind.report.logger.Log;
 import com.rbmhtechnology.vind.report.logger.ReportWriter;
 import com.rbmhtechnology.vind.report.logger.entry.FullTextEntry;
 import com.rbmhtechnology.vind.report.logger.entry.LogEntry;
 import com.rbmhtechnology.vind.report.model.NewsItem;
 import com.rbmhtechnology.vind.report.model.application.SimpleApplication;
-import com.rbmhtechnology.vind.report.model.request.SearchRequest;
 import com.rbmhtechnology.vind.report.model.session.SimpleSession;
 import com.rbmhtechnology.vind.test.SearchTestcase;
 import org.junit.Rule;
@@ -25,7 +23,6 @@ import org.junit.rules.ExpectedException;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
 
 import static com.rbmhtechnology.vind.api.query.filter.Filter.*;
 import static org.junit.Assert.assertEquals;
@@ -70,7 +67,7 @@ public class ReportingSearchServerTest extends SearchTestcase {
         assertEquals("123", logger.logs.get(0).getSession().getSessionId());
         assertEquals("*", ((FullTextEntry)logger.logs.get(0)).getRequest().getQuery());
         assertEquals("456", logger.logs.get(1).getSession().getSessionId());
-        assertEquals("Hello World", ((FullTextEntry)logger.logs.get(0)).getRequest().getQuery());
+        assertEquals("*", ((FullTextEntry)logger.logs.get(0)).getRequest().getQuery());
     }
 
     @Test

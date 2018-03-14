@@ -7,9 +7,9 @@ import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.result.BeanPageResult;
 import com.rbmhtechnology.vind.api.result.BeanSearchResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
+import com.rbmhtechnology.vind.log.writer.LogReportWriter;
 import com.rbmhtechnology.vind.report.ReportingSearchServer;
 import com.rbmhtechnology.vind.report.logger.ReportWriter;
-import com.rbmhtechnology.vind.report.writer.LogReportWriter;
 
 import java.time.ZonedDateTime;
 
@@ -24,7 +24,7 @@ public class SearchApplication {
 		SearchServer server = SearchServer.getInstance();
 
 		final ReportWriter writer = new LogReportWriter();
-		final ReportingSearchServer reportingSearchServer = new ReportingSearchServer(server);
+		final ReportingSearchServer reportingSearchServer = new ReportingSearchServer(server, writer);
 
 		//index 2 news items
 		NewsItem i1 = new NewsItem("1", "New Vind instance needed", ZonedDateTime.now().minusMonths(3), "article", "coding");

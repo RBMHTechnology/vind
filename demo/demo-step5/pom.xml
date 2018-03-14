@@ -81,7 +81,7 @@
         </dependency>
         <dependency>
             <groupId>com.rbmhtechnology.vind</groupId>
-            <artifactId>report-writer-log</artifactId>
+            <artifactId>log-writer</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

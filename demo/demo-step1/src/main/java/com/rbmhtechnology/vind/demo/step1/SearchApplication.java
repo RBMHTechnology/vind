@@ -4,9 +4,9 @@ import com.rbmhtechnology.vind.demo.step1.model.NewsItem;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.result.BeanSearchResult;
+import com.rbmhtechnology.vind.log.writer.LogReportWriter;
 import com.rbmhtechnology.vind.report.ReportingSearchServer;
 import com.rbmhtechnology.vind.report.logger.ReportWriter;
-import com.rbmhtechnology.vind.report.writer.LogReportWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +23,7 @@ public class SearchApplication {
 		try (SearchServer server = SearchServer.getInstance()) {
 
 			final ReportWriter writer = new LogReportWriter();
-			final ReportingSearchServer reportingSearchServer = new ReportingSearchServer(server);
+			final ReportingSearchServer reportingSearchServer = new ReportingSearchServer(server, writer);
 
 			//index 2 news items
 			NewsItem i1 = new NewsItem("1", "New Vind instance needed", ZonedDateTime.now().minusMonths(3));

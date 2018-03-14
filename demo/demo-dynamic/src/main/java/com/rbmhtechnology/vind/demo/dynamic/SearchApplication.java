@@ -3,10 +3,11 @@ package com.rbmhtechnology.vind.demo.dynamic;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
+import com.rbmhtechnology.vind.log.writer.LogReportWriter;
 import com.rbmhtechnology.vind.model.*;
 import com.rbmhtechnology.vind.report.ReportingSearchServer;
 import com.rbmhtechnology.vind.report.logger.ReportWriter;
-import com.rbmhtechnology.vind.report.writer.LogReportWriter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +39,7 @@ public class SearchApplication {
         //get an instance of a server (in this case a embedded solr server)
         try (SearchServer server = SearchServer.getInstance()) {
             final ReportWriter writer = new LogReportWriter();
-            final ReportingSearchServer reportingSearchServer = new ReportingSearchServer(server);
+            final ReportingSearchServer reportingSearchServer = new ReportingSearchServer(server, writer);
             log.info("Indexing some data");
             server.index(news.createDoc("1")
                             .setValue(title, "Headline 1")

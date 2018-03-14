@@ -7,10 +7,10 @@ import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
+import com.rbmhtechnology.vind.log.writer.LogReportWriter;
 import com.rbmhtechnology.vind.model.*;
 import com.rbmhtechnology.vind.report.ReportingSearchServer;
 import com.rbmhtechnology.vind.report.logger.ReportWriter;
-import com.rbmhtechnology.vind.report.writer.LogReportWriter;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -61,7 +61,7 @@ public class SearchService implements AutoCloseable {
 
         this.server = SearchServer.getInstance();
 
-        this.reportingSearchServer = new ReportingSearchServer(server);
+        this.reportingSearchServer = new ReportingSearchServer(server, writer);
 
 
         this.title = new FieldDescriptorBuilder()
