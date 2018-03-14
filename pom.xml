@@ -18,7 +18,7 @@
 
         <module>backend</module>
         <module>server</module>
-        <module>report</module>
+        <module>monitoring</module>
 
         <module>utils</module>
 
