@@ -14,7 +14,7 @@
 
     <modules>
         <module>report-api</module>
-        <module>report-writer</module>
+        <module>log-writers</module>
     </modules>
 
     <build>
