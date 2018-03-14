@@ -19,8 +19,8 @@ import com.rbmhtechnology.vind.api.query.facet.Facet;
 
 public abstract class FacetMixin extends Facet {
 
-    @JsonProperty("type")
+    @JsonProperty("field")
     @Override
-    public abstract String getType();
+    public abstract String getName();
 
 }
