@@ -317,13 +317,13 @@ public class SolrSearchServer extends SearchServer {
 
                 switch(search.getResultSet().getType()) {
                     case page:{
-                        return new PageResult(response.getResults().getNumFound(), documents, search, facetResults, this, factory);
+                        return new PageResult(response.getResults().getNumFound(), response.getQTime(), documents, search, facetResults, this, factory).setElapsedTime(response.getElapsedTime());
                     }
                     case slice: {
-                        return new SliceResult(response.getResults().getNumFound(), documents, search, facetResults, this, factory);
+                        return new SliceResult(response.getResults().getNumFound(), response.getQTime(), documents, search, facetResults, this, factory).setElapsedTime(response.getElapsedTime());
                     }
                     default:
-                        return new PageResult(response.getResults().getNumFound(), documents, search, facetResults, this, factory);
+                        return new PageResult(response.getResults().getNumFound(), response.getQTime(), documents, search, facetResults, this, factory).setElapsedTime(response.getElapsedTime());
                 }
             }else {
                 throw new SolrServerException("Null result from SolrClient");

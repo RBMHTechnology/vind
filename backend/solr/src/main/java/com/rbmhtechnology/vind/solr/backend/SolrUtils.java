@@ -1360,7 +1360,7 @@ public class SolrUtils {
                         response.getSpellCheckResponse().getCollatedResult().replaceFirst("\\*$","") :
                         null;
 
-                return new SuggestionResult(suggestions, collation, factory);
+                return new SuggestionResult(suggestions, collation, response.getQTime(), factory).setElapsedTime(response.getElapsedTime());
             }
             return new SuggestionResult();
         }
