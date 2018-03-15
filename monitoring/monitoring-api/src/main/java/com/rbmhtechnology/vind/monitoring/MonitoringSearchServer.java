@@ -32,7 +32,7 @@ public class MonitoringSearchServer extends SearchServer {
 
     private Logger log = LoggerFactory.getLogger(MonitoringSearchServer.class);
 
-    public static final String APPLICATION_ID = "reporting.application.id";
+    public static final String APPLICATION_ID = "search.monitoring.application.id";
 
 
     private final SearchServer server;
@@ -74,8 +74,8 @@ public class MonitoringSearchServer extends SearchServer {
             String applicationId = SearchConfiguration.get(APPLICATION_ID);
 
             if(applicationId == null) {
-                log.error("property '{}' has to be set for report logger", APPLICATION_ID);
-                throw new RuntimeException("Property '" + APPLICATION_ID + "' has to be set for report logger");
+                log.error("property '{}' has to be set for search monitoring", APPLICATION_ID);
+                throw new RuntimeException("Property '" + APPLICATION_ID + "' has to be set for search monitoring");
             }
 
             application = new SimpleApplication(applicationId);
@@ -126,7 +126,7 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final BeanSearchResult<T> result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new FullTextEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, source ,search, result, start, end, session));
+        logger.log(new FullTextEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, source ,search, result, start, end,result.getQueryTime(), result.getElapsedTime(), session));
         return result;
     }
 
@@ -135,7 +135,7 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SearchResult result = server.execute(search, factory);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new FullTextEntry(this.server, factory, application, source ,search, result, start, end, session));
+        logger.log(new FullTextEntry(this.server, factory, application, source ,search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session));
         return result;
     }
 
@@ -154,7 +154,7 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         SuggestionResult result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new SuggestionEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, session));
+        logger.log(new SuggestionEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session));
         return result;
     }
 
@@ -163,7 +163,7 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SuggestionResult result = server.execute(search, assets);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new SuggestionEntry(this.server, assets, application, search, result, start, end, session));
+        logger.log(new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session));
         return result;
     }
 
@@ -172,7 +172,7 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SuggestionResult result = server.execute(search, assets, childFactory);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new SuggestionEntry(this.server, assets, application, search, result, start, end, session));
+        logger.log(new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session));
         return result;
     }
 

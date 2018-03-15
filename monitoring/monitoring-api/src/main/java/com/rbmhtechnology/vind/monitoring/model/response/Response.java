@@ -3,6 +3,7 @@
  */
 package com.rbmhtechnology.vind.monitoring.model.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -16,17 +17,26 @@ public class Response {
     @JsonProperty("query_time")
     private long queryTime;
 
-    @JsonProperty("num_of_fields")
-    private long suggestedFields;
+    @JsonProperty("elapsed_time")
+    private long elapsedTime;
 
-    public Response(long results, long queryTime) {
+    @JsonProperty("vind_time")
+    private long vindTime;
+
+    @JsonProperty("num_of_fields")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Long suggestedFields = null;
+
+    public Response(long results, long queryTime, long vindTime) {
         this.results = results;
         this.queryTime = queryTime;
+        this.vindTime = vindTime;
     }
 
-    public Response(long results, long suggestedFields, long queryTime) {
+    public Response(long results, long queryTime, long vindTime, long suggestedFields) {
         this.results = results;
         this.queryTime = queryTime;
+        this.vindTime = vindTime;
         this.suggestedFields = suggestedFields;
     }
 
@@ -38,7 +48,20 @@ public class Response {
         return queryTime;
     }
 
-    public long getSuggestedFields() {
+    public long getVindTime() {
+        return vindTime;
+    }
+
+    public Long getSuggestedFields() {
         return suggestedFields;
+    }
+
+    public long getElapsedTime() {
+        return elapsedTime;
+    }
+
+    public Response setElapsedTime(long elapsedTime) {
+        this.elapsedTime = elapsedTime;
+        return this;
     }
 }

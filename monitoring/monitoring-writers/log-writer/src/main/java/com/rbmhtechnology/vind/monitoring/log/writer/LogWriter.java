@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author Thomas Kurz (tkurz@apache.org)
+ * @author Alfonso Noriega Meneses
  * @since 18.07.16.
  */
 public class LogWriter extends MonitoringWriter {

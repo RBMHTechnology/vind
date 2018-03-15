@@ -3,7 +3,6 @@
  */
 package com.rbmhtechnology.vind.monitoring.logger.entry;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
@@ -13,9 +12,9 @@ import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.monitoring.model.application.Application;
 import com.rbmhtechnology.vind.monitoring.model.request.FullTextRequest;
 import com.rbmhtechnology.vind.monitoring.model.request.Paging.Paging;
+import com.rbmhtechnology.vind.monitoring.model.request.SearchRequest;
 import com.rbmhtechnology.vind.monitoring.model.response.Response;
 import com.rbmhtechnology.vind.monitoring.model.session.Session;
-import com.rbmhtechnology.vind.monitoring.model.request.SearchRequest;
 
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -25,8 +24,6 @@ import java.util.List;
  * Created on 03.10.17.
  */
 public class FullTextEntry extends LogEntry{
-
-    private ObjectMapper mapper = LogEntry.getMapper();
 
     final private EntryType type = EntryType.fulltext;
     private Application application;
@@ -40,23 +37,46 @@ public class FullTextEntry extends LogEntry{
     public FullTextEntry() {
     }
 
-    public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, String source, FulltextSearch search, SearchResult result, ZonedDateTime start, ZonedDateTime end, Session session) {
+    public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, String source, FulltextSearch search, SearchResult result, ZonedDateTime start, ZonedDateTime end, long queryTime, Session session) {
         this.application = application;
         this.session = session;
         this.timeStamp = start;
         this.request = new FullTextRequest(search.copy(), server.getRawQuery(search,factory), source);
-        this.response = new Response(result.getNumOfResults(), start.until(end, ChronoUnit.MILLIS));
+        this.response = new Response(result.getNumOfResults(), queryTime, start.until(end, ChronoUnit.MILLIS));
         this.sorting = search.getSorting();
         this.paging = new Paging(search.getResultSet());
     }
 
-    public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, String source, FulltextSearch search, BeanSearchResult result, ZonedDateTime start, ZonedDateTime end, Session session) {
+    public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, String source, FulltextSearch search, BeanSearchResult result, ZonedDateTime start, ZonedDateTime end, long queryTime, Session session) {
         this.application = application;
         this.session = session;
         this.timeStamp = start;
 
         this.request = new FullTextRequest(search.copy(), server.getRawQuery(search,factory), source);
-        this.response = new Response(result.getNumOfResults(), start.until(end, ChronoUnit.MILLIS));
+        this.response = new Response(result.getNumOfResults(), queryTime, start.until(end, ChronoUnit.MILLIS));
+        this.sorting = search.getSorting();
+        this.paging = new Paging(search.getResultSet());
+    }
+
+    public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, String source, FulltextSearch search, SearchResult result, ZonedDateTime start, ZonedDateTime end, long queryTime, long elapsedTime, Session session) {
+        this.application = application;
+        this.session = session;
+        this.timeStamp = start;
+        this.request = new FullTextRequest(search.copy(), server.getRawQuery(search,factory), source);
+        this.response = new Response(result.getNumOfResults(), queryTime, start.until(end, ChronoUnit.MILLIS));
+        this.response.setElapsedTime(elapsedTime);
+        this.sorting = search.getSorting();
+        this.paging = new Paging(search.getResultSet());
+    }
+
+    public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, String source, FulltextSearch search, BeanSearchResult result, ZonedDateTime start, ZonedDateTime end, long queryTime, long elapsedTime, Session session) {
+        this.application = application;
+        this.session = session;
+        this.timeStamp = start;
+
+        this.request = new FullTextRequest(search.copy(), server.getRawQuery(search,factory), source);
+        this.response = new Response(result.getNumOfResults(), queryTime, start.until(end, ChronoUnit.MILLIS));
+        this.response.setElapsedTime(elapsedTime);
         this.sorting = search.getSorting();
         this.paging = new Paging(search.getResultSet());
     }
