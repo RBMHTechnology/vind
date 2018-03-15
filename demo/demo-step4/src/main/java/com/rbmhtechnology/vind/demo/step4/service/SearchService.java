@@ -5,7 +5,10 @@ import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.result.SearchResult;
+import com.rbmhtechnology.vind.monitoring.log.writer.LogWriter;
 import com.rbmhtechnology.vind.model.*;
+import com.rbmhtechnology.vind.monitoring.MonitoringSearchServer;
+import com.rbmhtechnology.vind.monitoring.logger.MonitoringWriter;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -22,6 +25,8 @@ import static com.rbmhtechnology.vind.api.query.sort.Sort.desc;
 public class SearchService implements AutoCloseable {
 
     private SearchServer server = SearchServer.getInstance();
+    private final MonitoringWriter writer = new LogWriter();
+    private final MonitoringSearchServer monitoringSearchServer = new MonitoringSearchServer(server, writer);
 
     private SingleValueFieldDescriptor.TextFieldDescriptor<String> title;
     private SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created;
@@ -39,6 +44,7 @@ public class SearchService implements AutoCloseable {
 
         //a single value date field
         this.created = new FieldDescriptorBuilder()
+                .setFacet(true)
                 .buildDateField("created");
 
         //a multivalue text field used for fulltext and facet.
@@ -63,8 +69,8 @@ public class SearchService implements AutoCloseable {
     }
 
     public void index() {
-        server.indexBean(createNewsItem("1", "New Vind instance needed", ZonedDateTime.now().minusMonths(3), 1, "coding"));
-        server.indexBean(createNewsItem("2", "Vind instance available", ZonedDateTime.now(), 2, "coding", "release"));
+        server.index(createNewsItem("1", "New Vind instance needed", ZonedDateTime.now().minusMonths(3), 1, "coding"));
+        server.index(createNewsItem("2", "Vind instance available", ZonedDateTime.now(), 2, "coding", "release"));
         server.commit();
     }
 
@@ -92,7 +98,7 @@ public class SearchService implements AutoCloseable {
 
         //search.facet(stats("rankStats",ranking).mean().max());
 
-        return server.execute(search, newsItems);
+        return monitoringSearchServer.execute(search, newsItems);
     }
 
     @Override

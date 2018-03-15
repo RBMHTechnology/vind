@@ -130,6 +130,7 @@ public class SolrFilterSerializer {
 
 
     public Filter checkScopeValidity(Filter filter) {
+        if(Objects.isNull(filter)) { return null; }
         if(filter instanceof Filter.AndFilter) return coolNamedMethod((Filter.AndFilter) filter);
         if(filter instanceof Filter.OrFilter) return coolNamedMethod((Filter.OrFilter) filter);
         if(filter instanceof Filter.NotFilter) return coolNamedMethod((Filter.NotFilter) filter);

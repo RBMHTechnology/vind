@@ -16,10 +16,12 @@ import com.rbmhtechnology.vind.model.value.LatLng;
 import com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.UseCase;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrResponse;
 import org.apache.solr.client.solrj.response.*;
+import org.apache.solr.client.solrj.response.IntervalFacet;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.CommonParams;
@@ -44,8 +46,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.rbmhtechnology.vind.api.query.facet.Facet.*;
 import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.UseCase.*;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 
@@ -72,6 +74,15 @@ public class SolrUtils {
             Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(),Fieldname.Type.NUMBER.getName(),
             Fieldname.Type.STRING.getName(),Fieldname.Type.LOCATION.getName());
 
+    private static final String INTERNAL_SCOPE_FACET_FIELD_PREFIX = String.format("%s(%s|%s)(%s)?(%s|%s|%s)(%s|%s|%s|%s|%s|%s|%s)",
+            Fieldname._DYNAMIC,
+            Fieldname._MULTI,Fieldname._SINGLE,
+            Fieldname._STORED,
+            Fieldname._FACET,Fieldname._SUGGEST,Fieldname._FILTER,
+            Fieldname.Type.BOOLEAN.getName(), Fieldname.Type.DATE.getName(),
+            Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(),Fieldname.Type.NUMBER.getName(),
+            Fieldname.Type.STRING.getName(),Fieldname.Type.LOCATION.getName());
+
     private static final String INTERNAL_SUGGEST_FIELD_PREFIX = String.format("%s(%s|%s)(%s)?%s(%s|%s|%s|%s|%s|%s|%s)",
             Fieldname._DYNAMIC,
             Fieldname._MULTI,Fieldname._SINGLE,
@@ -94,7 +105,7 @@ public class SolrUtils {
                 log.debug("Parsing subdocument facet result from JSON ");
 
                 final int facetCount = (int) ((SimpleOrderedMap) subDocumentFacetResult).get("count");
-                if (facetCount > 0) {
+                if (facetCount > 0 && Objects.nonNull(((SimpleOrderedMap) subDocumentFacetResult).get("parent_facet"))) {
                     final List<SimpleOrderedMap> parentDocs = (ArrayList) ((SimpleOrderedMap) ((SimpleOrderedMap) subDocumentFacetResult).get("parent_facet")).get("buckets");
                     childCounts = parentDocs.stream().collect(Collectors.toMap(p -> (String) p.get("val"), p -> ((Integer) ((SimpleOrderedMap) p.get("children_facet")).get("count"))));
                 }
@@ -117,7 +128,7 @@ public class SolrUtils {
                 log.debug("Parsing subdocument facet result from JSON ");
 
                 final int facetCount = (int) ((SimpleOrderedMap) subDocumentFacetResult).get("count");
-                if (facetCount > 0) {
+                if (facetCount > 0 && Objects.nonNull(((SimpleOrderedMap) subDocumentFacetResult).get("childrenCount"))) {
                     final SimpleOrderedMap parentDocs = ((SimpleOrderedMap) ((SimpleOrderedMap) subDocumentFacetResult).get("childrenCount"));
                     final Integer childCount = (Integer) parentDocs.get("count");
                     final Integer parentCount;
@@ -135,13 +146,6 @@ public class SolrUtils {
 
         return null;
     }
-
-    /*private static final String INTERNAL_SORT_FIELD_PREFIX = String.format("%s%s(%s|%s|%s|%s|%s|%s)",
-            Fieldname._DYNAMIC,
-            Fieldname._SORT,
-            Fieldname.Type.BOOLEAN.getName(), Fieldname.Type.DATE.getName(),
-            Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(),Fieldname.Type.NUMBER.getName(),
-            Fieldname.Type.STRING.getName());*/
 
     public static final class Query {
 
@@ -238,23 +242,82 @@ public class SolrUtils {
                     .collect(Collectors.joining(" "));
         }
 
-        public static String[] buildFacetFieldList(Map<String, Facet> facets, DocumentFactory factory, String searchContext) {
+        public static String[] buildFacetFieldList(Map<String, Facet> facets, DocumentFactory factory, DocumentFactory childFactory, String searchContext) {
             final List<String> termFacetQuery = facets.values().stream()
-                    .filter(facet -> facet instanceof Facet.TermFacet)
-                    .map(facet -> (Facet.TermFacet) facet)
-                    .map(facet -> Objects.nonNull(facet.getFieldDescriptor()) ? facet : new Facet.TermFacet(factory.getField(facet.getName())))
-                    .map(facet -> Fieldname.getFieldname(facet.getFieldDescriptor(), Facet, searchContext))
+                    .filter(facet -> facet instanceof TermFacet)
+                    .map(facet -> (TermFacet) facet)
+                    .map(facet -> {
+                        if(Objects.nonNull(facet.getFieldDescriptor())) {
+                            return facet;
+                        } else {
+                            FieldDescriptor<?> field = factory.getField(facet.getName());
+                            if(Objects.isNull(field) && Objects.nonNull(childFactory)) {
+                                field = childFactory.getField(facet.getName());
+                            }
+                            return new TermFacet(field);
+                        }
+                    })
+                    .map(facet -> Fieldname.getFieldname(facet.getFieldDescriptor(), UseCase.valueOf(facet.getScope().name()), searchContext))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
             final List<String> typeFacet = facets.values().stream()
-                    .filter(facet -> facet instanceof Facet.TypeFacet)
+                    .filter(facet -> facet instanceof TypeFacet)
                     .map(facet -> Fieldname.TYPE)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
             termFacetQuery.addAll(typeFacet);
             return termFacetQuery.stream().toArray(String[]::new);
+        }
+
+        public static HashMap<String, Object> buildJsonTermFacet(Map<String, Facet> facets, int facetLimit, DocumentFactory factory, DocumentFactory childFactory, String searchContext) {
+            final List<HashMap<String, String>> termFacetQuery = facets.entrySet().stream()
+                    .filter(facet -> facet.getValue() instanceof TermFacet)
+                    //.map(facet -> facet.setValue((Facet.TermFacet) facet.getValue()))
+                    .map(facet -> {
+                        final HashMap<String, String> termFacet = new HashMap<>();
+                        termFacet.put("type","terms");
+                        final TermFacet value = (TermFacet) facet.getValue();
+                        FieldDescriptor<?> field = factory.getField(value.getName());
+                        if(Objects.isNull(field) && Objects.nonNull(childFactory)) {
+                            field = childFactory.getField(value.getName());
+                            termFacet.put("domain",
+                                    "{blockChildren:\"" + Fieldname.TYPE +":" +factory.getType() + "\"}");
+                        }
+
+                        final UseCase useCase = UseCase.valueOf(facet.getValue().getScope().name());
+                        final String fieldName = Fieldname.getFieldname(field, useCase, searchContext);
+
+                        if(StringUtils.isEmpty(fieldName)) {
+                            log.warn("Field {} is not set for faceting", fieldName);
+                            return null;
+                        }
+                        termFacet.put("field", fieldName);
+                        termFacet.put("limit", String.valueOf(facetLimit));
+
+                        return termFacet;
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            final List<HashMap<String, String>> typeFacet = facets.values().stream()
+                    .filter(facet -> facet instanceof TypeFacet)
+                    .map(facet ->{
+                        final HashMap<String, String> termFacet = new HashMap<>();
+                        termFacet.put("type","terms");
+                        termFacet.put("field", Fieldname.TYPE);
+                        termFacet.put("limit", String.valueOf(facetLimit));
+                        return termFacet;
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            termFacetQuery.addAll(typeFacet);
+
+            final HashMap<String, Object> jsonFieldFacet = new HashMap<>();
+            termFacetQuery.stream().forEach( facet -> jsonFieldFacet.put(facet.get("field"),facet));
+            return jsonFieldFacet;
         }
 
         public static String buildSolrQueryValue(Object o){
@@ -310,7 +373,7 @@ public class SolrUtils {
             return StringUtils.join("{!query='", name,"' stats='", name,"' range='", name,"' ","ex=dt key='", name, "'}", StringUtils.join(fields,','));
         }
 
-        public static String buildSolrStatsQuery(String solrfieldName, Facet.StatsFacet stats){
+        public static String buildSolrStatsQuery(String solrfieldName, StatsFacet stats){
             String query = buildSolrFacetCustomName(solrfieldName,stats);
 
             String statsQuery = "{!";
@@ -356,31 +419,29 @@ public class SolrUtils {
             return query;
         }
         public static Object buildUpdateQuery(FieldDescriptor field, Object value){
-            //Map.Entry<String, Object> entry =  Maps.immutableEntry(field.getName(),SolrUtils.Result.castForDescriptor(value, field));
-
             return SolrUtils.Result.castForDescriptor(value, field);
         }
 
         public static String buildSubdocumentFacet(FulltextSearch search, DocumentFactory factory,String searchContext) {
 
             final Optional<String> facetOptional = search.getFacets().values().stream()
-                    .filter(facet -> Facet.SubdocumentFacet.class.isAssignableFrom(facet.getClass()))
-                    .map(genericFacet -> (Facet.SubdocumentFacet) genericFacet)
+                    .filter(facet -> SubdocumentFacet.class.isAssignableFrom(facet.getClass()))
+                    .map(genericFacet -> (SubdocumentFacet) genericFacet)
                     .map(facet -> {
                         final String type = facet.getName();
-                        final String filter;
+                        String filter;
                         final String childrenFilterSerialized;
                         if(Objects.nonNull(search.getChildrenSearchString().hasFilter())){
-                          //filter = search.getFilter().accept(new SolrChildrenSerializerVisitor(factory,search.getChildrenFactory(),searchContext)).replaceAll("\\+_type_:" + type + " \\+","").replaceAll("\"", "")+ " AND " + search.getSearchString();
                             childrenFilterSerialized = serializeFacetFilter(search.getChildrenSearchString().getFilter(), search.getChildrenFactory(), searchContext, search.getStrict()).replaceAll("\"", "\\\\\"");;
-                            filter = childrenFilterSerialized + " AND " + search.getSearchString();
+                            filter = childrenFilterSerialized + " AND " + StringEscapeUtils.escapeJson(search.getSearchString());
                         } else {
                             childrenFilterSerialized ="";
-                            filter = search.getSearchString();
+                            filter = StringEscapeUtils.escapeJson(search.getSearchString());
                         }
-                        //TODO this should be done by an inner component (paging!!)
+
+                        filter = "{!edismax}" + filter;
                         return String.format(
-                                "{" +
+                                "{" +//TODO this should be done by an inner component (paging!!)
                                     "parent_facet:{" +
                                         "type:terms," +
                                         "field:%s," +
@@ -614,6 +675,11 @@ public class SolrUtils {
 
         public static String getFieldname(FieldDescriptor descriptor, UseCase useCase, String context) {
 
+            if (Objects.isNull(descriptor)){
+                log.warn("Trying to get name of null field descriptor.");
+                return null;
+            }
+
             final String contextPrefix;
             if (Objects.isNull(context) || !descriptor.isContextualized()) {
                 contextPrefix = "";
@@ -646,6 +712,7 @@ public class SolrUtils {
                         }
 
                     } else {
+                        log.debug("Descriptor {} is not configured for full text search.", descriptor.getName());
                         return null;
                     }
                 }
@@ -660,6 +727,7 @@ public class SolrUtils {
                             return fieldName + _FACET + type.getName() + contextPrefix + descriptor.getName();
                         }
                     } else {
+                        log.debug("Descriptor {} is not configured for facet search.", descriptor.getName());
                         return null;
                     }
                 }
@@ -674,6 +742,7 @@ public class SolrUtils {
                             return fieldName + _SUGGEST + type.getName() + contextPrefix + descriptor.getName();
                         }
                     } else {
+                        log.debug("Descriptor {} is not configured for suggestion search.", descriptor.getName());
                         return null;
                     }
                 }
@@ -700,6 +769,7 @@ public class SolrUtils {
                     } else if(isComplexField && descriptor.isStored() && !descriptor.isMultiValue() && Objects.nonNull(type)){
                         return fieldName.replaceFirst(_MULTI,_SINGLE) + _SORT + type.getName() + contextPrefix + descriptor.getName();
                     } else {
+                        log.debug("Descriptor {} is not configured for sorting.", descriptor.getName());
                         return null; //TODO: throw runtime exception?
                     }
                 }
@@ -709,10 +779,14 @@ public class SolrUtils {
                         return fieldName.replace(_SINGLE,_MULTI) + _FILTER + type.getName() + contextPrefix + descriptor.getName();
 
                     } else {
+                        log.debug("Descriptor {} is not configured for advance filter search.", descriptor.getName());
                         return null;
                     }
                 }
-                default: return null;//TODO: throw runtime exception
+                default: {
+                    log.warn("Unsupported use case {}.", useCase);
+                    return null;//TODO: throw runtime exception
+                }
             }
         }
     }
@@ -836,37 +910,74 @@ public class SolrUtils {
 
                 return document;
             }).collect(Collectors.toList());
-            }
+        }
 
-        public static FacetResults buildFacetResult(QueryResponse response, DocumentFactory factory, Map<String,Facet>  facetsQuery, String searchContext) {
-
+        private static HashMap<FieldDescriptor, TermFacetResult<?>> getTermFacetResults(QueryResponse response, DocumentFactory factory, DocumentFactory childFactory, Map<String,Facet>  facetsQuery, String searchContext) {
             final HashMap<FieldDescriptor, TermFacetResult<?>> facets = new HashMap<>();
-            final TermFacetResult typeFacetResults = new TermFacetResult();
             //term facets
-            if (Objects.nonNull(response.getFacetFields()))
-                response.getFacetFields().stream().forEach(field -> {
-                    final Matcher internalFacetFieldMatcher = Pattern.compile(INTERNAL_FACET_FIELD_PREFIX).matcher(field.getName());
-                    final String contextPrefix = searchContext != null ? searchContext + "_" : "";
-                    final String contextualizedName = internalFacetFieldMatcher.replaceFirst("");
-                    final String fieldName = contextualizedName.replace(contextPrefix, "");
-                    final FieldDescriptor<?> descriptor = factory.getField(fieldName);
-                    if (Objects.nonNull(descriptor) ) {
-                        final TermFacetResult facet = new TermFacetResult(field.getValues().stream()
-                                .map(count -> new FacetValue<>(castForDescriptor(count.getName(), descriptor, Facet), count.getCount()))
-                                .collect(Collectors.toList()));
-                        facets.put(descriptor, facet);
-                    } else {
-                        if(fieldName.equals(Fieldname.TYPE)){
-                            field.getValues()
-                                    .stream()
-                                    .forEach(count -> typeFacetResults
-                                            .addFacetValue(new FacetValue<> (castForDescriptor(count.getName(), descriptor, Facet), count.getCount())));
-                        } else {
-                            log.error("Unable to create a facet result: the field '{}' is not configured as facet.", fieldName);
-                            throw new RuntimeException("Unable to create a faceted result: the field '" + fieldName + "' is not configured as facet.");
+            if (Objects.nonNull(response.getResponse())) {
+                final SimpleOrderedMap jsonFacetResult = (SimpleOrderedMap) response.getResponse().get("facets");
+                if (Objects.nonNull(jsonFacetResult)) {
+                    for (int i = 0; i < jsonFacetResult.size(); i++) {
+                        final String facetName = jsonFacetResult.getName(i);
+                        if (jsonFacetResult.getName(i).startsWith("dynamic_")) {
+                            final String fieldName = getFieldDescriptorName(searchContext, facetName);
+                            FieldDescriptor<?> fieldDesc = factory.getField(fieldName);
+                            if (Objects.isNull(fieldDesc) && Objects.nonNull(childFactory)) {
+                                fieldDesc = childFactory.getField(fieldName);
+                            }
+                            final FieldDescriptor<?> descriptor = fieldDesc;
+
+                            final ArrayList<SimpleOrderedMap> termFacet =
+                                    ((ArrayList<SimpleOrderedMap>) ((SimpleOrderedMap) jsonFacetResult.get(facetName)).get("buckets"));
+
+                            if (Objects.nonNull(descriptor)) {
+                                final UseCase useCase = UseCase.valueOf(facetsQuery.get(fieldName).getScope().name());
+                                final TermFacetResult<?> facet = new TermFacetResult(termFacet.stream()
+                                        .map(f ->
+                                            new FacetValue<>(castForDescriptor(f.get("val"), descriptor, useCase), ((Integer) f.get("count")).longValue())
+                                        )
+                                        .collect(Collectors.toList()));
+
+                                facets.put(descriptor, facet);
+                            } else {
+                                log.error("Unable to create a facet result: the field '{}' is not configured as facet.", fieldName);
+                                throw new RuntimeException("Unable to create a faceted result: the field '" + fieldName + "' is not configured as facet.");
+                            }
                         }
                     }
-            });
+                }
+            }
+            return facets;
+        }
+
+        private static TermFacetResult<?> getTypeFacetResults(QueryResponse response) {
+            final TermFacetResult typeFacetResults = new TermFacetResult();
+            //term facets
+            if (Objects.nonNull(response.getResponse())) {
+                final SimpleOrderedMap jsonFacetResult = (SimpleOrderedMap) response.getResponse().get("facets");
+                if (Objects.nonNull(jsonFacetResult)) {
+                    for (int i = 0; i < jsonFacetResult.size(); i++) {
+                        if (jsonFacetResult.getName(i).equals(Fieldname.TYPE)) {
+                            final ArrayList<SimpleOrderedMap> termFacet =
+                                    ((ArrayList<SimpleOrderedMap>) ((SimpleOrderedMap) jsonFacetResult.get(jsonFacetResult.getName(i))).get("buckets"));
+
+                            termFacet.stream().forEach(f -> typeFacetResults
+                                    .addFacetValue(new FacetValue<>((String) f.get("val"), ((Integer)f.get("count")).longValue())));
+
+                        }
+                    }
+                }
+            }
+            return typeFacetResults;
+        }
+
+        public static FacetResults buildFacetResult(QueryResponse response, DocumentFactory factory, DocumentFactory childFactory, Map<String,Facet>  facetsQuery, String searchContext) {
+
+            final HashMap<FieldDescriptor, TermFacetResult<?>> facets =
+                    getTermFacetResults(response, factory, childFactory, facetsQuery, searchContext);
+
+            final TermFacetResult typeFacetResults = getTypeFacetResults(response);
 
             HashMap<String, QueryFacetResult<?>> queryFacetResults = new HashMap<>();
             if(response.getFacetQuery()!=null) {
@@ -875,7 +986,7 @@ public class SolrUtils {
 
             HashMap<String, RangeFacetResult<?>> rangeFacetResults = new HashMap<>();
             if(response.getFacetRanges()!=null) {
-                rangeFacetResults = getRangeFacetResult(response.getFacetRanges(),response,factory, searchContext);
+                rangeFacetResults = getRangeFacetResult(response.getFacetRanges(),response,factory,facetsQuery, searchContext);
             }
 
             HashMap<String, IntervalFacetResult> intervalFacetResults = new HashMap<>();
@@ -921,27 +1032,29 @@ public class SolrUtils {
             HashMap<String, StatsFacetResult<?>> statsResults = new HashMap<>();
             entries.stream()
                     .forEach(statsInfoEntry -> {
-                        FieldDescriptor field = ((Facet.StatsFacet) facetsQuery.get(statsInfoEntry.getKey())).getField();
-                        FieldStatsInfo statsInfo = statsInfoEntry.getValue();
-                        Object typedMean;
+                        final StatsFacet statsFacet = (StatsFacet) facetsQuery.get(statsInfoEntry.getKey());
+                        final FieldDescriptor field = statsFacet.getField();
+                        final FieldStatsInfo statsInfo = statsInfoEntry.getValue();
+                        final UseCase useCase = UseCase.valueOf(statsFacet.getScope().name());
+                        final Object typedMean;
                         //Mean can be either Double or date. In the latest scenario it can be casted to the specific type
                         if(Number.class.isAssignableFrom(field.getType())){
                             typedMean = statsInfo.getMean();
                         }else {
-                            typedMean = castForDescriptor(statsInfo.getMean(),field, Facet);
+                            typedMean = castForDescriptor(statsInfo.getMean(),field, useCase);
                         }
-                        StatsFacetResult<?> statsResult =
+                        final StatsFacetResult<?> statsResult =
                                 new StatsFacetResult(field,
-                                                    castForDescriptor(statsInfo.getMin(),field, Facet),
-                                                    castForDescriptor(statsInfo.getMax(),field, Facet),
-                                                    castForDescriptor(statsInfo.getSum(),field, Facet),
+                                                    castForDescriptor(statsInfo.getMin(),field, useCase),
+                                                    castForDescriptor(statsInfo.getMax(),field, useCase),
+                                                    castForDescriptor(statsInfo.getSum(),field, useCase),
                                                     statsInfo.getCount(),
                                                     statsInfo.getMissing(),
                                                     statsInfo.getSumOfSquares(),
                                                     typedMean,
                                                     statsInfo.getStddev(),
                                                     statsInfo.getPercentiles(),
-                                                    (List)castForDescriptor(statsInfo.getDistinctValues(),field, Facet),
+                                                    (List)castForDescriptor(statsInfo.getDistinctValues(),field, useCase),
                                                     statsInfo.getCountDistinct(),
                                                     statsInfo.getCardinality());
 
@@ -955,7 +1068,7 @@ public class SolrUtils {
             HashMap<String, QueryFacetResult<?>> queryFacetResults = new HashMap<>();
             solrFacetQueries.stream()
                     .forEach(queryFacet -> {
-                        QueryFacetResult facet = new QueryFacetResult<>(((Facet.QueryFacet)facetsQuery.get(queryFacet.getKey())).getFilter(),queryFacet.getValue());
+                        QueryFacetResult facet = new QueryFacetResult<>(((QueryFacet)facetsQuery.get(queryFacet.getKey())).getFilter(),queryFacet.getValue());
                         queryFacetResults.put(queryFacet.getKey(), facet);
                     });
             return queryFacetResults;
@@ -963,11 +1076,7 @@ public class SolrUtils {
 
         private static PivotFacetResult<?> getPivotFacetResult(PivotField pivotField,QueryResponse response, DocumentFactory factory, Map<String, Facet> facetsQuery, String searchContext) {
 
-
-            final Matcher internalFacetFieldMatcher = Pattern.compile(INTERNAL_FACET_FIELD_PREFIX).matcher(pivotField.getField());
-            final String contextPrefix = searchContext != null ? searchContext + "_" : "";
-            final String contextualizedName = internalFacetFieldMatcher.replaceFirst("");
-            final String fieldName = contextualizedName.replace(contextPrefix, "");
+            final String fieldName = getFieldDescriptorName(searchContext, pivotField.getField());
             final FieldDescriptor<?> descriptor = factory.getField(fieldName);
 
             if (descriptor == null) {
@@ -975,7 +1084,7 @@ public class SolrUtils {
                 throw new RuntimeException("Unable to create a pivot faced result: the field '"+ fieldName +"' is not configured as facet.");
             }
 
-            List<PivotFacetResult<?>> pivot = new ArrayList<>();
+            final List<PivotFacetResult<?>> pivot = new ArrayList<>();
             if(pivotField.getPivot()!=null) {
                 pivotField.getPivot().stream().forEach(pivotF -> pivot.add(getPivotFacetResult(pivotF,response,factory,facetsQuery, searchContext)));
             }
@@ -987,7 +1096,7 @@ public class SolrUtils {
 
             HashMap<String, RangeFacetResult<?>> pivotRangeResult = new HashMap<>();
             if (pivotField.getFacetRanges() != null) {
-                pivotRangeResult = getRangeFacetResult(pivotField.getFacetRanges(), response, factory,searchContext);
+                pivotRangeResult = getRangeFacetResult(pivotField.getFacetRanges(), response, factory, facetsQuery, searchContext);
             }
 
             HashMap<String, StatsFacetResult<?>> pivotStatsResults = new HashMap<>();
@@ -998,7 +1107,7 @@ public class SolrUtils {
             return new PivotFacetResult(pivot, pivotField.getValue(), descriptor, pivotField.getCount(),pivotQueryResult, pivotStatsResults, pivotRangeResult);
         }
 
-        private static  HashMap<String, IntervalFacetResult> getIntervalFacetResult(List<IntervalFacet> facetIntervals, QueryResponse response,DocumentFactory factory) {
+        private static  HashMap<String, IntervalFacetResult> getIntervalFacetResult(List<IntervalFacet> facetIntervals, QueryResponse response, DocumentFactory factory) {
             HashMap<String, IntervalFacetResult> intervalFacetResults = new HashMap<>();
             facetIntervals.stream()
                     .forEach(intervalFacet -> {
@@ -1011,7 +1120,7 @@ public class SolrUtils {
             return intervalFacetResults;
         }
 
-        private static  HashMap<String, RangeFacetResult<?>> getRangeFacetResult(List<RangeFacet> facetRanges, QueryResponse response,DocumentFactory factory,String searchContext) {
+        private static  HashMap<String, RangeFacetResult<?>> getRangeFacetResult(List<RangeFacet> facetRanges, QueryResponse response,DocumentFactory factory, Map<String,Facet>  facetsQuery, String searchContext) {
 
             final HashMap<String, RangeFacetResult<?>> rangeFacetResults = new HashMap<>();
             facetRanges.stream()
@@ -1032,10 +1141,7 @@ public class SolrUtils {
                                 .findFirst();
 
                         final String facetFieldName = Pattern.compile("\\{.*\\}").matcher(facetFieldQuery.get()).replaceFirst("");
-                        final Matcher internalFacetFieldMatcher = Pattern.compile(INTERNAL_FACET_FIELD_PREFIX).matcher(facetFieldName);
-                        final String contextPrefix = searchContext != null ? searchContext + "_" : "";
-                        final String contextualizedName = internalFacetFieldMatcher.replaceFirst("");
-                        final String fieldName = contextualizedName.replace(contextPrefix, "");
+                        final String fieldName = getFieldDescriptorName(searchContext, facetFieldName);
                         final FieldDescriptor<?> descriptor = factory.getField(fieldName);
 
                         if (descriptor == null) {
@@ -1043,14 +1149,15 @@ public class SolrUtils {
                             throw new RuntimeException("Unable to create a range facet result: the field '"+ fieldName +"' is not configured as facet.");
                         }
 
+                        final UseCase useCase = UseCase.valueOf(facetsQuery.get(rangeFacet.getName()).getScope().name());
                         final List<FacetValue> facetRangesResults = (List<FacetValue>) rangeFacet.getCounts().stream()
                                 .map(count -> {
                                     RangeFacet.Count solrCount = (RangeFacet.Count) count;
-                                    return new FacetValue<>(castForDescriptor(solrCount.getValue(),descriptor, Facet), solrCount.getCount());
+                                    return new FacetValue<>(castForDescriptor(solrCount.getValue(),descriptor, useCase), solrCount.getCount());
                                 }).collect(Collectors.toList());
 
-                        final Object start = castForDescriptor(rangeFacet.getStart(), descriptor, Facet);
-                        final Object end = castForDescriptor(rangeFacet.getEnd(), descriptor, Facet);
+                        final Object start = castForDescriptor(rangeFacet.getStart(), descriptor, useCase);
+                        final Object end = castForDescriptor(rangeFacet.getEnd(), descriptor, useCase);
                         final long gap = Long.parseLong(rangeFacet.getGap().toString().replaceAll("[^\\d]", ""));
                         final RangeFacetResult facet =new RangeFacetResult(facetRangesResults, start, end, gap);
 
@@ -1072,6 +1179,10 @@ public class SolrUtils {
                             break;
                         case Stored:
                             type = ((ComplexFieldDescriptor) descriptor).getStoreType();
+                            break;
+                        case Suggest: type = String.class;
+                            break;
+                        case Filter: type = ((ComplexFieldDescriptor)descriptor).getFacetType();
                             break;
                         default:
                             type = descriptor.getType();
@@ -1249,7 +1360,7 @@ public class SolrUtils {
                         response.getSpellCheckResponse().getCollatedResult().replaceFirst("\\*$","") :
                         null;
 
-                return new SuggestionResult(suggestions, collation, factory);
+                return new SuggestionResult(suggestions, collation, response.getQTime(), factory).setElapsedTime(response.getElapsedTime());
             }
             return new SuggestionResult();
         }
@@ -1275,6 +1386,13 @@ public class SolrUtils {
             }
 
             return new GetResult(nResults,docResults,query,factory);
+        }
+
+        private static String getFieldDescriptorName(String searchContext, String facetName) {
+            final Matcher internalFacetFieldMatcher = Pattern.compile(INTERNAL_SCOPE_FACET_FIELD_PREFIX).matcher(facetName);
+            final String contextPrefix = searchContext != null ? searchContext + "_" : "";
+            final String contextualizedName = internalFacetFieldMatcher.replaceFirst("");
+            return contextualizedName.replace(contextPrefix, "");
         }
 
     }

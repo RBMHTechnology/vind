@@ -5,7 +5,10 @@ import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.result.SearchResult;
+import com.rbmhtechnology.vind.monitoring.log.writer.LogWriter;
 import com.rbmhtechnology.vind.model.*;
+import com.rbmhtechnology.vind.monitoring.MonitoringSearchServer;
+import com.rbmhtechnology.vind.monitoring.logger.MonitoringWriter;
 
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -19,6 +22,8 @@ import static com.rbmhtechnology.vind.api.query.filter.Filter.eq;
 public class SearchService implements AutoCloseable{
 
     private SearchServer server = SearchServer.getInstance();
+    private final MonitoringWriter writer = new LogWriter();
+    private final MonitoringSearchServer monitoringSearchServer = new MonitoringSearchServer(server, writer);
 
     private SingleValueFieldDescriptor.TextFieldDescriptor<String> title;
     private SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created;
@@ -60,8 +65,8 @@ public class SearchService implements AutoCloseable{
     }
 
     public void index() {
-        server.indexBean(createNewsItem("1", "New Vind instance needed", ZonedDateTime.now().minusMonths(3), 1, "coding"));
-        server.indexBean(createNewsItem("2", "Vind instance available", ZonedDateTime.now(), 2, "coding", "release"));
+        server.index(createNewsItem("1", "New Vind instance needed", ZonedDateTime.now().minusMonths(3), 1, "coding"));
+        server.index(createNewsItem("2", "Vind instance available", ZonedDateTime.now(), 2, "coding", "release"));
         server.commit();
     }
 
@@ -72,7 +77,7 @@ public class SearchService implements AutoCloseable{
         search.filter(eq(ranking,raking));
 
         //for the execution we now use the factory as parameter
-        return server.execute(search, newsItems);
+        return monitoringSearchServer.execute(search, newsItems);
     }
 
     @Override

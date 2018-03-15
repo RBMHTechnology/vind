@@ -7,10 +7,7 @@ import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
-import com.rbmhtechnology.vind.api.result.BeanSearchResult;
-import com.rbmhtechnology.vind.api.result.GetResult;
-import com.rbmhtechnology.vind.api.result.SearchResult;
-import com.rbmhtechnology.vind.api.result.SuggestionResult;
+import com.rbmhtechnology.vind.api.result.*;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import org.slf4j.Logger;
@@ -201,7 +198,7 @@ public abstract class SearchServer implements Closeable {
      * @param factory {@link DocumentFactory} factory with the document schema.
      * @throws SearchServerException if not possible to execute the update.
      */
-    public abstract void execute(Update update, DocumentFactory factory);
+    public abstract boolean execute(Update update, DocumentFactory factory);
 
     /**
      * Deletes Documents which match the {@link Delete} filter configuration.
@@ -245,6 +242,23 @@ public abstract class SearchServer implements Closeable {
     public abstract SearchResult execute(FulltextSearch search, DocumentFactory factory);
 
     /**
+     * Return the raw query sent produced by the server implementation.
+     * @param search {@link FulltextSearch} search query configuration object.
+     * @param factory {@link DocumentFactory} mapping the index documents and the result type.
+     * @return {@link String} Raw query
+     */
+    public abstract String getRawQuery(FulltextSearch search, DocumentFactory factory);
+
+    /**
+     * Return the raw query sent produced by the server implementation.
+     * @param search {@link FulltextSearch} search query configuration object.
+     * @param c annotated class mapping the index documents and the result type.
+     * @param <T> annotated class type.
+     * @return {@link String} Raw query
+     */
+    public abstract <T> String getRawQuery(FulltextSearch search, Class<T> c);
+
+    /**
      * Executes a suggestion search based on an annotated class.
      * @param search ExecutableSuggestionSearch object with the query configuration.
      * @param c Annotated class type to be used as mapping.
@@ -274,6 +288,32 @@ public abstract class SearchServer implements Closeable {
     public abstract SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets,DocumentFactory childFactory);
 
     /**
+     * Return the raw query sent produced by the server implementation.
+     * @param search {@link ExecutableSuggestionSearch} search query configuration object.
+     * @param factory {@link DocumentFactory} mapping the index documents and the result type.
+     * @return {@link String} Raw query
+     */
+    public abstract String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory);
+
+    /**
+     * Return the raw query sent produced by the server implementation.
+     * @param search {@link ExecutableSuggestionSearch} search query configuration object.
+     * @param factory {@link DocumentFactory} mapping the index documents and the result type.
+     * @param childFactory {@link DocumentFactory} mapping the index documents children documents.
+     * @return {@link String} Raw query
+     */
+    public abstract String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory, DocumentFactory childFactory);
+
+    /**
+     * Return the raw query sent produced by the server implementation.
+     * @param search {@link ExecutableSuggestionSearch} search query configuration object.
+     * @param c annotated class mapping the index documents and the result type.
+     * @param <T> annotated class type.
+     * @return {@link String} Raw query
+     */
+    public abstract <T> String getRawQuery(ExecutableSuggestionSearch search, Class<T> c);
+
+    /**
      * Executes a get query based on an annotated class.
      * @param search Get object with the query configuration.
      * @param c Annotated class type to be used as mapping.
@@ -281,7 +321,7 @@ public abstract class SearchServer implements Closeable {
      * @return SuggestionResult object storing the server results.
      * @throws SearchServerException if not possible to execute the real time get.
      */
-    public abstract <T> GetResult execute(RealTimeGet search, Class<T> c);
+    public abstract <T> BeanGetResult<T> execute(RealTimeGet search, Class<T> c);
     /**
      * Executes a suggestion search based on an DocumentFactory.
      * @param search ExecutableSuggestionSearch object with the query configuration.

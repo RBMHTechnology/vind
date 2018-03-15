@@ -1,0 +1,47 @@
+{
+    "size":0,
+    "query":{
+        "bool":{
+            "must":[
+                {"term":{"type.keyword":"fulltext"}},
+                {"term":{"application.id.keyword":"%s"}},
+                {"terms":{"request.filter.type.keyword":["TermFilter", "DescriptorFilter"]}},
+                {"terms":{"request.filter.field.keyword":[%s]}}
+            ],
+            "filter": [
+                {
+                    "range":{
+                        "timeStamp":{
+                            "gte":%d,
+                            "lte":%d,
+                            "format":"epoch_millis"
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "aggs":{
+        "fields":{
+            "terms":{
+                "field":"request.filter.field.keyword",
+                "size":100,
+                "order":{
+                    "_count":"desc"
+                }
+            },
+            "aggs":{
+                 "values": {
+                     "terms":{
+                         "field":"request.filter.term.keyword",
+                         "size":10,
+                         "order":{
+                             "_count":"desc"
+                         }
+                     }
+
+                 }
+            }
+        }
+    }
+}

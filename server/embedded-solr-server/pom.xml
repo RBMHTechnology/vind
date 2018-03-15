@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.rbmhtechnology.vind</groupId>
         <artifactId>vind</artifactId>
-        <version>1.0.1</version>
+        <version>1.1.0</version>
         <relativePath>../../</relativePath>
     </parent>
 
@@ -16,6 +16,11 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>backend-solr</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>solr-suggestion-handler</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

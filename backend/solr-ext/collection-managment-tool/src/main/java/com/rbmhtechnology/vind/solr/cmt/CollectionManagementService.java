@@ -22,6 +22,7 @@ import org.apache.solr.client.solrj.request.CollectionAdminRequest.Create;
 import org.apache.solr.client.solrj.request.ConfigSetAdminRequest;
 import org.apache.solr.client.solrj.request.QueryRequest;
 import org.apache.solr.client.solrj.response.CollectionAdminResponse;
+import org.apache.solr.client.solrj.response.ConfigSetAdminResponse;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.cloud.ZkController;
@@ -101,7 +102,8 @@ public class CollectionManagementService {
             }
 
         } catch (SolrServerException | IOException e) {
-            throw new IOException("Cannot ping server", e);
+            logger.error("Error in collection management service: {}",e.getMessage(), e);
+            throw new IOException("Error in collection management service: "+ e.getMessage(), e);
         }
     }
 
@@ -379,7 +381,9 @@ public class CollectionManagementService {
     protected boolean configurationIsDeployed(String configName) throws IOException {
         ConfigSetAdminRequest.List list = new ConfigSetAdminRequest.List();
         try {
-            return list.process(client).getConfigSets().contains(configName);
+            final ConfigSetAdminResponse.List configList = list.process(client);
+            final List<String> configSets = configList.getConfigSets();
+            return configSets.contains(configName);
         } catch (SolrServerException | IOException e) {
             throw new IOException("Cannot list config sets", e);
         }
@@ -387,18 +391,20 @@ public class CollectionManagementService {
 
     protected Path downloadConfiguration(String configName) throws IOException {
 
+        Path configDirectory;
+
         try {
-            Path configDirectory = Files.createTempDirectory(configName);
-
-            Path jarFile = Utils.downloadToTempDir(configDirectory, repositories, configName);
-
-            Path unzipped = Utils.unzipJar(configDirectory, jarFile);
-
-            return Utils.findParentOfFirstMatch(unzipped,"solrconfig.xml");
+            configDirectory = Files.createTempDirectory(configName);
 
         } catch (IOException e) {
             throw new IOException("Cannot create temp folder for downloading " + configName, e);
         }
+
+        Path jarFile = Utils.downloadToTempDir(configDirectory, repositories, configName);
+
+        Path unzipped = Utils.unzipJar(configDirectory, jarFile);
+
+        return Utils.findParentOfFirstMatch(unzipped,"solrconfig.xml");
 
     }
 
@@ -462,7 +468,7 @@ public class CollectionManagementService {
 
             if(dirs.size() == 0) throw new IOException("Unzipped directory does not contain any configuration");
 
-            if(dirs.size() > 1) logger.warn("Unzipped directory contains more than onen configurations, taking one randomly");
+            if(dirs.size() > 1) logger.warn("Unzipped directory contains more than one configurations, taking one randomly");
 
             return dirs.iterator().next();
         }
@@ -502,12 +508,12 @@ public class CollectionManagementService {
             }
         }
 
-        private static class  DowloadResponseHandler implements ResponseHandler<Path> {
+        private static class DownloadResponseHandler implements ResponseHandler<Path> {
 
             private final URI uri;
             private final Path directory;
 
-            public DowloadResponseHandler(URI uri, Path directory) {
+            public DownloadResponseHandler(URI uri, Path directory) {
                 this.uri = uri;
                 this.directory = directory;
             }
@@ -530,9 +536,9 @@ public class CollectionManagementService {
                     if (repository.matches("https?://.*")) {
                         final URI uri = new URI((repository.endsWith("/") ? repository : (repository + "/")) + nameToPath(name));
                         try {
-                            return httpClient.execute(new HttpGet(uri), new DowloadResponseHandler(uri, directory));
+                            return httpClient.execute(new HttpGet(uri), new DownloadResponseHandler(uri, directory));
                         } catch (IOException e) {
-                            logger.warn("Unable to find artifact in repo {}", repository);
+                            logger.warn("Unable to find artifact in repository {}: {}", repository, e.getMessage());
                             final URI metadataUri = new URI((repository.endsWith("/") ? repository : ((repository + "/"))) + nameToMetadataPath(name));
 
                             final HttpResponse metadataResponse = httpClient.execute(new HttpGet(metadataUri));
@@ -556,12 +562,12 @@ public class CollectionManagementService {
 
                                 final URI timeStampUri = new URI((repository.endsWith("/") ? repository : (repository + "/")) + snapshotPath(name, timestamp, buildNumber));
                                 try {
-                                    return httpClient.execute(new HttpGet(timeStampUri), new DowloadResponseHandler(timeStampUri, directory));
+                                    return httpClient.execute(new HttpGet(timeStampUri), new DownloadResponseHandler(timeStampUri, directory));
                                 } catch (IOException ex) {
-                                    logger.warn("{} cannot be found in {}", name, repository);
+                                    logger.error("{} cannot be downloaded from {}: {}", name, repository,ex.getMessage());
                                 }
                             } else {
-                                logger.warn("{} cannot be found in {}", name, repository);
+                                logger.error("{} cannot be downloaded from {}: response code {}", name, repository, metadataResponse.getStatusLine().getStatusCode());
                             }
                             EntityUtils.consume(metadataResponse.getEntity());
                         }
@@ -575,10 +581,10 @@ public class CollectionManagementService {
                     }
 
                 } catch (URISyntaxException e) {
-                    throw new IOException("Cannot get download location for " + name);
+                    throw new IOException("Cannot get download location for " + name + ": "+ e.getMessage(), e);
                 }
 
-            throw new IOException("Cannot get file for " +name);
+            throw new IOException("Cannot get file for " + name + "in repositories [" + String.join(", ",repositories) +"]");
         }
 
         public static String nameToPath(String name) throws IOException {

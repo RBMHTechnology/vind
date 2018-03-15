@@ -1,0 +1,40 @@
+{
+    "size":0,
+    "query":{
+        "bool":{
+            "must":[
+                {"term":{"type.keyword":"fulltext"}},
+                {"term":{"application.id.keyword":"%s"}}
+            ],
+            "filter": [
+                {
+                    "range":{
+                        "timeStamp":{
+                            "gte":%d,
+                            "lte":%d,
+                            "format":"epoch_millis"
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "aggs":{
+         "queries":{
+             "terms":{
+                 "field":"request.query.keyword",
+                 "size":1000,
+                 "order":{
+                     "_count":"desc"
+                 }
+             },
+             "aggs": {
+                 "users": {
+                     "cardinality" : {
+                         "field" : "session.user.name.keyword"
+                     }
+                 }
+             }
+         }
+    }
+}

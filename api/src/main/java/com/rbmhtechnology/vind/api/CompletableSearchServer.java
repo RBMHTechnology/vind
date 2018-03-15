@@ -6,10 +6,7 @@ import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
-import com.rbmhtechnology.vind.api.result.BeanSearchResult;
-import com.rbmhtechnology.vind.api.result.GetResult;
-import com.rbmhtechnology.vind.api.result.SearchResult;
-import com.rbmhtechnology.vind.api.result.SuggestionResult;
+import com.rbmhtechnology.vind.api.result.*;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 
@@ -226,8 +223,8 @@ public class CompletableSearchServer extends SearchServer {
     }
 
     @Override
-    public void execute(Update update, DocumentFactory factory) {
-        backend.execute(update, factory);
+    public boolean execute(Update update, DocumentFactory factory) {
+        return backend.execute(update, factory);
     }
 
     @Override
@@ -256,6 +253,16 @@ public class CompletableSearchServer extends SearchServer {
     }
 
     @Override
+    public String getRawQuery(FulltextSearch search, DocumentFactory factory) {
+        return backend.getRawQuery(search,factory);
+    }
+
+    @Override
+    public <T> String getRawQuery(FulltextSearch search, Class<T> c) {
+        return backend.getRawQuery(search,c);
+    }
+
+    @Override
     public <T> SuggestionResult execute(ExecutableSuggestionSearch search, Class<T> c) {
         return backend.execute(search, c);
     }
@@ -271,7 +278,22 @@ public class CompletableSearchServer extends SearchServer {
     }
 
     @Override
-    public <T> GetResult execute(RealTimeGet search, Class<T> c) {
+    public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
+        return backend.getRawQuery(search, factory);
+    }
+
+    @Override
+    public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory, DocumentFactory childFactory) {
+        return backend.getRawQuery(search, factory, childFactory);
+    }
+
+    @Override
+    public <T> String getRawQuery(ExecutableSuggestionSearch search, Class<T> c) {
+        return backend.getRawQuery(search, c);
+    }
+
+    @Override
+    public <T> BeanGetResult<T> execute(RealTimeGet search, Class<T> c) {
         return backend.execute(search, c);
     }
 

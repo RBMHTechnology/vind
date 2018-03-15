@@ -17,6 +17,13 @@ public abstract class Sort {
         Desc
     }
 
+    protected Direction direction;
+
+    private String type;
+
+    @Override
+    public abstract Sort clone();
+
     /**
      * Sets a {@link SpecialSort} object direction to ascending.
      * @param sort specific {@link SpecialSort} object.
@@ -103,6 +110,22 @@ public abstract class Sort {
     }
 
     /**
+     * Gets the sorting direction
+     * @return {@link Sort.Direction}
+     */
+    public Direction getDirection() {
+        return direction;
+    }
+
+    /**
+     * Gets the type of the sorting configuration
+     * @return {@link String} class name of the sort
+     */
+    public String getType() {
+        return this.getClass().getSimpleName();
+    }
+
+    /**
      * Abstract class to be implemented by complex sorting objects.
      */
     public static abstract class SpecialSort extends Sort {
@@ -117,7 +140,7 @@ public abstract class Sort {
         }
 
         /**
-         * Static method to instanciate a {@link com.rbmhtechnology.vind.api.query.distance.Distance} object.
+         * Static method to instantiate a {@link com.rbmhtechnology.vind.api.query.distance.Distance} object.
          * Be sure that geoDistance is set in search!
          * @return {@link Sort.SpecialSort.ScoredDate} sort query object.
          */
@@ -130,7 +153,6 @@ public abstract class Sort {
          */
         public static class ScoredDate extends SpecialSort {
 
-            private Direction direction;
             private SingleValueFieldDescriptor descriptor;
 
             /**
@@ -150,12 +172,10 @@ public abstract class Sort {
             }
 
             /**
-             * Gets the sorting direction
-             * @return {@link Sort.Direction}
+             * Gets the {@link String} name of the field descriptor.
+             * @return {@link String} name of the field descriptor.
              */
-            public Direction getDirection() {
-                return direction;
-            }
+            public String getField() {return descriptor.getName();}
 
             @Override
             public void setDirection(Direction direction) {
@@ -171,15 +191,18 @@ public abstract class Sort {
                 return String.format(scoreString,this.direction,this.descriptor.getName());
             }
 
+            @Override
+            public Sort clone() {
+                final ScoredDate copy = new ScoredDate(this.descriptor);
+                copy.direction = this.direction;
+                return copy;
+            }
         }
 
         public static class DistanceSort extends SpecialSort {
-            private Direction direction = Direction.Asc;
 
-            public DistanceSort() {}
-
-            public Direction getDirection() {
-                return direction;
+            public DistanceSort() {
+                this.direction = Direction.Asc;
             }
 
             @Override
@@ -198,6 +221,13 @@ public abstract class Sort {
         }
 
         public abstract void setDirection(Direction direction);
+
+        @Override
+        public Sort clone() {
+            final DistanceSort copy = new DistanceSort();
+            copy.direction = this.direction;
+            return copy;
+        }
     }
 
     /**
@@ -206,7 +236,6 @@ public abstract class Sort {
     public static class SimpleSort extends Sort {
 
         private String field;
-        private Direction direction;
 
         /**
          * Creates a new instance of {@link SimpleSort}.
@@ -226,21 +255,19 @@ public abstract class Sort {
             return field;
         }
 
-        /**
-         * Gets the sorting direction
-         * @return {@link Sort.Direction}
-         */
-        public Direction getDirection() {
-            return direction;
-        }
-
         @Override
         public String toString(){
             final String scoreString = "{" +
-                    "\"direction\":\"%s\"," +
-                    "\"field\":\"%s\"" +
+                    "'direction':'%s'," +
+                    "'field':'%s'" +
                     "}";
             return String.format(scoreString,this.direction,this.field);
+        }
+
+        @Override
+        public Sort clone() {
+            final SimpleSort copy = new SimpleSort(new String(this.field), this.direction);
+            return copy;
         }
     }
     /**
@@ -248,7 +275,7 @@ public abstract class Sort {
      */
     public static class DescriptorSort extends Sort {
         private FieldDescriptor descriptor;
-        private Direction direction;
+
         /**
          * Creates a new instance of {@link DescriptorSort}.
          * @param descriptor {@link FieldDescriptor} indicating the field to sort on.
@@ -265,13 +292,12 @@ public abstract class Sort {
         public FieldDescriptor getDescriptor() {
             return descriptor;
         }
+
         /**
-         * Gets the sorting direction
-         * @return {@link Sort.Direction}
+         * Gets the {@link String} name of the field descriptor.
+         * @return {@link String} name of the field descriptor.
          */
-        public Direction getDirection() {
-            return direction;
-        }
+        public String getField() {return descriptor.getName();}
 
         @Override
         public String toString(){
@@ -280,6 +306,12 @@ public abstract class Sort {
                     "\"field\":\"%s\"" +
                     "}";
             return String.format(scoreString,this.direction,this.descriptor.getName());
+        }
+
+        @Override
+        public Sort clone() {
+            final DescriptorSort copy = new DescriptorSort(this.descriptor, this.direction);
+            return copy;
         }
     }
 

@@ -19,6 +19,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.rbmhtechnology.vind.api.query.filter.Filter.*;
+
 /**
  * Abstract class to be implemented by the specific facet query classes {@link TermFacet}, {@link NumericRangeFacet},
  * {@link DateRangeFacet}, {@link PivotFacet}, {@link QueryFacet} and {@link StatsFacet}.
@@ -30,8 +32,16 @@ public abstract class Facet {
 
     private Logger log = LoggerFactory.getLogger(getClass());
 
+    protected Scope scope = Scope.Facet;
     protected String name;
     protected String[] tagedPivots = new String[0];
+
+    public String getType() {
+        return this.getClass().getSimpleName();
+    }
+
+    @Override
+    public abstract Facet clone();
 
     /**
      * Returns the name of the facet.
@@ -43,6 +53,15 @@ public abstract class Facet {
 
     public String[] getTagedPivots() {
         return tagedPivots;
+    }
+
+    public Scope getScope() {
+        return scope;
+    }
+
+    public Facet setScope(Scope scope) {
+        this.scope = scope;
+        return this;
     }
 
     /**
@@ -70,6 +89,10 @@ public abstract class Facet {
             return fieldDescriptor;
         }
 
+        public String getFieldName() {
+            return this.name;
+        }
+
         @Override
         public String toString(){
             final String serializeFacet = "" +
@@ -78,6 +101,14 @@ public abstract class Facet {
                         "\"field\":\"%s\"" +
                     "}";
             return String.format(serializeFacet, this.name, this.name);
+        }
+
+        @Override
+        public Facet clone() {
+            final TermFacet<T> copy = new TermFacet<>(this.name);
+            copy.setScope(this.scope);
+            copy.fieldDescriptor = this.fieldDescriptor;
+            return copy;
         }
     }
 
@@ -96,6 +127,14 @@ public abstract class Facet {
                     "}";
             return String.format(serializeFacet,this.name);
         }
+
+        @Override
+        public Facet clone() {
+            final TypeFacet copy = new TypeFacet();
+            copy.setScope(this.scope);
+
+            return copy;
+        }
     }
 
     /**
@@ -112,6 +151,13 @@ public abstract class Facet {
                     "\"type\":\"SubDocumentFacet\""+
                     "}";
             return String.format(serializeFacet,this.name);
+        }
+
+        @Override
+        public Facet clone() {
+            final SubdocumentFacet copy = new SubdocumentFacet(new DocumentFactoryBuilder(this.name).build());
+            copy.setScope(this.scope);
+            return copy;
         }
     }
 
@@ -164,6 +210,10 @@ public abstract class Facet {
             return fieldDescriptor;
         }
 
+        public String getFieldName() {
+            return fieldDescriptor.getName();
+        }
+
         /**
          * Get the starting value of the range.
          * @return T Numeric value. T must extend {@link Number}.
@@ -200,6 +250,13 @@ public abstract class Facet {
                     "}";
             return String.format(serializeFacet,this.name,this.getClass().getSimpleName(),this.fieldDescriptor.getName(),this.start,this.end,this.gap);
         }
+
+        @Override
+        public Facet clone() {
+            final NumericRangeFacet copy = new NumericRangeFacet(this.name,this.fieldDescriptor,this.start, this.end, this.gap, this.tagedPivots);
+            copy.setScope(this.scope);
+            return copy;
+        }
     }
 
     /**
@@ -223,6 +280,10 @@ public abstract class Facet {
          */
         public FieldDescriptor getFieldDescriptor() {
             return fieldDescriptor;
+        }
+
+        public String getFieldName() {
+            return fieldDescriptor.getName();
         }
 
         /**
@@ -279,6 +340,9 @@ public abstract class Facet {
             return String.format(serializeFacet,this.name,this.getClass().getSimpleName(),this.fieldDescriptor.getName(),this.start,this.end,this.gap,this.gapUnits.toString());
         }
 
+        @Override
+        public abstract Facet clone();
+
         /**
          * Class which allows to perform ranged facet query on a {@link ZonedDateTime} typed date field. A facet ranged query
          * returns all the documents which have the specified field with a value included in a range defined by
@@ -304,6 +368,12 @@ public abstract class Facet {
                 this.end = end;
                 this.gap = gap.toMillis();
                 this.tagedPivots = pivotNames;
+            }
+
+
+            @Override
+            public Facet clone() {
+                return new ZoneDateRangeFacet<ZonedDateTime>(this.name,this.fieldDescriptor, (ZonedDateTime)this.start, (ZonedDateTime)this.end, Duration.ofMillis(this.gap), this.tagedPivots);
             }
         }
 
@@ -333,6 +403,11 @@ public abstract class Facet {
                 this.end = end;
                 this.gap = timeUnit.toMillis(gap);
                 this.tagedPivots = pivotNames;
+            }
+
+            @Override
+            public Facet clone() {
+                return new UtilDateRangeFacet<Date>(this.name,this.fieldDescriptor, (Date)this.start, (Date)this.end, this.gap, this.gapUnits, this.tagedPivots);
             }
         }
 
@@ -400,7 +475,21 @@ public abstract class Facet {
                 this.tagedPivots = pivotNames;
             }
 
+            private DateMathRangeFacet() {}
+
+            @Override
+            public Facet clone() {
+                final DateMathRangeFacet<T> copy = new DateMathRangeFacet<>();
+                copy.name = this.name;
+                copy.fieldDescriptor = this.fieldDescriptor;
+                copy.start = this.start;
+                copy.end = this.end;
+                copy.gap = this.gap;
+                copy.tagedPivots = this.tagedPivots;
+                return copy;
+            }
         }
+
     }
 
     public static abstract class IntervalFacet<T> extends Facet {
@@ -414,6 +503,10 @@ public abstract class Facet {
          */
         public FieldDescriptor<T> getFieldDescriptor() {
             return fieldDescriptor;
+        }
+
+        public String getFieldName() {
+            return fieldDescriptor.getName();
         }
 
         public Set<Interval<T>> getIntervals() {
@@ -458,6 +551,22 @@ public abstract class Facet {
         public FieldDescriptor getFieldDescriptor() {
             return fieldDescriptor;
         }
+
+        public String getFieldName() {
+            return fieldDescriptor.getName();
+        }
+
+        private NumericIntervalFacet() {}
+
+        @Override
+        public Facet clone() {
+            final NumericIntervalFacet copy = new NumericIntervalFacet();
+            copy.fieldDescriptor = this.fieldDescriptor;
+            copy.name = this.name;
+            copy.scope = this.scope;
+            copy.intervals = this.intervals; //FIXME clone intervals
+            return copy;
+        }
     }
 
     public abstract static class DateIntervalFacet<T> extends IntervalFacet<T> {
@@ -478,6 +587,18 @@ public abstract class Facet {
                 this.intervals = Sets.newHashSet(intervals);
             }
 
+            private ZoneDateTimeIntervalFacet(){}
+
+            @Override
+            public Facet clone() {
+                final ZoneDateTimeIntervalFacet copy = new ZoneDateTimeIntervalFacet();
+                copy.fieldDescriptor = this.fieldDescriptor;
+                copy.name = this.name;
+                copy.scope = this.scope;
+                copy.intervals = this.intervals; //FIXME clone intervals
+                return copy;
+            }
+
         }
 
         public static class UtilDateIntervalFacet<T extends Date> extends DateIntervalFacet<T> {
@@ -493,6 +614,18 @@ public abstract class Facet {
                 this.fieldDescriptor = (FieldDescriptor<T>)  fieldDescriptor;
                 this.intervals = Sets.newHashSet(intervals);
             }
+
+            private UtilDateIntervalFacet(){}
+
+            @Override
+            public Facet clone() {
+                final UtilDateIntervalFacet copy = new UtilDateIntervalFacet();
+                copy.fieldDescriptor = this.fieldDescriptor;
+                copy.name = this.name;
+                copy.scope = this.scope;
+                copy.intervals = this.intervals; //FIXME clone intervals
+                return copy;
+            }
         }
 
         public static class UtilDateMathIntervalFacet<T extends Date> extends DateIntervalFacet<T> {
@@ -507,6 +640,19 @@ public abstract class Facet {
                 this.fieldDescriptor = (FieldDescriptor<T>) fieldDescriptor;
                 this.intervals = Sets.newHashSet(intervals);
             }
+
+            private UtilDateMathIntervalFacet(){}
+
+            @Override
+            public Facet clone() {
+                final UtilDateMathIntervalFacet copy = new UtilDateMathIntervalFacet();
+                copy.fieldDescriptor = this.fieldDescriptor;
+                copy.name = this.name;
+                copy.scope = this.scope;
+                copy.intervals = this.intervals; //FIXME clone intervals
+                return copy;
+            }
+
         }
 
         public static class ZoneDateTimeDateMathIntervalFacet<T extends ZonedDateTime> extends DateIntervalFacet<T> {
@@ -520,6 +666,18 @@ public abstract class Facet {
                 this.name = name;
                 this.fieldDescriptor =(FieldDescriptor<T>) fieldDescriptor;
                 this.intervals = Sets.newHashSet(intervals);
+            }
+
+            private ZoneDateTimeDateMathIntervalFacet(){}
+
+            @Override
+            public Facet clone() {
+                final ZoneDateTimeDateMathIntervalFacet copy = new ZoneDateTimeDateMathIntervalFacet();
+                copy.fieldDescriptor = this.fieldDescriptor;
+                copy.name = this.name;
+                copy.scope = this.scope;
+                copy.intervals = this.intervals; //FIXME clone intervals
+                return copy;
             }
         }
     }
@@ -564,6 +722,10 @@ public abstract class Facet {
             );
         }
 
+        @Override
+        public Facet clone() {
+            return new PivotFacet(this.name, this.fieldDescriptors.toArray(new FieldDescriptor<?>[this.fieldDescriptors.size()]));
+        }
     }
 
     /**
@@ -605,6 +767,11 @@ public abstract class Facet {
                     this.getClass().getSimpleName(),
                     this.filter
             );
+        }
+
+        @Override
+        public Facet clone() {
+            return new QueryFacet(this.name, this.filter.clone(),this.tagedPivots);
         }
     }
 
@@ -774,6 +941,32 @@ public abstract class Facet {
             );
         }
 
+        @Override
+        public Facet clone() {
+            final StatsFacet copy = new StatsFacet(this.name, this.field, this.tagedPivots);
+            copy.scope = this.scope;
+            copy.min = this.min;
+            copy.max = this.max;
+            copy.sum = this.sum;
+            copy.count = this.count;
+            copy.missing = this.missing;
+            copy.sumOfSquares = this.sumOfSquares;
+            copy.mean = this.mean;
+            copy.stddev = this.stddev;
+            copy.percentiles = this.percentiles;
+            copy.distinctValues = this.distinctValues;
+            copy.countDistinct = this.countDistinct;
+            copy.cardinality = this.cardinality;
+            return copy;
+        }
+
+        @Override
+        public StatsFacet<T> setScope(Scope scope) {
+            this.scope = scope;
+            return this;
+
+        }
+
         static public StatsFacet createFacet(String name, FieldDescriptor field, String ...pivotNames) {
 
             if (MultiValueFieldDescriptor.NumericFieldDescriptor.class.isAssignableFrom(field.getClass())) {
@@ -933,6 +1126,13 @@ public abstract class Facet {
             return this;
         }
 
+        @Override
+        public StatsNumericFacet<T> setScope(Scope scope) {
+            this.scope = scope;
+            return this;
+
+        }
+
     }
 
     /**
@@ -1038,6 +1238,13 @@ public abstract class Facet {
             this.stddev=true;
             return this;
         }
+
+        @Override
+        public StatsDateFacet<T> setScope(Scope scope) {
+            this.scope = scope;
+            return this;
+
+        }
     }
 
     /**
@@ -1142,6 +1349,13 @@ public abstract class Facet {
         public StatsUtilDateFacet<T> stddev() {
             this.stddev=true;
             return this;
+        }
+
+        @Override
+        public StatsUtilDateFacet<T> setScope(Scope scope) {
+            this.scope = scope;
+            return this;
+
         }
     }
 

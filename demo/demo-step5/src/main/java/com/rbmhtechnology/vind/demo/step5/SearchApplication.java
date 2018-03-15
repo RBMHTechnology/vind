@@ -26,7 +26,12 @@ public class SearchApplication {
 			);
 
 			get("/suggest", (req, res) -> search.suggest(req.queryParams("q")), new ResultTransformer());
+
+            // Issue with embedded solr server: when the spark server is setup the process finishes and the tmp folder
+            // of the core is deleted.
+			while(true){}
 		}
+
 
 	}
 

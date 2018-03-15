@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.rbmhtechnology.vind.api.query.filter.Filter.*;
 
 
 /**
@@ -52,17 +53,22 @@ public class FulltextSearch {
     }
 
     /**
-     * Creates a copy of the actual fulltext search query.
+     * Creates a clone of the actual fulltext search query.
      * @return A new {@link FulltextSearch} instance.
      */
     public FulltextSearch copy() {
         final FulltextSearch copy = new FulltextSearch();
-        copy.searchString = this.searchString;
+
+        copy.searchString = new String(this.searchString);
         copy.resultSet = resultSet.copy();
-        copy.filter = this.getFilter();
-        copy.sorting = this.getSorting();
-        copy.facets = this.getFacets();
-        //TODO there are some copy fields missing?
+        if (Objects.nonNull(this.getFilter())) {
+            copy.filter = this.getFilter().clone();
+        }
+        copy.sorting = this.getSorting().stream().map( s -> s.clone()).collect(Collectors.toList());
+
+
+        this.getFacets().keySet().stream().forEach(k -> copy.facets.put(k,this.getFacets().get(k).clone()));
+        
         return copy;
     }
 
@@ -140,13 +146,13 @@ public class FulltextSearch {
     }
 
     /**
-     * Adds a basic {@link com.rbmhtechnology.vind.api.query.filter.Filter.TermFilter} to the search query.
+     * Adds a basic {@link TermFilter} to the search query.
      * @param field String name of the field to filter by.
      * @param value String value to filter.
      * @return This {@link FulltextSearch} instance with the new filter added.
      */
     public FulltextSearch filter(String field, String value) {
-        return filter(Filter.eq(field, value));
+        return filter(eq(field, value));
     }
 
     /**
@@ -160,7 +166,7 @@ public class FulltextSearch {
         } else if (this.filter == null) {
             this.filter = filter;
         } else {
-            this.filter = Filter.and(this.filter, filter);
+            this.filter = and(this.filter, filter);
         }
         return this;
     }
@@ -291,11 +297,33 @@ public class FulltextSearch {
 
     /**
      * Add basic {@link com.rbmhtechnology.vind.api.query.facet.Facet.TermFacet} to the fulltext search query.
+     * @param scope sets the scope where the facet will be done.
+     * @param descriptor {@link FieldDescriptor} indicating the field to facet on.
+     * @return This {@link FulltextSearch} instance with the new facet added.
+     */
+    public FulltextSearch facet(Scope scope, FieldDescriptor ... descriptor) {
+        this.facets.putAll(Facets.term(scope,descriptor));
+        return this;
+    }
+
+    /**
+     * Add basic {@link com.rbmhtechnology.vind.api.query.facet.Facet.TermFacet} to the fulltext search query.
      * @param name String name of the field to facet on.
      * @return This {@link FulltextSearch} instance with the new facet added.
      */
     public FulltextSearch facet(String ... name) {
         this.facets.putAll(Facets.term(name));
+        return this;
+    }
+
+    /**
+     * Add basic {@link com.rbmhtechnology.vind.api.query.facet.Facet.TermFacet} to the fulltext search query.
+     * @param scope sets the scope where the facet will be done.
+     * @param name String name of the field to facet on.
+     * @return This {@link FulltextSearch} instance with the new facet added.
+     */
+    public FulltextSearch facet(Scope scope, String ... name) {
+        this.facets.putAll(Facets.term(scope, name));
         return this;
     }
 

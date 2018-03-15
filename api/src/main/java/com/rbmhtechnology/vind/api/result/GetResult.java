@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.api.result;
 
+import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.model.DocumentFactory;
@@ -9,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class stores the search result documents as instances of {@link Document}.
@@ -65,6 +67,14 @@ public class GetResult {
                 "numOfResults=" + numOfResults +
                 ", results=" + results +
                 '}';
+    }
+
+    public  <P> BeanGetResult<P> toPojoResult(GetResult getResult, Class<P> clazz) {
+        return new BeanGetResult<>(getResult.numOfResults,
+                getResult.results.stream().map(d -> AnnotationUtil.createPojo(d, clazz)).collect(Collectors.toList()),
+                getResult.query,
+                clazz
+        );
     }
 
 

@@ -1,0 +1,33 @@
+{
+    "size":0,
+    "query":{
+        "bool":{
+            "must":[
+                {"term":{"type.keyword":"suggestion"}},
+                {"term":{"application.id.keyword":"%s"}}
+            ],
+            "filter": [
+                {
+                    "range":{
+                        "timeStamp":{
+                            "gte":%d,
+                            "lte":%d,
+                            "format":"epoch_millis"
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "aggs":{
+        "suggestionFields":{
+            "terms":{
+                "field":"request.suggestionFields.keyword",
+                "size":100,
+                "order":{
+                    "_count":"desc"
+                }
+            }
+        }
+    }
+}
