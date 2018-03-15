@@ -4,7 +4,7 @@
 package com.rbmhtechnology.vind.monitoring.elastic.writer;
 
 import com.rbmhtechnology.vind.monitoring.logger.MonitoringWriter;
-import com.rbmhtechnology.vind.monitoring.logger.entry.LogEntry;
+import com.rbmhtechnology.vind.monitoring.logger.entry.MonitoringEntry;
 import com.rbmhtechnology.vind.monitoring.utils.ElasticSearchClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +23,7 @@ public class ElasticWriter extends MonitoringWriter {
     }
 
     @Override
-    public void log(LogEntry log) {
+    public void log(MonitoringEntry log) {
         logger.debug("Indexing log entry: {}", log.toJson());
         elasticClient.put(log.toJson());
     }

@@ -26,11 +26,8 @@ import java.util.Objects;
 /**
  * Created on 03.10.17.
  */
-/*@JsonTypeInfo(use=JsonTypeInfo.Id.NAME, include= JsonTypeInfo.As.PROPERTY, property="@class")
-@JsonSubTypes({ @JsonSubTypes.Type(value = FullTextEntry.class, name = "FullTextEntry") ,
-                @JsonSubTypes.Type(value = SuggestionEntry.class, name = "SuggestionEntry"),
-                @JsonSubTypes.Type(value = InteractionEntry.class, name = "SuggestionEntry")})*/
-public abstract class LogEntry {
+
+public abstract class MonitoringEntry {
 
 
 
@@ -61,7 +58,7 @@ public abstract class LogEntry {
 
     public String toJson(){
         try {
-            return LogEntry.getMapper().writeValueAsString(this);
+            return MonitoringEntry.getMapper().writeValueAsString(this);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

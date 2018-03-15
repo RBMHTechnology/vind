@@ -1,6 +1,6 @@
 package com.rbmhtechnology.vind.monitoring.logger;
 
-import com.rbmhtechnology.vind.monitoring.logger.entry.LogEntry;
+import com.rbmhtechnology.vind.monitoring.logger.entry.MonitoringEntry;
 import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
@@ -27,5 +27,5 @@ public abstract class MonitoringWriter { //TODO could be an interface
         return server;
     }
 
-    public abstract void log(LogEntry log);
+    public abstract void log(MonitoringEntry log);
 }

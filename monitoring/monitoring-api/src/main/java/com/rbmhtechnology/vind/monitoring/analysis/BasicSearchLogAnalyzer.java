@@ -3,7 +3,7 @@
  */
 package com.rbmhtechnology.vind.monitoring.analysis;
 
-import com.rbmhtechnology.vind.monitoring.logger.entry.LogEntry;
+import com.rbmhtechnology.vind.monitoring.logger.entry.MonitoringEntry;
 
 import java.util.Collection;
 
@@ -14,12 +14,12 @@ public class BasicSearchLogAnalyzer extends LogAnalyzer{
 
 
     @Override
-    public String analyze(LogEntry log) {
+    public String analyze(MonitoringEntry log) {
         return null;
     }
 
     @Override
-    public String analyze(Collection <LogEntry> log) {
+    public String analyze(Collection <MonitoringEntry> log) {
 
         return null;
     }

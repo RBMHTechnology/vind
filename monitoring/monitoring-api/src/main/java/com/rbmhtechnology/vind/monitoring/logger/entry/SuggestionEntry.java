@@ -19,7 +19,7 @@ import java.time.temporal.ChronoUnit;
 /**
  * Created on 03.10.17.
  */
-public class SuggestionEntry extends LogEntry{
+public class SuggestionEntry extends MonitoringEntry {
 
     final private EntryType type = EntryType.suggestion;
     private Application application;

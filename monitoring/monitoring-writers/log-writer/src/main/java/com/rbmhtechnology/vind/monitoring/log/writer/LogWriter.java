@@ -1,7 +1,7 @@
 package com.rbmhtechnology.vind.monitoring.log.writer;
 
 import com.rbmhtechnology.vind.monitoring.logger.MonitoringWriter;
-import com.rbmhtechnology.vind.monitoring.logger.entry.LogEntry;
+import com.rbmhtechnology.vind.monitoring.logger.entry.MonitoringEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +17,7 @@ public class LogWriter extends MonitoringWriter {
     public LogWriter() {}
 
     @Override
-    public void log(LogEntry log) {
+    public void log(MonitoringEntry log) {
         logger.info(log.toJson());
     }
 

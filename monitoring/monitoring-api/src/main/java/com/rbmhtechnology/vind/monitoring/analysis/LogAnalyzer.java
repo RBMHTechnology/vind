@@ -3,7 +3,7 @@
  */
 package com.rbmhtechnology.vind.monitoring.analysis;
 
-import com.rbmhtechnology.vind.monitoring.logger.entry.LogEntry;
+import com.rbmhtechnology.vind.monitoring.logger.entry.MonitoringEntry;
 
 import java.util.Collection;
 
@@ -14,8 +14,8 @@ import java.util.Collection;
  */
 public abstract class LogAnalyzer {
 
-    public abstract String analyze(LogEntry log);
+    public abstract String analyze(MonitoringEntry log);
 
 
-    public abstract String analyze(Collection<LogEntry> log);
+    public abstract String analyze(Collection<MonitoringEntry> log);
 }

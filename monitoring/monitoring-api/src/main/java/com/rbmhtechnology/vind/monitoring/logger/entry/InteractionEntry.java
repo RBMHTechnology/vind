@@ -13,9 +13,9 @@ import java.time.ZonedDateTime;
 /**
  * Created on 03.10.17.
  */
-public class InteractionEntry extends LogEntry{
+public class InteractionEntry extends MonitoringEntry {
 
-    private ObjectMapper mapper = LogEntry.getMapper();
+    private ObjectMapper mapper = MonitoringEntry.getMapper();
 
     final private EntryType type = EntryType.interaction;
     private Application application;

@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * Created on 03.10.17.
  */
-public class FullTextEntry extends LogEntry{
+public class FullTextEntry extends MonitoringEntry {
 
     final private EntryType type = EntryType.fulltext;
     private Application application;

@@ -11,7 +11,7 @@ import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
 import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
 import com.rbmhtechnology.vind.monitoring.logger.MonitoringWriter;
 import com.rbmhtechnology.vind.monitoring.logger.entry.FullTextEntry;
-import com.rbmhtechnology.vind.monitoring.logger.entry.LogEntry;
+import com.rbmhtechnology.vind.monitoring.logger.entry.MonitoringEntry;
 import com.rbmhtechnology.vind.monitoring.model.NewsItem;
 import com.rbmhtechnology.vind.monitoring.model.application.SimpleApplication;
 import com.rbmhtechnology.vind.monitoring.model.session.SimpleSession;
@@ -98,10 +98,10 @@ public class MonitoringSearchServerTest extends SearchTestcase {
 
     public class TestMonitoringWriter extends MonitoringWriter {
 
-        public ArrayList<LogEntry> logs = new ArrayList<>();
+        public ArrayList<MonitoringEntry> logs = new ArrayList<>();
 
         @Override
-        public void log(LogEntry log) {
+        public void log(MonitoringEntry log) {
             logs.add(log);
         }
     }
