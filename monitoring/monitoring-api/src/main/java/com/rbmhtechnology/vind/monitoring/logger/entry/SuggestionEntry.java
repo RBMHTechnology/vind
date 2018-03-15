@@ -31,17 +31,6 @@ public class SuggestionEntry extends LogEntry{
     public SuggestionEntry() {
     }
 
-    public SuggestionEntry(SearchServer server, DocumentFactory factory, Application application, String source,
-           ExecutableSuggestionSearch search, SuggestionResult result, ZonedDateTime start, ZonedDateTime end,
-           long queryTime, Session session) {
-        this.application = application;
-        this.session = session;
-        this.timeStamp = start;
-        //TODO add copy to suggestion search
-        this.request = new SuggestionRequest(search/*.copy()*/, server.getRawQuery(search, factory),source);
-        this.response = new Response(result.size(), queryTime, start.until(end, ChronoUnit.MILLIS),result.getSuggestedFields().size());
-    }
-
     public SuggestionEntry(SearchServer server, DocumentFactory factory,
            Application application, ExecutableSuggestionSearch search, SuggestionResult result, ZonedDateTime start,
            ZonedDateTime end, long queryTime, Session session) {
@@ -49,20 +38,8 @@ public class SuggestionEntry extends LogEntry{
         this.session = session;
         this.timeStamp = start;
         //TODO add copy to suggestion search
-        this.request = new SuggestionRequest(search/*.copy()*/,server.getRawQuery(search, factory), this.type.name());
+        this.request = new SuggestionRequest(search/*.copy()*/,server.getRawQuery(search, factory));
         this.response = new Response(result.size(), queryTime, start.until(end, ChronoUnit.MILLIS), result.getSuggestedFields().size());
-    }
-
-    public SuggestionEntry(SearchServer server, DocumentFactory factory, Application application, String source,
-                           ExecutableSuggestionSearch search, SuggestionResult result, ZonedDateTime start, ZonedDateTime end,
-                           long queryTime, long elapsedTime, Session session) {
-        this.application = application;
-        this.session = session;
-        this.timeStamp = start;
-        //TODO add copy to suggestion search
-        this.request = new SuggestionRequest(search/*.copy()*/, server.getRawQuery(search, factory),source);
-        this.response = new Response(result.size(), queryTime, start.until(end, ChronoUnit.MILLIS),result.getSuggestedFields().size());
-        this.response.setElapsedTime(elapsedTime);
     }
 
     public SuggestionEntry(SearchServer server, DocumentFactory factory,
@@ -72,7 +49,7 @@ public class SuggestionEntry extends LogEntry{
         this.session = session;
         this.timeStamp = start;
         //TODO add copy to suggestion search
-        this.request = new SuggestionRequest(search/*.copy()*/,server.getRawQuery(search, factory), this.type.name());
+        this.request = new SuggestionRequest(search/*.copy()*/,server.getRawQuery(search, factory));
         this.response = new Response(result.size(), queryTime, start.until(end, ChronoUnit.MILLIS), result.getSuggestedFields().size());
         this.response.setElapsedTime(elpasedTime);
     }

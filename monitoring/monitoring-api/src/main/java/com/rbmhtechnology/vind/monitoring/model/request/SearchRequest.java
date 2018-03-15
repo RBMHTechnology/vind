@@ -20,6 +20,5 @@ public interface SearchRequest {
     List<Facet> getFacets();
 
     String getRawQuery();
-    String getSource();
 
 }

@@ -21,19 +21,17 @@ public class FullTextRequest implements SearchRequest{
     private com.rbmhtechnology.vind.api.query.filter.Filter filter;
     private List<Facet> facets;
     private String rawQuery;
-    private String source;
 
     public FullTextRequest() {
     }
 
-    public FullTextRequest(FulltextSearch search, String solrQuery, String source) {
+    public FullTextRequest(FulltextSearch search, String solrQuery) {
         this.search = search;
         this.query = Objects.nonNull(this.search.getSearchString()) ? this.search.getSearchString() : "*";
         if (Objects.nonNull(this.search.getFilter())) {
             this.filter = this.search.getFilter();//com.rbmhtechnology.vind.report.model.request.filter.Filter.logFilter(this.search.getFilter()) ;
         }
         this.facets = new ArrayList<>(this.search.getFacets().values());
-        this.source = source;
         this.rawQuery = solrQuery;
     }
 
@@ -55,11 +53,6 @@ public class FullTextRequest implements SearchRequest{
     @Override
     public String getRawQuery() {
         return rawQuery;
-    }
-
-    @Override
-    public String getSource() {
-        return this.source;
     }
 
 }

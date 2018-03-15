@@ -22,7 +22,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.ZonedDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Thomas Kurz (tkurz@apache.org)
@@ -38,10 +40,8 @@ public class MonitoringSearchServer extends SearchServer {
     private final SearchServer server;
 
     private Session session;
-
-    private String source;
-
     private Application application;
+    private HashMap<String, Object> monitoringMetadata = new HashMap<>();
 
     private final MonitoringWriter logger;
 
@@ -126,7 +126,26 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final BeanSearchResult<T> result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new FullTextEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, source ,search, result, start, end,result.getQueryTime(), result.getElapsedTime(), session));
+        final FullTextEntry entry =
+                new FullTextEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        entry.setMetadata(this.monitoringMetadata);
+        logger.log(entry);
+        return result;
+    }
+
+    public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c, HashMap<String, Object> metadata) {
+        final ZonedDateTime start = ZonedDateTime.now();
+        final BeanSearchResult<T> result = server.execute(search, c);
+        final ZonedDateTime end = ZonedDateTime.now();
+        final FullTextEntry entry =
+                new FullTextEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+
+        final HashMap<String, Object> mergedMetadata = new HashMap<>();
+        mergedMetadata.putAll(this.monitoringMetadata);
+        mergedMetadata.putAll(metadata);
+        entry.setMetadata(mergedMetadata);
+
+        logger.log(entry);
         return result;
     }
 
@@ -135,7 +154,23 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SearchResult result = server.execute(search, factory);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new FullTextEntry(this.server, factory, application, source ,search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session));
+        final FullTextEntry entry = new FullTextEntry(this.server, factory, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        entry.setMetadata(this.monitoringMetadata);
+        logger.log(entry);
+        return result;
+    }
+
+    public SearchResult execute(FulltextSearch search, DocumentFactory factory, HashMap<String, Object> metadata) {
+        final ZonedDateTime start = ZonedDateTime.now();
+        final SearchResult result = server.execute(search, factory);
+        final ZonedDateTime end = ZonedDateTime.now();
+        final FullTextEntry entry = new FullTextEntry(this.server, factory, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+
+        final HashMap<String, Object> mergedMetadata = new HashMap<>();
+        mergedMetadata.putAll(this.monitoringMetadata);
+        mergedMetadata.putAll(metadata);
+        entry.setMetadata(mergedMetadata);
+        logger.log(entry);
         return result;
     }
 
@@ -154,7 +189,23 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         SuggestionResult result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new SuggestionEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session));
+        final SuggestionEntry entry = new SuggestionEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        entry.setMetadata(this.monitoringMetadata);
+        logger.log(entry);
+        return result;
+    }
+
+    public <T> SuggestionResult execute(ExecutableSuggestionSearch search, Class<T> c, HashMap<String, Object> metadata) {
+        final ZonedDateTime start = ZonedDateTime.now();
+        SuggestionResult result = server.execute(search, c);
+        final ZonedDateTime end = ZonedDateTime.now();
+        final SuggestionEntry entry = new SuggestionEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        // Adding execution metadata to server metadata
+        final HashMap<String, Object> mergedMetadata = new HashMap<>();
+        mergedMetadata.putAll(this.monitoringMetadata);
+        mergedMetadata.putAll(metadata);
+        entry.setMetadata(mergedMetadata);
+        logger.log(entry);
         return result;
     }
 
@@ -163,7 +214,23 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SuggestionResult result = server.execute(search, assets);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session));
+        final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        entry.setMetadata(this.monitoringMetadata);
+        logger.log(entry);
+        return result;
+    }
+
+    public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets, HashMap<String, Object> metadata) {
+        final ZonedDateTime start = ZonedDateTime.now();
+        final SuggestionResult result = server.execute(search, assets);
+        final ZonedDateTime end = ZonedDateTime.now();
+        final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        // Adding execution metadata to server metadata
+        final HashMap<String, Object> mergedMetadata = new HashMap<>();
+        mergedMetadata.putAll(this.monitoringMetadata);
+        mergedMetadata.putAll(metadata);
+        entry.setMetadata(mergedMetadata);
+        logger.log(entry);
         return result;
     }
 
@@ -172,7 +239,23 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SuggestionResult result = server.execute(search, assets, childFactory);
         final ZonedDateTime end = ZonedDateTime.now();
-        logger.log(new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session));
+        final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        entry.setMetadata(this.monitoringMetadata);
+        logger.log(entry);
+        return result;
+    }
+
+    public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets, DocumentFactory childFactory, HashMap<String, Object> metadata) {
+        final ZonedDateTime start = ZonedDateTime.now();
+        final SuggestionResult result = server.execute(search, assets, childFactory);
+        final ZonedDateTime end = ZonedDateTime.now();
+        final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        // Adding execution metadata to server metadata
+        final HashMap<String, Object> mergedMetadata = new HashMap<>();
+        mergedMetadata.putAll(this.monitoringMetadata);
+        mergedMetadata.putAll(metadata);
+        entry.setMetadata(mergedMetadata);
+        logger.log(entry);
         return result;
     }
 
@@ -229,11 +312,9 @@ public class MonitoringSearchServer extends SearchServer {
         this.session = session;
     }
 
-    public String getSource() {
-        return source;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
+    public void addMetadata(String key, Object value) {
+        if (Objects.nonNull(key)) {
+            this. monitoringMetadata.put(key, value);
+        }
     }
 }

@@ -37,44 +37,44 @@ public class FullTextEntry extends LogEntry{
     public FullTextEntry() {
     }
 
-    public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, String source, FulltextSearch search, SearchResult result, ZonedDateTime start, ZonedDateTime end, long queryTime, Session session) {
+    public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, FulltextSearch search, SearchResult result, ZonedDateTime start, ZonedDateTime end, long queryTime, Session session) {
         this.application = application;
         this.session = session;
         this.timeStamp = start;
-        this.request = new FullTextRequest(search.copy(), server.getRawQuery(search,factory), source);
+        this.request = new FullTextRequest(search.copy(), server.getRawQuery(search,factory));
         this.response = new Response(result.getNumOfResults(), queryTime, start.until(end, ChronoUnit.MILLIS));
         this.sorting = search.getSorting();
         this.paging = new Paging(search.getResultSet());
     }
 
-    public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, String source, FulltextSearch search, BeanSearchResult result, ZonedDateTime start, ZonedDateTime end, long queryTime, Session session) {
+    public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, FulltextSearch search, BeanSearchResult result, ZonedDateTime start, ZonedDateTime end, long queryTime, Session session) {
         this.application = application;
         this.session = session;
         this.timeStamp = start;
 
-        this.request = new FullTextRequest(search.copy(), server.getRawQuery(search,factory), source);
+        this.request = new FullTextRequest(search.copy(), server.getRawQuery(search,factory));
         this.response = new Response(result.getNumOfResults(), queryTime, start.until(end, ChronoUnit.MILLIS));
         this.sorting = search.getSorting();
         this.paging = new Paging(search.getResultSet());
     }
 
-    public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, String source, FulltextSearch search, SearchResult result, ZonedDateTime start, ZonedDateTime end, long queryTime, long elapsedTime, Session session) {
+    public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, FulltextSearch search, SearchResult result, ZonedDateTime start, ZonedDateTime end, long queryTime, long elapsedTime, Session session) {
         this.application = application;
         this.session = session;
         this.timeStamp = start;
-        this.request = new FullTextRequest(search.copy(), server.getRawQuery(search,factory), source);
+        this.request = new FullTextRequest(search.copy(), server.getRawQuery(search,factory));
         this.response = new Response(result.getNumOfResults(), queryTime, start.until(end, ChronoUnit.MILLIS));
         this.response.setElapsedTime(elapsedTime);
         this.sorting = search.getSorting();
         this.paging = new Paging(search.getResultSet());
     }
 
-    public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, String source, FulltextSearch search, BeanSearchResult result, ZonedDateTime start, ZonedDateTime end, long queryTime, long elapsedTime, Session session) {
+    public FullTextEntry(SearchServer server, DocumentFactory factory, Application application, FulltextSearch search, BeanSearchResult result, ZonedDateTime start, ZonedDateTime end, long queryTime, long elapsedTime, Session session) {
         this.application = application;
         this.session = session;
         this.timeStamp = start;
 
-        this.request = new FullTextRequest(search.copy(), server.getRawQuery(search,factory), source);
+        this.request = new FullTextRequest(search.copy(), server.getRawQuery(search,factory));
         this.response = new Response(result.getNumOfResults(), queryTime, start.until(end, ChronoUnit.MILLIS));
         this.response.setElapsedTime(elapsedTime);
         this.sorting = search.getSorting();

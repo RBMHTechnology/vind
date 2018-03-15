@@ -20,6 +20,8 @@ import com.rbmhtechnology.vind.monitoring.model.request.filter.OrFilterMixIn;
 import com.rbmhtechnology.vind.monitoring.model.request.sort.SortMixIn;
 
 import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.Objects;
 
 /**
  * Created on 03.10.17.
@@ -31,10 +33,31 @@ import java.time.ZonedDateTime;
 public abstract class LogEntry {
 
 
+
+    public HashMap<String,Object> metadata = new HashMap<>();
+
     public abstract Application getApplication();
     public abstract Session getSession();
     public abstract EntryType getType();
     public abstract ZonedDateTime getTimeStamp();
+
+    public void addMetadata(String key, Object value) {
+        if (Objects.nonNull(key)) {
+            metadata.put(key, value);
+        }
+    }
+
+    public HashMap<String, Object> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(HashMap<String, Object> metadata) {
+        if (Objects.nonNull(metadata)) {
+            this.metadata = metadata;
+        } else {
+            this.metadata = new HashMap<>();
+        }
+    }
 
     public String toJson(){
         try {

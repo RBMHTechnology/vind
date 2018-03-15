@@ -51,11 +51,10 @@ public class FullTextRequestTest {
 
     @Test
     public void testCreateFullTextRequest(){
-        final FullTextRequest fullTextRequest = new FullTextRequest(search, "q=*.*","test");
+        final FullTextRequest fullTextRequest = new FullTextRequest(search, "q=*.*");
 
         assertEquals("mocked Query", fullTextRequest.getQuery());
         assertEquals("andFilter", fullTextRequest.getFilter().toString());
-        assertEquals("test", fullTextRequest.getSource());
     }
 
 }

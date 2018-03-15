@@ -24,38 +24,35 @@ public class SuggestionRequest implements SearchRequest {
     private Collection<String> suggestionFields;
     private Filter filter;
     private String rawQuery;
-    private String source;
 
     public SuggestionRequest() {
     }
 
-    public SuggestionRequest(ExecutableSuggestionSearch search, String rawQuery,String source) {
+    public SuggestionRequest(ExecutableSuggestionSearch search, String rawQuery) {
         if(StringSuggestionSearch.class.isAssignableFrom(search.getClass())) {
-            createSuggestionRequest((StringSuggestionSearch)search, rawQuery, source);
+            createSuggestionRequest((StringSuggestionSearch)search, rawQuery);
         } else {
-            createSuggestionRequest((DescriptorSuggestionSearch)search, rawQuery, source);
+            createSuggestionRequest((DescriptorSuggestionSearch)search, rawQuery);
         }
     }
 
-    public void createSuggestionRequest(StringSuggestionSearch search, String rawQuery, String source) {
+    public void createSuggestionRequest(StringSuggestionSearch search, String rawQuery) {
         this.search = search;
         this.query = this.search.getInput();
         this.suggestionFields = search.getSuggestionFields();
         if (Objects.nonNull(this.search.getFilter())) {
             this.filter = this.search.getFilter();
         }
-        this.source = source;
         this.rawQuery = rawQuery;
     }
 
-    public void createSuggestionRequest(DescriptorSuggestionSearch search, String rawQuery,String source) {
+    public void createSuggestionRequest(DescriptorSuggestionSearch search, String rawQuery) {
         this.search = search;
         this.query = this.search.getInput();
         this.suggestionFields = search.getSuggestionFields().stream().map( f -> f.getName()).collect(Collectors.toList());
         if (Objects.nonNull(this.search.getFilter())) {
             this.filter = this.search.getFilter();
         }
-        this.source = source;
         this.rawQuery = rawQuery;
     }
 
@@ -81,10 +78,5 @@ public class SuggestionRequest implements SearchRequest {
     @Override
     public String getRawQuery() {
         return rawQuery;
-    }
-
-    @Override
-    public String getSource() {
-        return this.source;
     }
 }
