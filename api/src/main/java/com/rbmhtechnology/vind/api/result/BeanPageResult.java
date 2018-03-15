@@ -14,8 +14,11 @@ import java.util.List;
 public class BeanPageResult<T> extends BeanSearchResult<T> {
 
     private Page page;
+
     /**
+     * DEPRECATED: use the signature providing the time the query took.{@link BeanPageResult#BeanPageResult(long, long, List, FulltextSearch, FacetResults, SearchServer, Class)}
      * Creates a new instance of {@link BeanPageResult}.
+     *
      * @param numOfResults Number of documents returned by the search server instance.
      * @param results A list of results parsed to T.
      * @param query The fulltext query executed to retrieve this set of results.
@@ -23,6 +26,8 @@ public class BeanPageResult<T> extends BeanSearchResult<T> {
      * @param server A search server implementation.
      * @param c Annotated class to parse the results to.
      */
+
+    @Deprecated
     public BeanPageResult(long numOfResults, List<T> results, FulltextSearch query, FacetResults facetResults, SearchServer server, Class<T> c) {
         super(numOfResults, results, query, facetResults, server, c);
         if (query.getResultSet().getType().equals(ResultSubset.DivisionType.page)) {
@@ -32,10 +37,30 @@ public class BeanPageResult<T> extends BeanSearchResult<T> {
         }
     }
 
-    /*/**
+    /**
+     * Creates a new instance of {@link BeanPageResult}.
+     *
+     * @param numOfResults Number of documents returned by the search server instance.
+     * @param queryTime the time the query took in the backend.
+     * @param results A list of results parsed to T.
+     * @param query The fulltext query executed to retrieve this set of results.
+     * @param facetResults The different faceted results of the query.
+     * @param server A search server implementation.
+     * @param c Annotated class to parse the results to.
+     */
+    public BeanPageResult(long numOfResults, long queryTime ,List<T> results, FulltextSearch query, FacetResults facetResults, SearchServer server, Class<T> c) {
+        super(numOfResults, queryTime, results, query, facetResults, server, c);
+        if (query.getResultSet().getType().equals(ResultSubset.DivisionType.page)) {
+            this.page = (Page) query.getResultSet();
+        } else {
+            throw new RuntimeException("Search result set is not configured as page: Result set type is "+query.getResultSet().getType());
+        }
+    }
+
+    /**
      * Gets the next page of results.
      * @return Instance of BeanSearchResult containing the next page results.
-     * @throws SearchServerException
+     * @throws {@link SearchServerException} When something goes wrong with the search execution.
      */
     public BeanSearchResult<T> nextPage() {
         try{
