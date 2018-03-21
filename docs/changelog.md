@@ -35,7 +35,7 @@ For information about older releases check the [history on GitHub](https://githu
 * First stable version of monitoring model.
 * Added monitoring log writer.
 * Added monitoring ElasticSearch writer.
-* Added first monitoring analyzer: report, able to writ Json or HTML reports.
+* Added first monitoring analyzer: report, able to write Json or HTML reports.
 * Added to `SearchServer` a getRawQuery method to get the backend specific query.
 * Added the possibility ti configure by config properties the backend connection timeout and read timeout.
 * BugFix: Added real deep copy of fulltext search object.
