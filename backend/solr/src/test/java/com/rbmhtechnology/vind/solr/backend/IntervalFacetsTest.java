@@ -30,13 +30,14 @@ public class IntervalFacetsTest {
         FieldDescriptor<Integer> descriptor = Mockito.mock(FieldDescriptor.class);
         when(descriptor.getType()).thenReturn(Integer.class);
         when(descriptor.isFacet()).thenReturn(true);
+        when(descriptor.getName()).thenReturn("fieldName");
         DocumentFactory factory = Mockito.mock(DocumentFactory.class);
 
         FulltextSearch search = Search.fulltext().facet(interval("quality", descriptor, Interval.numericInterval("low", 0, 2, true, false), Interval.numericInterval("high", 3, 4)));
 
         SolrQuery query = server.buildSolrQuery(search,factory);
 
-        assertEquals("{!key=quality}dynamic_single_facet_int_null", query.get("facet.interval"));
+        assertEquals("{!key=quality}dynamic_single_facet_int_fieldName", query.get("facet.interval"));
 
         //assertThat(Arrays.asList(query.getParams("f.dynamic_single_int_null.facet.interval.set")), contains("{!key=low}[0,2)", "{!key=high}[3,4]")); TODO fix hamcrest dependency
     }

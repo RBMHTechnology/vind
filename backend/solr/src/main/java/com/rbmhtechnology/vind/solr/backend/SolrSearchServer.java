@@ -467,7 +467,7 @@ public class SolrSearchServer extends SearchServer {
                         final UseCase useCase = UseCase.valueOf(intervalFacet.getScope().name());
                         final String fieldName = getFieldname(intervalFacet.getFieldDescriptor(), useCase, searchContext);
 
-                        query.add(FacetParams.FACET_INTERVAL, SolrUtils.Query.buildSolrFacetKey(intervalFacet.getName()) + fieldName);
+                        query.add(FacetParams.FACET_INTERVAL, SolrUtils.Query.buildSolrFacetKey(intervalFacet.getFacetName()) + fieldName);
 
                         for(Object o : intervalFacet.getIntervals()) {
                             Interval i = (Interval) o; //TODO why is this necessary?
@@ -511,7 +511,7 @@ public class SolrSearchServer extends SearchServer {
                                         .map(fieldDescriptor -> getFieldname(fieldDescriptor, UseCase.Facet, searchContext))
                                         .toArray(String[]::new);
 
-                        query.add(FacetParams.FACET_PIVOT,SolrUtils.Query.buildSolrPivotSubFacetName(pivotFacet.getName(),fieldNames));
+                        query.add(FacetParams.FACET_PIVOT,SolrUtils.Query.buildSolrPivotSubFacetName(pivotFacet.getFacetName(),fieldNames));
                     });
 
             //facet fields
