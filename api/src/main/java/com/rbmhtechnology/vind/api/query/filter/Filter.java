@@ -779,6 +779,14 @@ public abstract class Filter {
             return term;
         }
 
+        /**
+         * Get the name of the field.
+         * @return  {@link String} with the value to field descriptor name.
+         */
+        public String getField() {
+            return field;
+        }
+
         @Override
         public Filter clone() {
             final DescriptorFilter<T> copy = new DescriptorFilter<T>(this.descriptor,this.term, super.filterScope);

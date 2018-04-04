@@ -214,6 +214,11 @@ public abstract class Facet {
             return fieldDescriptor.getName();
         }
 
+        @Override
+        public String getName() {
+            return fieldDescriptor.getName();
+        }
+
         /**
          * Get the starting value of the range.
          * @return T Numeric value. T must extend {@link Number}.
@@ -283,6 +288,11 @@ public abstract class Facet {
         }
 
         public String getFieldName() {
+            return fieldDescriptor.getName();
+        }
+
+        @Override
+        public String getName() {
             return fieldDescriptor.getName();
         }
 
@@ -506,6 +516,11 @@ public abstract class Facet {
         }
 
         public String getFieldName() {
+            return fieldDescriptor.getName();
+        }
+
+        @Override
+        public String getName() {
             return fieldDescriptor.getName();
         }
 
@@ -814,6 +829,11 @@ public abstract class Facet {
          */
         public FieldDescriptor<T> getField() {
             return field;
+        }
+
+        @Override
+        public String getName() {
+            return field.getName();
         }
 
         /**
