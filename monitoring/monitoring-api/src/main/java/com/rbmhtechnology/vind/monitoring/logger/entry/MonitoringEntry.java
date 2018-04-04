@@ -7,10 +7,13 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.monitoring.model.application.Application;
+import com.rbmhtechnology.vind.monitoring.model.request.DateMathExpressionMixIn;
+import com.rbmhtechnology.vind.monitoring.model.request.RootTimeMixIn;
 import com.rbmhtechnology.vind.monitoring.model.request.facet.FacetMixin;
 import com.rbmhtechnology.vind.monitoring.model.session.Session;
 import com.rbmhtechnology.vind.monitoring.model.request.filter.AndFilterMixIn;
@@ -75,6 +78,8 @@ public abstract class MonitoringEntry {
                 .addMixIn(Filter.NotFilter.class, NotFilterMixIn.class)
                 .addMixIn(Facet.class, FacetMixin.class)
                 .addMixIn(Sort.class, SortMixIn.class)
+                .addMixIn(DateMathExpression.class, DateMathExpressionMixIn.class)
+                .addMixIn(DateMathExpression.RootTime.class, RootTimeMixIn.class)
                 ;
     }
 

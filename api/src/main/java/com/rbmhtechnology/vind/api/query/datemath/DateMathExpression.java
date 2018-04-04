@@ -46,6 +46,22 @@ public class DateMathExpression {
         this.root.setUnit(unit);
     }
 
+    public RootTime getRoot() {
+        return root;
+    }
+
+    public TimeUnit getUnit() {
+        return unit;
+    }
+
+    public List<DateMathOperation> getAdd() {
+        return add;
+    }
+
+    public List<DateMathOperation> getSub() {
+        return sub;
+    }
+
     @Override
     public String toString() {
         String output = this.root.toString();
@@ -63,7 +79,7 @@ public class DateMathExpression {
         return output;
     }
 
-    protected class RootTime {
+    public class RootTime {
         private final boolean relative;
         private ZonedDateTime fixedTime;
         private TimeUnit unit;
@@ -74,6 +90,18 @@ public class DateMathExpression {
         protected RootTime(ZonedDateTime time){
             relative = false;
             fixedTime = time;
+        }
+
+        public boolean isRelative() {
+            return relative;
+        }
+
+        public ZonedDateTime getFixedTime() {
+            return fixedTime;
+        }
+
+        public TimeUnit getUnit() {
+            return unit;
         }
 
         public RootTime setUnit(TimeUnit unit) {
@@ -102,6 +130,14 @@ public class DateMathExpression {
         protected DateMathOperation(long quantity, TimeUnit unit) {
             this.quantity = quantity;
             this.unit = unit;
+        }
+
+        public long getQuantity() {
+            return quantity;
+        }
+
+        public TimeUnit getUnit() {
+            return unit;
         }
 
         @Override
