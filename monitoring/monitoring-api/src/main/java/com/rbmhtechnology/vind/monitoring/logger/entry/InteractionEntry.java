@@ -23,10 +23,10 @@ public class InteractionEntry extends MonitoringEntry {
     private ZonedDateTime timeStamp;
     private Interaction request;
 
-    public InteractionEntry(Application application, String source, Interaction interaction, ZonedDateTime start, ZonedDateTime end, Session session) {
+    public InteractionEntry(Application application, Interaction interaction, ZonedDateTime timestamp, Session session) {
         this.application = application;
         this.session = session;
-        this.timeStamp = start;
+        this.timeStamp = timestamp;
         this.request = interaction;
     }
 
