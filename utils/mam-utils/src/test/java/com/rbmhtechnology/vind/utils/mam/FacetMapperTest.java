@@ -29,8 +29,8 @@ public class FacetMapperTest {
         SingleValueFieldDescriptor.UtilDateFieldDescriptor<Date> testDateField = new FieldDescriptorBuilder().buildUtilDateField("test1");
         FieldDescriptor<Float> testNumericField = new FieldDescriptorBuilder().buildNumericField("numericTest", Float.class);
 
-        Assert.assertTrue(FacetMapper.stringQuery2FacetMapper(testDateField, "dateFacet",dateIntervals).getFacetName().equals("dateFacet"));
-        Assert.assertTrue(FacetMapper.stringQuery2FacetMapper(testNumericField, "numericFacet", numberIntervals).getFacetName().equals("numericFacet"));
+        Assert.assertTrue(FacetMapper.stringQuery2FacetMapper(testDateField, "dateFacet",dateIntervals).getName().equals("dateFacet"));
+        Assert.assertTrue(FacetMapper.stringQuery2FacetMapper(testNumericField, "numericFacet", numberIntervals).getName().equals("numericFacet"));
 
         Assert.assertTrue(true);
     }
@@ -54,8 +54,8 @@ public class FacetMapperTest {
                 .setFacet(true, tax -> Arrays.asList(tax.getTerm()))
                 .buildNumericComplexField("complexNumberTax", Taxonomy.class, Number.class, Number.class);
 
-        Assert.assertTrue(FacetMapper.stringQuery2FacetMapper(complexDateField, "dateFacet",dateIntervals).getFacetName().equals("dateFacet"));
-        Assert.assertTrue(FacetMapper.stringQuery2FacetMapper(complexNumberField, "numericFacet", numberIntervals).getFacetName().equals("numericFacet"));
+        Assert.assertTrue(FacetMapper.stringQuery2FacetMapper(complexDateField, "dateFacet",dateIntervals).getName().equals("dateFacet"));
+        Assert.assertTrue(FacetMapper.stringQuery2FacetMapper(complexNumberField, "numericFacet", numberIntervals).getName().equals("numericFacet"));
 
         Assert.assertTrue(true);
     }
