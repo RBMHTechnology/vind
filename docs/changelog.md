@@ -43,5 +43,6 @@ For information about older releases check the [history on GitHub](https://githu
 
 ## 1.1.1
 * BugFix: added mixIn to properly serialize DateMathExpression objects and its sub objects.
-* __API change__: deprecated method `getName()` from Facet API. Use `getFacetName()` instead when 
+* __API change__: deprecated method `getName()` from Facet API. Use `getFacetName()` instead when
 looking for the Facet name or `getFieldName()`.
+* Simplified InteractionEntry data model.
