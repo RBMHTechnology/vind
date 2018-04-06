@@ -92,7 +92,7 @@ public class MonitoringSearchServerTest extends SearchTestcase {
 
         BeanSearchResult<NewsItem> result = server.execute(search, NewsItem.class);
 
-        assertEquals(1, logger.logs.size());
+        assertEquals(3, logger.logs.size());
 
     }
 

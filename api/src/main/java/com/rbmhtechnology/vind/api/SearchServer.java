@@ -175,14 +175,14 @@ public abstract class SearchServer implements Closeable {
      * this change to take place on the  index.
      * @param doc comma separated {@link Document}s to be indexed.
      */
-    public abstract void index(Document ... doc);
+    public abstract IndexResult index(Document ... doc);
 
     /**
      * Adds a {@link Document} or {@link Document}s to the search server index. {@link SearchServer#commit()} should be executed afterwards for
      * this change to take place on the  index.
      * @param doc comma separated {@link Document}s to be indexed.
      */
-    public abstract void index(List<Document> doc);
+    public abstract IndexResult index(List<Document> doc);
 
     /**
      * Removes a {@link Document} from the search server index. {@link SearchServer#commit()} should be executed afterwards for

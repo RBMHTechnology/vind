@@ -36,6 +36,7 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.request.schema.SchemaRequest;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SolrPingResponse;
+import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.client.solrj.response.schema.SchemaResponse;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrDocument;
@@ -136,23 +137,21 @@ public class SolrSearchServer extends SearchServer {
     }
 
     @Override
-    public void index(Document ... docs) {
+    public IndexResult index(Document ... docs) {
         Asserts.notNull(docs,"Document to index should not be null.");
         Asserts.check(docs.length > 0, "Should be at least one document to index.");
-        for(Document doc: docs) {
-            indexSingleDocument(doc);
-        }
+        return indexMultipleDocuments(Arrays.asList(docs));
     }
 
     @Override
-    public void index(List<Document> docs) {
+    public IndexResult index(List<Document> docs) {
         Asserts.notNull(docs,"Document to index should not be null.");
         Asserts.check(docs.size() > 0, "Should be at least one document to index.");
 
-        indexMultipleDocuments(docs);
+        return  indexMultipleDocuments(docs);
     }
 
-    private void indexSingleDocument(Document doc) {
+    private IndexResult indexSingleDocument(Document doc) {
         final SolrInputDocument document = createInputDocument(doc);
         try {
             if (solrClientLogger.isTraceEnabled()) {
@@ -160,15 +159,18 @@ public class SolrSearchServer extends SearchServer {
             } else {
                 solrClientLogger.debug(">>> add({})", doc.getId());
             }
+
             removeNonParentDocument(doc);
-            this.solrClient.add(document);
+            final UpdateResponse response = this.solrClient.add(document);
+            return new IndexResult(Long.valueOf(response.getQTime())).setElapsedTime(response.getElapsedTime());
+
         } catch (SolrServerException | IOException e) {
             log.error("Cannot index document {}", document.getField(ID) , e);
             throw new SearchServerException("Cannot index document", e);
         }
     }
 
-    private void indexMultipleDocuments(List<Document> docs) {
+    private IndexResult indexMultipleDocuments(List<Document> docs) {
         final List<SolrInputDocument> solrDocs = docs.parallelStream()
                 .map(doc -> createInputDocument(doc))
                 .collect(Collectors.toList());
@@ -181,7 +183,10 @@ public class SolrSearchServer extends SearchServer {
             for(Document doc : docs){
                 removeNonParentDocument(doc);
             }
-            this.solrClient.add(solrDocs);
+
+            final UpdateResponse response = this.solrClient.add(solrDocs);
+            return new IndexResult(Long.valueOf(response.getQTime())).setElapsedTime(response.getElapsedTime());
+
         } catch (SolrServerException | IOException e) {
             log.error("Cannot index documents {}", solrDocs, e);
             throw new SearchServerException("Cannot index documents", e);
