@@ -54,32 +54,32 @@ public class CompletableSearchServer extends SearchServer {
     }
 
     @Deprecated
-    public final CompletableFuture<Void> indexAsync(Object t) {
+    public final CompletableFuture<IndexResult> indexAsync(Object t) {
         return indexBeanAsync(t);
     }
     @Deprecated
-    public CompletableFuture<Void> indexBeanAsync(Object t) {
+    public CompletableFuture<IndexResult> indexBeanAsync(Object t) {
         return indexBeanAsync(t, executor);
     }
 
-    public CompletableFuture<Void> indexBeanAsync(Object ... t) {
+    public CompletableFuture<IndexResult> indexBeanAsync(Object ... t) {
         return indexBeanAsync(executor, t);
     }
 
-    public CompletableFuture<Void> indexBeanAsync(List<Object> t) {
+    public CompletableFuture<IndexResult> indexBeanAsync(List<Object> t) {
         return indexBeanAsync(executor, t);
     }
 
     @Deprecated
-    public final CompletableFuture<Void> indexAsync(Object t, Executor executor) {
+    public final CompletableFuture<IndexResult> indexAsync(Object t, Executor executor) {
         return indexBeanAsync(t, executor);
     }
     @Deprecated
-    public CompletableFuture<Void> indexBeanAsync(Object t, Executor executor) {
+    public CompletableFuture<IndexResult> indexBeanAsync(Object t, Executor executor) {
         return indexAsync(executor,AnnotationUtil.createDocument(t));
     }
 
-    public CompletableFuture<Void> indexBeanAsync(Executor executor, Object ... t) {
+    public CompletableFuture<IndexResult> indexBeanAsync(Executor executor, Object ... t) {
         List<Document> beanDocuments = new ArrayList<>();
 
         for (Object bean : t){
@@ -88,7 +88,7 @@ public class CompletableSearchServer extends SearchServer {
         return indexAsync(executor,beanDocuments);
     }
 
-    public CompletableFuture<Void> indexBeanAsync( Executor executor, List<Object> t) {
+    public CompletableFuture<IndexResult> indexBeanAsync( Executor executor, List<Object> t) {
         List<Document> beanDocuments = new ArrayList<>();
 
         for (Object bean : t){
@@ -98,29 +98,29 @@ public class CompletableSearchServer extends SearchServer {
     }
 
     @Deprecated
-    public CompletableFuture<Void> indexAsync(Document doc) {
+    public CompletableFuture<IndexResult> indexAsync(Document doc) {
         return indexAsync(doc, executor);
     }
 
     @Deprecated
-    public CompletableFuture<Void> indexAsync(Document doc, Executor executor) {
-        return CompletableFuture.runAsync(() -> this.index(doc), executor);
+    public CompletableFuture<IndexResult> indexAsync(Document doc, Executor executor) {
+        return CompletableFuture.supplyAsync(() -> this.index(doc), executor);
     }
 
-    public CompletableFuture<Void> indexAsync(Document ... docs) {
+    public CompletableFuture<IndexResult> indexAsync(Document ... docs) {
         return indexAsync(executor, docs);
     }
 
-    public CompletableFuture<Void> indexAsync(Executor executor, Document ... docs) {
-        return CompletableFuture.runAsync(() -> this.index(docs), executor);
+    public CompletableFuture<IndexResult> indexAsync(Executor executor, Document ... docs) {
+        return CompletableFuture.supplyAsync(() -> this.index(docs), executor);
     }
 
-    public CompletableFuture<Void> indexAsync(List<Document> docs) {
+    public CompletableFuture<IndexResult> indexAsync(List<Document> docs) {
         return indexAsync(executor, docs);
     }
 
-    public CompletableFuture<Void> indexAsync(Executor executor,List<Document> docs) {
-        return CompletableFuture.runAsync(() -> this.index(docs), executor);
+    public CompletableFuture<IndexResult> indexAsync(Executor executor,List<Document> docs) {
+        return CompletableFuture.supplyAsync(() -> this.index(docs), executor);
     }
 
     @Deprecated
@@ -213,13 +213,13 @@ public class CompletableSearchServer extends SearchServer {
     }
 
     @Override
-    public void index(Document ... docs) {
-        backend.index(docs);
+    public IndexResult index(Document ... docs) {
+        return backend.index(docs);
     }
 
     @Override
-    public void index(List<Document> docs) {
-        backend.index(docs);
+    public IndexResult index(List<Document> docs) {
+        return backend.index(docs);
     }
 
     @Override
@@ -228,13 +228,13 @@ public class CompletableSearchServer extends SearchServer {
     }
 
     @Override
-    public void execute(Delete delete, DocumentFactory factory) {
-        backend.execute(delete, factory);
+    public DeleteResult execute(Delete delete, DocumentFactory factory) {
+        return backend.execute(delete, factory);
     }
 
     @Override
-    public void delete(Document doc) {
-        backend.delete(doc);
+    public DeleteResult delete(Document doc) {
+        return backend.delete(doc);
     }
 
     @Override

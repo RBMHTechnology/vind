@@ -13,6 +13,7 @@ import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SolrPingResponse;
+import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.SolrInputField;
@@ -28,7 +29,9 @@ import org.mockito.MockitoAnnotations;
 import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 
 import static com.rbmhtechnology.vind.api.query.filter.Filter.eq;
@@ -55,6 +58,9 @@ public class SolrSearchServerTest {
     @Mock
     private QueryResponse response;
 
+    @Mock
+    private UpdateResponse iResponse;
+
     private SearchServer server;
 
     @Before
@@ -68,6 +74,11 @@ public class SolrSearchServerTest {
         when(solrClient.query(any(), any(SolrRequest.METHOD.class))).thenReturn(response);
         when(response.getResults()).thenReturn(new SolrDocumentList());
         when(response.getResults()).thenReturn(new SolrDocumentList());
+
+        when(solrClient.add(org.mockito.Matchers.<Collection<SolrInputDocument>>any())).thenReturn(iResponse);
+        when(solrClient.add(any(SolrInputDocument.class))).thenReturn(iResponse);
+        when(iResponse.getQTime()).thenReturn(10);
+        when(iResponse.getElapsedTime()).thenReturn(15l);
 
         //we use the protected constructor to avoid schema checking
         server = new SolrSearchServer(solrClient, false);
@@ -119,10 +130,11 @@ public class SolrSearchServerTest {
                 .setValue(category, 4);
 
         server.index(d1);
-        ArgumentCaptor<SolrInputDocument> argument = ArgumentCaptor.forClass(SolrInputDocument.class);
+        ArgumentCaptor<ArrayList<SolrInputDocument>> argument = ArgumentCaptor.forClass((Class)ArrayList.class);
         verify(solrClient).add(argument.capture());
 
-        SolrInputDocument doc = argument.getValue();
+        ArrayList<SolrInputDocument> docs = argument.getValue();
+        SolrInputDocument doc = docs.get(0);
         assertThat(doc.get(SolrUtils.Fieldname.ID), solrInputField(SolrUtils.Fieldname.ID, "1"));
         assertThat(doc.get(SolrUtils.Fieldname.TYPE), solrInputField(SolrUtils.Fieldname.TYPE, "asset"));
         assertThat(doc.get("dynamic_multi_int_category"), solrInputField("dynamic_multi_int_category", Matchers.containsInAnyOrder(1,2)));

@@ -13,8 +13,7 @@ import com.rbmhtechnology.vind.api.result.*;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.monitoring.logger.MonitoringWriter;
-import com.rbmhtechnology.vind.monitoring.logger.entry.FullTextEntry;
-import com.rbmhtechnology.vind.monitoring.logger.entry.SuggestionEntry;
+import com.rbmhtechnology.vind.monitoring.logger.entry.*;
 import com.rbmhtechnology.vind.monitoring.model.application.Application;
 import com.rbmhtechnology.vind.monitoring.model.application.SimpleApplication;
 import com.rbmhtechnology.vind.monitoring.model.session.Session;
@@ -22,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -89,30 +89,57 @@ public class MonitoringSearchServer extends SearchServer {
     }
 
     @Override
-    public void index(Document... docs) {
-        server.index(docs);
+    public IndexResult index(Document... docs) {
+       return this.index(Arrays.asList(docs));
     }
 
     @Override
-    public void index(List<Document> docs) {
-        server.index(docs);
+    public IndexResult index(List<Document> docs) {
+        final ZonedDateTime start = ZonedDateTime.now();
+        final IndexResult result =  server.index(docs);
+        final ZonedDateTime end = ZonedDateTime.now();
+        final IndexEntry entry =
+                new IndexEntry( application, start, end, result.getQueryTime(), result.getElapsedTime(), session, docs);
+        entry.setMetadata(this.monitoringMetadata);
+        logger.log(entry);
+        return server.index(docs);
     }
 
     @Override
     public boolean execute(Update update, DocumentFactory factory) {
-        //currently not logged
-        return server.execute(update, factory);
+        final ZonedDateTime start = ZonedDateTime.now();
+        final Boolean result =  server.execute(update, factory);
+        final ZonedDateTime end = ZonedDateTime.now();
+        final UpdateEntry entry =
+                new UpdateEntry( application, start, end, session, result);
+        entry.setMetadata(this.monitoringMetadata);
+        logger.log(entry);
+        return result;
     }
 
     @Override
-    public void execute(Delete delete, DocumentFactory factory) {
-        server.execute(delete,factory);
+    public DeleteResult execute(Delete delete, DocumentFactory factory) {
+
+        final ZonedDateTime start = ZonedDateTime.now();
+        final DeleteResult result = server.execute(delete, factory);
+        final ZonedDateTime end = ZonedDateTime.now();
+        final DeleteEntry entry =
+                new DeleteEntry(application, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        entry.setMetadata(this.monitoringMetadata);
+        logger.log(entry);
+        return result;
     }
 
     @Override
-    public void delete(Document doc) {
-        //currently not logged
-        server.delete(doc);
+    public DeleteResult delete(Document doc) {
+        final ZonedDateTime start = ZonedDateTime.now();
+        final DeleteResult result = server.delete(doc);;
+        final ZonedDateTime end = ZonedDateTime.now();
+        final DeleteEntry entry =
+                new DeleteEntry(application, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        entry.setMetadata(this.monitoringMetadata);
+        logger.log(entry);
+        return result;
     }
 
     @Override
@@ -280,7 +307,9 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final BeanGetResult<T> result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        //TODO log
+        final GetEntry entry = new GetEntry(application, start, end,result.getQueryTime(), result.getElapsedTime(), session, search.getValues(), result.getNumOfResults());
+        entry.setMetadata(this.monitoringMetadata);
+        logger.log(entry);
         return result;
     }
 
@@ -289,7 +318,9 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final GetResult result = server.execute(search, assets);
         final ZonedDateTime end = ZonedDateTime.now();
-        //TODO log
+        final GetEntry entry = new GetEntry(application, start, end,result.getQueryTime(), result.getElapsedTime(), session, search.getValues(), result.getNumOfResults());
+        entry.setMetadata(this.monitoringMetadata);
+        logger.log(entry);
         return result;
     }
 
