@@ -43,6 +43,8 @@ public class MonitoringSearchServer extends SearchServer {
     private Application application;
     private HashMap<String, Object> monitoringMetadata = new HashMap<>();
 
+    private boolean silent = false;
+
     private final MonitoringWriter logger;
 
     public MonitoringSearchServer(SearchServer server) {
@@ -98,10 +100,18 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final IndexResult result =  server.index(docs);
         final ZonedDateTime end = ZonedDateTime.now();
-        final IndexEntry entry =
-                new IndexEntry( application, start, end, result.getQueryTime(), result.getElapsedTime(), session, docs);
-        entry.setMetadata(this.monitoringMetadata);
-        logger.log(entry);
+        try {
+            final IndexEntry entry =
+                    new IndexEntry( application, start, end, result.getQueryTime(), result.getElapsedTime(), session, docs);
+            entry.setMetadata(this.monitoringMetadata);
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Index monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
+
         return server.index(docs);
     }
 
@@ -110,10 +120,17 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final Boolean result =  server.execute(update, factory);
         final ZonedDateTime end = ZonedDateTime.now();
-        final UpdateEntry entry =
-                new UpdateEntry( application, start, end, session, result);
-        entry.setMetadata(this.monitoringMetadata);
-        logger.log(entry);
+        try {
+            final UpdateEntry entry =
+                    new UpdateEntry( application, start, end, session, result);
+            entry.setMetadata(this.monitoringMetadata);
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Update monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -123,10 +140,17 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final DeleteResult result = server.execute(delete, factory);
         final ZonedDateTime end = ZonedDateTime.now();
-        final DeleteEntry entry =
-                new DeleteEntry(application, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        entry.setMetadata(this.monitoringMetadata);
-        logger.log(entry);
+        try {
+            final DeleteEntry entry =
+                    new DeleteEntry(application, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            entry.setMetadata(this.monitoringMetadata);
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Delete monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -135,10 +159,18 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final DeleteResult result = server.delete(doc);;
         final ZonedDateTime end = ZonedDateTime.now();
-        final DeleteEntry entry =
-                new DeleteEntry(application, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        entry.setMetadata(this.monitoringMetadata);
-        logger.log(entry);
+
+        try {
+            final DeleteEntry entry =
+                    new DeleteEntry(application, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            entry.setMetadata(this.monitoringMetadata);
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Delete monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -153,10 +185,17 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final BeanSearchResult<T> result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        final FullTextEntry entry =
-                new FullTextEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        entry.setMetadata(this.monitoringMetadata);
-        logger.log(entry);
+        try {
+            final FullTextEntry entry =
+                    new FullTextEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            entry.setMetadata(this.monitoringMetadata);
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Fulltext monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -164,15 +203,21 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final BeanSearchResult<T> result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        final FullTextEntry entry =
-                new FullTextEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        try {
+            final FullTextEntry entry =
+                    new FullTextEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
 
-        final HashMap<String, Object> mergedMetadata = new HashMap<>();
-        mergedMetadata.putAll(this.monitoringMetadata);
-        mergedMetadata.putAll(metadata);
-        entry.setMetadata(mergedMetadata);
-
-        logger.log(entry);
+            final HashMap<String, Object> mergedMetadata = new HashMap<>();
+            mergedMetadata.putAll(this.monitoringMetadata);
+            mergedMetadata.putAll(metadata);
+            entry.setMetadata(mergedMetadata);
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Fulltext monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -181,9 +226,17 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SearchResult result = server.execute(search, factory);
         final ZonedDateTime end = ZonedDateTime.now();
-        final FullTextEntry entry = new FullTextEntry(this.server, factory, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        entry.setMetadata(this.monitoringMetadata);
-        logger.log(entry);
+
+        try {
+            final FullTextEntry entry = new FullTextEntry(this.server, factory, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            entry.setMetadata(this.monitoringMetadata);
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Fulltext monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -191,13 +244,20 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SearchResult result = server.execute(search, factory);
         final ZonedDateTime end = ZonedDateTime.now();
-        final FullTextEntry entry = new FullTextEntry(this.server, factory, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        try {
+            final FullTextEntry entry = new FullTextEntry(this.server, factory, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
 
-        final HashMap<String, Object> mergedMetadata = new HashMap<>();
-        mergedMetadata.putAll(this.monitoringMetadata);
-        mergedMetadata.putAll(metadata);
-        entry.setMetadata(mergedMetadata);
-        logger.log(entry);
+            final HashMap<String, Object> mergedMetadata = new HashMap<>();
+            mergedMetadata.putAll(this.monitoringMetadata);
+            mergedMetadata.putAll(metadata);
+            entry.setMetadata(mergedMetadata);
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Fulltext monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -216,9 +276,17 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         SuggestionResult result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        final SuggestionEntry entry = new SuggestionEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        entry.setMetadata(this.monitoringMetadata);
-        logger.log(entry);
+
+        try {
+            final SuggestionEntry entry = new SuggestionEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            entry.setMetadata(this.monitoringMetadata);
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Suggestion monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -226,13 +294,20 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         SuggestionResult result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        final SuggestionEntry entry = new SuggestionEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        // Adding execution metadata to server metadata
-        final HashMap<String, Object> mergedMetadata = new HashMap<>();
-        mergedMetadata.putAll(this.monitoringMetadata);
-        mergedMetadata.putAll(metadata);
-        entry.setMetadata(mergedMetadata);
-        logger.log(entry);
+        try {
+            final SuggestionEntry entry = new SuggestionEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            // Adding execution metadata to server metadata
+            final HashMap<String, Object> mergedMetadata = new HashMap<>();
+            mergedMetadata.putAll(this.monitoringMetadata);
+            mergedMetadata.putAll(metadata);
+            entry.setMetadata(mergedMetadata);
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Suggestion monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -241,9 +316,16 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SuggestionResult result = server.execute(search, assets);
         final ZonedDateTime end = ZonedDateTime.now();
-        final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        entry.setMetadata(this.monitoringMetadata);
-        logger.log(entry);
+        try {
+            final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            entry.setMetadata(this.monitoringMetadata);
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Suggestion monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -251,13 +333,20 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SuggestionResult result = server.execute(search, assets);
         final ZonedDateTime end = ZonedDateTime.now();
-        final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        // Adding execution metadata to server metadata
-        final HashMap<String, Object> mergedMetadata = new HashMap<>();
-        mergedMetadata.putAll(this.monitoringMetadata);
-        mergedMetadata.putAll(metadata);
-        entry.setMetadata(mergedMetadata);
-        logger.log(entry);
+        try {
+            final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            // Adding execution metadata to server metadata
+            final HashMap<String, Object> mergedMetadata = new HashMap<>();
+            mergedMetadata.putAll(this.monitoringMetadata);
+            mergedMetadata.putAll(metadata);
+            entry.setMetadata(mergedMetadata);
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Suggestion monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -266,9 +355,17 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SuggestionResult result = server.execute(search, assets, childFactory);
         final ZonedDateTime end = ZonedDateTime.now();
-        final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        entry.setMetadata(this.monitoringMetadata);
-        logger.log(entry);
+
+        try {
+            final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            entry.setMetadata(this.monitoringMetadata);
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Suggestion monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -276,13 +373,21 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final SuggestionResult result = server.execute(search, assets, childFactory);
         final ZonedDateTime end = ZonedDateTime.now();
-        final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        // Adding execution metadata to server metadata
-        final HashMap<String, Object> mergedMetadata = new HashMap<>();
-        mergedMetadata.putAll(this.monitoringMetadata);
-        mergedMetadata.putAll(metadata);
-        entry.setMetadata(mergedMetadata);
-        logger.log(entry);
+
+        try {
+            final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            // Adding execution metadata to server metadata
+            final HashMap<String, Object> mergedMetadata = new HashMap<>();
+            mergedMetadata.putAll(this.monitoringMetadata);
+            mergedMetadata.putAll(metadata);
+            entry.setMetadata(mergedMetadata);
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Suggestion monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -307,9 +412,17 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final BeanGetResult<T> result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        final GetEntry entry = new GetEntry(application, start, end,result.getQueryTime(), result.getElapsedTime(), session, search.getValues(), result.getNumOfResults());
-        entry.setMetadata(this.monitoringMetadata);
-        logger.log(entry);
+
+        try {
+            final GetEntry entry = new GetEntry(application, start, end,result.getQueryTime(), result.getElapsedTime(), session, search.getValues(), result.getNumOfResults());
+            entry.setMetadata(this.monitoringMetadata);
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Get monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -318,9 +431,17 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final GetResult result = server.execute(search, assets);
         final ZonedDateTime end = ZonedDateTime.now();
-        final GetEntry entry = new GetEntry(application, start, end,result.getQueryTime(), result.getElapsedTime(), session, search.getValues(), result.getNumOfResults());
-        entry.setMetadata(this.monitoringMetadata);
-        logger.log(entry);
+
+        try {
+            final GetEntry entry = new GetEntry(application, start, end,result.getQueryTime(), result.getElapsedTime(), session, search.getValues(), result.getNumOfResults());
+            entry.setMetadata(this.monitoringMetadata);
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Get monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -347,5 +468,14 @@ public class MonitoringSearchServer extends SearchServer {
         if (Objects.nonNull(key)) {
             this. monitoringMetadata.put(key, value);
         }
+    }
+
+    public boolean isSilent() {
+        return silent;
+    }
+
+    public MonitoringSearchServer setSilent(boolean silent) {
+        this.silent = silent;
+        return this;
     }
 }
