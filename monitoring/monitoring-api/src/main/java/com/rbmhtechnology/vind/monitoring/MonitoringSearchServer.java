@@ -13,10 +13,7 @@ import com.rbmhtechnology.vind.api.result.*;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.monitoring.logger.MonitoringWriter;
-import com.rbmhtechnology.vind.monitoring.logger.entry.FullTextEntry;
-import com.rbmhtechnology.vind.monitoring.logger.entry.GetEntry;
-import com.rbmhtechnology.vind.monitoring.logger.entry.IndexEntry;
-import com.rbmhtechnology.vind.monitoring.logger.entry.SuggestionEntry;
+import com.rbmhtechnology.vind.monitoring.logger.entry.*;
 import com.rbmhtechnology.vind.monitoring.model.application.Application;
 import com.rbmhtechnology.vind.monitoring.model.application.SimpleApplication;
 import com.rbmhtechnology.vind.monitoring.model.session.Session;
@@ -115,14 +112,28 @@ public class MonitoringSearchServer extends SearchServer {
     }
 
     @Override
-    public void execute(Delete delete, DocumentFactory factory) {
-        server.execute(delete,factory);
+    public DeleteResult execute(Delete delete, DocumentFactory factory) {
+
+        final ZonedDateTime start = ZonedDateTime.now();
+        final DeleteResult result = server.execute(delete, factory);
+        final ZonedDateTime end = ZonedDateTime.now();
+        final DeleteEntry entry =
+                new DeleteEntry(application, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        entry.setMetadata(this.monitoringMetadata);
+        logger.log(entry);
+        return result;
     }
 
     @Override
-    public void delete(Document doc) {
-        //currently not logged
-        server.delete(doc);
+    public DeleteResult delete(Document doc) {
+        final ZonedDateTime start = ZonedDateTime.now();
+        final DeleteResult result = server.delete(doc);;
+        final ZonedDateTime end = ZonedDateTime.now();
+        final DeleteEntry entry =
+                new DeleteEntry(application, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        entry.setMetadata(this.monitoringMetadata);
+        logger.log(entry);
+        return result;
     }
 
     @Override

@@ -41,7 +41,7 @@ public class IndexEntry extends MonitoringEntry {
         this.session = session;
         this.timeStamp = start;
         this.documentIds = docs.stream().map( doc -> doc.getId()).collect(Collectors.toList());
-        this.response =  new Response(0, queryTime, start.until(end, ChronoUnit.MILLIS ));
+        this.response =  new Response(-1, queryTime, start.until(end, ChronoUnit.MILLIS ));
     }
 
     public IndexEntry(Application application, ZonedDateTime start, ZonedDateTime end, long queryTime, long elapsedTime, Session session, List<Document> docs) {
@@ -49,7 +49,7 @@ public class IndexEntry extends MonitoringEntry {
         this.session = session;
         this.timeStamp = start;
         this.documentIds = docs.stream().map( doc -> doc.getId()).collect(Collectors.toList());
-        this.response =  new Response(0, queryTime, start.until(end, ChronoUnit.MILLIS ));
+        this.response =  new Response(-1, queryTime, start.until(end, ChronoUnit.MILLIS ));
         this.response.setElapsedTime(elapsedTime);
     }
 

@@ -294,12 +294,20 @@ public class SolrSearchServer extends SearchServer {
     }
 
     @Override
-    public void delete(Document doc) {
+    public DeleteResult delete(Document doc) {
         try {
+            long qTime = 0;
+            long elapsedTime = 0;
             solrClientLogger.debug(">>> delete({})", doc.getId());
-            solrClient.deleteById(doc.getId());
+            final UpdateResponse deleteResponse = solrClient.deleteById(doc.getId());
+            qTime = deleteResponse.getQTime();
+            elapsedTime = deleteResponse.getElapsedTime();
             //Deleting nested documents
-            solrClient.deleteByQuery("_root_:" + doc.getId());
+            final UpdateResponse deleteNestedResponse = solrClient.deleteByQuery("_root_:" + doc.getId());
+            qTime += deleteNestedResponse.getQTime();
+            elapsedTime += deleteNestedResponse.getElapsedTime();
+
+            return new DeleteResult(qTime).setElapsedTime(elapsedTime);
         } catch (SolrServerException | IOException e) {
             log.error("Cannot delete document {}", doc.getId() , e);
             throw new SearchServerException("Cannot delete document", e);
@@ -759,7 +767,7 @@ public class SolrSearchServer extends SearchServer {
     }
 
     @Override
-    public void execute(Delete delete, DocumentFactory factory) {
+    public DeleteResult execute(Delete delete, DocumentFactory factory) {
         String query = SolrUtils.Query.buildFilterString(delete.getQuery(), factory, delete.getUpdateContext(),true);
         try {
             solrClientLogger.debug(">>> delete query({})", query);
@@ -768,13 +776,21 @@ public class SolrSearchServer extends SearchServer {
             solrQuery.setParam(CommonParams.Q, "*:*");
             solrQuery.setParam(CommonParams.FQ,query.trim().replaceAll("^\\+","").split("\\+"));
             final QueryResponse response = solrClient.query(solrQuery, SolrRequest.METHOD.POST);
+            long qTime = 0;
+            long elapsedTime = 0;
             if(Objects.nonNull(response) && CollectionUtils.isNotEmpty(response.getResults())){
                 final List<String> idList = response.getResults().stream().map(doc -> (String) doc.get(ID)).collect(Collectors.toList());
-                solrClient.deleteById(idList);
+                final UpdateResponse deleteResponse = solrClient.deleteById(idList);
+                qTime = deleteResponse.getQTime();
+                elapsedTime = deleteResponse.getElapsedTime();
                 //Deleting nested documents
-                solrClient.deleteByQuery("_root_:("+StringUtils.join(idList, " OR ")+")");
+                final UpdateResponse deleteNestedResponse = solrClient.deleteByQuery("_root_:(" + StringUtils.join(idList, " OR ") + ")");
+
+                qTime += deleteNestedResponse.getQTime();
+                elapsedTime += deleteNestedResponse.getElapsedTime();
             }
 
+            return new DeleteResult(qTime).setElapsedTime(elapsedTime);
         } catch (SolrServerException | IOException e) {
             log.error("Cannot delete with query {}", query, e);
             throw new SearchServerException("Cannot delete with query", e);

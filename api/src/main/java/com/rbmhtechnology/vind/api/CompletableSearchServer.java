@@ -228,13 +228,13 @@ public class CompletableSearchServer extends SearchServer {
     }
 
     @Override
-    public void execute(Delete delete, DocumentFactory factory) {
-        backend.execute(delete, factory);
+    public DeleteResult execute(Delete delete, DocumentFactory factory) {
+        return backend.execute(delete, factory);
     }
 
     @Override
-    public void delete(Document doc) {
-        backend.delete(doc);
+    public DeleteResult delete(Document doc) {
+        return backend.delete(doc);
     }
 
     @Override
