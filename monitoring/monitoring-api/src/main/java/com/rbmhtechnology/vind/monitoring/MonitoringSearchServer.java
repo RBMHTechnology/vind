@@ -107,8 +107,14 @@ public class MonitoringSearchServer extends SearchServer {
 
     @Override
     public boolean execute(Update update, DocumentFactory factory) {
-        //currently not logged
-        return server.execute(update, factory);
+        final ZonedDateTime start = ZonedDateTime.now();
+        final Boolean result =  server.execute(update, factory);
+        final ZonedDateTime end = ZonedDateTime.now();
+        final UpdateEntry entry =
+                new UpdateEntry( application, start, end, session, result);
+        entry.setMetadata(this.monitoringMetadata);
+        logger.log(entry);
+        return result;
     }
 
     @Override

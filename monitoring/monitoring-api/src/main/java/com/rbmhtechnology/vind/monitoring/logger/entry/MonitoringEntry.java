@@ -84,6 +84,6 @@ public abstract class MonitoringEntry {
     }
 
     public enum EntryType {
-        fulltext, suggestion, index, get, delete, interaction
+        fulltext, suggestion, index, get, delete, update, interaction
     }
 }
