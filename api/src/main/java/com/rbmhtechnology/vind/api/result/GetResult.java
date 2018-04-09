@@ -84,6 +84,15 @@ public class GetResult {
         this.elapsedTime = elapsedTime;
         return this;
     }
+
+    /**
+     * Returns the time taken by the backend to get the results.
+     * @return long number representing the time in milliseconds.
+     */
+    public long getQueryTime() {
+        return queryTime;
+    }
+
     /**
      * Gets the number of results stored.
      * @return Number of results.

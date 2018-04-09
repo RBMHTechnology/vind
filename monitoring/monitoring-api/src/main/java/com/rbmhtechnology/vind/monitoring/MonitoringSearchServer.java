@@ -14,6 +14,7 @@ import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.monitoring.logger.MonitoringWriter;
 import com.rbmhtechnology.vind.monitoring.logger.entry.FullTextEntry;
+import com.rbmhtechnology.vind.monitoring.logger.entry.GetEntry;
 import com.rbmhtechnology.vind.monitoring.logger.entry.IndexEntry;
 import com.rbmhtechnology.vind.monitoring.logger.entry.SuggestionEntry;
 import com.rbmhtechnology.vind.monitoring.model.application.Application;
@@ -289,7 +290,9 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final BeanGetResult<T> result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        //TODO log
+        final GetEntry entry = new GetEntry(application, start, end,result.getQueryTime(), result.getElapsedTime(), session, search.getValues(), result.getNumOfResults());
+        entry.setMetadata(this.monitoringMetadata);
+        logger.log(entry);
         return result;
     }
 
@@ -298,7 +301,9 @@ public class MonitoringSearchServer extends SearchServer {
         final ZonedDateTime start = ZonedDateTime.now();
         final GetResult result = server.execute(search, assets);
         final ZonedDateTime end = ZonedDateTime.now();
-        //TODO log
+        final GetEntry entry = new GetEntry(application, start, end,result.getQueryTime(), result.getElapsedTime(), session, search.getValues(), result.getNumOfResults());
+        entry.setMetadata(this.monitoringMetadata);
+        logger.log(entry);
         return result;
     }
 
