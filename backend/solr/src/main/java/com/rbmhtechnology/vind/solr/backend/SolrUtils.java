@@ -1385,7 +1385,7 @@ public class SolrUtils {
                 }
             }
 
-            return new GetResult(nResults,docResults,query,factory);
+            return new GetResult(nResults,docResults,query,factory,response.getQTime()).setElapsedTime(response.getElapsedTime());
         }
 
         private static String getFieldDescriptorName(String searchContext, String facetName) {
