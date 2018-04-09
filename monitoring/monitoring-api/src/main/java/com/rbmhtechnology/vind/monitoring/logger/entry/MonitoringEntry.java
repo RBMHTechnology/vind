@@ -3,9 +3,13 @@
  */
 package com.rbmhtechnology.vind.monitoring.logger.entry;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
@@ -22,6 +26,7 @@ import com.rbmhtechnology.vind.monitoring.model.request.filter.NotFilterMixIn;
 import com.rbmhtechnology.vind.monitoring.model.request.filter.OrFilterMixIn;
 import com.rbmhtechnology.vind.monitoring.model.request.sort.SortMixIn;
 
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Objects;
@@ -68,7 +73,7 @@ public abstract class MonitoringEntry {
     }
 
     protected static ObjectMapper getMapper(){
-        return new ObjectMapper()
+        final ObjectMapper objectMapper = new ObjectMapper()
                 .configure(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS, false)
                 .registerModule(new JavaTimeModule())
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
@@ -79,11 +84,28 @@ public abstract class MonitoringEntry {
                 .addMixIn(Facet.class, FacetMixin.class)
                 .addMixIn(Sort.class, SortMixIn.class)
                 .addMixIn(DateMathExpression.class, DateMathExpressionMixIn.class)
-                .addMixIn(DateMathExpression.RootTime.class, RootTimeMixIn.class)
-                ;
+                .addMixIn(DateMathExpression.RootTime.class, RootTimeMixIn.class);
+        objectMapper.getSerializerProvider().setNullKeySerializer(new MyDtoNullKeySerializer());
+        return objectMapper;
     }
 
     public enum EntryType {
         fulltext, suggestion, index, get, delete, update, interaction
+    }
+
+    static class MyDtoNullKeySerializer extends StdSerializer<Object> {
+        public MyDtoNullKeySerializer() {
+            this(null);
+        }
+
+        public MyDtoNullKeySerializer(Class<Object> t) {
+            super(t);
+        }
+
+        @Override
+        public void serialize(Object nullKey, JsonGenerator jsonGenerator, SerializerProvider unused)
+                throws IOException, JsonProcessingException {
+            jsonGenerator.writeFieldName("");
+        }
     }
 }

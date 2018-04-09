@@ -111,7 +111,7 @@ public class MonitoringSearchServer extends SearchServer {
         final Boolean result =  server.execute(update, factory);
         final ZonedDateTime end = ZonedDateTime.now();
         final UpdateEntry entry =
-                new UpdateEntry( application, start, end, session, result);
+                new UpdateEntry( application, start, end, session, update, result);
         entry.setMetadata(this.monitoringMetadata);
         logger.log(entry);
         return result;

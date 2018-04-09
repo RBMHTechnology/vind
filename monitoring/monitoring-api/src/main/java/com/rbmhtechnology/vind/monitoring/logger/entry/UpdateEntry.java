@@ -3,7 +3,9 @@
  */
 package com.rbmhtechnology.vind.monitoring.logger.entry;
 
+import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.monitoring.model.application.Application;
+import com.rbmhtechnology.vind.monitoring.model.request.UpdateRequest;
 import com.rbmhtechnology.vind.monitoring.model.response.Response;
 import com.rbmhtechnology.vind.monitoring.model.session.Session;
 
@@ -16,18 +18,20 @@ import java.time.temporal.ChronoUnit;
 public class UpdateEntry extends MonitoringEntry {
 
     final private EntryType type = EntryType.update;
-    private Application application;
-    private Session session;
-    private ZonedDateTime timeStamp;
-    private Response response;
-    private Boolean success;
+    private final Application application;
+    private final Session session;
+    private final ZonedDateTime timeStamp;
+    private final Response response;
+    private final UpdateRequest request;
+    private final Boolean success;
 
 
-    public UpdateEntry(Application application, ZonedDateTime start, ZonedDateTime end, Session session, Boolean success) {
+    public UpdateEntry(Application application, ZonedDateTime start, ZonedDateTime end, Session session, Update update, Boolean success) {
         this.application = application;
         this.session = session;
         this.timeStamp = start;
         this.success = success;
+        this.request = new UpdateRequest(update);
         this.response =  new Response(-1, -1, start.until(end, ChronoUnit.MILLIS ));
     }
 
@@ -54,6 +58,10 @@ public class UpdateEntry extends MonitoringEntry {
 
     public Response getResponse() {
         return response;
+    }
+
+    public UpdateRequest getRequest() {
+        return request;
     }
 
     public Boolean getSuccess() {
