@@ -34,6 +34,7 @@ public class ElasticSearchClient {
         try {
             final JestClient client = getElasticSearchClient();
             client.execute(new CreateIndex.Builder(elasticIndex).build());
+            log.info("Established elasticsearch connection to host '{}:{}', index '{}'.", elasticHost, elasticPort, elasticIndex);
             elasticClient = client;
         } catch (IOException e) {
             log.error("Error creating base index on ElasticSearch: {}", e.getMessage(), e);

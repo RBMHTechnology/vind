@@ -18,6 +18,7 @@ public class ElasticWriter extends MonitoringWriter {
     private ElasticSearchClient elasticClient;
 
     public ElasticWriter(String elasticHost, String elasticPort, String elasticIndex) {
+        logger.debug("ElasticWriter configured to write in: {}:{}/{}", elasticHost, elasticPort, elasticIndex);
         elasticClient = new ElasticSearchClient();
         elasticClient.init(elasticHost, elasticPort, elasticIndex);
     }

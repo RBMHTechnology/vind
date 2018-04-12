@@ -49,24 +49,21 @@ public abstract class Filter {
     }
 
     public Scope getFilterScope() {
-        return Objects.nonNull(this.filterScope)?
-                this.filterScope : this.getFilterScope(null);
+        return this.getFilterScope(null);
     }
 
     public Scope getFilterScope(String fieldname, DocumentFactory factory){
-        if(this.filterScope != null) {
-            return this.filterScope;
-        } else {
-            return getFilterScope(factory.getField(fieldname));
-        }
+        return getFilterScope(factory.getField(fieldname));
     }
 
     public Scope getFilterScope(FieldDescriptor fd){
-        if(this.filterScope != null) {
+        if(Objects.nonNull(this.filterScope)) {
             return this.filterScope;
         } else {
             if (fd == null) {
-                logger.error("Cannot get scope for non existing field descriptor");
+                logger.debug(
+                        "Unable to get custom scope from filter or field descriptor: fall back to default filter scope '{}'",
+                        DEFAULT_SCOPE);
                 return DEFAULT_SCOPE;
             } else {
                 if (fd.isFacet() && !fd.isSuggest()) return Scope.Facet;
@@ -756,6 +753,11 @@ public abstract class Filter {
             this.term = term;
             super.filterScope = scope;
             this.field = descriptor.getName();
+        }
+
+        @Override
+        public Scope getFilterScope() {
+            return this.getFilterScope(this.descriptor);
         }
 
         @Override
