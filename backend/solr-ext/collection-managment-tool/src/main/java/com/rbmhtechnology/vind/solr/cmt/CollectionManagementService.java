@@ -57,7 +57,7 @@ import java.util.zip.ZipInputStream;
  * @author Thomas Kurz (thomas.kurz@redlink.co)
  * @since 29.03.17.
  */
-public class CollectionManagementService {
+public class CollectionManagementService implements Closeable {
 
     private static Logger logger = LoggerFactory.getLogger(CollectionManagementService.class);
 
@@ -681,5 +681,12 @@ public class CollectionManagementService {
 
     protected List<String> getRepositories() {
         return repositories;
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (client != null) {
+            client.close();
+        }
     }
 }
