@@ -25,7 +25,6 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
  * @since 29.03.17.
 */
 @LuceneTestCase.Slow
-@Ignore //TODO this is only failing in bamboo and must be an internal bamboo error
 public class CollectionManagementServiceTest extends SolrCloudTestCase {
 
     private static CollectionManagementService service;
@@ -72,7 +71,7 @@ public class CollectionManagementServiceTest extends SolrCloudTestCase {
 
     @Test
     public void checkAndInstallConfigurationTest() throws IOException {
-        String configName = "com.rbmhtechnology.vind:solr:1.0.2";
+        String configName = "com.rbmhtechnology.vind:backend-solr:1.1.2";
         service.checkAndInstallConfiguration(configName);
         assertTrue(service.configurationIsDeployed(configName));
     }
