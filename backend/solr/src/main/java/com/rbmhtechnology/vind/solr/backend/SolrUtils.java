@@ -250,9 +250,9 @@ public class SolrUtils {
                         if(Objects.nonNull(facet.getFieldDescriptor())) {
                             return facet;
                         } else {
-                            FieldDescriptor<?> field = factory.getField(facet.getName());
+                            FieldDescriptor<?> field = factory.getField(facet.getFieldName());
                             if(Objects.isNull(field) && Objects.nonNull(childFactory)) {
-                                field = childFactory.getField(facet.getName());
+                                field = childFactory.getField(facet.getFieldName());
                             }
                             return new TermFacet(field);
                         }
@@ -271,7 +271,7 @@ public class SolrUtils {
             return termFacetQuery.stream().toArray(String[]::new);
         }
 
-        public static HashMap<String, Object> buildJsonTermFacet(Map<String, Facet> facets, DocumentFactory factory, DocumentFactory childFactory, String searchContext) {
+        public static HashMap<String, Object> buildJsonTermFacet(Map<String, Facet> facets, int facetLimit, DocumentFactory factory, DocumentFactory childFactory, String searchContext) {
             final List<HashMap<String, String>> termFacetQuery = facets.entrySet().stream()
                     .filter(facet -> facet.getValue() instanceof TermFacet)
                     //.map(facet -> facet.setValue((Facet.TermFacet) facet.getValue()))
@@ -279,9 +279,9 @@ public class SolrUtils {
                         final HashMap<String, String> termFacet = new HashMap<>();
                         termFacet.put("type","terms");
                         final TermFacet value = (TermFacet) facet.getValue();
-                        FieldDescriptor<?> field = factory.getField(value.getName());
+                        FieldDescriptor<?> field = factory.getField(value.getFieldName());
                         if(Objects.isNull(field) && Objects.nonNull(childFactory)) {
-                            field = childFactory.getField(value.getName());
+                            field = childFactory.getField(value.getFieldName());
                             termFacet.put("domain",
                                     "{blockChildren:\"" + Fieldname.TYPE +":" +factory.getType() + "\"}");
                         }
@@ -294,6 +294,7 @@ public class SolrUtils {
                             return null;
                         }
                         termFacet.put("field", fieldName);
+                        termFacet.put("limit", String.valueOf(facetLimit));
 
                         return termFacet;
                     })
@@ -306,6 +307,7 @@ public class SolrUtils {
                         final HashMap<String, String> termFacet = new HashMap<>();
                         termFacet.put("type","terms");
                         termFacet.put("field", Fieldname.TYPE);
+                        termFacet.put("limit", String.valueOf(facetLimit));
                         return termFacet;
                     })
                     .filter(Objects::nonNull)
@@ -359,7 +361,7 @@ public class SolrUtils {
         }
 
         public static String buildSolrFacetCustomName(String field, Facet facet){
-            return StringUtils.join("{!",buildSolrFacetTags(facet.getTagedPivots())," ex=dt key='", facet.getName(), "'}", field);
+            return StringUtils.join("{!",buildSolrFacetTags(facet.getTagedPivots())," ex=dt key='", facet.getFacetName(), "'}", field);
         }
 
         public static String buildSolarPivotCustomName(String name,String... fields){
@@ -426,7 +428,7 @@ public class SolrUtils {
                     .filter(facet -> SubdocumentFacet.class.isAssignableFrom(facet.getClass()))
                     .map(genericFacet -> (SubdocumentFacet) genericFacet)
                     .map(facet -> {
-                        final String type = facet.getName();
+                        final String type = facet.getFacetName();
                         String filter;
                         final String childrenFilterSerialized;
                         if(Objects.nonNull(search.getChildrenSearchString().hasFilter())){
@@ -1358,7 +1360,7 @@ public class SolrUtils {
                         response.getSpellCheckResponse().getCollatedResult().replaceFirst("\\*$","") :
                         null;
 
-                return new SuggestionResult(suggestions, collation, factory);
+                return new SuggestionResult(suggestions, collation, response.getQTime(), factory).setElapsedTime(response.getElapsedTime());
             }
             return new SuggestionResult();
         }
@@ -1383,7 +1385,7 @@ public class SolrUtils {
                 }
             }
 
-            return new GetResult(nResults,docResults,query,factory);
+            return new GetResult(nResults,docResults,query,factory,response.getQTime()).setElapsedTime(response.getElapsedTime());
         }
 
         private static String getFieldDescriptorName(String searchContext, String facetName) {

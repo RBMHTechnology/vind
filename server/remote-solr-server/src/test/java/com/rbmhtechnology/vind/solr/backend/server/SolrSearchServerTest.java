@@ -18,7 +18,9 @@ import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SolrPingResponse;
+import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrDocumentList;
+import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -27,6 +29,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
+import java.util.Collection;
 
 import static com.rbmhtechnology.vind.api.query.filter.Filter.eq;
 import static org.junit.Assert.assertEquals;
@@ -51,6 +54,9 @@ public class SolrSearchServerTest {
 
     @Mock
     private NamedList responseObject;
+
+    @Mock
+    private UpdateResponse iResponse;
 
     private SearchServer server;
 
@@ -78,6 +84,11 @@ public class SolrSearchServerTest {
         when(responseObject.get("responseHeader")).thenReturn(responseObject);
         when(responseObject.get("params")).thenReturn(responseObject);
         when(responseObject.get("suggestion.field")).thenReturn("category");
+
+        when(solrClient.add(org.mockito.Matchers.<Collection<SolrInputDocument>>any())).thenReturn(iResponse);
+        when(solrClient.add(any(SolrInputDocument.class))).thenReturn(iResponse);
+        when(iResponse.getQTime()).thenReturn(10);
+        when(iResponse.getElapsedTime()).thenReturn(15l);
 
         //we use the protected constructor to avoid schema checking
         server = new SolrSearchServerTestClass(solrClient);

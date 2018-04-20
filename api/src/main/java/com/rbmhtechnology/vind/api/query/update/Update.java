@@ -13,7 +13,6 @@ import java.util.*;
 public class Update {
 
     private String id;
-    private HashMap<FieldDescriptor<?>, HashMap<String, Object>> options = new HashMap<>();
     private HashMap<FieldDescriptor<?>, HashMap<String, SortedSet<UpdateOperation>>> contextualizedOptions = new HashMap<>();
     private String context;
 

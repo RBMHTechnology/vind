@@ -157,10 +157,11 @@ public abstract class SearchServer implements Closeable {
      * {@link com.rbmhtechnology.vind.annotations.Id}.{@link SearchServer#commit()} should be executed afterwards for
      * this change to take place on the  index.
      * @param t Object to be removed from the index.
+     * @return {@link DeleteResult} instance containing the deletion execution info.
      * @throws SearchServerException if not possible to perform the deletion.
      */
-    public void deleteBean(Object t) {
-        delete((Document) AnnotationUtil.createDocument(t));
+    public DeleteResult deleteBean(Object t) {
+        return delete((Document) AnnotationUtil.createDocument(t));
     }
 
     /**
@@ -175,22 +176,23 @@ public abstract class SearchServer implements Closeable {
      * this change to take place on the  index.
      * @param doc comma separated {@link Document}s to be indexed.
      */
-    public abstract void index(Document ... doc);
+    public abstract IndexResult index(Document ... doc);
 
     /**
      * Adds a {@link Document} or {@link Document}s to the search server index. {@link SearchServer#commit()} should be executed afterwards for
      * this change to take place on the  index.
      * @param doc comma separated {@link Document}s to be indexed.
      */
-    public abstract void index(List<Document> doc);
+    public abstract IndexResult index(List<Document> doc);
 
     /**
      * Removes a {@link Document} from the search server index. {@link SearchServer#commit()} should be executed afterwards for
      * this change to take place on the  index.
      * @param doc {@link Document} to be indexed.
+     * @return {@link DeleteResult} instance containing the deletion execution info.
      * @throws SearchServerException if not possible to perform the deletion.
      */
-    public abstract void delete(Document doc);
+    public abstract DeleteResult delete(Document doc);
 
     /**
      *  Changes a document in the index, based on the modifications described by {@link Update}.
@@ -204,8 +206,9 @@ public abstract class SearchServer implements Closeable {
      * Deletes Documents which match the {@link Delete} filter configuration.
      * @param delete A Delete filter configured.
      * @param factory The type of Document to be deleted.
+     * @return {@link DeleteResult} instance containing the deletion execution info.
      */
-    public abstract void execute(Delete delete, DocumentFactory factory);
+    public abstract DeleteResult execute(Delete delete, DocumentFactory factory);
 
     /**
      * Pushes to the index the modifications.
@@ -286,6 +289,32 @@ public abstract class SearchServer implements Closeable {
      * @throws SearchServerException
      */
     public abstract SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets,DocumentFactory childFactory);
+
+    /**
+     * Return the raw query sent produced by the server implementation.
+     * @param search {@link ExecutableSuggestionSearch} search query configuration object.
+     * @param factory {@link DocumentFactory} mapping the index documents and the result type.
+     * @return {@link String} Raw query
+     */
+    public abstract String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory);
+
+    /**
+     * Return the raw query sent produced by the server implementation.
+     * @param search {@link ExecutableSuggestionSearch} search query configuration object.
+     * @param factory {@link DocumentFactory} mapping the index documents and the result type.
+     * @param childFactory {@link DocumentFactory} mapping the index documents children documents.
+     * @return {@link String} Raw query
+     */
+    public abstract String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory, DocumentFactory childFactory);
+
+    /**
+     * Return the raw query sent produced by the server implementation.
+     * @param search {@link ExecutableSuggestionSearch} search query configuration object.
+     * @param c annotated class mapping the index documents and the result type.
+     * @param <T> annotated class type.
+     * @return {@link String} Raw query
+     */
+    public abstract <T> String getRawQuery(ExecutableSuggestionSearch search, Class<T> c);
 
     /**
      * Executes a get query based on an annotated class.

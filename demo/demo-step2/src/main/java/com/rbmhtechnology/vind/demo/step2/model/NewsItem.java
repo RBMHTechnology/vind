@@ -32,6 +32,7 @@ public class NewsItem {
 
     //this field is 'just' a facet field
     @Facet
+    @FullText
     private String kind;
 
     private ZonedDateTime created;

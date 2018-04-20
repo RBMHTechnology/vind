@@ -17,6 +17,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
  * Abstract class to be implemented by filter query objects ({@link AndFilter}, {@link OrFilter},
@@ -47,20 +48,22 @@ public abstract class Filter {
         return this.getClass().getSimpleName();
     }
 
+    public Scope getFilterScope() {
+        return this.getFilterScope(null);
+    }
+
     public Scope getFilterScope(String fieldname, DocumentFactory factory){
-        if(this.filterScope != null) {
-            return this.filterScope;
-        } else {
-            return getFilterScope(factory.getField(fieldname));
-        }
+        return getFilterScope(factory.getField(fieldname));
     }
 
     public Scope getFilterScope(FieldDescriptor fd){
-        if(this.filterScope != null) {
+        if(Objects.nonNull(this.filterScope)) {
             return this.filterScope;
         } else {
             if (fd == null) {
-                logger.error("Cannot get scope for non existing field descriptor");
+                logger.debug(
+                        "Unable to get custom scope from filter or field descriptor: fall back to default filter scope '{}'",
+                        DEFAULT_SCOPE);
                 return DEFAULT_SCOPE;
             } else {
                 if (fd.isFacet() && !fd.isSuggest()) return Scope.Facet;
@@ -69,6 +72,9 @@ public abstract class Filter {
             }
         }
     }
+
+    @Override
+    public abstract Filter clone();
 
     /**
      * Static method which creates a {@link AndFilter} out of a group of filters.
@@ -488,6 +494,16 @@ public abstract class Filter {
 
             return filter;
         }
+
+        @Override
+        public Filter clone() {
+            final Set<Filter> childCopy = this.getChildren().stream()
+                    .map(f -> f.clone())
+                    .collect(Collectors.toSet());
+
+            final Filter copy = AndFilter.fromSet(childCopy);
+            return copy;
+        }
     }
 
     /**
@@ -564,6 +580,16 @@ public abstract class Filter {
 
             return filter;
         }
+
+        @Override
+        public Filter clone() {
+            final Set<Filter> childCopy = this.getChildren().stream()
+                    .map(f -> f.clone())
+                    .collect(Collectors.toSet());
+
+            final Filter copy = OrFilter.fromSet(childCopy);
+            return copy;
+        }
     }
 
     /**
@@ -592,6 +618,12 @@ public abstract class Filter {
          */
         public Filter getDelegate() {
             return delegate;
+        }
+
+        @Override
+        public Filter clone() {
+            final Filter copy = new NotFilter(this.getDelegate().clone());
+            return copy;
         }
     }
 
@@ -637,6 +669,12 @@ public abstract class Filter {
         public String getTerm() {
             return term;
         }
+
+        @Override
+        public Filter clone() {
+            final Filter copy = new TermFilter(this.field, this.term, super.filterScope);
+            return copy;
+        }
     }
 
     /**
@@ -668,6 +706,12 @@ public abstract class Filter {
             return String.format("%s=%s*", field, term);
         }
 
+        @Override
+        public Filter clone() {
+            final PrefixFilter copy = new PrefixFilter(this.field, this.term, super.filterScope);
+            return copy;
+        }
+
         /**
          * Get the filtered field name
          * @return String {@link PrefixFilter#field} with the field name.
@@ -694,6 +738,7 @@ public abstract class Filter {
 
         private final T term;
         private final FieldDescriptor descriptor;
+        private final String field;
 
         /**
          * Creates a {@link DescriptorFilter} object based on a given field descriptor parameter and a value.
@@ -707,6 +752,12 @@ public abstract class Filter {
             this.descriptor = descriptor;
             this.term = term;
             super.filterScope = scope;
+            this.field = descriptor.getName();
+        }
+
+        @Override
+        public Scope getFilterScope() {
+            return this.getFilterScope(this.descriptor);
         }
 
         @Override
@@ -728,6 +779,20 @@ public abstract class Filter {
          */
         public T getTerm() {
             return term;
+        }
+
+        /**
+         * Get the name of the field.
+         * @return  {@link String} with the value to field descriptor name.
+         */
+        public String getField() {
+            return field;
+        }
+
+        @Override
+        public Filter clone() {
+            final DescriptorFilter<T> copy = new DescriptorFilter<T>(this.descriptor,this.term, super.filterScope);
+            return copy;
         }
     }
 
@@ -763,6 +828,13 @@ public abstract class Filter {
         public String toString() {
             return String.format("%s=[ %s TO %s ]", field, start.toString(), end.toString());
         }
+
+        @Override
+        public Filter clone() {
+            final BetweenDatesFilter copy = new BetweenDatesFilter(this.field,this.start, this.end, super.filterScope);
+            return copy;
+        }
+
         /**
          * Get the filtered field name
          * @return String {@link BetweenDatesFilter#field} with the field name.
@@ -815,6 +887,13 @@ public abstract class Filter {
         public String toString() {
             return String.format("%s=[ * TO %s ]", field, date);
         }
+
+        @Override
+        public Filter clone() {
+            final BeforeFilter copy = new BeforeFilter(this.field,this.date, super.filterScope);
+            return copy;
+        }
+
         /**
          * Get the filtered field name
          * @return String {@link BeforeFilter#field} with the field name.
@@ -858,6 +937,13 @@ public abstract class Filter {
         public String toString() {
             return String.format("%s=[ %s TO * ]", field, date);
         }
+
+        @Override
+        public Filter clone() {
+            final AfterFilter copy = new AfterFilter(this.field,this.date, super.filterScope);
+            return copy;
+        }
+
         /**
          * Get the filtered field name
          * @return String {@link AfterFilter#field} with the field name.
@@ -904,6 +990,13 @@ public abstract class Filter {
         public String toString() {
             return String.format("%s=[ %s TO %s ]", field, start,end);
         }
+
+        @Override
+        public Filter clone() {
+            final BetweenNumericFilter copy = new BetweenNumericFilter(this.field,this.start, this.end, super.filterScope);
+            return copy;
+        }
+
         /**
          * Get the filtered field name
          * @return String {@link BetweenNumericFilter#field} with the field name.
@@ -952,6 +1045,13 @@ public abstract class Filter {
         public String toString() {
             return String.format("%s=[ %s TO * ]", field, number);
         }
+
+        @Override
+        public Filter clone() {
+            final GreaterThanFilter copy = new GreaterThanFilter(this.field,this.number, super.filterScope);
+            return copy;
+        }
+
         /**
          * Get the filtered field name
          * @return String {@link GreaterThanFilter#field} with the field name.
@@ -994,6 +1094,13 @@ public abstract class Filter {
         public String toString() {
             return String.format("%s=[ * TO %s ]", field, number);
         }
+
+        @Override
+        public Filter clone() {
+            final LowerThanFilter copy = new LowerThanFilter(this.field,this.number, super.filterScope);
+            return copy;
+        }
+
         /**
          * Get the filtered field name
          * @return String {@link LowerThanFilter#field} with the field name.
@@ -1001,6 +1108,7 @@ public abstract class Filter {
         public String getField() {
             return field;
         }
+
         /**
          * Get the number of the filter.
          * @return Number greater limit number.
@@ -1060,6 +1168,13 @@ public abstract class Filter {
         public String toString() {
             return String.format("%s=[ %s TO %s ]", field, upperLeft, lowerRight);
         }
+
+        @Override
+        public Filter clone() {
+            final WithinBBoxFilter copy = new WithinBBoxFilter(this.field,this.upperLeft, this.lowerRight, super.filterScope);
+            return copy;
+        }
+
         /**
          * Get the filtered field name
          * @return String {@link WithinBBoxFilter#field} with the field name.
@@ -1135,6 +1250,13 @@ public abstract class Filter {
         public String toString() {
             return String.format("&fq={!geofilt sfield=%s}&pt=%s&d=%s", field, center, distance);
         }
+
+        @Override
+        public Filter clone() {
+            final WithinCircleFilter copy = new WithinCircleFilter(this.field,this.center, this.distance, super.filterScope);
+            return copy;
+        }
+
         /**
          * Get the filtered field name
          * @return String {@link WithinBBoxFilter#field} with the field name.
@@ -1187,6 +1309,12 @@ public abstract class Filter {
             return String.format("%s=*", field);
         }
 
+        @Override
+        public Filter clone() {
+            final NotEmptyTextFilter copy = new NotEmptyTextFilter(this.field, super.filterScope);
+            return copy;
+        }
+
         /**
          * Get the filtered field name
          * @return String {@link NotEmptyTextFilter#field} with the field name.
@@ -1221,6 +1349,12 @@ public abstract class Filter {
         @Override
         public String toString() {
             return String.format("%s=*", field);
+        }
+
+        @Override
+        public Filter clone() {
+            final NotEmptyFilter copy = new NotEmptyFilter(this.field, super.filterScope);
+            return copy;
         }
 
         /**
@@ -1258,6 +1392,13 @@ public abstract class Filter {
         public String toString() {
             return String.format("%s=*", field);
         }
+
+        @Override
+        public Filter clone() {
+            final NotEmptyLocationFilter copy = new NotEmptyLocationFilter(this.field, super.filterScope);
+            return copy;
+        }
+
         /**
          * Get the filtered field name
          * @return String {@link NotEmptyLocationFilter#field} with the field name.
@@ -1327,6 +1468,13 @@ public abstract class Filter {
         public String toString() {
             return String.format("(parentType=%s & nestedType=%s)", parentDocType,nestedDocType);
         }
+
+        @Override
+        public Filter clone() {
+            final ChildrenDocumentFilter copy = new ChildrenDocumentFilter(this.parentDocType, this.nestedDocType);
+            return copy;
+        }
+
         /**
          * Get the filtered parent type
          * @return String {@link ChildrenDocumentFilter#parentDocType} with the type name.

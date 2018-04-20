@@ -4,7 +4,7 @@
 
     <groupId>com.rbmhtechnology.vind</groupId>
     <artifactId>vind</artifactId>
-    <version>1.0.4-SNAPSHOT</version>
+    <version>1.1.3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Vind</name>
@@ -18,7 +18,7 @@
 
         <module>backend</module>
         <module>server</module>
-        <module>report</module>
+        <module>monitoring</module>
 
         <module>utils</module>
 
@@ -137,7 +137,7 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-simple</artifactId>
                 <version>${slf4j.version}</version>
-                <scope>runtime</scope>
+                <scope>test</scope>
             </dependency>
 
             <dependency>

@@ -7,7 +7,10 @@ import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
+import com.rbmhtechnology.vind.monitoring.log.writer.LogWriter;
 import com.rbmhtechnology.vind.model.*;
+import com.rbmhtechnology.vind.monitoring.MonitoringSearchServer;
+import com.rbmhtechnology.vind.monitoring.logger.MonitoringWriter;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -40,6 +43,9 @@ public class SearchService implements AutoCloseable {
 
     private String guardianApiKey;
     private SearchServer server;
+    private final MonitoringWriter writer = new LogWriter();
+    private final MonitoringSearchServer monitoringSearchServer;
+
 
     private SingleValueFieldDescriptor.TextFieldDescriptor<String> title;
     private SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> publicationDate;
@@ -54,6 +60,9 @@ public class SearchService implements AutoCloseable {
         this.guardianApiKey = guardianApiKey;
 
         this.server = SearchServer.getInstance();
+
+        this.monitoringSearchServer = new MonitoringSearchServer(server, writer);
+
 
         this.title = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -99,7 +108,7 @@ public class SearchService implements AutoCloseable {
                 document.setValue(kind, item.getType());
                 document.setValue(url, item.getWebUrl());
 
-                server.indexBean(document);
+                server.index(document);
             }
             server.commit();
         }
@@ -114,7 +123,7 @@ public class SearchService implements AutoCloseable {
 
         if (categories != null) Arrays.stream(categories).map(c -> eq(category, c)).forEach(search::filter);
 
-        return server.execute(search, newsItems);
+        return monitoringSearchServer.execute(search, newsItems);
     }
 
     public Object suggest(String query, String... categories) {
@@ -123,7 +132,7 @@ public class SearchService implements AutoCloseable {
 
         if (categories != null) Arrays.stream(categories).map(c -> eq(category, c)).forEach(search::filter);
 
-        return server.execute(search, newsItems);
+        return monitoringSearchServer.execute(search, newsItems);
     }
 
     public Object search(String query, int page, Sort sort) {
@@ -152,7 +161,7 @@ public class SearchService implements AutoCloseable {
                 )
         );
 
-        return server.execute(search, newsItems);
+        return monitoringSearchServer.execute(search, newsItems);
 
     }
 

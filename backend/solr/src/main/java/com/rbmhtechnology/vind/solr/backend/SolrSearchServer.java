@@ -36,6 +36,7 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.request.schema.SchemaRequest;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SolrPingResponse;
+import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.client.solrj.response.schema.SchemaResponse;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrDocument;
@@ -136,23 +137,21 @@ public class SolrSearchServer extends SearchServer {
     }
 
     @Override
-    public void index(Document ... docs) {
+    public IndexResult index(Document ... docs) {
         Asserts.notNull(docs,"Document to index should not be null.");
         Asserts.check(docs.length > 0, "Should be at least one document to index.");
-        for(Document doc: docs) {
-            indexSingleDocument(doc);
-        }
+        return indexMultipleDocuments(Arrays.asList(docs));
     }
 
     @Override
-    public void index(List<Document> docs) {
+    public IndexResult index(List<Document> docs) {
         Asserts.notNull(docs,"Document to index should not be null.");
         Asserts.check(docs.size() > 0, "Should be at least one document to index.");
 
-        indexMultipleDocuments(docs);
+        return  indexMultipleDocuments(docs);
     }
 
-    private void indexSingleDocument(Document doc) {
+    private IndexResult indexSingleDocument(Document doc) {
         final SolrInputDocument document = createInputDocument(doc);
         try {
             if (solrClientLogger.isTraceEnabled()) {
@@ -160,15 +159,18 @@ public class SolrSearchServer extends SearchServer {
             } else {
                 solrClientLogger.debug(">>> add({})", doc.getId());
             }
+
             removeNonParentDocument(doc);
-            this.solrClient.add(document);
+            final UpdateResponse response = this.solrClient.add(document);
+            return new IndexResult(Long.valueOf(response.getQTime())).setElapsedTime(response.getElapsedTime());
+
         } catch (SolrServerException | IOException e) {
             log.error("Cannot index document {}", document.getField(ID) , e);
             throw new SearchServerException("Cannot index document", e);
         }
     }
 
-    private void indexMultipleDocuments(List<Document> docs) {
+    private IndexResult indexMultipleDocuments(List<Document> docs) {
         final List<SolrInputDocument> solrDocs = docs.parallelStream()
                 .map(doc -> createInputDocument(doc))
                 .collect(Collectors.toList());
@@ -181,7 +183,10 @@ public class SolrSearchServer extends SearchServer {
             for(Document doc : docs){
                 removeNonParentDocument(doc);
             }
-            this.solrClient.add(solrDocs);
+
+            final UpdateResponse response = this.solrClient.add(solrDocs);
+            return new IndexResult(Long.valueOf(response.getQTime())).setElapsedTime(response.getElapsedTime());
+
         } catch (SolrServerException | IOException e) {
             log.error("Cannot index documents {}", solrDocs, e);
             throw new SearchServerException("Cannot index documents", e);
@@ -289,12 +294,20 @@ public class SolrSearchServer extends SearchServer {
     }
 
     @Override
-    public void delete(Document doc) {
+    public DeleteResult delete(Document doc) {
         try {
+            long qTime = 0;
+            long elapsedTime = 0;
             solrClientLogger.debug(">>> delete({})", doc.getId());
-            solrClient.deleteById(doc.getId());
+            final UpdateResponse deleteResponse = solrClient.deleteById(doc.getId());
+            qTime = deleteResponse.getQTime();
+            elapsedTime = deleteResponse.getElapsedTime();
             //Deleting nested documents
-            solrClient.deleteByQuery("_root_:" + doc.getId());
+            final UpdateResponse deleteNestedResponse = solrClient.deleteByQuery("_root_:" + doc.getId());
+            qTime += deleteNestedResponse.getQTime();
+            elapsedTime += deleteNestedResponse.getElapsedTime();
+
+            return new DeleteResult(qTime).setElapsedTime(elapsedTime);
         } catch (SolrServerException | IOException e) {
             log.error("Cannot delete document {}", doc.getId() , e);
             throw new SearchServerException("Cannot delete document", e);
@@ -317,13 +330,13 @@ public class SolrSearchServer extends SearchServer {
 
                 switch(search.getResultSet().getType()) {
                     case page:{
-                        return new PageResult(response.getResults().getNumFound(), documents, search, facetResults, this, factory);
+                        return new PageResult(response.getResults().getNumFound(), response.getQTime(), documents, search, facetResults, this, factory).setElapsedTime(response.getElapsedTime());
                     }
                     case slice: {
-                        return new SliceResult(response.getResults().getNumFound(), documents, search, facetResults, this, factory);
+                        return new SliceResult(response.getResults().getNumFound(), response.getQTime(), documents, search, facetResults, this, factory).setElapsedTime(response.getElapsedTime());
                     }
                     default:
-                        return new PageResult(response.getResults().getNumFound(), documents, search, facetResults, this, factory);
+                        return new PageResult(response.getResults().getNumFound(), response.getQTime(), documents, search, facetResults, this, factory).setElapsedTime(response.getElapsedTime());
                 }
             }else {
                 throw new SolrServerException("Null result from SolrClient");
@@ -467,7 +480,7 @@ public class SolrSearchServer extends SearchServer {
                         final UseCase useCase = UseCase.valueOf(intervalFacet.getScope().name());
                         final String fieldName = getFieldname(intervalFacet.getFieldDescriptor(), useCase, searchContext);
 
-                        query.add(FacetParams.FACET_INTERVAL, SolrUtils.Query.buildSolrFacetKey(intervalFacet.getName()) + fieldName);
+                        query.add(FacetParams.FACET_INTERVAL, SolrUtils.Query.buildSolrFacetKey(intervalFacet.getFacetName()) + fieldName);
 
                         for(Object o : intervalFacet.getIntervals()) {
                             Interval i = (Interval) o; //TODO why is this necessary?
@@ -511,11 +524,11 @@ public class SolrSearchServer extends SearchServer {
                                         .map(fieldDescriptor -> getFieldname(fieldDescriptor, UseCase.Facet, searchContext))
                                         .toArray(String[]::new);
 
-                        query.add(FacetParams.FACET_PIVOT,SolrUtils.Query.buildSolrPivotSubFacetName(pivotFacet.getName(),fieldNames));
+                        query.add(FacetParams.FACET_PIVOT,SolrUtils.Query.buildSolrPivotSubFacetName(pivotFacet.getFacetName(),fieldNames));
                     });
 
             //facet fields
-            final HashMap<String, Object> strings = SolrUtils.Query.buildJsonTermFacet(search.getFacets(), factory, search.getChildrenFactory(), searchContext);
+            final HashMap<String, Object> strings = SolrUtils.Query.buildJsonTermFacet(search.getFacets(), search.getFacetLimit(), factory, search.getChildrenFactory(), searchContext);
 
             query.add("json.facet", strings.toString().replaceAll("=",":"));
             //facet Subdocument count
@@ -754,7 +767,7 @@ public class SolrSearchServer extends SearchServer {
     }
 
     @Override
-    public void execute(Delete delete, DocumentFactory factory) {
+    public DeleteResult execute(Delete delete, DocumentFactory factory) {
         String query = SolrUtils.Query.buildFilterString(delete.getQuery(), factory, delete.getUpdateContext(),true);
         try {
             solrClientLogger.debug(">>> delete query({})", query);
@@ -763,13 +776,21 @@ public class SolrSearchServer extends SearchServer {
             solrQuery.setParam(CommonParams.Q, "*:*");
             solrQuery.setParam(CommonParams.FQ,query.trim().replaceAll("^\\+","").split("\\+"));
             final QueryResponse response = solrClient.query(solrQuery, SolrRequest.METHOD.POST);
+            long qTime = 0;
+            long elapsedTime = 0;
             if(Objects.nonNull(response) && CollectionUtils.isNotEmpty(response.getResults())){
                 final List<String> idList = response.getResults().stream().map(doc -> (String) doc.get(ID)).collect(Collectors.toList());
-                solrClient.deleteById(idList);
+                final UpdateResponse deleteResponse = solrClient.deleteById(idList);
+                qTime = deleteResponse.getQTime();
+                elapsedTime = deleteResponse.getElapsedTime();
                 //Deleting nested documents
-                solrClient.deleteByQuery("_root_:("+StringUtils.join(idList, " OR ")+")");
+                final UpdateResponse deleteNestedResponse = solrClient.deleteByQuery("_root_:(" + StringUtils.join(idList, " OR ") + ")");
+
+                qTime += deleteNestedResponse.getQTime();
+                elapsedTime += deleteNestedResponse.getElapsedTime();
             }
 
+            return new DeleteResult(qTime).setElapsedTime(elapsedTime);
         } catch (SolrServerException | IOException e) {
             log.error("Cannot delete with query {}", query, e);
             throw new SearchServerException("Cannot delete with query", e);
@@ -805,6 +826,25 @@ public class SolrSearchServer extends SearchServer {
             log.error("Cannot execute suggestion query");
             throw new SearchServerException("Cannot execute suggestion query", e);
         }
+    }
+
+    @Override
+    public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
+        final SolrQuery query = buildSolrQuery(search, factory, null);
+        return query.toString();
+    }
+
+    @Override
+    public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory, DocumentFactory childFactory) {
+        final SolrQuery query = buildSolrQuery(search, factory, childFactory);
+        return query.toString();
+    }
+
+    @Override
+    public <T> String getRawQuery(ExecutableSuggestionSearch search, Class<T> c) {
+        final DocumentFactory factory = AnnotationUtil.createDocumentFactory(c);
+        final SolrQuery query = buildSolrQuery(search, factory, null);
+        return query.toString();
     }
 
     protected SolrQuery buildSolrQuery(ExecutableSuggestionSearch search, DocumentFactory assets, DocumentFactory childFactory) {
