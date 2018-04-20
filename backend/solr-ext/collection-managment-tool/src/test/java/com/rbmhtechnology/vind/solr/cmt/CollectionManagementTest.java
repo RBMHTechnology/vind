@@ -24,7 +24,6 @@ public class CollectionManagementTest extends SolrCloudTestCase {
         String zkHost = cluster.getZkServer().getZkHost();
 
         service = new CollectionManagementService(zkHost);
-        service.setClient(cluster.getSolrClient());
     }
 
     @AfterClass

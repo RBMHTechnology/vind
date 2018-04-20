@@ -53,10 +53,7 @@ public class CollectionManagementServiceTest extends SolrCloudTestCase {
         create2.setReplicationFactor(1);
         create2.process(cluster.getSolrClient());
 
-
-        service = new CollectionManagementService();
-
-        service.setClient(cluster.getSolrClient());
+        service = new CollectionManagementService(cluster.getZkServer().getZkAddress());
 
         //upload example jar
         service.uploadRuntimeLib("com.rbmhtechnology.solr.test:test-jar:1.0", Paths.get(Resources.getResource("runtimelib.jar").toURI()));
