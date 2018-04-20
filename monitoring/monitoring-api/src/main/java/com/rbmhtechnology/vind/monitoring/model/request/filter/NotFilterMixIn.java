@@ -15,7 +15,7 @@ public abstract class NotFilterMixIn extends Filter.NotFilter {
 
 
     /**
-     * Creates an instance of {@link NotFilter} of a given filter.
+     * Creates an instance of {@link com.rbmhtechnology.vind.api.query.filter.Filter.NotFilter NotFilter} of a given filter.
      *
      * @param a {@link Filter} to be one part of the NOT query.
      */
