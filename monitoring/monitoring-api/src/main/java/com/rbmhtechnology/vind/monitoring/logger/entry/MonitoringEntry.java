@@ -20,11 +20,8 @@ import com.rbmhtechnology.vind.monitoring.model.application.Application;
 import com.rbmhtechnology.vind.monitoring.model.request.DateMathExpressionMixIn;
 import com.rbmhtechnology.vind.monitoring.model.request.RootTimeMixIn;
 import com.rbmhtechnology.vind.monitoring.model.request.facet.*;
+import com.rbmhtechnology.vind.monitoring.model.request.filter.*;
 import com.rbmhtechnology.vind.monitoring.model.session.Session;
-import com.rbmhtechnology.vind.monitoring.model.request.filter.AndFilterMixIn;
-import com.rbmhtechnology.vind.monitoring.model.request.filter.FilterMixIn;
-import com.rbmhtechnology.vind.monitoring.model.request.filter.NotFilterMixIn;
-import com.rbmhtechnology.vind.monitoring.model.request.filter.OrFilterMixIn;
 import com.rbmhtechnology.vind.monitoring.model.request.sort.SortMixIn;
 
 import java.io.IOException;
@@ -89,7 +86,8 @@ public abstract class MonitoringEntry {
                 .addMixIn(Interval.ZonedDateTimeInterval.class, ZoneDateIntervalMixin.class)
                 .addMixIn(Interval.UtilDateInterval.class, UtilDateIntervalMixin.class)
                 .addMixIn(Interval.DateMathInterval.class, DateMathIntervalMixin.class)
-                .addMixIn(Facet.DateRangeFacet.class, DateRangeMixin.class);
+                .addMixIn(Facet.DateRangeFacet.class, DateRangeMixin.class)
+                .addMixIn(Filter.BetweenDatesFilter.class, BetweenDatesMixIn.class);
         objectMapper.getSerializerProvider().setNullKeySerializer(new MyDtoNullKeySerializer());
         return objectMapper;
     }

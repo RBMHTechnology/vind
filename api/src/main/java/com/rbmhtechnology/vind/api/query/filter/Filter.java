@@ -824,6 +824,22 @@ public abstract class Filter {
             super.filterScope = scope;
         }
 
+        /**
+         * Calculates the epoch millis of the start position for the filter
+         * @return start date expressed in  epoch millis
+         */
+        public long getTimeStampStart() {
+            return this.getStart().getTimeStamp();
+        }
+
+        /**
+         * Calculates the epoch millis of the end position for the filter
+         * @return end date expressed in  epoch millis
+         */
+        public long getTimeStampEnd() {
+            return this.getEnd().getTimeStamp();
+        }
+
         @Override
         public String toString() {
             return String.format("%s=[ %s TO %s ]", field, start.toString(), end.toString());
