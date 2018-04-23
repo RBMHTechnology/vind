@@ -54,3 +54,9 @@ search execution. By default the _MonitoringServer_ silent is set to **false**, 
 * BugFix: Reduced logging level from error to debug of _Filter.getScope(FieldDescriptor descriptor)_ when falling back to
 default scope due to a null FieldDescriptor.
 * Added helpful debug logging in _MonitoringServer_.
+
+## 1.1.3
+* BugFix: CollectionManagementService now closes the SolrCloudClient connection
+* BugFix: Solved issue with javadoc version
+* BugFix: Homogenize monitoring property types to return always a number(some interval facets where giving a start date or a number depending on the original
+   field descriptor type).
