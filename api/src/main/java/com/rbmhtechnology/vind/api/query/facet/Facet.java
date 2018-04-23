@@ -414,6 +414,14 @@ public abstract class Facet {
                 this.tagedPivots = pivotNames;
             }
 
+            public long getTimeStampStart() {
+                return ((ZonedDateTime)this.getStart()).toInstant().getEpochSecond();
+            }
+
+            public long getTimeStampEnd() {
+                return ((ZonedDateTime)getEnd()).toInstant().getEpochSecond();
+            }
+
 
             @Override
             public Facet clone() {
@@ -449,6 +457,14 @@ public abstract class Facet {
                 this.end = end;
                 this.gap = timeUnit.toMillis(gap);
                 this.tagedPivots = pivotNames;
+            }
+
+            public long getTimeStampStart() {
+                return ((Date)this.getStart()).toInstant().getEpochSecond();
+            }
+
+            public long getTimeStampEnd() {
+                return ((Date)getEnd()).toInstant().getEpochSecond();
             }
 
             @Override
@@ -530,6 +546,14 @@ public abstract class Facet {
             }
 
             private DateMathRangeFacet() {}
+
+            public long getTimeStampStart() {
+                return ((DateMathExpression)this.getStart()).getTimeStamp();
+            }
+
+            public long getTimeStampEnd() {
+                return ((DateMathExpression)this.getEnd()).getTimeStamp();
+            }
 
             @Override
             public Facet clone() {
