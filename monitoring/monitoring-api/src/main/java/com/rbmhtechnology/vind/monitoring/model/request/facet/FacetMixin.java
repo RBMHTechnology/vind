@@ -16,7 +16,6 @@ import com.rbmhtechnology.vind.api.query.facet.Facet;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonPropertyOrder({"type"})
 @JsonIgnoreProperties(ignoreUnknown = true, value = {"fieldDescriptor","descriptor", "log","tagedPivots","name" })
-
 public abstract class FacetMixin extends Facet {
 
     @JsonProperty("field")

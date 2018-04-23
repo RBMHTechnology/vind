@@ -13,12 +13,13 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
+import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.monitoring.model.application.Application;
 import com.rbmhtechnology.vind.monitoring.model.request.DateMathExpressionMixIn;
 import com.rbmhtechnology.vind.monitoring.model.request.RootTimeMixIn;
-import com.rbmhtechnology.vind.monitoring.model.request.facet.FacetMixin;
+import com.rbmhtechnology.vind.monitoring.model.request.facet.*;
 import com.rbmhtechnology.vind.monitoring.model.session.Session;
 import com.rbmhtechnology.vind.monitoring.model.request.filter.AndFilterMixIn;
 import com.rbmhtechnology.vind.monitoring.model.request.filter.FilterMixIn;
@@ -84,7 +85,11 @@ public abstract class MonitoringEntry {
                 .addMixIn(Facet.class, FacetMixin.class)
                 .addMixIn(Sort.class, SortMixIn.class)
                 .addMixIn(DateMathExpression.class, DateMathExpressionMixIn.class)
-                .addMixIn(DateMathExpression.RootTime.class, RootTimeMixIn.class);
+                .addMixIn(DateMathExpression.RootTime.class, RootTimeMixIn.class)
+                .addMixIn(Interval.ZonedDateTimeInterval.class, ZoneDateIntervalMixin.class)
+                .addMixIn(Interval.UtilDateInterval.class, UtilDateIntervalMixin.class)
+                .addMixIn(Interval.DateMathInterval.class, DateMathIntervalMixin.class)
+                .addMixIn(Facet.DateRangeFacet.class, DateRangeMixin.class);
         objectMapper.getSerializerProvider().setNullKeySerializer(new MyDtoNullKeySerializer());
         return objectMapper;
     }
