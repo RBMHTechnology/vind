@@ -432,8 +432,6 @@ public abstract class Filter {
         public AndFilter(Filter a, Filter b) {
             Objects.requireNonNull(a);
             Objects.requireNonNull(b);
-            children.add(a);
-            children.add(b);
             addChild(a);
             addChild(b);
         }
