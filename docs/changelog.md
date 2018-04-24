@@ -40,3 +40,23 @@ For information about older releases check the [history on GitHub](https://githu
 * Added the possibility ti configure by config properties the backend connection timeout and read timeout.
 * BugFix: Added real deep copy of fulltext search object.
 * BugFix: Added missing search facet limit to term facet Json implementation.
+
+## 1.1.1
+* BugFix: added mixIn to properly serialize DateMathExpression objects and its sub objects.
+* __API change__: deprecated method `getName()` from Facet API. Use `getFacetName()` instead when
+looking for the Facet name or `getFieldName()`.
+* Simplified InteractionEntry data model.
+* Added monitoring to Index, Real time Get, Update and Delete actions from monitoringServer.
+* Added _silent_ option to _MonitoringServer_ allowing to ignore unnecessary exceptions thrown during monitoring, which do not affect
+search execution. By default the _MonitoringServer_ silent is set to **false**, and this can be changed with the method _MonitoringServer.setSilent(boolean)_.
+
+## 1.1.2
+* BugFix: Reduced logging level from error to debug of _Filter.getScope(FieldDescriptor descriptor)_ when falling back to
+default scope due to a null FieldDescriptor.
+* Added helpful debug logging in _MonitoringServer_.
+
+## 1.1.3
+* BugFix: CollectionManagementService now closes the SolrCloudClient connection
+* BugFix: Solved issue with javadoc version
+* BugFix: Homogenize monitoring property types to return always a number(some interval facets where giving a start date or a number depending on the original
+   field descriptor type).

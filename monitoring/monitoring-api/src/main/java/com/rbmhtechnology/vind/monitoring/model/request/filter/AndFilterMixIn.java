@@ -15,7 +15,7 @@ public abstract class AndFilterMixIn extends Filter.AndFilter {
 
 
     /**
-     * Creates an instance of {@link AndFilter} of two given filters.
+     * Creates an instance of {@link com.rbmhtechnology.vind.api.query.filter.Filter.AndFilter AndFilter} of two given filters.
      *
      * @param a {@link Filter} to be one part of the AND query.
      * @param b {@link Filter} to be one part of the AND query.

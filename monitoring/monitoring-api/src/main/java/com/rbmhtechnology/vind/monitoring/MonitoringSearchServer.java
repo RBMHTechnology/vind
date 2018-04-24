@@ -13,8 +13,7 @@ import com.rbmhtechnology.vind.api.result.*;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.monitoring.logger.MonitoringWriter;
-import com.rbmhtechnology.vind.monitoring.logger.entry.FullTextEntry;
-import com.rbmhtechnology.vind.monitoring.logger.entry.SuggestionEntry;
+import com.rbmhtechnology.vind.monitoring.logger.entry.*;
 import com.rbmhtechnology.vind.monitoring.model.application.Application;
 import com.rbmhtechnology.vind.monitoring.model.application.SimpleApplication;
 import com.rbmhtechnology.vind.monitoring.model.session.Session;
@@ -22,9 +21,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author Thomas Kurz (tkurz@apache.org)
@@ -42,6 +43,8 @@ public class MonitoringSearchServer extends SearchServer {
     private Session session;
     private Application application;
     private HashMap<String, Object> monitoringMetadata = new HashMap<>();
+
+    private boolean silent = false;
 
     private final MonitoringWriter logger;
 
@@ -89,30 +92,100 @@ public class MonitoringSearchServer extends SearchServer {
     }
 
     @Override
-    public void index(Document... docs) {
-        server.index(docs);
+    public IndexResult index(Document... docs) {
+       return this.index(Arrays.asList(docs));
     }
 
     @Override
-    public void index(List<Document> docs) {
-        server.index(docs);
+    public IndexResult index(List<Document> docs) {
+        final ZonedDateTime start = ZonedDateTime.now();
+        log.debug("Monitoring server is indexing document'{}' at {}:{}:{} - {}.{}.{} ", docs.stream().map(Document::getId).collect(Collectors.toList()),
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
+        final IndexResult result =  server.index(docs);
+        final ZonedDateTime end = ZonedDateTime.now();
+        try {
+            final IndexEntry entry =
+                    new IndexEntry( application, start, end, result.getQueryTime(), result.getElapsedTime(), session, docs);
+            entry.setMetadata(this.monitoringMetadata);
+            log.debug("Monitoring is adding an Index entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Index monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
+
+        return server.index(docs);
     }
 
     @Override
     public boolean execute(Update update, DocumentFactory factory) {
-        //currently not logged
-        return server.execute(update, factory);
+        final ZonedDateTime start = ZonedDateTime.now();
+        log.debug("Monitoring server is updating document'{}' at {}:{}:{} - {}.{}.{} ", update.getId(),
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
+        final Boolean result =  server.execute(update, factory);
+        final ZonedDateTime end = ZonedDateTime.now();
+
+        try {
+            final UpdateEntry entry =
+                    new UpdateEntry( application, start, end, session, update,result);
+            entry.setMetadata(this.monitoringMetadata);
+            log.debug("Monitoring is adding an Update entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Update monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
+        return result;
     }
 
     @Override
-    public void execute(Delete delete, DocumentFactory factory) {
-        server.execute(delete,factory);
+    public DeleteResult execute(Delete delete, DocumentFactory factory) {
+
+        final ZonedDateTime start = ZonedDateTime.now();
+        log.debug("Monitoring server is deleting at {}:{}:{} - {}.{}.{} ",
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
+        final DeleteResult result = server.execute(delete, factory);
+        final ZonedDateTime end = ZonedDateTime.now();
+        try {
+            final DeleteEntry entry =
+                    new DeleteEntry(application, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            entry.setMetadata(this.monitoringMetadata);
+            log.debug("Monitoring is adding a Delete entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Delete monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
+        return result;
     }
 
     @Override
-    public void delete(Document doc) {
-        //currently not logged
-        server.delete(doc);
+    public DeleteResult delete(Document doc) {
+        final ZonedDateTime start = ZonedDateTime.now();
+        log.debug("Monitoring server is deleting at {}:{}:{} - {}.{}.{} ",
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
+        final DeleteResult result = server.delete(doc);
+        final ZonedDateTime end = ZonedDateTime.now();
+
+        try {
+            final DeleteEntry entry =
+                    new DeleteEntry(application, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            entry.setMetadata(this.monitoringMetadata);
+            log.debug("Monitoring is adding a Delete entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Delete monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
+        return result;
     }
 
     @Override
@@ -124,53 +197,93 @@ public class MonitoringSearchServer extends SearchServer {
     @Override
     public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
         final ZonedDateTime start = ZonedDateTime.now();
+        log.debug("Monitoring server is executing FulltextSearch at {}:{}:{} - {}.{}.{} ",
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
         final BeanSearchResult<T> result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        final FullTextEntry entry =
-                new FullTextEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        entry.setMetadata(this.monitoringMetadata);
-        logger.log(entry);
+        try {
+            final FullTextEntry entry =
+                    new FullTextEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            entry.setMetadata(this.monitoringMetadata);
+            log.debug("Monitoring is adding a FulltextSearch entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Fulltext monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
     public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c, HashMap<String, Object> metadata) {
         final ZonedDateTime start = ZonedDateTime.now();
+        log.debug("Monitoring server is executing FulltextSearch at {}:{}:{} - {}.{}.{} ",
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
         final BeanSearchResult<T> result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        final FullTextEntry entry =
-                new FullTextEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        try {
+            final FullTextEntry entry =
+                    new FullTextEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
 
-        final HashMap<String, Object> mergedMetadata = new HashMap<>();
-        mergedMetadata.putAll(this.monitoringMetadata);
-        mergedMetadata.putAll(metadata);
-        entry.setMetadata(mergedMetadata);
-
-        logger.log(entry);
+            final HashMap<String, Object> mergedMetadata = new HashMap<>();
+            mergedMetadata.putAll(this.monitoringMetadata);
+            mergedMetadata.putAll(metadata);
+            entry.setMetadata(mergedMetadata);
+            log.debug("Monitoring is adding a FulltextSearch entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Fulltext monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
     @Override
     public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
         final ZonedDateTime start = ZonedDateTime.now();
+        log.debug("Monitoring server is executing FulltextSearch at {}:{}:{} - {}.{}.{} ",
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
         final SearchResult result = server.execute(search, factory);
         final ZonedDateTime end = ZonedDateTime.now();
-        final FullTextEntry entry = new FullTextEntry(this.server, factory, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        entry.setMetadata(this.monitoringMetadata);
-        logger.log(entry);
+
+        try {
+            final FullTextEntry entry = new FullTextEntry(this.server, factory, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            entry.setMetadata(this.monitoringMetadata);
+            log.debug("Monitoring is adding a FulltextSearch entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Fulltext monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
     public SearchResult execute(FulltextSearch search, DocumentFactory factory, HashMap<String, Object> metadata) {
         final ZonedDateTime start = ZonedDateTime.now();
+        log.debug("Monitoring server is executing FulltextSearch at {}:{}:{} - {}.{}.{} ",
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
         final SearchResult result = server.execute(search, factory);
         final ZonedDateTime end = ZonedDateTime.now();
-        final FullTextEntry entry = new FullTextEntry(this.server, factory, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        try {
+            final FullTextEntry entry = new FullTextEntry(this.server, factory, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
 
-        final HashMap<String, Object> mergedMetadata = new HashMap<>();
-        mergedMetadata.putAll(this.monitoringMetadata);
-        mergedMetadata.putAll(metadata);
-        entry.setMetadata(mergedMetadata);
-        logger.log(entry);
+            final HashMap<String, Object> mergedMetadata = new HashMap<>();
+            mergedMetadata.putAll(this.monitoringMetadata);
+            mergedMetadata.putAll(metadata);
+            entry.setMetadata(mergedMetadata);
+            log.debug("Monitoring is adding a FulltextSearch entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Fulltext monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -187,75 +300,138 @@ public class MonitoringSearchServer extends SearchServer {
     @Override
     public <T> SuggestionResult execute(ExecutableSuggestionSearch search, Class<T> c) {
         final ZonedDateTime start = ZonedDateTime.now();
-        SuggestionResult result = server.execute(search, c);
+        log.debug("Monitoring server is executing SuggestionSearch at {}:{}:{} - {}.{}.{} ",
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
+        final SuggestionResult result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        final SuggestionEntry entry = new SuggestionEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        entry.setMetadata(this.monitoringMetadata);
-        logger.log(entry);
+
+        try {
+            final SuggestionEntry entry = new SuggestionEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            entry.setMetadata(this.monitoringMetadata);
+            log.debug("Monitoring is adding a Suggestion entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Suggestion monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
     public <T> SuggestionResult execute(ExecutableSuggestionSearch search, Class<T> c, HashMap<String, Object> metadata) {
         final ZonedDateTime start = ZonedDateTime.now();
-        SuggestionResult result = server.execute(search, c);
+        log.debug("Monitoring server is executing SuggestionSearch at {}:{}:{} - {}.{}.{} ",
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
+        final SuggestionResult result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        final SuggestionEntry entry = new SuggestionEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        // Adding execution metadata to server metadata
-        final HashMap<String, Object> mergedMetadata = new HashMap<>();
-        mergedMetadata.putAll(this.monitoringMetadata);
-        mergedMetadata.putAll(metadata);
-        entry.setMetadata(mergedMetadata);
-        logger.log(entry);
+        try {
+            final SuggestionEntry entry = new SuggestionEntry(this.server, AnnotationUtil.createDocumentFactory(c), application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            // Adding execution metadata to server metadata
+            final HashMap<String, Object> mergedMetadata = new HashMap<>();
+            mergedMetadata.putAll(this.monitoringMetadata);
+            mergedMetadata.putAll(metadata);
+            entry.setMetadata(mergedMetadata);
+            log.debug("Monitoring is adding a Suggestion entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Suggestion monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
     @Override
     public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets) {
         final ZonedDateTime start = ZonedDateTime.now();
+        log.debug("Monitoring server is executing SuggestionSearch at {}:{}:{} - {}.{}.{} ",
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
         final SuggestionResult result = server.execute(search, assets);
         final ZonedDateTime end = ZonedDateTime.now();
-        final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        entry.setMetadata(this.monitoringMetadata);
-        logger.log(entry);
+        try {
+            final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            entry.setMetadata(this.monitoringMetadata);
+            log.debug("Monitoring is adding a Suggestion entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Suggestion monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
     public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets, HashMap<String, Object> metadata) {
         final ZonedDateTime start = ZonedDateTime.now();
+        log.debug("Monitoring server is executing SuggestionSearch at {}:{}:{} - {}.{}.{} ",
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
         final SuggestionResult result = server.execute(search, assets);
         final ZonedDateTime end = ZonedDateTime.now();
-        final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        // Adding execution metadata to server metadata
-        final HashMap<String, Object> mergedMetadata = new HashMap<>();
-        mergedMetadata.putAll(this.monitoringMetadata);
-        mergedMetadata.putAll(metadata);
-        entry.setMetadata(mergedMetadata);
-        logger.log(entry);
+        try {
+            final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            // Adding execution metadata to server metadata
+            final HashMap<String, Object> mergedMetadata = new HashMap<>();
+            mergedMetadata.putAll(this.monitoringMetadata);
+            mergedMetadata.putAll(metadata);
+            entry.setMetadata(mergedMetadata);
+            log.debug("Monitoring is adding a Suggestion entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Suggestion monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
     @Override
     public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets, DocumentFactory childFactory) {
         final ZonedDateTime start = ZonedDateTime.now();
+        log.debug("Monitoring server is executing SuggestionSearch at {}:{}:{} - {}.{}.{} ",
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
         final SuggestionResult result = server.execute(search, assets, childFactory);
         final ZonedDateTime end = ZonedDateTime.now();
-        final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        entry.setMetadata(this.monitoringMetadata);
-        logger.log(entry);
+
+        try {
+            final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            entry.setMetadata(this.monitoringMetadata);
+            log.debug("Monitoring is adding a Suggestion entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Suggestion monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
     public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets, DocumentFactory childFactory, HashMap<String, Object> metadata) {
         final ZonedDateTime start = ZonedDateTime.now();
+        log.debug("Monitoring server is executing SuggestionSearch at {}:{}:{} - {}.{}.{} ",
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
         final SuggestionResult result = server.execute(search, assets, childFactory);
         final ZonedDateTime end = ZonedDateTime.now();
-        final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
-        // Adding execution metadata to server metadata
-        final HashMap<String, Object> mergedMetadata = new HashMap<>();
-        mergedMetadata.putAll(this.monitoringMetadata);
-        mergedMetadata.putAll(metadata);
-        entry.setMetadata(mergedMetadata);
-        logger.log(entry);
+
+        try {
+            final SuggestionEntry entry = new SuggestionEntry(this.server, assets, application, search, result, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+            // Adding execution metadata to server metadata
+            final HashMap<String, Object> mergedMetadata = new HashMap<>();
+            mergedMetadata.putAll(this.monitoringMetadata);
+            mergedMetadata.putAll(metadata);
+            entry.setMetadata(mergedMetadata);
+            log.debug("Monitoring is adding a Suggestion entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Suggestion monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -278,18 +454,44 @@ public class MonitoringSearchServer extends SearchServer {
     @Override
     public <T> BeanGetResult<T> execute(RealTimeGet search, Class<T> c) {
         final ZonedDateTime start = ZonedDateTime.now();
+        log.debug("Monitoring server is executing Real time get at {}:{}:{} - {}.{}.{} ",
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
         final BeanGetResult<T> result = server.execute(search, c);
         final ZonedDateTime end = ZonedDateTime.now();
-        //TODO log
+
+        try {
+            final GetEntry entry = new GetEntry(application, start, end,result.getQueryTime(), result.getElapsedTime(), session, search.getValues(), result.getNumOfResults());
+            entry.setMetadata(this.monitoringMetadata);
+            log.debug("Monitoring is adding a Get entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Get monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
     @Override
     public GetResult execute(RealTimeGet search, DocumentFactory assets) {
         final ZonedDateTime start = ZonedDateTime.now();
+        log.debug("Monitoring server is executing Real time get at {}:{}:{} - {}.{}.{} ",
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
         final GetResult result = server.execute(search, assets);
         final ZonedDateTime end = ZonedDateTime.now();
-        //TODO log
+
+        try {
+            final GetEntry entry = new GetEntry(application, start, end,result.getQueryTime(), result.getElapsedTime(), session, search.getValues(), result.getNumOfResults());
+            entry.setMetadata(this.monitoringMetadata);
+            log.debug("Monitoring is adding a Get entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Get monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
         return result;
     }
 
@@ -316,5 +518,14 @@ public class MonitoringSearchServer extends SearchServer {
         if (Objects.nonNull(key)) {
             this. monitoringMetadata.put(key, value);
         }
+    }
+
+    public boolean isSilent() {
+        return silent;
+    }
+
+    public MonitoringSearchServer setSilent(boolean silent) {
+        this.silent = silent;
+        return this;
     }
 }

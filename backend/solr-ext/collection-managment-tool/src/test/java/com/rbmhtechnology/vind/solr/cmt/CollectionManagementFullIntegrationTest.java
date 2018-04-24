@@ -31,17 +31,17 @@ public class CollectionManagementFullIntegrationTest {
 
         assertFalse(service.collectionExists("test-for-vind"));
 
-        service.createCollection("test-for-vind", "com.rbmhtechnology.vind:solr:2.0.0-SNAPSHOT", 1, 1);
+        service.createCollection("test-for-vind", "com.rbmhtechnology.vind:backend-solr:1.1.2", 1, 1);
 
         assertTrue(service.collectionExists("test-for-vind"));
 
-        service.updateCollection("test-for-vind", "com.rbmhtechnology.vind:solr:2.0.0-SNAPSHOT");
+        service.updateCollection("test-for-vind", "com.rbmhtechnology.vind:backend-solr:1.1.2");
 
         service.removeCollection("test-for-vind");
 
         assertFalse(service.collectionExists("test-for-vind"));
 
-        service.removeConfigSet("com.rbmhtechnology.vind:solr:2.0.0-SNAPSHOT");
+        service.removeConfigSet("com.rbmhtechnology.vind:backend-solr:1.1.2");
     }
 
 }

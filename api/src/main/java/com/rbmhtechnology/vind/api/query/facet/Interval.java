@@ -27,6 +27,7 @@ public class Interval<T> {
         return end;
     }
 
+
     public boolean includesStart() {
         return includeStart;
     }
@@ -119,6 +120,14 @@ public class Interval<T> {
             this.includeStart = includeStart;
             this.includeEnd = includeEnd;
         }
+
+        public long getTimeStampStart() {
+            return ((Date)this.getStart()).toInstant().getEpochSecond();
+        }
+
+        public long getTimeStampEnd() {
+            return ((Date)getEnd()).toInstant().getEpochSecond();
+        }
     }
 
     public static class ZonedDateTimeInterval<T extends ZonedDateTime> extends Interval<T> {
@@ -133,6 +142,14 @@ public class Interval<T> {
             this.end = end;
             this.includeStart = includeStart;
             this.includeEnd = includeEnd;
+        }
+
+        public long getTimeStampStart() {
+            return ((ZonedDateTime)this.getStart()).toInstant().getEpochSecond();
+        }
+
+        public long getTimeStampEnd() {
+            return ((ZonedDateTime)getEnd()).toInstant().getEpochSecond();
         }
     }
 
@@ -150,6 +167,14 @@ public class Interval<T> {
             this.end = end;
             this.includeStart = includeStart;
             this.includeEnd = includeEnd;
+        }
+
+        public long getTimeStampStart() {
+            return this.getStart().getTimeStamp();
+        }
+
+        public long getTimeStampEnd() {
+            return getEnd().getTimeStamp();
         }
 
         public static class UtilDateDateMathInterval<T extends Date> extends DateMathInterval {

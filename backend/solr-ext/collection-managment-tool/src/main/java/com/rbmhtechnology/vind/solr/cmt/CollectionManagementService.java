@@ -71,21 +71,18 @@ public class CollectionManagementService {
 
     private List<String> repositories = new ArrayList<>();
 
-    private CloudSolrClient client;
-
     public CollectionManagementService(String zkHost) throws IOException {
-        this(zkHost, null);
+        this(zkHost, new String[0]);
     }
 
     public CollectionManagementService(String zkHost, String ... repositories) throws IOException {
         this(repositories);
         this.zkHost = zkHost;
-        this.client = new CloudSolrClient(zkHost);
 
-        try {
-            NamedList result = this.client.request(new CollectionAdminRequest.ClusterStatus());
+        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
+            NamedList result = client.request(new CollectionAdminRequest.ClusterStatus());
 
-            if(((NamedList)((NamedList)result.get("cluster")).get("collections")).get(".system") == null) {
+            if (((NamedList) ((NamedList) result.get("cluster")).get("collections")).get(".system") == null) {
                 logger.warn("Blob store '.system' for runtime libs is not yet created. Will create one");
 
                 try {
@@ -102,8 +99,8 @@ public class CollectionManagementService {
             }
 
         } catch (SolrServerException | IOException e) {
-            logger.error("Error in collection management service: {}",e.getMessage(), e);
-            throw new IOException("Error in collection management service: "+ e.getMessage(), e);
+            logger.error("Error in collection management service: {}", e.getMessage(), e);
+            throw new IOException("Error in collection management service: " + e.getMessage(), e);
         }
     }
 
@@ -131,7 +128,7 @@ public class CollectionManagementService {
     public void createCollection(String collectionName, String configName, int numOfShards, int numOfReplicas) throws IOException {
         checkAndInstallConfiguration(configName);
 
-        try {
+        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
             Create create = new CollectionAdminRequest.Create();
             create.setCollectionName(collectionName);
             create.setConfigName(configName);
@@ -154,8 +151,8 @@ public class CollectionManagementService {
      * @throws {@link IOException} is thrown when a problem with the solr request occurs.
      */
     public boolean collectionExists(String collectionName) throws IOException {
-        try {
-            final NamedList<Object> request = this.client.request(new CollectionAdminRequest.List());
+        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
+            final NamedList<Object> request = client.request(new CollectionAdminRequest.List());
             return ((List) request.get("collections")).contains(collectionName);
         } catch (SolrServerException | IOException e) {
             throw new IOException("Error during solr request: Cannot get the list of collections", e);
@@ -179,7 +176,7 @@ public class CollectionManagementService {
         //final String origMaxShards ;
         //final String origReplicationFactor ;
 
-        try {
+        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
             final CollectionAdminResponse status = new CollectionAdminRequest.ClusterStatus()
                     .setCollectionName(collectionName).process(client);
             if(status.getStatus() == 0) {
@@ -201,7 +198,8 @@ public class CollectionManagementService {
         if(!origConfigName.equals(configName)){
 
             //Change config set of the collection to the new one
-            try (final SolrZkClient zkClient = new SolrZkClient(zkHost, 4000)) {
+            try (final SolrZkClient zkClient = new SolrZkClient(zkHost, 4000);
+                 CloudSolrClient client = new CloudSolrClient(zkHost)) {
                 //TODO: The following call to the collections API is working from solr >= 6
                 /*final SolrQuery modifyCollectionQuery = new SolrQuery();
                 modifyCollectionQuery.setRequestHandler("/admin/collections");
@@ -256,14 +254,14 @@ public class CollectionManagementService {
     protected void addOrUpdateRuntimeDependencies(Map<String, Long> runtimeDependencies, String collectionName) {
         for(String blobName : runtimeDependencies.keySet()) {
             RuntimeLibRequest request = new RuntimeLibRequest(RuntimeLibRequestType.add, blobName, runtimeDependencies.get(blobName));
-            try {
+            try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
                 client.request(request, collectionName);
             } catch (SolrServerException | IOException e) {
                 logger.warn("Cannot add runtime dependency {} (v{}) to collection {}", blobName, runtimeDependencies.get(blobName), collectionName); //TODO (minor) parse result
                 logger.info("Try to update dependency");
                 request.setType(RuntimeLibRequestType.update);
 
-                try {
+                try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
                     client.request(request, collectionName);
                 } catch (SolrServerException | IOException e1) {
                     logger.warn("Cannot update runtime dependency {} (v{}) to collection {}", blobName, runtimeDependencies.get(blobName), collectionName); //TODO (minor) parse result
@@ -300,23 +298,25 @@ public class CollectionManagementService {
         request.setPath("/admin/file");
         request.setResponseParser(new InputStreamResponseParser("json"));
 
-        NamedList o = client.request(request, collectionName);
+        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
+            final NamedList o = client.request(request, collectionName);
 
-        LineIterator it = IOUtils.lineIterator((InputStream) o.get("stream"), "utf-8");
+            final LineIterator it = IOUtils.lineIterator((InputStream) o.get("stream"), "utf-8");
 
-        List<String> returnValues = Streams.stream(it).collect(Collectors.toList());
+            final List<String> returnValues = Streams.stream(it).collect(Collectors.toList());
 
-        //if file not exists (a little hacky..)
-        if(returnValues.size() == 1 && returnValues.get(0).startsWith("{\"responseHeader\":{\"status\":404")) {
-            logger.warn("Release does not yet contain rumtimelib configuration file. Runtimelibs have to be installed manually.");
-            return Collections.emptyList();
-        };
-        return returnValues;
+            //if file not exists (a little hacky..)
+            if (returnValues.size() == 1 && returnValues.get(0).startsWith("{\"responseHeader\":{\"status\":404")) {
+                logger.warn("Release does not yet contain rumtimelib configuration file. Runtimelibs have to be installed manually.");
+                return Collections.emptyList();
+            }
+            return returnValues;
+        }
     }
 
     public Long getVersionAndInstallIfNecessary(String dependency) {
 
-        try {
+        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
             SolrQuery query = new SolrQuery("blobName:"+Utils.toBlobName(dependency));
             query.setSort("version", SolrQuery.ORDER.desc);
             QueryResponse response = client.query(".system",query);
@@ -342,7 +342,7 @@ public class CollectionManagementService {
 
         JarUploadRequest request = new JarUploadRequest(jarFile, "/blob/" + Utils.toBlobName(dependency));
 
-        try {
+        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
             client.request(request, ".system");
             return 1L;
         } catch (SolrServerException | IOException e) {
@@ -365,7 +365,7 @@ public class CollectionManagementService {
     private void installConfiguration(String configName) throws IOException {
         Path folder = downloadConfiguration(configName);
 
-        try {
+        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
             client.uploadConfig(folder, configName);
         } catch (IOException e) {
             throw new IOException("Cannot upload config set " + configName, e);
@@ -380,7 +380,7 @@ public class CollectionManagementService {
 
     protected boolean configurationIsDeployed(String configName) throws IOException {
         ConfigSetAdminRequest.List list = new ConfigSetAdminRequest.List();
-        try {
+        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
             final ConfigSetAdminResponse.List configList = list.process(client);
             final List<String> configSets = configList.getConfigSets();
             return configSets.contains(configName);
@@ -412,18 +412,22 @@ public class CollectionManagementService {
         final CollectionAdminRequest.Delete delete = new CollectionAdminRequest.Delete();
         delete.setCollectionName(collectionName);
 
-        try {
-            delete.process(this.client);
+        try (CloudSolrClient client = createCloudSolrClient()) {
+            delete.process(client);
         } catch (SolrServerException |IOException e) {
             throw new IOException("Error during solr request: Cannot delete collection " + collectionName, e);
         }
     }
 
+    private CloudSolrClient createCloudSolrClient() {
+        return new CloudSolrClient(zkHost);
+    }
+
     protected void removeConfigSet(String configSetName) throws IOException {
         final ConfigSetAdminRequest.Delete delete =new ConfigSetAdminRequest.Delete();
 
-        try {
-            delete.setConfigSetName(configSetName).process(this.client);
+        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
+            delete.setConfigSetName(configSetName).process(client);
         } catch (SolrServerException |IOException e) {
             throw new IOException("Error during solr request: Cannot delete configSet " + configSetName, e);
         }
@@ -671,15 +675,8 @@ public class CollectionManagementService {
         }
     }
 
-    /**
-     * Just for test usage!
-     * @param client cloud solr client to connec to to.
-     */
-    protected void setClient(CloudSolrClient client) {
-        this.client = client;
-    }
-
     protected List<String> getRepositories() {
         return repositories;
     }
+
 }

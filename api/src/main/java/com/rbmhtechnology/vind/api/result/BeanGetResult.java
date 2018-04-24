@@ -21,12 +21,15 @@ public class BeanGetResult<T> {
     private final List<T> results;
     private final RealTimeGet query;
     private final Class <T> clazz;
+    private final long queryTime;
+    private long elapsedTime;
 
     public BeanGetResult() {
         this.numOfResults = 0L;
         this.results = Collections.emptyList();
         this.query = new RealTimeGet();
         this.clazz = null;
+        this.queryTime = 0;
     }
 
     /**
@@ -41,8 +44,53 @@ public class BeanGetResult<T> {
         this.results = results;
         this.query = getQuery;
         this.clazz = clazz;
-
+        this.queryTime = 0;
     }
+
+    /**
+     * Creates a new instance of {@link BeanGetResult}.
+     * @param numOfResults Number of documents returned by the search server instance.
+     * @param results A list of results parsed to Document.
+     * @param getQuery The fulltext query executed to retrieve this set of results.
+     * @param clazz Bean class to get as result.
+     * @param qTime time it takes the backend to perform the query.
+     */
+    public BeanGetResult(long numOfResults, List<T> results, RealTimeGet getQuery, Class<T> clazz, long qTime) {
+        this.numOfResults = numOfResults;
+        this.results = results;
+        this.query = getQuery;
+        this.clazz = clazz;
+        this.queryTime = qTime;
+    }
+
+    /**
+     * Returns the time taken by the backend to get the results and the time it takes
+     * to the backend client create a response.
+     * @return long number representing the time in milliseconds.
+     */
+    public long getElapsedTime() {
+        return elapsedTime;
+    }
+
+    /**
+     * Sets time taken by the backend to get the results and the time it takes
+     * to the backend client create a response.
+     * @param elapsedTime long number representing the time in milliseconds.
+     * @return an instance of {@link BeanGetResult} with the updated elapsed time.
+     */
+    public BeanGetResult<T> setElapsedTime(long elapsedTime) {
+        this.elapsedTime = elapsedTime;
+        return this;
+    }
+
+    /**
+     * Returns the time taken by the backend to get the results.
+     * @return long number representing the time in milliseconds.
+     */
+    public long getQueryTime() {
+        return queryTime;
+    }
+
     /**
      * Gets the number of results stored.
      * @return Number of results.

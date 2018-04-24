@@ -49,24 +49,21 @@ public abstract class Filter {
     }
 
     public Scope getFilterScope() {
-        return Objects.nonNull(this.filterScope)?
-                this.filterScope : this.getFilterScope(null);
+        return this.getFilterScope(null);
     }
 
     public Scope getFilterScope(String fieldname, DocumentFactory factory){
-        if(this.filterScope != null) {
-            return this.filterScope;
-        } else {
-            return getFilterScope(factory.getField(fieldname));
-        }
+        return getFilterScope(factory.getField(fieldname));
     }
 
     public Scope getFilterScope(FieldDescriptor fd){
-        if(this.filterScope != null) {
+        if(Objects.nonNull(this.filterScope)) {
             return this.filterScope;
         } else {
             if (fd == null) {
-                logger.error("Cannot get scope for non existing field descriptor");
+                logger.debug(
+                        "Unable to get custom scope from filter or field descriptor: fall back to default filter scope '{}'",
+                        DEFAULT_SCOPE);
                 return DEFAULT_SCOPE;
             } else {
                 if (fd.isFacet() && !fd.isSuggest()) return Scope.Facet;
@@ -759,6 +756,11 @@ public abstract class Filter {
         }
 
         @Override
+        public Scope getFilterScope() {
+            return this.getFilterScope(this.descriptor);
+        }
+
+        @Override
         public String toString() {
             return String.format("%s='%s'", descriptor.getName(), term);
         }
@@ -777,6 +779,14 @@ public abstract class Filter {
          */
         public T getTerm() {
             return term;
+        }
+
+        /**
+         * Get the name of the field.
+         * @return  {@link String} with the value to field descriptor name.
+         */
+        public String getField() {
+            return field;
         }
 
         @Override
@@ -812,6 +822,22 @@ public abstract class Filter {
             this.start = start;
             this.end = end;
             super.filterScope = scope;
+        }
+
+        /**
+         * Calculates the epoch millis of the start position for the filter
+         * @return start date expressed in  epoch millis
+         */
+        public long getTimeStampStart() {
+            return this.getStart().getTimeStamp();
+        }
+
+        /**
+         * Calculates the epoch millis of the end position for the filter
+         * @return end date expressed in  epoch millis
+         */
+        public long getTimeStampEnd() {
+            return this.getEnd().getTimeStamp();
         }
 
         @Override

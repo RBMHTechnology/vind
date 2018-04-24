@@ -333,7 +333,7 @@ public class FulltextSearch {
      * @return This {@link FulltextSearch} instance with the new facet added.
      */
     public FulltextSearch facet(Facet facet) {
-        this.facets.put(facet.getName(), facet);
+        this.facets.put(facet.getFacetName(), facet);
         return this;
     }
 
