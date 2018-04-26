@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
  * This suggestion service queries a given core for facet suggestions based on an input string
  * <p/>
  * Author: Thomas Kurz (tkurz@apache.org)
+ * Author: Alfonso Noriega Meneses
  */
 public class SuggestionService {
 
@@ -45,7 +46,7 @@ public class SuggestionService {
 
     private String internalFacetLimit = "50";
 
-    private boolean spellcheck_enabled = false;
+    private boolean spellCheckEnabled = false;
 
     private SolrCore solrCore;
 
@@ -53,14 +54,14 @@ public class SuggestionService {
 
     public SuggestionService(SolrCore solrCore, NamedList args) {
 
-        NamedList l = new NamedList();
+        final NamedList l = new NamedList();
 
         //set spellcheck component if there is one
         if(((ArrayList)args.get("first-components")).contains("spellcheck")) {
-            List component = new ArrayList<String>();
+            final List component = new ArrayList<String>();
             component.add("spellcheck");
             l.add("first-components",component);
-            spellcheck_enabled = true;
+            spellCheckEnabled = true;
         }
 
         if(args.get("defaults") != null && ((NamedList)args.get("defaults")).get(SuggestionRequestParams.SUGGESTION_INTERNAL_LIMIT) != null) {
@@ -73,57 +74,34 @@ public class SuggestionService {
         this.searchHandler.inform(solrCore);
     }
 
-    public void run(SolrQueryResponse rsp, SolrParams params, String query, String df, String[] fields, String[] singlevalue_fields, String[] multivalue_fields, String[] fqs, int termLimit, int limit, SuggestionRequestHandler.LimitType limitType, SuggestionRequestHandler.Type type, SuggestionRequestHandler.Strategy strategy, String suggestionField, Map<String, Map<String,Object>> intervals) {
+    public void run(SolrQueryResponse rsp, SolrParams params, String query, String df, String[] fields, String[] singlevalue_fields, String[] multiValueFields, String[] fqs, int termLimit, int limit, SuggestionRequestHandler.LimitType limitType, SuggestionRequestHandler.Type type, SuggestionRequestHandler.Strategy strategy, String suggestionField, Map<String, Map<String,Object>> intervals) throws Exception {
 
         //analyze query in advance
-        query = FieldAnalyzerService.analyzeString(solrCore, df, query);
+        final String analyzedQuery = FieldAnalyzerService.analyzeString(solrCore, df, query);
+        final SolrQueryResponse response = query(analyzedQuery,params,df,fields,fqs,termLimit,suggestionField,intervals);
 
-        SuggestionResult[] result = null;
+        //Create the suggestion results
+        SuggestionResult[] result;
+        result = this.getSuggestionResults(analyzedQuery, df, singlevalue_fields, multiValueFields, termLimit, limit, limitType, type, strategy, suggestionField, intervals, response);
 
-        Object spellcheck_result;
+        //if no results, try spellchecker (if defined and if spellchecked query differs from original)
+        if((Objects.isNull(result) && spellCheckEnabled)) {
+            final String spellCheckedQuery = getSpellCheckedQuery(response);
+            final Object spellCheckResult = response.getValues().get("spellcheck");
 
-        SolrQueryResponse response = query(query,params,df,fields,fqs,termLimit,suggestionField,intervals);
-
-        if(response.getValues().get("facets") instanceof SimpleOrderedMap) {
-            SimpleOrderedMap facets = (SimpleOrderedMap) response.getValues().get("facets");
-            if((Integer) facets.get("count") > 0) {
-                result = createResults(response, singlevalue_fields, multivalue_fields, query, df,type,termLimit, limit, limitType, strategy,suggestionField,intervals);
-            }
-        } else {
-            SolrDocumentList doclist = (SolrDocumentList) response.getValues().get("facet");
-            if(doclist.getNumFound() > 0) {
-                result = createResults(response, singlevalue_fields, multivalue_fields, query, df,type,termLimit, limit, limitType, strategy,suggestionField,intervals);
-            }
-        }
-
-        //if no results, try spellcheck (if defined and if spellchecked query differs from original)
-        if(result == null && spellcheck_enabled) {
-            String spellchecked_query = getSpellcheckedQuery(response);
-            spellcheck_result = response.getValues().get("spellcheck");
-
-            //query with spellchecked query
-            if(spellchecked_query != null) {
-                SolrQueryResponse spellcheck_response = query(spellchecked_query,params,df,fields,fqs,termLimit,suggestionField,intervals);
-                if(spellcheck_response.getValues().get("facets") instanceof SimpleOrderedMap) {
-                    SimpleOrderedMap facets = (SimpleOrderedMap) spellcheck_response.getValues().get("facets");
-                    if((Integer) facets.get("count") > 0) {
-                        result = createResults(spellcheck_response, singlevalue_fields, multivalue_fields, spellchecked_query, df,type, termLimit, limit, limitType, strategy,suggestionField,intervals);
-                    }
-                } else {
-                    SolrDocumentList doclist = (SolrDocumentList) spellcheck_response.getValues().get("facet");
-                    if(doclist.getNumFound() > 0) {
-                        result = createResults(spellcheck_response, singlevalue_fields, multivalue_fields, spellchecked_query, df,type, termLimit, limit, limitType, strategy,suggestionField,intervals);
-                    }
-                }
-                //add result of spellcheck component
-                if(spellcheck_result != null && result != null) {
+            //query with checked query
+            if(spellCheckedQuery != null && !analyzedQuery.equals(spellCheckedQuery)) {
+                final SolrQueryResponse spellCheckedResponse = query(spellCheckedQuery,params,df,fields,fqs,termLimit,suggestionField,intervals);
+                result = this.getSuggestionResults(spellCheckedQuery, df, singlevalue_fields, multiValueFields, termLimit, limit, limitType, type, strategy, suggestionField, intervals, spellCheckedResponse);
+                //add result of spellchecker component
+                if(spellCheckResult != null && result != null) {
                     //TODO remove * on last position of collation
-                    rsp.add("spellcheck",spellcheck_result);
+                    rsp.add("spellcheck",spellCheckResult);
                 }
             }
         }
 
-        if(result == null) {
+        if(Objects.isNull(result)) {
             result = createEmptyResults(type,limit, limitType);
         }
 
@@ -131,8 +109,28 @@ public class SuggestionService {
         if(result[1] != null) rsp.add(SuggestionResultParams.MULTI_SUGGESTIONS, result[1].write());
     }
 
+    private SuggestionResult[] getSuggestionResults(String query, String df, String[] singleValueFields, String[] multiValueFields, int termLimit, int limit, SuggestionRequestHandler.LimitType limitType, SuggestionRequestHandler.Type type, SuggestionRequestHandler.Strategy strategy, String suggestionField, Map<String, Map<String, Object>> intervals, SolrQueryResponse response) {
+        final SuggestionResult[] result;
+        if(response.getValues().get("facets") instanceof SimpleOrderedMap) {
+            final SimpleOrderedMap facets = (SimpleOrderedMap) response.getValues().get("facets");
+            if((Integer) facets.get("count") > 0) {
+                result = createResults(response, singleValueFields, multiValueFields, query, df,type,termLimit, limit, limitType, strategy,suggestionField,intervals);
+            } else {
+                result = null;
+            }
+        } else {
+            final SolrDocumentList facets = (SolrDocumentList) response.getValues().get("facet");
+            if(facets.getNumFound() > 0) {
+                result = createResults(response, singleValueFields, multiValueFields, query, df,type,termLimit, limit, limitType, strategy,suggestionField,intervals);
+            } else {
+                result = null;
+            }
+        }
+        return result;
+    }
+
     private SuggestionResult[] createEmptyResults(SuggestionRequestHandler.Type type, int limit, SuggestionRequestHandler.LimitType limitType) {
-        SuggestionResult[] result = new SuggestionResult[2];
+        final SuggestionResult[] result = new SuggestionResult[2];
         switch (type) {
             case single:
                 result[0] = new SuggesionResultSingle(limit,limitType);break;
@@ -145,18 +143,18 @@ public class SuggestionService {
         return result;
     }
 
-    protected SuggestionResult[] createResults(SolrQueryResponse rsp, String[] singlevalue_fields, String[] multivalue_fields, String query, String df, SuggestionRequestHandler.Type type, int termLimit, int limit, SuggestionRequestHandler.LimitType limitType, SuggestionRequestHandler.Strategy strategy, String sugestionField, Map<String, Map<String,Object>> intervals) {
+    protected SuggestionResult[] createResults(SolrQueryResponse rsp, String[] singleValueFields, String[] multiValueFields, String query, String df, SuggestionRequestHandler.Type type, int termLimit, int limit, SuggestionRequestHandler.LimitType limitType, SuggestionRequestHandler.Strategy strategy, String sugestionField, Map<String, Map<String,Object>> intervals) {
         SuggestionResult[] result = new SuggestionResult[2];
         switch (type) {
             case single:
-                result[0] = SuggestionResultFactory.createSingleValueResult(solrCore, rsp, singlevalue_fields, query, df, termLimit, limit, limitType, strategy,sugestionField,intervals);
+                result[0] = SuggestionResultFactory.createSingleValueResult(solrCore, rsp, singleValueFields, query, df, termLimit, limit, limitType, strategy,sugestionField,intervals);
                 break;
             case multi:
-                result[1] = SuggestionResultFactory.createMultiValueResult(solrCore, rsp, multivalue_fields, query, df,termLimit, limit, limitType); //TODO consider strategy
+                result[1] = SuggestionResultFactory.createMultiValueResult(solrCore, rsp, multiValueFields, query, df,termLimit, limit, limitType); //TODO consider strategy
                 break;
             case mixed:
-                result[0] = SuggestionResultFactory.createSingleValueResult(solrCore, rsp, singlevalue_fields, query, df,termLimit, limit, limitType, strategy,sugestionField,intervals);
-                result[1] = SuggestionResultFactory.createMultiValueResult(solrCore, rsp, multivalue_fields, query, df, termLimit, limit, limitType);
+                result[0] = SuggestionResultFactory.createSingleValueResult(solrCore, rsp, singleValueFields, query, df,termLimit, limit, limitType, strategy,sugestionField,intervals);
+                result[1] = SuggestionResultFactory.createMultiValueResult(solrCore, rsp, multiValueFields, query, df, termLimit, limit, limitType);
         }
 
         if ((result[0] == null || result[0].getCount() ==0) && (result[1] == null || ((SuggestionResultMulti) result[1]).getCount() == 0)) {
@@ -165,30 +163,31 @@ public class SuggestionService {
         return result;
     }
 
-    private String getSpellcheckedQuery(SolrQueryResponse rsp) {
+    private String getSpellCheckedQuery(SolrQueryResponse rsp) {
 
         //check if spellcheck result exists.
         if(rsp.getValues().get("spellcheck") == null) return null;
 
-        NamedList collations = (NamedList)((NamedList)rsp.getValues().get("spellcheck")).get("collations");
+        final NamedList collations = (NamedList)((NamedList)rsp.getValues().get("spellcheck")).get("collations");
 
         if(collations != null && collations.size() > 0) {
             String s = (String)collations.get("collation");
             return s.substring(0,s.length()-1);
         } else {
-            String s = (String)((NamedList)((NamedList)rsp.getValues().get("spellcheck")).get("suggestions")).get("collation");
+            final String s = (String)((NamedList)((NamedList)rsp.getValues().get("spellcheck")).get("suggestions")).get("collation");
             return s != null ? s.substring(0,s.length()-1) : null;
         }
     }
 
-    private SolrQueryResponse query(String query, SolrParams original_params, String df, String[] fields, String[] fqs, int termLimit, String suggestionField, Map<String,Map<String,Object>> intervals) {
+    private SolrQueryResponse query(String query, SolrParams original_params, String df, String[] fields, String[] fqs, int termLimit, String suggestionField, Map<String,Map<String,Object>> intervals) throws Exception {
 
-        SolrQueryResponse rsp = new SolrQueryResponse();
+        final SolrQueryResponse rsp = new SolrQueryResponse();
 
         //remove *
         if(query.contains("*")) {
             query = query.replaceAll("\\*", "");
         }
+
         //Split the query into terms separated by spaces
         List<String> terms = Arrays.asList(query.trim().split(" |\\+"));
 
@@ -198,7 +197,7 @@ public class SuggestionService {
         }
 
         //Get the REGEX expression for each term to make them match as prefix in any word of a field.
-        List<String> queryPreffixes = terms.stream()
+        final List<String> queryPreffixes = terms.stream()
                 .map(term -> term.chars()
                         .mapToObj(i -> (char)i)
                         .map(letter -> {
@@ -214,13 +213,13 @@ public class SuggestionService {
         log.debug("original query params: {}", original_params);
 
         //Prepare query
-        ModifiableSolrParams params = new ModifiableSolrParams();
+        final ModifiableSolrParams params = new ModifiableSolrParams();
 
         //add original params
         //params.add(original_params);
 
         //add other params
-        SolrQueryRequest req = new LocalSolrQueryRequest( solrCore, params );
+        final SolrQueryRequest req = new LocalSolrQueryRequest( solrCore, params );
         params.set(CommonParams.Q, "*:*");
         params.set(CommonParams.DF, df);
         params.set("q.op", "AND");
@@ -282,8 +281,8 @@ public class SuggestionService {
 
                 intervalsJson.put(intervalKey, intervalJson);
             });
-
         }
+
         //Filtering here provides smaller response but takes more time, better skip this general query
         //final String prefixSolrQuery = String.join(" OR ", queryRegex.stream().map(term -> "("+term+")").collect(Collectors.toList()));
         //params.set(CommonParams.Q, prefixSolrQuery);
@@ -295,13 +294,13 @@ public class SuggestionService {
             }
         }
 
-        if(spellcheck_enabled) {
+        if(spellCheckEnabled) {
             params.add("spellcheck","true");
             params.add("spellcheck.q",String.join(" ",terms).concat("*") );
             params.add("spellcheck.collate","true");
-            final String accuarcy = original_params.get("spellcheck.accuracy");
-            if(Objects.nonNull(accuarcy)) {
-                params.add("spellcheck.accuracy", accuarcy);
+            final String accuracy = original_params.get("spellcheck.accuracy");
+            if(Objects.nonNull(accuracy)) {
+                params.add("spellcheck.accuracy", accuracy);
             }
         }
 
@@ -315,8 +314,8 @@ public class SuggestionService {
         }
 
         try {
-            log.info("internal request: {}", req.toString());
-            log.info("JSON facet query: {}", req.getJSON().toString());
+            log.debug("internal request: {}", req.toString());
+            log.debug("JSON facet query: {}", req.getJSON().toString());
             //execute query and return
             final long millis = new DateTime().getMillis();
             searchHandler.handleRequestBody(req, rsp);
@@ -324,10 +323,15 @@ public class SuggestionService {
             log.debug("internal response: {}", rsp.getValues().toString());
             return rsp;
         } catch (SolrException e) {
+            log.error("Solr server exception while handling suggestion request (code {}): {}",e.code(), e.getMessage(),e);
+            throw e;
+        } catch (InterruptedException e) {
+            //Do not wrap interrupted exceptions!
+            log.error("The process has been interrupted: {}", e.getMessage(), e);
             throw e;
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new SolrException(SolrException.ErrorCode.SERVER_ERROR,"internal server error");
+            log.error("Exception while handling suggestion request: {}", e.getMessage(), e);
+            throw new SolrException(SolrException.ErrorCode.SERVER_ERROR,"internal server error", e);
         } finally {
             req.close();
         }

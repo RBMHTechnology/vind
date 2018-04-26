@@ -60,3 +60,6 @@ default scope due to a null FieldDescriptor.
 * BugFix: Solved issue with javadoc version
 * BugFix: Homogenize monitoring property types to return always a number(some interval facets where giving a start date or a number depending on the original
    field descriptor type).
+
+## 1.1.4
+* SuggestionHandler code cleaning and improvements in logging and Exception handling.
