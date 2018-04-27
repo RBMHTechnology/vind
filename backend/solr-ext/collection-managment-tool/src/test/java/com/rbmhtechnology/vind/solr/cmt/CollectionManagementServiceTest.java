@@ -25,6 +25,7 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
  * @since 29.03.17.
 */
 @LuceneTestCase.Slow
+@Ignore
 public class CollectionManagementServiceTest extends SolrCloudTestCase {
 
     private static CollectionManagementService service;
