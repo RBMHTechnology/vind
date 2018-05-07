@@ -63,3 +63,4 @@ default scope due to a null FieldDescriptor.
 
 ## 1.1.4
 * SuggestionHandler code cleaning and improvements in logging and Exception handling.
+* Bugfix: Fixed issue when adding and filters.
