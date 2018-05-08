@@ -64,3 +64,6 @@ default scope due to a null FieldDescriptor.
 ## 1.1.4
 * SuggestionHandler code cleaning and improvements in logging and Exception handling.
 * Bugfix: Fixed issue when adding and filters.
+
+## 1.1.5
+* Bugfix: Added to NOT filter Solr serialization a base '\*:\*' to ensure the subtraction has a positive base operator.
