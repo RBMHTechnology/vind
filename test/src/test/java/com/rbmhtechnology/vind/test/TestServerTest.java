@@ -117,7 +117,7 @@ public class TestServerTest {
 
         FulltextSearch search = Search.fulltext("hello")
                 .filter(category.between(0, 10))
-                .filter(created.before(ZonedDateTime.now()))
+                .filter(not(created.after(ZonedDateTime.now())))
                 .filter(modified.before(new Date()))
                 .facet(pivot("cats", category, created))
                 .facet(pivot("catVStitle", category, title))
