@@ -3,13 +3,13 @@
     "query":{
         "bool":{
             "must":[
-                {"term":{"type.keyword":"fulltext"}},
-                {"term":{"application.id.keyword":"%s"}}
+                {"term":{"%stype.raw":"fulltext"}},
+                {"term":{"%sapplication.id.raw":"%s"}}
             ],
             "filter": [
                 {
                     "range":{
-                        "timeStamp":{
+                        "%stimeStamp":{
                             "gte":%d,
                             "lte":%d,
                             "format":"epoch_millis"
@@ -20,9 +20,9 @@
         }
     },
     "aggs":{
-        "fields":{
+        "facets":{
             "terms":{
-                "field":"request.facets.name.keyword",
+                "field":"%srequest.facets.field.raw",
                 "size":100,
                 "order":{
                     "_count":"desc"

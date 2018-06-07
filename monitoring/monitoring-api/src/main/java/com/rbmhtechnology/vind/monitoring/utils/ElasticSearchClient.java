@@ -9,6 +9,7 @@ import io.searchbox.core.Index;
 import io.searchbox.core.Search;
 import io.searchbox.core.SearchResult;
 import io.searchbox.indices.CreateIndex;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,11 +26,17 @@ public class ElasticSearchClient {
     private String elasticHost;
     private String elasticIndex;
     transient JestClient elasticClient;
+    private String logType;
 
     public boolean init(String elasticHost, String elasticPort, String elasticIndex) {
+        return init(elasticHost, elasticPort, elasticIndex,null);
+    }
+
+    public boolean init(String elasticHost, String elasticPort, String elasticIndex, String logType) {
         this.elasticHost = elasticHost;
         this.elasticPort = elasticPort;
         this.elasticIndex = elasticIndex;
+        this.logType = logType;
 
         try {
             final JestClient client = getElasticSearchClient();
@@ -67,10 +74,15 @@ public class ElasticSearchClient {
         final JestClient client = getElasticSearchClient();
         if (client != null) {
 
-            final Search search = new Search.Builder(query)
-                    .addIndex(elasticIndex)
-                    .addType("logEntry")//TODO extract this
-                    .build();
+            final Search.Builder searchBuilder = new Search.Builder(query)
+                    .addIndex(elasticIndex);
+
+            if (StringUtils.isNotEmpty(this.logType)) {
+                searchBuilder.addType("logEntry");
+            }
+
+            final Search search = searchBuilder.build();
+
             try {
                 final SearchResult result = client.execute(search);
                 log.debug("Completed total requests query. Succeeded: {}", result.isSucceeded());

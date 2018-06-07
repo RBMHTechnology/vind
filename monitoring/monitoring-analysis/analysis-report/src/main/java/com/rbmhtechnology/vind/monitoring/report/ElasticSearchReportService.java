@@ -4,6 +4,8 @@
 package com.rbmhtechnology.vind.monitoring.report;
 
 import com.google.common.base.Joiner;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.rbmhtechnology.vind.monitoring.utils.ElasticSearchClient;
 import com.rbmhtechnology.vind.monitoring.utils.ElasticSearchClientBuilder;
 import io.searchbox.core.SearchResult;
@@ -18,10 +20,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created on 28.02.18.
@@ -30,11 +30,16 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchClientBuilder.class);
     private ElasticSearchClient elasticClient = new ElasticSearchClient();
-
+    private String messageWrapper = "";
 
     public ElasticSearchReportService(String elasticHost, String elasticPort, String elasticIndex, ZonedDateTime from, ZonedDateTime to, String applicationId) {
         super(from, to, applicationId);
         elasticClient.init(elasticHost, elasticPort, elasticIndex);
+    }
+
+    public ElasticSearchReportService(String elasticHost, String elasticPort, String elasticIndex, String logType, ZonedDateTime from, ZonedDateTime to, String applicationId) {
+        super(from, to, applicationId);
+        elasticClient.init(elasticHost, elasticPort, elasticIndex, logType);
     }
 
     public ElasticSearchReportService(String elasticHost, String elasticPort, String elasticIndex,Date from, Date to, String timeZoneID, String applicationId) {
@@ -42,18 +47,35 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         elasticClient.init(elasticHost, elasticPort, elasticIndex);
     }
 
+    public ElasticSearchReportService(String elasticHost, String elasticPort, String elasticIndex, String logType,Date from, Date to, String timeZoneID, String applicationId) {
+        super(from, to, timeZoneID, applicationId);
+        elasticClient.init(elasticHost, elasticPort, elasticIndex, logType);
+    }
+
     public ElasticSearchReportService(String elasticHost, String elasticPort, String elasticIndex,long from, long to, String timeZoneId, String applicationId) {
         super(from, to, timeZoneId, applicationId);
         elasticClient.init(elasticHost, elasticPort, elasticIndex);
     }
 
+    public ElasticSearchReportService(String elasticHost, String elasticPort, String elasticIndex, String logType, long from, long to, String timeZoneId, String applicationId) {
+        super(from, to, timeZoneId, applicationId);
+        elasticClient.init(elasticHost, elasticPort, elasticIndex, logType);
+    }
 
+
+    public ElasticSearchReportService setMessageWrapper(String wrapper) {
+        this.messageWrapper = wrapper + ".";
+        return this;
+    }
 
     @Override
     public long getTotalRequests() {
 
         final String query = this.loadQueryFromFile("totalRequests",
+                this.messageWrapper,
+                this.messageWrapper,
                 this.getApplicationId(),
+                this.messageWrapper,
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli());
 
@@ -64,9 +86,13 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public LinkedHashMap<ZonedDateTime, Integer> getTopDays() {
         final String query = this.loadQueryFromFile("topDays",
+                this.messageWrapper,
+                this.messageWrapper,
                 this.getApplicationId(),
+                this.messageWrapper,
                 this.getFrom().toInstant().toEpochMilli(),
-                this.getTo().toInstant().toEpochMilli());
+                this.getTo().toInstant().toEpochMilli(),
+                this.messageWrapper);
 
         final SearchResult searchResult = elasticClient.getQuery(query);
         final LinkedHashMap<ZonedDateTime, Integer> result = new LinkedHashMap<>();
@@ -80,9 +106,13 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public LinkedHashMap<String, Long> getTopUsers() {
         final String query = this.loadQueryFromFile("topUsers",
+                this.messageWrapper,
+                this.messageWrapper,
                 this.getApplicationId(),
+                this.messageWrapper,
                 this.getFrom().toInstant().toEpochMilli(),
-                this.getTo().toInstant().toEpochMilli());
+                this.getTo().toInstant().toEpochMilli(),
+                this.messageWrapper);
 
         final SearchResult searchResult = elasticClient.getQuery(query);
         final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("user").getBuckets();
@@ -96,12 +126,17 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public LinkedHashMap<String, Long> getTopFaceFields() {
         final String query = this.loadQueryFromFile("topFacetFields",
+                this.messageWrapper,
+                this.messageWrapper,
                 this.getApplicationId(),
+                this.messageWrapper,
                 this.getFrom().toInstant().toEpochMilli(),
-                this.getTo().toInstant().toEpochMilli());
+                this.getTo().toInstant().toEpochMilli(),
+                this.messageWrapper,
+                this.messageWrapper);
 
         final SearchResult searchResult = elasticClient.getQuery(query);
-        final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("fields").getBuckets();
+        final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("facets").getBuckets();
         final LinkedHashMap<String, Long> result = new LinkedHashMap<>();
         termEntries.stream().sorted(Comparator.comparingLong(TermsAggregation.Entry::getCount).reversed())
                 .forEach(entry -> result.put(entry.getKey(), entry.getCount()));
@@ -110,16 +145,60 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     }
 
     @Override
-    public LinkedHashMap<String, LinkedHashMap<Object,Long>> getFaceFieldsValues(List<String> fields) {
+    public LinkedHashMap<String, LinkedHashMap<Object,Long>> getFacetFieldsValues(List<String> fields) {
+        int from = 0;
+        int resultSize = 0;
 
         final String query = this.loadQueryFromFile("topFacetFieldsValues",
+                resultSize, //page size
+                from,
+                this.messageWrapper,
+                this.messageWrapper,
                 this.getApplicationId(),
+                this.messageWrapper,
+                this.messageWrapper,
                 "\"".concat(Joiner.on("\", \"").skipNulls().join(fields)).concat("\""),
+                this.messageWrapper,
                 this.getFrom().toInstant().toEpochMilli(),
-                this.getTo().toInstant().toEpochMilli());
+                this.getTo().toInstant().toEpochMilli()
+        );
 
-        final SearchResult searchResult = elasticClient.getQuery(query);
-        final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("fields").getBuckets();
+        final SearchResult matchingResults = elasticClient.getQuery(query);
+        final Long totalResults = matchingResults.getTotal();
+        final List<JsonObject> results = new ArrayList<>();
+
+        resultSize = 100;
+        while (from <= totalResults) {
+            final String q = this.loadQueryFromFile("topFacetFieldsValues",
+                    resultSize, //page size
+                    from,
+                    this.messageWrapper,
+                    this.messageWrapper,
+                    this.getApplicationId(),
+                    this.messageWrapper,
+                    this.messageWrapper,
+                    "\"".concat(Joiner.on("\", \"").skipNulls().join(fields)).concat("\""),
+                    this.messageWrapper,
+                    this.getFrom().toInstant().toEpochMilli(),
+                    this.getTo().toInstant().toEpochMilli()
+            );
+
+            final SearchResult searchResult = elasticClient.getQuery(q);
+
+            results.addAll(searchResult.getHits(JsonElement.class).stream()
+                    .map(es -> (JsonObject)es.source.getAsJsonObject()
+                            .getAsJsonObject("message_json")
+                            .getAsJsonObject("request")
+                            .getAsJsonObject("filter"))
+                    .collect(Collectors.toList()));
+
+
+            from += resultSize;
+        }
+
+
+
+        /*final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("fields").getBuckets();
         final LinkedHashMap<String, LinkedHashMap<Object,Long>> result = new LinkedHashMap<>();
         termEntries.stream().sorted(Comparator.comparingLong(TermsAggregation.Entry::getCount).reversed())
                 .forEach(entry -> {
@@ -130,8 +209,8 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
                     result.put(entry.getKey(),valuesMap);
                     }
-                );
-        return result;
+                );*/
+        return null;
     }
 
     @Override

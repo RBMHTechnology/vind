@@ -1,17 +1,18 @@
 {
-    "size":0,
+    "size":%s,
+    "from":%s,
     "query":{
         "bool":{
             "must":[
-                {"term":{"type.keyword":"fulltext"}},
-                {"term":{"application.id.keyword":"%s"}},
-                {"terms":{"request.filter.type.keyword":["TermFilter", "DescriptorFilter"]}},
-                {"terms":{"request.filter.field.keyword":[%s]}}
+                {"term":{"%stype.raw":"fulltext"}},
+                {"term":{"%sapplication.id.raw":"%s"}},
+                {"terms":{"%srequest.filter.delegates.type.raw":["TermFilter", "DescriptorFilter"]}},
+                {"terms":{"%srequest.filter.delegates.field.raw":[%s]}}
             ],
             "filter": [
                 {
                     "range":{
-                        "timeStamp":{
+                        "%stimeStamp":{
                             "gte":%d,
                             "lte":%d,
                             "format":"epoch_millis"
@@ -19,29 +20,6 @@
                     }
                 }
             ]
-        }
-    },
-    "aggs":{
-        "fields":{
-            "terms":{
-                "field":"request.filter.field.keyword",
-                "size":100,
-                "order":{
-                    "_count":"desc"
-                }
-            },
-            "aggs":{
-                 "values": {
-                     "terms":{
-                         "field":"request.filter.term.keyword",
-                         "size":10,
-                         "order":{
-                             "_count":"desc"
-                         }
-                     }
-
-                 }
-            }
         }
     }
 }
