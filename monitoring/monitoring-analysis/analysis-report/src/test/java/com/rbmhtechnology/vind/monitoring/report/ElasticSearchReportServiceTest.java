@@ -4,6 +4,7 @@
 package com.rbmhtechnology.vind.monitoring.report;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.ZonedDateTime;
@@ -16,13 +17,14 @@ import java.util.LinkedHashMap;
 public class ElasticSearchReportServiceTest {
 
     //TODO:Mock elasticsearch client and remove ignores
-    private final String esHost = "172.20.30.95"; //"localhost";
-    private final String esPort = "19200"; //"9200";
-    private final String esIndex = "logstash-searchanalysis-2018.05.*"; //"logindex";
-    private final String applicationName = "mediamanager-Media Manager / Editing - Internal / RBMH-Assets";//"Application name - 0.0.0";
+    private final String esHost = "localhost";
+    private final String esPort = "9200";
+    private final String esIndex = "logindex";
+    private final String applicationName = "Application name - 0.0.0";
     private final String messageWrapper = "message_json";
 
     @Test
+    @Ignore
     public void getTotalRequestsTest() throws Exception {
         final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, ZonedDateTime.now().minusYears(1), ZonedDateTime.now().plusYears(1), applicationName);
         esRepsortService.setMessageWrapper(messageWrapper);
@@ -34,6 +36,7 @@ public class ElasticSearchReportServiceTest {
     }
 
     @Test
+    @Ignore
     public void getTopDaysTest() throws Exception {
         final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, ZonedDateTime.now().minusYears(1), ZonedDateTime.now().plusYears(1), applicationName);
         esRepsortService.setMessageWrapper(messageWrapper);
@@ -46,6 +49,7 @@ public class ElasticSearchReportServiceTest {
     }
 
     @Test
+    @Ignore
     public void getTopUsersTest() throws Exception {
         final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, ZonedDateTime.now().minusYears(1), ZonedDateTime.now().plusYears(1), applicationName);
         esRepsortService.setMessageWrapper(messageWrapper);
@@ -58,6 +62,7 @@ public class ElasticSearchReportServiceTest {
     }
 
     @Test
+    @Ignore
     public void getTopFacetFieldsTest() throws Exception {
         final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, ZonedDateTime.now().minusYears(1), ZonedDateTime.now().plusYears(1), applicationName);
         esRepsortService.setMessageWrapper(messageWrapper);
@@ -70,6 +75,7 @@ public class ElasticSearchReportServiceTest {
     }
 
     @Test
+    @Ignore
     public void getFacetFieldsValuesTest() throws Exception {
         final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, ZonedDateTime.now().minusYears(1), ZonedDateTime.now().plusYears(1), applicationName);
         esRepsortService.setMessageWrapper(messageWrapper);
@@ -82,6 +88,7 @@ public class ElasticSearchReportServiceTest {
     }
 
     @Test
+    @Ignore
     public void getTopSuggestionFieldsTest() throws Exception {
         final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, ZonedDateTime.now().minusYears(1), ZonedDateTime.now().plusYears(1), applicationName);
         esRepsortService.setMessageWrapper(messageWrapper);
@@ -94,6 +101,7 @@ public class ElasticSearchReportServiceTest {
     }
 
     @Test
+    @Ignore
     public void getTopQueriesTest() throws Exception {
         final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, ZonedDateTime.now().minusYears(1), ZonedDateTime.now().plusYears(1), applicationName);
         esRepsortService.setMessageWrapper(messageWrapper);
