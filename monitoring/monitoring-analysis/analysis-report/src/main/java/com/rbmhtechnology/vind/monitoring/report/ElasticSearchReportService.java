@@ -4,6 +4,8 @@
 package com.rbmhtechnology.vind.monitoring.report;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.Streams;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.rbmhtechnology.vind.monitoring.utils.ElasticSearchClient;
@@ -21,6 +23,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -197,28 +200,49 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         }
 
 
+        final List<JsonArray> filters = results.stream()
+                .map(e -> e.getAsJsonArray("delegates"))
+                .collect(Collectors.toList());
 
-        /*final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("fields").getBuckets();
+        final List<JsonObject> descriptorFacetFilters = filters.stream()
+                .map( f -> Streams.stream(f.iterator()).collect(Collectors.toList()))
+                .flatMap( Collection::stream)
+                .map( je -> je.getAsJsonObject())
+                .filter( f -> f.get("scope").getAsString().equals("Facet"))
+                .filter( f -> f.get("type").getAsString().equals("DescriptorFilter"))
+                .collect(Collectors.toList());
+
+
         final LinkedHashMap<String, LinkedHashMap<Object,Long>> result = new LinkedHashMap<>();
-        termEntries.stream().sorted(Comparator.comparingLong(TermsAggregation.Entry::getCount).reversed())
-                .forEach(entry -> {
-                    LinkedHashMap<Object,Long> valuesMap = new LinkedHashMap<>();
-                    entry.getTermsAggregation("values").getBuckets().stream()
-                        .sorted(Comparator.comparingLong(TermsAggregation.Entry::getCount).reversed())
-                        .forEach(valueEntry -> valuesMap.put(valueEntry.getKey(),valueEntry.getCount()));
 
-                    result.put(entry.getKey(),valuesMap);
-                    }
-                );*/
-        return null;
+        fields.stream()
+                .forEach( field -> {
+                    final Map<String, Long> fieldFilters = descriptorFacetFilters.stream()
+                            .filter( filter -> filter.get("field").getAsString().equals(field))
+                            .map( filter -> filter.get("term").getAsString())
+                            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+                    //Sort the results
+                    final LinkedHashMap values = fieldFilters.entrySet().stream()
+                            .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                                    (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+
+                    result.put(field, values);
+                });
+        return result;
     }
 
     @Override
     public LinkedHashMap<String, Long> getTopSuggestionFields() {
         final String query = this.loadQueryFromFile("topSuggestionFields",
+                this.messageWrapper,
+                this.messageWrapper,
                 this.getApplicationId(),
+                this.messageWrapper,
                 this.getFrom().toInstant().toEpochMilli(),
-                this.getTo().toInstant().toEpochMilli());
+                this.getTo().toInstant().toEpochMilli(),
+                this.messageWrapper);
 
         final SearchResult searchResult = elasticClient.getQuery(query);
         final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("suggestionFields").getBuckets();
@@ -230,16 +254,103 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     }
 
     @Override
-    public LinkedHashMap<String, List<LinkedHashMap<String,Long>>> getSuggestionFieldsValues(List<String> fields) {
-        return null;
+    public LinkedHashMap<String, LinkedHashMap<Object, Long>> getSuggestionFieldsValues(List<String> fields) {
+        int from = 0;
+        int resultSize = 0;
+
+        final String query = this.loadQueryFromFile("topSuggestionFieldsValues",
+                resultSize, //page size
+                from,
+                this.messageWrapper,
+                this.messageWrapper,
+                this.getApplicationId(),
+                this.messageWrapper,
+                this.messageWrapper,
+                this.messageWrapper,
+                "\"".concat(Joiner.on("\", \"").skipNulls().join(fields)).concat("\""),
+                this.messageWrapper,
+                this.getFrom().toInstant().toEpochMilli(),
+                this.getTo().toInstant().toEpochMilli()
+        );
+
+        final SearchResult matchingResults = elasticClient.getQuery(query);
+        final Long totalResults = matchingResults.getTotal();
+        final List<JsonObject> results = new ArrayList<>();
+
+        resultSize = 100;
+        while (from <= totalResults) {
+            final String q = this.loadQueryFromFile("topSuggestionFieldsValues",
+                    resultSize, //page size
+                    from,
+                    this.messageWrapper,
+                    this.messageWrapper,
+                    this.getApplicationId(),
+                    this.messageWrapper,
+                    this.messageWrapper,
+                    this.messageWrapper,
+                    "\"".concat(Joiner.on("\", \"").skipNulls().join(fields)).concat("\""),
+                    this.messageWrapper,
+                    this.getFrom().toInstant().toEpochMilli(),
+                    this.getTo().toInstant().toEpochMilli()
+            );
+
+            final SearchResult searchResult = elasticClient.getQuery(q);
+
+            results.addAll(searchResult.getHits(JsonElement.class).stream()
+                    .map(es -> (JsonObject)es.source.getAsJsonObject()
+                            .getAsJsonObject("message_json")
+                            .getAsJsonObject("request")
+                            .getAsJsonObject("filter"))
+                    .collect(Collectors.toList()));
+
+
+            from += resultSize;
+        }
+
+
+        final List<JsonArray> filters = results.stream()
+                .map(e -> e.getAsJsonArray("delegates"))
+                .collect(Collectors.toList());
+
+        final List<JsonObject> descriptorFacetFilters = filters.stream()
+                .map( f -> Streams.stream(f.iterator()).collect(Collectors.toList()))
+                .flatMap( Collection::stream)
+                .map( je -> je.getAsJsonObject())
+                .filter( f -> f.get("scope").getAsString().equals("Suggest"))
+                .filter( f -> f.get("type").getAsString().equals("DescriptorFilter"))
+                .collect(Collectors.toList());
+
+
+        final LinkedHashMap<String, LinkedHashMap<Object,Long>> result = new LinkedHashMap<>();
+
+        fields.stream()
+                .forEach( field -> {
+                    final Map<String, Long> fieldFilters = descriptorFacetFilters.stream()
+                            .filter( filter -> filter.get("field").getAsString().equals(field))
+                            .map( filter -> filter.get("term").getAsString())
+                            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+                    //Sort the results
+                    final LinkedHashMap values = fieldFilters.entrySet().stream()
+                            .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                                    (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+
+                    result.put(field, values);
+                });
+        return result;
     }
 
     @Override
     public LinkedHashMap<String, Long> getTopQueries() {
         final String query = this.loadQueryFromFile("topQueries",
+                this.messageWrapper,
+                this.messageWrapper,
                 this.getApplicationId(),
+                this.messageWrapper,
                 this.getFrom().toInstant().toEpochMilli(),
-                this.getTo().toInstant().toEpochMilli());
+                this.getTo().toInstant().toEpochMilli(),
+                this.messageWrapper);
 
         final SearchResult searchResult = elasticClient.getQuery(query);
         final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("queries").getBuckets();

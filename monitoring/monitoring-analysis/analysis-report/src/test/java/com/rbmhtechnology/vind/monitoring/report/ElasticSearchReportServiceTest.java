@@ -17,10 +17,6 @@ import java.util.LinkedHashMap;
 public class ElasticSearchReportServiceTest {
 
     //TODO:Mock elasticsearch client and remove ignores
-    private final String esHost = "localhost";
-    private final String esPort = "9200";
-    private final String esIndex = "logindex";
-    private final String applicationName = "Application name - 0.0.0";
     private final String messageWrapper = "message_json";
 
     @Test
@@ -96,6 +92,64 @@ public class ElasticSearchReportServiceTest {
         final LinkedHashMap<String, Long> topSuggestionFields = esRepsortService.getTopSuggestionFields();
 
         Assert.assertEquals(1, topSuggestionFields.size());
+
+        esRepsortService.close();
+    }
+
+    @Test
+    @Ignore
+    public void getSuggestionFieldsValuesTest() throws Exception {
+        final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, ZonedDateTime.now().minusYears(1), ZonedDateTime.now().plusYears(1), applicationName);
+        esRepsortService.setMessageWrapper(messageWrapper);
+
+        final LinkedHashMap<String,LinkedHashMap<Object, Long>> topSuggestionFieldsValues = esRepsortService.getSuggestionFieldsValues(
+                Arrays.asList("activity",
+                "anatomy",
+                "leisuretime",
+                "concept",
+                "bodycaremedicine",
+                "source",
+                "title",
+                "realInvestOrderNumber",
+                "agriculture",
+                "transport_vehicle",
+                "society",
+                "weather",
+                "season",
+                "event",
+                "architecture",
+                "sports",
+                "nature",
+                "work",
+                "technology",
+                "procedure",
+                "economy",
+                "animalsimple",
+                "people",
+                "productPlacement",
+                "feast",
+                "nutrition",
+                "urban",
+                "light",
+                "various",
+                "person",
+                "infrastructure",
+                "culture",
+                "internalInvestOrderNumber",
+                "fruitsvegetables",
+                "content_model_structure",
+                "topic",
+                "animal",
+                "style",
+                "clothing",
+                "scienceandresearch",
+                "travel",
+                "facility",
+                "geolocation",
+                "object",
+                "fashion"));
+
+        Assert.assertEquals(1, topSuggestionFieldsValues.size());
 
         esRepsortService.close();
     }

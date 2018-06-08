@@ -1,10 +1,14 @@
 {
-    "size":0,
+    "size":%s,
+    "from":%s,
     "query":{
         "bool":{
             "must":[
-                {"term":{"%stype.raw":"suggestion"}},
-                {"term":{"%sapplication.id.raw":"%s"}}
+                {"term":{"%stype.raw":"fulltext"}},
+                {"term":{"%sapplication.id.raw":"%s"}},
+                {"terms":{"%srequest.filter.delegates.scope.raw":["Suggest"]}},
+                {"terms":{"%srequest.filter.delegates.type.raw":["TermFilter", "DescriptorFilter"]}},
+                {"terms":{"%srequest.filter.delegates.field.raw":[%s]}}
             ],
             "filter": [
                 {
@@ -17,17 +21,6 @@
                     }
                 }
             ]
-        }
-    },
-    "aggs":{
-        "suggestionFields":{
-            "terms":{
-                "field":"%srequest.suggestionFields.raw",
-                "size":100,
-                "order":{
-                    "_count":"desc"
-                }
-            }
         }
     }
 }
