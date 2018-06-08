@@ -17,6 +17,10 @@ import java.util.LinkedHashMap;
 public class ElasticSearchReportServiceTest {
 
     //TODO:Mock elasticsearch client and remove ignores
+    private String esHost = "localhost";
+    private String esPort = "9200";
+    private String esIndex = "logAnalysis";
+    private String applicationName = "App name";
     private final String messageWrapper = "message_json";
 
     @Test
