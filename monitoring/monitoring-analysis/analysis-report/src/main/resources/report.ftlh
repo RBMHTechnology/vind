@@ -182,11 +182,8 @@
     <div class="section"><h2>Filters</h2>
         <p>This part shows which fields are set for filters in facets, suggestions and advanced and how they are used
             within the given timerange.
-            The evaluation for each filter type is split in three parts:<i>Fields</i>, <i>Values</i> and <i>Tips</i>.
-            In <i>Fields</i> we outline the current configuration together with the real field usage.
-            In <i>Values</i> we show the top usages for the each field which has a standard deviation greater than 10 in
-            usage.
-            In <i>Tips</i> we give some hints how the search experience may be improved.</p></div>
+            The evaluation for each filter type is split in two parts:<i>Fields</i> and <i>Values</i>
+
     <div class="section"><h3>Facets</h3><h4>Facet Fields</h4>
         <table class="data">
             <thead>
@@ -213,10 +210,9 @@
             </tbody>
         </table>
         <h4>Facet Values</h4>
-        <p>Only considers fields with a standard deviation greater than 10, only considers top 25 values of the first 3
-            search steps.
+        <p>
         <#list facetFieldsValues as field, values>
-        <h5>Top 10 values for <i>${field}</i></h5>
+        <h5>Top values for <i>${field}</i></h5>
         <table class="data">
             <thead>
                 <tr>
@@ -263,10 +259,34 @@
             </#list>
             </tbody>
         </table>
+        <h4>Suggestion Values</h4>
+        <p>
+        <#list suggestionFieldsValues as field, values>
+        <h5>Top values for <i>${field}</i></h5>
+        <table class="data">
+            <thead>
+            <tr>
+                <th>Ranking</th>
+                <th>Value</th>
+                <th>#Usages</th>
+            </tr>
+            </thead>
+            <tbody>
+            <#list values as value, count>
+            <tr>
+                <td>${value?counter}</td>
+                <td>${value}</td>
+                <td>${count}</td>
+            </tr>
+            </#list>
+            </tbody>
+        </table>
+        </#list>
+        </p>
     </div>
     <div class="section">
         <h2>Fulltext</h2>
-        <h3>Fulltext Queries (Top 100)</h3>
+        <h3>Top Fulltext Queries</h3>
         <p>${totalTopQueries} queries with ${topQueries?size} distinct search terms.</p>
         <table class="data">
             <thead>
@@ -292,7 +312,7 @@
             </#list>
             </tbody>
         </table>
-        <h3>Filtered Fulltext Queries (Top 100)</h3>
+        <h3>Top Filtered Fulltext Queries</h3>
         <p>Filter: without <#list configuration.queryFilters as filter>${filter}  </#list></p>
         <p>14769 queries with 3133 distinct search terms.</p>
         <table class="data">

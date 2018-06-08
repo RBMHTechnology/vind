@@ -40,7 +40,7 @@ public class ElasticSearchReportServiceTest {
     public void getTopDaysTest() throws Exception {
         final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, ZonedDateTime.now().minusYears(1), ZonedDateTime.now().plusYears(1), applicationName);
         esRepsortService.setMessageWrapper(messageWrapper);
-        final LinkedHashMap<ZonedDateTime, Integer> topDays = esRepsortService.getTopDays();
+        final LinkedHashMap<ZonedDateTime, Long> topDays = esRepsortService.getTopDays();
 
         Assert.assertEquals(2, topDays.size());
 

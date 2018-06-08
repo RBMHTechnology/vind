@@ -6,7 +6,7 @@
             "must":[
                 {"term":{"%stype.raw":"fulltext"}},
                 {"term":{"%sapplication.id.raw":"%s"}},
-                {"terms":{"%srequest.filter.delegates.scope.raw":["Suggest"]}},
+                {"terms":{"%srequest.filter.delegates.scope.raw":[%s]}},
                 {"terms":{"%srequest.filter.delegates.type.raw":["TermFilter", "DescriptorFilter"]}},
                 {"terms":{"%srequest.filter.delegates.field.raw":[%s]}}
             ],
