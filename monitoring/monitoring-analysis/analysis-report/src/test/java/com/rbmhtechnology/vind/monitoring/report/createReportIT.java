@@ -17,10 +17,10 @@ import java.util.LinkedHashMap;
  */
 public class createReportIT {
 
-    private String esHost = "localhost";
-    private String esPort = "9200";
-    private String esIndex = "logAnalysis";
-    private String applicationName = "App name";
+    private String esHost = "172.20.30.95";
+    private String esPort = "19200";
+    private String esIndex = "logstash-searchanalysis-*";
+    private String applicationName = "mediamanager-Media Manager / Editing - Internal / RBMH-Assets";
     private final String messageWrapper = "message_json";
     private ElasticSearchReportService esRepsortService;
 
@@ -65,9 +65,11 @@ public class createReportIT {
 
         Assert.assertTrue(reportWriter.write(this.report,reportFile.getAbsolutePath()));
 
+        System.out.println("Report has been written to " + reportFile.getAbsolutePath());
+
     }
 
-    @After
+    //@After
     public void cleanUp() throws Exception {
         esRepsortService.close();
 
