@@ -6,7 +6,9 @@ import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -30,14 +32,14 @@ public class ReportCli {
         }
         try {
             exec(options, line);
-        } catch ( IOException e) {
+        } catch ( Exception e) {
             logger.error("CLI parsing error: {}", e.getMessage());
             formatter.printHelp("Analysis Report Writer", options);
             System.exit(-1);
         }
     }
 
-    public static void exec(final Options options, final CommandLine line) throws IOException {
+    public static void exec(final Options options, final CommandLine line) throws Exception {
         //TODO some checks
         final String esHost = line.getOptionValue("eh");
         final String esPort = line.getOptionValue("ep");
@@ -74,8 +76,15 @@ public class ReportCli {
                 .setTopQueries(esRepsortService.getTopQueries())
                 .setTopUsers(esRepsortService.getTopUsers());
 
-        reportWriter.write(report, "./report-" + applicationId + "-" + System.currentTimeMillis() + ".html");
 
+        Path filePath = Files.createFile(Paths.get("./testout/" +  getCleanFilename(applicationId, resultFormat)));
+        reportWriter.write(report, filePath.toAbsolutePath().toString());
+
+        esRepsortService.close();
+    }
+
+    private static String getCleanFilename(String applicationId, String resultFormat) {
+        return applicationId.replaceAll(" ", "_").replaceAll("/", "_") + "-" + System.currentTimeMillis() + "." + resultFormat;
     }
 
     public static Options configCliOptions() {
@@ -90,33 +99,28 @@ public class ReportCli {
          private String applicationName = "mediamanager-Media Manager / Editing - Internal / RBMH-Assets";
          private final String messageWrapper = "message_json";
          */
-        OptionGroup elasticGroup = new OptionGroup();
-        elasticGroup.setRequired(true);
-        elasticGroup.addOption(Option.builder("eh")
+        options.addOption(Option.builder("eh")
                 .numberOfArgs(1)
                 .argName("ELASTIC HOST")
                 .longOpt("host")
                 .desc("eleasticsearch host.")
                 .required(true)
                 .build());
-        elasticGroup.addOption(Option.builder("ep")
+        options.addOption(Option.builder("ep")
                 .numberOfArgs(1)
                 .argName("ELASTIC PORT")
                 .longOpt("port")
                 .desc("eleasticsearch port.")
                 .required(true)
                 .build());
-        elasticGroup.addOption(Option.builder("ei")
+        options.addOption(Option.builder("ei")
                 .numberOfArgs(1)
                 .argName("ELASTIC INDEX")
                 .longOpt("index")
                 .desc("eleasticsearch index.")
                 .required(true)
                 .build());
-
-        OptionGroup applicationGroup = new OptionGroup();
-        applicationGroup.setRequired(true);
-        applicationGroup.addOption(Option.builder("aid")
+        options.addOption(Option.builder("aid")
                 .numberOfArgs(1)
                 .argName("APPLICATION ID")
                 .longOpt("appid")
@@ -124,9 +128,7 @@ public class ReportCli {
                 .required(true)
                 .build());
 
-        OptionGroup basicGroup = new OptionGroup();
-        basicGroup.setRequired(false);
-        basicGroup.addOption(Option.builder("mw")
+        options.addOption(Option.builder("mw")
                 .numberOfArgs(1)
                 .argName("MESSAGE WRAPPER")
                 .longOpt("message_wrapper")
@@ -134,9 +136,7 @@ public class ReportCli {
                 .required(true)
                 .build());
 
-        OptionGroup resultGroup = new OptionGroup();
-        resultGroup.setRequired(false);
-        resultGroup.addOption(Option.builder("f")
+        options.addOption(Option.builder("f")
                 .numberOfArgs(1)
                 .argName("RESULT FORMAT")
                 .longOpt("result_format")
@@ -144,28 +144,20 @@ public class ReportCli {
                 .required(true)
                 .build());
 
-        OptionGroup rangeGroup = new OptionGroup();
-        rangeGroup.setRequired(false);
-        rangeGroup.addOption(Option.builder("from")
+        options.addOption(Option.builder("from")
                 .numberOfArgs(1)
                 .argName("FROM")
                 .longOpt("from")
                 .desc("from")
                 .required(true)
                 .build());
-        rangeGroup.addOption(Option.builder("to")
+        options.addOption(Option.builder("to")
                 .numberOfArgs(1)
                 .argName("TO")
                 .longOpt("to")
                 .desc("to")
                 .required(true)
                 .build());
-
-        options.addOptionGroup(elasticGroup);
-        options.addOptionGroup(applicationGroup);
-        options.addOptionGroup(basicGroup);
-        options.addOptionGroup(resultGroup);
-        options.addOptionGroup(rangeGroup);
 
         return options;
     }
