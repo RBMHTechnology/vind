@@ -17,10 +17,10 @@ import java.util.LinkedHashMap;
  */
 public class createReportIT {
 
-    private String esHost = "172.20.30.95";
-    private String esPort = "19200";
-    private String esIndex = "logstash-searchanalysis-*";
-    private String applicationName = "mediamanager-Media Manager / Editing - Internal / RBMH-Assets";
+    private String esHost = "localhost";
+    private String esPort = "9200";
+    private String esIndex = "logAnalysis";
+    private String applicationName = "App name";
     private final String messageWrapper = "message_json";
     private ElasticSearchReportService esRepsortService;
 
