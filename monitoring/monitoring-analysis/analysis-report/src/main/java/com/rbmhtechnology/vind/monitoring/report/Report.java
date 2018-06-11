@@ -97,7 +97,7 @@ public class Report {
     public LinkedHashMap<String, Long> getFormattedTopDays() {
         final LinkedHashMap<String, Long> formattedTopDays = new LinkedHashMap<>();
         topDays.entrySet().stream()
-                .sorted(Comparator.comparingLong(Map.Entry::getValue))
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                 .forEach( entry -> formattedTopDays.put(DateTimeFormatter.ofPattern(this.dateFormat).format(entry.getKey().withZoneSameInstant(zoneId)),entry.getValue()));
         return formattedTopDays;
     }
