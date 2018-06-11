@@ -128,16 +128,17 @@
 </head>
 <body>
 <div id="header">
-    <img src="https://image3.redbull.com/rbx00023/0001/1/210/403/logos/logos-homepage/brandlogos/jpg/red-bull-mediahouse-01.jpg"/>
+    <img src="${imageUrl}"/>
     <h1>Vind - Report</h1>
     <h2>${prettyToday}</h2>
     <table>
-        <tr>
+        <!--<tr>
             <th>Name:</th>
             <td>${applicationName}</td>
         </tr>
+        -->
         <tr>
-            <th>App:</th>
+            <th>AppId:</th>
             <td>${applicationName}</td>
         </tr>
         <#list configuration.generalFilters as name, value>

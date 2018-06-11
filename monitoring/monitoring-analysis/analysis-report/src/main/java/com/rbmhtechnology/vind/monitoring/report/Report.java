@@ -17,8 +17,9 @@ import java.util.Map;
 public class Report {
 
     private String dateFormat = "dd/MM/yyyy VV";
-    private String longDateFormat = "EEEE, MMMM dd, yyyy hh:mm a - VV";
+    private String longDateFormat = "EEEE, MMMM dd, yyyy hh:mm a";
     private ZoneId zoneId = ZoneOffset.UTC;
+    private String imageUrl = "https://image3.redbull.com/rbx00023/0001/1/210/403/logos/logos-homepage/brandlogos/jpg/red-bull-mediahouse-01.jpg"; //TODO make configurable
 
     private final ReportConfiguration configuration = new ReportConfiguration();
 
@@ -43,7 +44,10 @@ public class Report {
 
     public String getPrettyToday() {
         return DateTimeFormatter.ofPattern(longDateFormat).format(today.withZoneSameInstant(zoneId));
+    }
 
+    public String getImageUrl() {
+        return imageUrl;
     }
 
     public String getApplicationName() {

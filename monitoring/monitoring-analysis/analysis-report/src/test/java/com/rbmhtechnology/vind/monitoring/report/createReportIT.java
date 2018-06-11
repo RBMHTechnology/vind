@@ -65,9 +65,11 @@ public class createReportIT {
 
         Assert.assertTrue(reportWriter.write(this.report,reportFile.getAbsolutePath()));
 
+        System.out.println("Report has been written to " + reportFile.getAbsolutePath());
+
     }
 
-    @After
+    //@After
     public void cleanUp() throws Exception {
         esRepsortService.close();
 
