@@ -4,16 +4,18 @@
 package com.rbmhtechnology.vind.monitoring.utils;
 
 import io.searchbox.client.JestClient;
-import io.searchbox.core.DocumentResult;
-import io.searchbox.core.Index;
-import io.searchbox.core.Search;
-import io.searchbox.core.SearchResult;
+import io.searchbox.client.JestResult;
+import io.searchbox.core.*;
 import io.searchbox.indices.CreateIndex;
+import io.searchbox.params.Parameters;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Created on 28.02.18.
@@ -78,7 +80,8 @@ public class ElasticSearchClient {
                     .addIndex(elasticIndex);
 
             if (StringUtils.isNotEmpty(this.logType)) {
-                searchBuilder.addType("logEntry");
+                searchBuilder.addType(this.logType);
+                searchBuilder.addType(this.logType);
             }
 
             final Search search = searchBuilder.build();
@@ -107,9 +110,79 @@ public class ElasticSearchClient {
         return null;
     }
 
+    public synchronized JestResult scrollResults(String scrollId) {
+        final JestClient client = getElasticSearchClient();
+        if (client != null) {
+
+            final SearchScroll scroll = new SearchScroll.Builder(scrollId, "5m").build();
+
+            try {
+                final JestResult result = client.execute(scroll);
+                log.debug("Completed scroll query. Succeeded: {}", result.isSucceeded());
+                return result;
+            } catch (IOException e) {
+                log.error("Error in scroll request query: {}", e.getMessage(), e);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    public synchronized SearchResult  getScrollQuery(String query) {
+        final JestClient client = getElasticSearchClient();
+        if (client != null) {
+
+            final Search.Builder searchBuilder = new Search.Builder(query)
+                    .addIndex(elasticIndex)
+                    .setParameter(Parameters.SCROLL,"5m");
+
+            if (StringUtils.isNotEmpty(this.logType)) {
+                searchBuilder.addType(this.logType);
+            }
+
+            final Search search = searchBuilder.build();
+
+            try {
+                final SearchResult result = client.execute(search);
+                log.debug("Completed scroll query. Succeeded: {}", result.isSucceeded());
+                return result;
+            } catch (IOException e) {
+                log.error("Error in scroll request query: {}", e.getMessage(), e);
+                return null;
+            }
+            //TODO: move to async at some point
+            /*client.executeAsync(search,new JestResultHandler<JestResult>() {
+                @Override
+                public void completed(JestResult result) {
+                    log.debug("Completed total requests query. Succeeded: {}", result.isSucceeded());
+                }
+
+                @Override
+                public void failed(Exception e) {
+                    log.error("Error indexing content : {}", e.getMessage(), e);
+                }
+            });*/
+        }
+        return null;
+    }
+
     public synchronized void put(String content) {
         cacheResult(content);
         //TODO: more?
+    }
+
+    public String loadQueryFromFile(String fileName, Object ... args) {
+        final Path path = Paths.get(ElasticSearchClient.class.getClassLoader().getResource("queries/" + fileName).getPath());
+        try {
+            final byte[] encoded = Files.readAllBytes(path);
+            final String query = new String(encoded, "UTF-8");
+            return String.format(query, args);
+
+        } catch (IOException e) {
+            log.error("Error preparing query from file '{}': {}", path, e.getMessage(), e);
+            throw new RuntimeException("Error preparing query from file '" + path + "': " + e.getMessage(), e);
+        }
+
     }
 
     /**

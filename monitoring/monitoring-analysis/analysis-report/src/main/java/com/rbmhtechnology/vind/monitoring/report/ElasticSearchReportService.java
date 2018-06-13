@@ -16,10 +16,6 @@ import io.searchbox.core.search.aggregation.TermsAggregation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -74,7 +70,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public long getTotalRequests() {
 
-        final String query = this.loadQueryFromFile("totalRequests",
+        final String query = elasticClient.loadQueryFromFile("totalRequests",
                 this.messageWrapper,
                 this.messageWrapper,
                 this.getApplicationId(),
@@ -88,7 +84,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
     @Override
     public LinkedHashMap<ZonedDateTime, Long> getTopDays() {
-        final String query = this.loadQueryFromFile("topDays",
+        final String query = elasticClient.loadQueryFromFile("topDays",
                 this.messageWrapper,
                 this.messageWrapper,
                 this.getApplicationId(),
@@ -108,7 +104,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
     @Override
     public LinkedHashMap<String, Long> getTopUsers() {
-        final String query = this.loadQueryFromFile("topUsers",
+        final String query = elasticClient.loadQueryFromFile("topUsers",
                 this.messageWrapper,
                 this.messageWrapper,
                 this.getApplicationId(),
@@ -128,7 +124,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
     @Override
     public LinkedHashMap<String, Long> getTopFaceFields() {
-        final String query = this.loadQueryFromFile("topFacetFields",
+        final String query = elasticClient.loadQueryFromFile("topFacetFields",
                 this.messageWrapper,
                 this.messageWrapper,
                 this.getApplicationId(),
@@ -192,7 +188,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
     @Override
     public LinkedHashMap<String, Long> getTopSuggestionFields() {
-        final String query = this.loadQueryFromFile("topSuggestionFields",
+        final String query = elasticClient.loadQueryFromFile("topSuggestionFields",
                 this.messageWrapper,
                 this.messageWrapper,
                 this.getApplicationId(),
@@ -255,7 +251,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
     @Override
     public LinkedHashMap<String, Long> getTopQueries() {
-        final String query = this.loadQueryFromFile("topQueries",
+        final String query = elasticClient.loadQueryFromFile("topQueries",
                 this.messageWrapper,
                 this.messageWrapper,
                 this.getApplicationId(),
@@ -275,7 +271,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
     @Override
     public LinkedHashMap<String, Long> getTopFilteredQueries(String regexFilter) {
-        final String query = this.loadQueryFromFile("topFilteredQueries",
+        final String query = elasticClient.loadQueryFromFile("topFilteredQueries",
                 this.getApplicationId(),
                 regexFilter,
                 this.getFrom().toInstant().toEpochMilli(),
@@ -295,25 +291,11 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         this.elasticClient.destroy();
     }
 
-    private String loadQueryFromFile(String fileName, Object ... args) {
-        final Path path = Paths.get(ElasticSearchClient.class.getClassLoader().getResource("queries/" + fileName).getPath());
-        try {
-            final byte[] encoded = Files.readAllBytes(path);
-            final String query = new String(encoded, "UTF-8");
-            return String.format(query, args);
-
-        } catch (IOException e) {
-            log.error("Error preparing query from file '{}': {}", path, e.getMessage(), e);
-            throw new RuntimeException("Error preparing query from file '" + path + "': " + e.getMessage(), e);
-        }
-
-    }
-
     private List<JsonObject> getDescriptorFilters(List<String> fields, String scope) {
         int from = 0;
         int resultSize = 0;
 
-        final String query = this.loadQueryFromFile("topFacetFieldsValues",
+        final String query = elasticClient.loadQueryFromFile("topFacetFieldsValues",
                 resultSize, //page size
                 from,
                 this.messageWrapper,
@@ -335,7 +317,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
         resultSize = 100;
         while (from < totalResults) {
-            final String q = this.loadQueryFromFile("topFacetFieldsValues",
+            final String q = elasticClient.loadQueryFromFile("topFacetFieldsValues",
                     resultSize, //page size
                     from,
                     this.messageWrapper,
