@@ -1,0 +1,14 @@
+{
+    "size":%d,
+    "query":{
+        "bool":{
+            "must":[
+                {"term":{"%sapplication.id.raw":"%s"}},
+                {"term":{"%ssession.sessionId.raw":"%s"}}
+            ],
+            "must_not":{
+                "exists":{"field":"%sprocessed"}
+             }
+        }
+    }
+}

@@ -1,0 +1,25 @@
+{
+    "size":%d,
+    "fields":["%ssession.sessionId"],
+    "query":{
+        "bool":{
+            "must":{
+                "term":{"%sapplication.id.raw":"%s"}
+            },
+            "must_not":{
+                "exists":{"field":"%sprocessed"}
+             },
+            "filter": [
+                {
+                    "range":{
+                        "%stimeStamp":{
+                            "gte":%d,
+                            "lte":%d,
+                            "format":"epoch_millis"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}
