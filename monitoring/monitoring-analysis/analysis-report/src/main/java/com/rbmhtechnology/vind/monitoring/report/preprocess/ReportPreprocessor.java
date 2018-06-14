@@ -40,7 +40,9 @@ public class ReportPreprocessor {
     private Long scrollSpan = 1000l;
     private DateTimeFormatter esDateFormater = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
-    private List<JsonObject> environmentFilters;
+    private List<JsonElement> environmentFilters = new ArrayList<>();
+    private List<String> sessionIds = new ArrayList<>();
+    private List<String> systemFieldFilters = new ArrayList<>();
 
     public ReportPreprocessor(String esHost, String esPort, String esIndex, ZonedDateTime from, ZonedDateTime to, String appId, String messageWrapper) {
         this.from = from.toInstant().toEpochMilli();
@@ -65,13 +67,26 @@ public class ReportPreprocessor {
     }
 
 
-    public List<String> getSessionsIncluded() {
+    public ReportPreprocessor addSystemFilterField(String ... fields) {
+        if (Objects.nonNull(fields)) {
+            systemFieldFilters.addAll(Arrays.asList(fields));
+        }
+        return this;
+    }
+    public void preprocess(){
+        preparePreprocessing();
+        sessionIds.forEach(this::preprocessSession);
+    }
 
-        final String query = elasticClient.loadQueryFromFile("sessionIds",
+    //Gets the list of sessions to preprocess and figures out the
+    // general filters which apply to all queries.
+    private void preparePreprocessing() {
+
+        final String query = elasticClient.loadQueryFromFile("prepare",
                 this.scrollSpan,
                 this.messageWrapper,
-                this.messageWrapper,
                 this.appId,
+                this.messageWrapper,
                 this.messageWrapper,
                 this.messageWrapper,
                 this.from,
@@ -84,11 +99,33 @@ public class ReportPreprocessor {
         final Long totalResults = ((SearchResult) searchResult).getTotal();
 
         final JsonArray hits = searchResult.getJsonObject().getAsJsonObject("hits").getAsJsonArray("hits");
+        //Get the session Ids for the first result scroll
         final Set<String> sessions =  new HashSet<>();
-
         sessions.addAll(Streams.stream(hits)
-                .map(hit -> hit.getAsJsonObject().getAsJsonObject("fields").getAsJsonArray(this.messageWrapper + "session.sessionId").get(0).getAsString())
+                .map(hit -> hit.getAsJsonObject()
+                        .getAsJsonObject("_source")
+                        .getAsJsonObject(String.valueOf(this.messageWrapper.subSequence(0, (messageWrapper.length()-1))))
+                        .getAsJsonObject("session")
+                        .get("sessionId").getAsString())
                 .collect(Collectors.toList()));
+
+        //Find out filters common to all queries
+        final JsonElement initialFilters = hits.get(0).getAsJsonObject()
+                                        .getAsJsonObject("_source")
+                                        .getAsJsonObject(String.valueOf(this.messageWrapper.subSequence(0, (messageWrapper.length()-1))))
+                                        .getAsJsonObject("request")
+                                        .get("filter");
+
+        final ArrayList<JsonElement> commonFilters =  Lists.newArrayList(extractFilterFields(initialFilters).iterator());
+        Streams.stream(hits)
+                .map(hit -> extractFilterFields(hit.getAsJsonObject()
+                        .getAsJsonObject("_source")
+                        .getAsJsonObject(String.valueOf(this.messageWrapper.subSequence(0, (messageWrapper.length()-1))))
+                        .getAsJsonObject("request")
+                        .get("filter")))
+                .forEach( hfs -> commonFilters.retainAll(Lists.newArrayList(hfs.iterator())));
+
+
 
         Long start = scrollSpan;
         while (start < totalResults) {
@@ -98,14 +135,28 @@ public class ReportPreprocessor {
                     scrollResult.getJsonObject().getAsJsonPrimitive("_scroll_id").getAsString();
 
             final JsonArray scrollHits = scrollResult.getJsonObject().getAsJsonObject("hits").getAsJsonArray("hits");
-            sessions.addAll(Streams.stream(scrollHits)
-                    .map(hit -> hit.getAsJsonObject().getAsJsonObject("fields").getAsJsonArray(this.messageWrapper + "session.sessionId").get(0).getAsString())
-                    .collect(Collectors.toList()));
-            start += scrollSpan;
 
+            sessions.addAll(Streams.stream(scrollHits)
+                    .map(hit -> hit.getAsJsonObject()
+                            .getAsJsonObject("_source")
+                            .getAsJsonObject(String.valueOf(this.messageWrapper.subSequence(0, (messageWrapper.length()-1))))
+                            .getAsJsonObject("session")
+                            .get("sessionId").getAsString())
+                    .collect(Collectors.toList()));
+
+            Streams.stream(scrollHits)
+                    .map(hit -> extractFilterFields(hit.getAsJsonObject()
+                            .getAsJsonObject("_source")
+                            .getAsJsonObject(String.valueOf(this.messageWrapper.subSequence(0, (messageWrapper.length()-1))))
+                            .getAsJsonObject("request")
+                            .get("filter")))
+                    .forEach( hfs -> commonFilters.retainAll(Lists.newArrayList(hfs.iterator())));
+
+            start += scrollSpan;
         }
 
-        return Lists.newArrayList(sessions);
+        sessionIds.addAll(sessions);
+        environmentFilters.addAll(commonFilters);
     }
 
     public Boolean preprocessSession(String sessionId) {
@@ -124,10 +175,8 @@ public class ReportPreprocessor {
 
         String scrollId =
                 searchResult.getJsonObject().getAsJsonPrimitive("_scroll_id").getAsString();
-        final Long totalResults = ((SearchResult) searchResult).getTotal();
+        final Long totalResults = searchResult.getTotal();
 
-        final JsonArray hits = searchResult.getJsonObject().getAsJsonObject("hits")
-                .getAsJsonArray("hits");
 
         final Set<JsonObject> requests =  new HashSet<>();
 
@@ -193,8 +242,7 @@ public class ReportPreprocessor {
 
     private void processSession(List<JsonObject> entries) {
 
-
-         //Exclude suggestion entries
+        //Exclude suggestion entries
         final List<JsonObject> cleanList = entries.stream()
                 .filter( e -> !e.get("type").getAsString().equals("suggestion"))
                 .collect(Collectors.toList());
@@ -219,92 +267,113 @@ public class ReportPreprocessor {
                     //Check duplicated accesses
                     if (CollectionUtils.isNotEmpty(lastAccesses)
                             && lastAccesses.contains(access)) {
-                        process.addProperty("duplicate",true);
+                        process.addProperty(SEARCH_DUPLICATE,true);
+                        process.addProperty(SEARCH_SKIP,true);
 
                     } else {
                         lastAccesses.add(access);
                         if (Objects.nonNull(lastQuery)) {
-                            final JsonObject processInfo = lastQuery.getAsJsonObject("process");
-                            processInfo.addProperty("access", processInfo.get("access").getAsLong() + 1);
+                            final JsonObject processInfo = lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT);
+                            processInfo.addProperty(SEARCH_INTERACTION_SELECT, processInfo.get(SEARCH_INTERACTION_SELECT).getAsLong() + 1);
                         } else {
-                            process.addProperty("skip",true);
+                            process.addProperty(SEARCH_SKIP,true);
                         }
                     }
-                    searchStep = 1; //TODO: move to incremental check
+
+                    //TODO:Is the select interaction the end of a user query flow?
+                    searchStep = 1;
                     lastQuery = null;
                 }
             }
 
             //FULLTEXT QUERIES
             if (actual.get("type").getAsString().equals("fulltext")) {
-                //Initialize interactions to 0
-                process.addProperty(SEARCH_INTERACTION_SELECT, 0);
-                process.add("steps", new JsonObject());
 
-                //check if it is a duplicated query
-                if(Objects.nonNull(lastQuery) && lastQuery.getAsJsonObject("request").equals(actual.getAsJsonObject("request"))) {
-                    process.addProperty(SEARCH_DUPLICATE, true);
-                    //TODO: we do not care whether it is a paging action or a sorting action
-
+                //empty check
+                if (isEmptyQuery(actual)) {
+                    process.addProperty(SEARCH_SKIP,true);
+                    process.addProperty(SEARCH_EMPTY,true);
+                    //empty query is the end of an user iteration
+                    searchStep = 1;
+                    lastQuery = null;
                 } else {
-                    //Clear list of accesses
-                    lastAccesses.clear();
+                    //Initialize process result json object
+                    process.addProperty(SEARCH_INTERACTION_SELECT, 0);
+                    process.add(SEARCH_STEPS, new JsonObject());
+                    //check if it is a duplicated query
+                    if(Objects.nonNull(lastQuery) && lastQuery.getAsJsonObject("request").equals(actual.getAsJsonObject("request"))) {
+                        process.addProperty(SEARCH_DUPLICATE, true);
+                        process.addProperty(SEARCH_SKIP,true);
+                        //TODO: we do not care whether it is a paging action or a sorting action
 
-                    //Calculate flattened list of filters
-                    JsonArray flattenedFilters = new JsonArray();
-                    final JsonElement filters = actual.getAsJsonObject("request").get("filter");
-                    if (filters.isJsonArray()) {
-                        flattenedFilters.addAll(extractFilterFields(filters.getAsJsonArray()));
-                        process.add("filters", flattenedFilters);
                     } else {
-                        final JsonArray fs = new JsonArray();
-                        fs.add(filters);
-                        flattenedFilters.addAll(extractFilterFields(fs));
-                        process.add("filters", flattenedFilters);
-                    }
+                        //Clear list of accesses
+                        lastAccesses.clear();
 
-                    final JsonArray stepFilters = new JsonArray();
-                    stepFilters.addAll(flattenedFilters);
-                    if(Objects.nonNull(lastQuery)) {
-                        if(isRefinedQuery(actual,lastQuery)) {
-                            //Copy previous steps info into this query
-                            process.add("steps", lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).get("steps"));
+                        //Calculate flattened list of filters
+                        final JsonElement filters = actual.getAsJsonObject("request").get("filter");
+                        final JsonArray flattenedFilters = new JsonArray();
+                        flattenedFilters.addAll(extractFilterFields(filters));
+                        process.add(SEARCH_FILTERS, flattenedFilters);
 
-                            final JsonArray lastFilters = lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).getAsJsonArray("filters");
-                            //Select new filters for this step
-                            Streams.stream(flattenedFilters.iterator())
-                                    .filter(lastFilters::contains)
-                                    .forEach(f -> stepFilters.remove(f));
-                            searchStep ++;
-                            lastQuery = actual;
+                        final JsonArray stepFilters = new JsonArray();
+                        stepFilters.addAll(flattenedFilters);
+                        if(Objects.nonNull(lastQuery)) {
+                            if(isRefinedQuery(actual,lastQuery)) {
+                                //Copy previous steps info into this query
+                                process.add(SEARCH_STEPS, lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).get(SEARCH_STEPS));
+
+                                final JsonArray lastFilters = lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).getAsJsonArray(SEARCH_FILTERS);
+                                //Select new filters for this step
+                                Streams.stream(flattenedFilters.iterator())
+                                        .filter(lastFilters::contains)
+                                        .forEach(f -> stepFilters.remove(f));
+                                searchStep ++;
+                                lastQuery = actual;
+                            } else {
+                                searchStep = 1;
+                                lastQuery = actual;
+                            }
                         } else {
                             searchStep = 1;
                             lastQuery = actual;
-                        }
-                    } else {
-                        searchStep = 1;
-                        lastQuery = actual;
 
+                        }
+
+                        process.getAsJsonObject(SEARCH_STEPS).add(String.valueOf(searchStep), stepFilters);
+                        process.addProperty(SEARCH_STEP, searchStep);
+                        process.addProperty(SEARCH_STRING, actual.getAsJsonObject("request").get("query").getAsString());
                     }
 
-                    process.getAsJsonObject("steps").add(String.valueOf(searchStep), stepFilters);
-                    process.addProperty(SEARCH_STEP, searchStep);
-                    process.addProperty(SEARCH_STRING, actual.getAsJsonObject("request").get("query").getAsString());
                 }
+
+
             }
         }
 
     }
 
-    private Boolean isRefinedQuery (JsonObject query, JsonObject lastQuery) {
+    private Boolean isEmptyQuery (JsonObject query) {
 
+        final String queryText = query.getAsJsonObject("request").get("query").getAsString();
+        if (queryText.equals("*")) {
+            final JsonArray queryFilters = extractFilterFields(query.getAsJsonObject("request").get("filter"));
+            if (queryFilters.size() == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    private Boolean isRefinedQuery (JsonObject query, JsonObject lastQuery) {
 
         final String oldQueryText = lastQuery.getAsJsonObject("request").get("query").getAsString();
         final String actualQueryText = query.getAsJsonObject("request").get("query").getAsString();
 
         if(isSimilarTextQuery(actualQueryText, oldQueryText)) {
-            final JsonArray previousFilters = lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).getAsJsonArray("filters");
-            final JsonArray actualFilters = query.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).getAsJsonArray("filters");
+            final JsonArray previousFilters = lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).getAsJsonArray(SEARCH_FILTERS);
+            final JsonArray actualFilters = query.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).getAsJsonArray(SEARCH_FILTERS);
             final Long intersectionCount = Streams.stream(actualFilters.iterator())
                     .filter(previousFilters::contains)
                     .count();
@@ -327,56 +396,31 @@ public class ReportPreprocessor {
         return false;
     }
 
-    private JsonArray extractFilterFields(JsonArray filters) {
-        return Streams.stream(filters.iterator())
+    private JsonArray extractFilterFields(JsonElement filters) {
+        final JsonArray fs = new JsonArray();
+
+        //Single filter object or a list of filters
+        if (filters.isJsonObject()) {
+            fs.add(filters.getAsJsonObject());
+        } else {
+            fs.addAll(filters.getAsJsonArray());
+        }
+
+        return Streams.stream(fs.iterator())
                 .map(JsonElement::getAsJsonObject)
                 .flatMap( jo -> {
                     if (jo.has("delegates")){
-                        final JsonElement delegate = jo.get("delegates");
-                        if (delegate.isJsonArray()) {
-                            return Streams.stream(extractFilterFields(delegate.getAsJsonArray()).iterator());
-                        } else {
-                            return Stream.of(delegate.getAsJsonObject());
-                        }
+                        return Streams.stream(extractFilterFields(jo.get("delegates")).iterator());
                     } else {
                         return Stream.of(jo);
                     }
                 })
+                .filter( f -> ! environmentFilters.contains(f))
+                .filter( f -> ! systemFieldFilters.contains(f.getAsJsonObject().get("field").getAsString()))
                 .collect(JsonArray::new,
                         JsonArray::add,
                         JsonArray::addAll);
     }
 
-
-
-    private Boolean equalFilters(JsonObject f1, JsonObject f2) {
-        if (f1.get("type").getAsString().equals(f2.get("type").getAsString())
-                && f1.get("scope").getAsString().equals(f2.get("scope").getAsString())) {
-            if(f1.has("delegates") && f2.has("delegates")) {
-                if(f1.get("delegates").isJsonArray() && f2.get("delegates").isJsonArray()) {
-                    return
-                        equalFilters(f1.getAsJsonArray("delegates"), f2.getAsJsonArray("delegates"));
-                } else
-                    return equalFilters(f1.getAsJsonObject("delegates"), f2.getAsJsonObject("delegates"));
-            } else {
-                return f1.equals(f2);
-            }
-        }
-        return false;
-    }
-    private Boolean equalFilters(JsonArray fs1, JsonArray fs2) {
-        //compare element size
-        if(fs1.size() == fs2.size()){
-            final Iterator<JsonElement> delegates = fs1.iterator();
-            //Check if every filter is in the second list of filters
-
-            return Streams.stream(delegates).allMatch( f1 ->
-                    Streams.stream(fs2.iterator())
-                            .anyMatch( f -> equalFilters(f.getAsJsonObject(),f1.getAsJsonObject()))
-            );
-        }
-
-        return false;
-    }
 
 }

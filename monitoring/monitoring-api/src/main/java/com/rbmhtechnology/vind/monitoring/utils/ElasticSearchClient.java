@@ -114,7 +114,7 @@ public class ElasticSearchClient {
         final JestClient client = getElasticSearchClient();
         if (client != null) {
 
-            final SearchScroll scroll = new SearchScroll.Builder(scrollId, "5m").build();
+            final SearchScroll scroll = new SearchScroll.Builder(scrollId, "10m").build();
 
             try {
                 final JestResult result = client.execute(scroll);
@@ -134,7 +134,7 @@ public class ElasticSearchClient {
 
             final Search.Builder searchBuilder = new Search.Builder(query)
                     .addIndex(elasticIndex)
-                    .setParameter(Parameters.SCROLL,"5m");
+                    .setParameter(Parameters.SCROLL,"10m");
 
             if (StringUtils.isNotEmpty(this.logType)) {
                 searchBuilder.addType(this.logType);

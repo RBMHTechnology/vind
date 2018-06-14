@@ -1,12 +1,11 @@
 {
     "size":%d,
-    "fields":["%srequest.filter"],
     "query":{
         "bool":{
             "must":[
                 {"term":{"%sapplication.id.raw":"%s"}},
-                {"term":{"%stype.raw":"fulltext"}},
-             ],
+                {"term":{"%stype.raw":"fulltext"}}
+            ],
             "must_not":{
                 "exists":{"field":"%sprocessed"}
              },
