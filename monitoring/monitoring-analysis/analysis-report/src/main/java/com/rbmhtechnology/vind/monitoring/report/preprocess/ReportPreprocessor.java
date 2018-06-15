@@ -16,6 +16,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -96,6 +98,7 @@ public class ReportPreprocessor {
     //Gets the list of sessions to preprocess and figures out the
     // general filters which apply to all queries.
     private void prepareProcessing() {
+        log.info("Getting sessions and common filter for the period [{} - {}]",from, to);
 
         final String query = elasticClient.loadQueryFromFile("prepare",
                 this.scrollSpan,
@@ -141,7 +144,7 @@ public class ReportPreprocessor {
                     .collect(Collectors.toList());
 
             //Get the session Ids for the first result scroll
-            sessions.addAll(vindEntries.parallelStream()
+            sessions.addAll(vindEntries.stream()
                     //Get the Session
                     .map( vindLog -> vindLog
                             .getAsJsonObject("session")
@@ -158,20 +161,25 @@ public class ReportPreprocessor {
                 commonFilters.addAll(Lists.newArrayList(extractFilterFields(initialFilters).iterator()));
             }
 
-            vindEntries.parallelStream()
+            vindEntries.stream()
                     .map(vindEntry ->
                             extractFilterFields(vindEntry.getAsJsonObject("request").get("filter")))
-                    .forEach( hfs -> commonFilters.retainAll(Lists.newArrayList(hfs.iterator())));
+                    .forEach( hfs ->
+                            commonFilters.retainAll(Lists.newArrayList(hfs.iterator()))
+                    );
 
             start += scrollSpan;
         }
 
         sessionIds.addAll(sessions);
+        log.info("{} different session IDs found on the period [{} - {}]", sessionIds.size(), from, to);
         environmentFilters.addAll(commonFilters);
+        log.debug("{} different environment filter found for the period [{} - {}]", environmentFilters.size(), from, to);
     }
 
     public Boolean preprocessSession(String sessionId) {
 
+        log.info("Starting pre-processing of vind monitoring entries for session [{}],",sessionId);
         //fetch all the entries for the session
         final String query = elasticClient.loadQueryFromFile("session",
                 this.scrollSpan,
@@ -213,6 +221,7 @@ public class ReportPreprocessor {
                                 .getAsJsonObject("_source");
 
                         entry.addProperty("_id", hit.getAsJsonObject().get("_id").getAsString());
+                        entry.addProperty("_index", hit.getAsJsonObject().get("_index").getAsString());
                         return entry;
                     })
                     .collect(Collectors.toList());
@@ -247,6 +256,7 @@ public class ReportPreprocessor {
                 .sorted(Comparator.comparingLong(jo -> jo.get("timeStamp").getAsLong()))
                 .collect(Collectors.toList());
 
+        log.info("A total of {} vind monitoring entries for session [{}],",sortedRequest.size() ,sessionId);
         processSession(sortedRequest);
 
         return bulkUpdate(requests);
@@ -579,12 +589,14 @@ public class ReportPreprocessor {
                         update.add(SEARCH_PRE_PROCESS_RESULT, e.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT));
                     }
                     update.addProperty("_id", e.get("_id").getAsString());
+                    update.addProperty("_index", e.get("_index").getAsString());
                     return update;
                 })
                 .collect(Collectors.toList());
 
+        log.info("Writing {} processing results to elasticsearch",processResults.size());
         elasticClient.bulkUpdate(processResults, baseType);
-        return false;
+        return true;
     }
 
 }

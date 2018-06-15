@@ -244,14 +244,16 @@ public class ElasticSearchClient {
 
         final Bulk.Builder bulkProcessor = new Bulk.Builder();
 
+
         //prepare update actions
         updates.forEach( u -> {
             final String id = u.remove("_id").getAsString();
+            final String index = u.remove("_index").getAsString();
             final JsonObject updateDoc = new JsonObject();
             updateDoc.add("doc",u.getAsJsonObject());
             final Update update = new Update
                     .Builder(updateDoc.toString())
-                    .index(elasticIndex)
+                    .index(index)
                     .id(id)
                     .type(docType).build();
 
