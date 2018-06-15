@@ -44,6 +44,7 @@ public class ReportCli {
         final String esHost = line.getOptionValue("eh");
         final String esPort = line.getOptionValue("ep");
         final String esIndex = line.getOptionValue("ei");
+        final String entryType = line.getOptionValue("et");
 
         final String messageWrapper = line.getOptionValue("mw");
         final String resultFormat = line.getOptionValue("f");
@@ -52,8 +53,7 @@ public class ReportCli {
         final ZonedDateTime from = ZonedDateTime.parse(line.getOptionValue("from"));
         final ZonedDateTime to = ZonedDateTime.parse(line.getOptionValue("to"));
 
-        final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, from, to, applicationId);
-        esRepsortService.setMessageWrapper(messageWrapper);
+        final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, entryType, from, to, applicationId, messageWrapper);
 
         final LinkedHashMap<String, Long> topFaceFields = esRepsortService.getTopFaceFields();
         final ArrayList<String> facetFields = new ArrayList<>(topFaceFields.keySet());
@@ -118,6 +118,13 @@ public class ReportCli {
                 .argName("ELASTIC INDEX")
                 .longOpt("index")
                 .desc("eleasticsearch index.")
+                .required(true)
+                .build());
+        options.addOption(Option.builder("et")
+                .numberOfArgs(1)
+                .argName("ENTRY TYPE")
+                .longOpt("type")
+                .desc("eleasticsearch document type.")
                 .required(true)
                 .build());
         options.addOption(Option.builder("aid")

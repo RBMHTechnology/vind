@@ -31,10 +31,11 @@ public class ReportPreprocessor {
     private static final Logger log = LoggerFactory.getLogger(ReportPreprocessor.class);
 
     private final Long from;
-    protected final Long to;
+    private final Long to;
 
     private final  ElasticSearchClient elasticClient = new ElasticSearchClient();
     private final String appId;
+    private String baseType;
     private String messageWrapper = "";
     private Long scrollSpan = 1000l;
     private DateTimeFormatter esDateFormater = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
@@ -43,23 +44,15 @@ public class ReportPreprocessor {
     private List<String> sessionIds = new ArrayList<>();
     private List<String> systemFieldFilters = new ArrayList<>();
 
-    public ReportPreprocessor(String esHost, String esPort, String esIndex, ZonedDateTime from, ZonedDateTime to, String appId, String messageWrapper) {
-        this.from = from.toInstant().toEpochMilli();
-        this.to = to.toInstant().toEpochMilli();
-        if(StringUtils.isNotBlank(messageWrapper) && !messageWrapper.endsWith(".")) {
-            this.messageWrapper = messageWrapper + ".";
-        }
-        this.appId = appId;
 
-        elasticClient.init(esHost, esPort, esIndex);
-    }
-
-    public ReportPreprocessor(String esHost, String esPort, String esIndex, ZonedDateTime from, ZonedDateTime to, String appId) {
+    public ReportPreprocessor(String esHost, String esPort, String esIndex, ZonedDateTime from, ZonedDateTime to, String appId, String baseType) {
         this.from = from.toInstant().toEpochMilli();
         this.to = to.toInstant().toEpochMilli();
         this.appId = appId;
+        this.messageWrapper = "";
+        this.baseType = baseType;
 
-        elasticClient.init(esHost, esPort, esIndex);
+        elasticClient.init(esHost, esPort, esIndex, baseType, ReportPreprocessor.class.getClassLoader().getResource("processMapping.json").getPath());
     }
 
     public ReportPreprocessor(String esHost, String esPort, String esIndex, ZonedDateTime from, ZonedDateTime to, String appId, String messageWrapper, String baseType) {
@@ -68,13 +61,22 @@ public class ReportPreprocessor {
         this.appId = appId;
         if(StringUtils.isNotBlank(messageWrapper) && !messageWrapper.endsWith(".")) {
             this.messageWrapper = messageWrapper + ".";
+        } else if(StringUtils.isNotBlank(messageWrapper)) {
+            this.messageWrapper = messageWrapper;
+        } else {
+            this.messageWrapper = "";
         }
+        this.baseType = baseType;
         elasticClient.init(esHost, esPort, esIndex, baseType, ReportPreprocessor.class.getClassLoader().getResource("processMapping.json").getPath());
     }
 
     public ReportPreprocessor setMessageWrapper(String messageWrapper) {
         if(StringUtils.isNotBlank(messageWrapper) && !messageWrapper.endsWith(".")) {
             this.messageWrapper = messageWrapper + ".";
+        } else if(StringUtils.isNotBlank(messageWrapper)) {
+            this.messageWrapper = messageWrapper;
+        } else {
+            this.messageWrapper = "";
         }
         return this;
     }
@@ -147,7 +149,7 @@ public class ReportPreprocessor {
                     .collect(Collectors.toList()));
 
             //Find out filters common to all queries
-            if(start ==0 ){
+            if(start ==0 && vindEntries.size() > 0){
                 //Find out filters common to all queries
                 final JsonElement initialFilters = vindEntries.get(0)
                         .getAsJsonObject("request")
@@ -343,7 +345,11 @@ public class ReportPreprocessor {
                         if(Objects.nonNull(lastQuery)) {
                             if(isRefinedQuery(actual,lastQuery)) {
                                 //Copy previous steps info into this query
-                                process.add(SEARCH_STEPS, lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).get(SEARCH_STEPS));
+                                final JsonObject previousSteps = lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).get(SEARCH_STEPS).getAsJsonObject();
+                                final JsonObject copy = deepCopy(previousSteps);
+
+
+                                process.add(SEARCH_STEPS, copy);
 
                                 final JsonArray lastFilters = lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).getAsJsonArray(SEARCH_FILTERS);
                                 //Select new filters for this step
@@ -526,10 +532,58 @@ public class ReportPreprocessor {
         return false;
     }
 
-    private Boolean bulkUpdate(Set<JsonObject> results) {
+    private JsonObject deepCopy(JsonObject object) {
+        final JsonObject copy = new JsonObject();
 
-        //TODO:fixType
-        elasticClient.bulkUpdate(Lists.newArrayList(results),"type");
+        final Iterator members = object.getAsJsonObject().entrySet().iterator();
+        while(members.hasNext()) {
+            Map.Entry<String, JsonElement> entry = (Map.Entry)members.next();
+            copy.add(entry.getKey(), deepCopy(entry.getValue()));
+        }
+
+        return copy;
+    }
+
+    private JsonElement deepCopy(JsonElement object) {
+
+        if (object.isJsonObject()) {
+            return object;
+        }
+        else {
+            final JsonArray copy = new JsonArray();
+            final Iterator jsonElements = object.getAsJsonArray().iterator();
+            while(jsonElements.hasNext()) {
+                copy.add(deepCopy((JsonElement) jsonElements.next()));
+            }
+            return copy;
+        }
+
+    }
+
+    private Boolean bulkUpdate(Set<JsonObject> results) {
+        final List<JsonObject> processResults = results.stream()
+                .filter( je -> {
+                    if (StringUtils.isNotBlank(messageWrapper)) {
+                       return je.has("process");
+                    } else {
+                        return je.getAsJsonObject(messageWrapper).has("process");
+                    }
+                })
+                .map( e -> {
+                    final JsonObject update = new JsonObject();
+                    if (StringUtils.isNotBlank(messageWrapper)) {
+                        final JsonObject result =  new JsonObject();
+                        result.add(SEARCH_PRE_PROCESS_RESULT, e.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT));
+                        update.add(messageWrapper.substring(0,messageWrapper.length()-1),result);
+                    } else {
+                        update.add(SEARCH_PRE_PROCESS_RESULT, e.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT));
+                    }
+                    update.addProperty("_id", e.get("_id").getAsString());
+                    return update;
+                })
+                .collect(Collectors.toList());
+
+        elasticClient.bulkUpdate(processResults, baseType);
         return false;
     }
 

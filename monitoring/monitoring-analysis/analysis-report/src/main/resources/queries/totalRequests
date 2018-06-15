@@ -8,7 +8,7 @@
                 {"exists":{"field":"%sprocess"}}
             ],
             "must_not":{
-                "match":{"%sprocessresult.skip":"true"}
+                "match":{"%sprocess.skip":"true"}
             },
             "filter": [
                 {

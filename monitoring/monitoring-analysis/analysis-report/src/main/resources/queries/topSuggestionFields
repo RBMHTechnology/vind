@@ -4,12 +4,8 @@
         "bool":{
             "must":[
                 {"term":{"%stype.raw":"suggestion"}},
-                {"term":{"%sapplication.id.raw":"%s"}},
-                {"exists":{"field":"%sprocess"}}
+                {"term":{"%sapplication.id.raw":"%s"}}
             ],
-            "must_not":{
-                "match":{"%sprocessresult.skip":"true"}
-             },
             "filter": [
                 {
                     "range":{

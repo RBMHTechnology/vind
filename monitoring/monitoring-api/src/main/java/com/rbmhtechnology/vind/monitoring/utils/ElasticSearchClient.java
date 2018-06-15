@@ -54,19 +54,15 @@ public class ElasticSearchClient {
         try {
             final JestClient client = getElasticSearchClient();
             boolean indexExists = client.execute(new IndicesExists.Builder(elasticIndex).build()).isSucceeded();
-            if (indexExists && StringUtils.isNotBlank(logType) && StringUtils.isNotBlank(processResultMappingFile)) {
-
-                final String mappingJson = new String(ByteStreams.toByteArray(new FileInputStream(processResultMappingFile)));
-                log.info("Updating elasticsearch type mapping.");
-                client.execute(new PutMapping.Builder(elasticIndex, logType, mappingJson).build());
-            } else {
+            if (!indexExists){
                 log.info("Creating elasticsearch index.");
                 client.execute(new CreateIndex.Builder(elasticIndex).build());
-                if (StringUtils.isNotBlank(logType) && StringUtils.isNotBlank(processResultMappingFile)) {
-                    log.info("Updating type mapping.");
-                    final String mappingJson = new String(ByteStreams.toByteArray(new FileInputStream(processResultMappingFile)));
-                    client.execute(new PutMapping.Builder(elasticIndex, logType, mappingJson).build());
-                }
+            }
+
+            if (StringUtils.isNotBlank(logType) && StringUtils.isNotBlank(processResultMappingFile)) {
+                log.info("Updating type mapping.");
+                final String mappingJson = new String(ByteStreams.toByteArray(new FileInputStream(processResultMappingFile)));
+                client.execute(new PutMapping.Builder(elasticIndex, logType, mappingJson).build());
             }
 
             log.info("Established elasticsearch connection to host '{}:{}', index '{}'.", elasticHost, elasticPort, elasticIndex);
@@ -162,9 +158,9 @@ public class ElasticSearchClient {
                     .addIndex(elasticIndex)
                     .setParameter(Parameters.SCROLL,"10m");
 
-            if (StringUtils.isNotEmpty(this.logType)) {
+            /*if (StringUtils.isNotEmpty(this.logType)) {
                 searchBuilder.addType(this.logType);
-            }
+            }*/
 
             final Search search = searchBuilder.build();
 
