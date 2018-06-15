@@ -11,7 +11,6 @@ import com.google.gson.JsonObject;
 import com.rbmhtechnology.vind.monitoring.report.util.SimilarityUtils;
 import com.rbmhtechnology.vind.monitoring.utils.ElasticSearchClient;
 import io.searchbox.client.JestResult;
-import io.searchbox.core.SearchResult;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -74,13 +73,13 @@ public class ReportPreprocessor {
         return this;
     }
     public void preprocess(){
-        preparePreprocessing();
+        prepareProcessing();
         sessionIds.forEach(this::preprocessSession);
     }
 
     //Gets the list of sessions to preprocess and figures out the
     // general filters which apply to all queries.
-    private void preparePreprocessing() {
+    private void prepareProcessing() {
 
         final String query = elasticClient.loadQueryFromFile("prepare",
                 this.scrollSpan,
@@ -92,64 +91,60 @@ public class ReportPreprocessor {
                 this.from,
                 this.to);
 
-        final JestResult searchResult = elasticClient.getScrollQuery(query);
-
-        String scrollId =
-                searchResult.getJsonObject().getAsJsonPrimitive("_scroll_id").getAsString();
-        final Long totalResults = ((SearchResult) searchResult).getTotal();
-
-        final JsonArray hits = searchResult.getJsonObject().getAsJsonObject("hits").getAsJsonArray("hits");
-        //Get the session Ids for the first result scroll
         final Set<String> sessions =  new HashSet<>();
-        sessions.addAll(Streams.stream(hits)
-                .map(hit -> hit.getAsJsonObject()
-                        .getAsJsonObject("_source")
-                        .getAsJsonObject(String.valueOf(this.messageWrapper.subSequence(0, (messageWrapper.length()-1))))
-                        .getAsJsonObject("session")
-                        .get("sessionId").getAsString())
-                .collect(Collectors.toList()));
+        final ArrayList<JsonElement> commonFilters = new ArrayList<>();
 
-        //Find out filters common to all queries
-        final JsonElement initialFilters = hits.get(0).getAsJsonObject()
-                                        .getAsJsonObject("_source")
-                                        .getAsJsonObject(String.valueOf(this.messageWrapper.subSequence(0, (messageWrapper.length()-1))))
-                                        .getAsJsonObject("request")
-                                        .get("filter");
-
-        final ArrayList<JsonElement> commonFilters =  Lists.newArrayList(extractFilterFields(initialFilters).iterator());
-        Streams.stream(hits)
-                .map(hit -> extractFilterFields(hit.getAsJsonObject()
-                        .getAsJsonObject("_source")
-                        .getAsJsonObject(String.valueOf(this.messageWrapper.subSequence(0, (messageWrapper.length()-1))))
-                        .getAsJsonObject("request")
-                        .get("filter")))
-                .forEach( hfs -> commonFilters.retainAll(Lists.newArrayList(hfs.iterator())));
-
-
-
-        Long start = scrollSpan;
+        String scrollId = null;
+        Long start = 0l;
+        Long totalResults = 1l;
         while (start < totalResults) {
 
-            final JestResult scrollResult =  elasticClient.scrollResults(scrollId);
+            final JestResult scrollResult;
+            if (Objects.nonNull(scrollId)) {
+                scrollResult =  elasticClient.scrollResults(scrollId);
+            } else {
+                scrollResult = elasticClient.getScrollQuery(query);
+                totalResults =scrollResult.getJsonObject().getAsJsonObject("hits").get("total").getAsLong();
+            }
+
             scrollId =
                     scrollResult.getJsonObject().getAsJsonPrimitive("_scroll_id").getAsString();
 
             final JsonArray scrollHits = scrollResult.getJsonObject().getAsJsonObject("hits").getAsJsonArray("hits");
 
-            sessions.addAll(Streams.stream(scrollHits)
+            final List<JsonObject> vindEntries = Streams.stream(scrollHits)
+                    //Get the elasticsearch source
                     .map(hit -> hit.getAsJsonObject()
-                            .getAsJsonObject("_source")
-                            .getAsJsonObject(String.valueOf(this.messageWrapper.subSequence(0, (messageWrapper.length()-1))))
+                            .getAsJsonObject("_source"))
+                    //Get the log out of the wrapper
+                    .map( entry -> {
+                        if (StringUtils.isNotBlank(this.messageWrapper)) {
+                            return entry
+                                    .getAsJsonObject(String.valueOf(this.messageWrapper.subSequence(0, (messageWrapper.length() - 1))));
+                        } else return entry; })
+                    .collect(Collectors.toList());
+
+            //Get the session Ids for the first result scroll
+            sessions.addAll(vindEntries.parallelStream()
+                    //Get the Session
+                    .map( vindLog -> vindLog
                             .getAsJsonObject("session")
                             .get("sessionId").getAsString())
                     .collect(Collectors.toList()));
 
-            Streams.stream(scrollHits)
-                    .map(hit -> extractFilterFields(hit.getAsJsonObject()
-                            .getAsJsonObject("_source")
-                            .getAsJsonObject(String.valueOf(this.messageWrapper.subSequence(0, (messageWrapper.length()-1))))
-                            .getAsJsonObject("request")
-                            .get("filter")))
+            //Find out filters common to all queries
+            if(start ==0 ){
+                //Find out filters common to all queries
+                final JsonElement initialFilters = vindEntries.get(0)
+                        .getAsJsonObject("request")
+                        .get("filter");
+
+                commonFilters.addAll(Lists.newArrayList(extractFilterFields(initialFilters).iterator()));
+            }
+
+            vindEntries.parallelStream()
+                    .map(vindEntry ->
+                            extractFilterFields(vindEntry.getAsJsonObject("request").get("filter")))
                     .forEach( hfs -> commonFilters.retainAll(Lists.newArrayList(hfs.iterator())));
 
             start += scrollSpan;
@@ -162,7 +157,6 @@ public class ReportPreprocessor {
     public Boolean preprocessSession(String sessionId) {
 
         //fetch all the entries for the session
-
         final String query = elasticClient.loadQueryFromFile("session",
                 this.scrollSpan,
                 this.messageWrapper,
@@ -171,49 +165,52 @@ public class ReportPreprocessor {
                 sessionId,
                 this.messageWrapper);
 
-        final SearchResult searchResult = elasticClient.getScrollQuery(query);
-
-        String scrollId =
-                searchResult.getJsonObject().getAsJsonPrimitive("_scroll_id").getAsString();
-        final Long totalResults = searchResult.getTotal();
-
-
         final Set<JsonObject> requests =  new HashSet<>();
 
-        requests.addAll(searchResult.getHits(JsonObject.class).stream()
-                .map(es -> es.source.getAsJsonObject(String.valueOf(this.messageWrapper.subSequence(0,this.messageWrapper.length()-1))))
-                .map( e ->{
-                    e.remove("application");
-                    e.remove("session");
-                    e.remove("response");
-                    e.remove("sorting");
-                    e.remove("metadata");
-                    return e;
-                })
-                .collect(Collectors.toList()));
-
-        Long start = scrollSpan;
+        String scrollId = null;
+        Long start = 0l;
+        Long totalResults = 1l;
         while (start < totalResults) {
+            final JestResult scrollResult;
+            if (Objects.nonNull(scrollId)) {
+                scrollResult =  elasticClient.scrollResults(scrollId);
+            } else {
+                scrollResult = elasticClient.getScrollQuery(query);
+                totalResults =scrollResult.getJsonObject().getAsJsonObject("hits").get("total").getAsLong();
+            }
 
-            final JestResult scrollResult =  elasticClient.scrollResults(scrollId);
             scrollId =
                     scrollResult.getJsonObject().getAsJsonPrimitive("_scroll_id").getAsString();
 
-            requests.addAll(Streams.stream(scrollResult.getJsonObject().getAsJsonObject("hits").getAsJsonArray("hits").iterator())
-                    .map( e -> e.getAsJsonObject().getAsJsonObject("_source"))
-                    .map( jo ->{ if(StringUtils.isNotBlank(this.messageWrapper)){
-                                    return jo.getAsJsonObject(String.valueOf(this.messageWrapper.subSequence(0,this.messageWrapper.length()-1)));
-                                }
-                                return jo;})
+            final JsonArray scrollHits = scrollResult.getJsonObject().getAsJsonObject("hits").getAsJsonArray("hits");
+
+            final List<JsonObject> vindEntries = Streams
+                    .stream(scrollHits.iterator())
+                    //Get the elasticsearch vind monitoring object and add the es id
+                    .map(hit -> {
+                        final JsonObject entry ;
+                        if (StringUtils.isNotBlank(this.messageWrapper)) {
+                            entry = hit.getAsJsonObject()
+                                    .getAsJsonObject("_source")
+                                    .getAsJsonObject(String.valueOf(this.messageWrapper.subSequence(0, (messageWrapper.length() - 1))));
+                        } else entry = hit.getAsJsonObject()
+                                .getAsJsonObject("_source");
+
+                        entry.addProperty("_id", hit.getAsJsonObject().get("_id").getAsString());
+                        return entry;
+                    })
+                    .collect(Collectors.toList());
+
+            requests.addAll( vindEntries.stream()
                     .map( e ->{
                         e.remove("application");
                         e.remove("session");
                         e.remove("response");
-                        e.remove("sorting");
                         e.remove("metadata");
                         return e;
                     })
                     .collect(Collectors.toList()));
+
             start += scrollSpan;
 
         }
@@ -236,8 +233,7 @@ public class ReportPreprocessor {
 
         processSession(sortedRequest);
 
-
-        return false;
+        return bulkUpdate(requests);
     }
 
     private void processSession(List<JsonObject> entries) {
@@ -291,26 +287,38 @@ public class ReportPreprocessor {
 
                 //empty check
                 if (isEmptyQuery(actual)) {
+                    log.debug("Empty entry: Resetting step count to 1 and lastQuery to null.");
                     process.addProperty(SEARCH_SKIP,true);
                     process.addProperty(SEARCH_EMPTY,true);
                     //empty query is the end of an user iteration
                     searchStep = 1;
                     lastQuery = null;
                 } else {
-                    //Initialize process result json object
-                    process.addProperty(SEARCH_INTERACTION_SELECT, 0);
-                    process.add(SEARCH_STEPS, new JsonObject());
                     //check if it is a duplicated query
-                    if(Objects.nonNull(lastQuery) && lastQuery.getAsJsonObject("request").equals(actual.getAsJsonObject("request"))) {
-                        process.addProperty(SEARCH_DUPLICATE, true);
+                    if(Objects.nonNull(lastQuery) && isDuplicatedQuery(actual, lastQuery)) {
+                        log.debug("Duplicated entry: checking if is a paging, sorting or duplicated.");
+                        if(isPaging(actual,lastQuery)) {
+                            process.addProperty(SEARCH_PAGING, true);
+                        }
+                        if(isSorting(actual,lastQuery)) {
+                            process.addProperty(SEARCH_SORTING, true);
+                        }
+                        if (!(isSorting(actual,lastQuery) || isPaging(actual,lastQuery))) {
+                            process.addProperty(SEARCH_DUPLICATE, true);
+                        }
+
                         process.addProperty(SEARCH_SKIP,true);
-                        //TODO: we do not care whether it is a paging action or a sorting action
 
                     } else {
                         //Clear list of accesses
                         lastAccesses.clear();
 
+                        //Initialize process result json object
+                        process.addProperty(SEARCH_INTERACTION_SELECT, 0);
+                        process.add(SEARCH_STEPS, new JsonObject());
+
                         //Calculate flattened list of filters
+                        //TODO: do not ignore conditional filters
                         final JsonElement filters = actual.getAsJsonObject("request").get("filter");
                         final JsonArray flattenedFilters = new JsonArray();
                         flattenedFilters.addAll(extractFilterFields(filters));
@@ -350,7 +358,45 @@ public class ReportPreprocessor {
 
             }
         }
+    }
 
+    private Boolean isDuplicatedQuery (JsonObject query, JsonObject lastQuery) {
+
+        final String oldQueryText = lastQuery.getAsJsonObject("request").get("query").getAsString();
+        final String actualQueryText = query.getAsJsonObject("request").get("query").getAsString();
+
+        if(actualQueryText.equals(oldQueryText)) {
+            final JsonElement previousFilters = lastQuery.getAsJsonObject("request").get("filter");
+            final JsonElement actualFilters = query.getAsJsonObject("request").get("filter");
+            if(equalFilters(actualFilters, previousFilters)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Boolean isPaging (JsonObject query, JsonObject lastQuery) {
+
+        if(isDuplicatedQuery(query,lastQuery)){
+            final JsonObject oldPaging = lastQuery.getAsJsonObject("paging");
+            final JsonObject actualPaging = query.getAsJsonObject("paging");
+            if(!actualPaging.equals(oldPaging)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Boolean isSorting (JsonObject query, JsonObject lastQuery) {
+
+        if(isDuplicatedQuery(query,lastQuery)){
+            final JsonArray oldSorting = lastQuery.getAsJsonArray("sorting");
+            final JsonArray actualSorting = query.getAsJsonArray("sorting");
+            if(!actualSorting.equals(oldSorting)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Boolean isEmptyQuery (JsonObject query) {
@@ -364,7 +410,6 @@ public class ReportPreprocessor {
         }
         return false;
     }
-
 
     private Boolean isRefinedQuery (JsonObject query, JsonObject lastQuery) {
 
@@ -380,7 +425,6 @@ public class ReportPreprocessor {
             if ((previousFilters.size() - intersectionCount) <= 1) {
                 return true;
             }
-
         }
         return false;
     }
@@ -422,5 +466,57 @@ public class ReportPreprocessor {
                         JsonArray::addAll);
     }
 
+    private Boolean equalFilters(JsonElement fs1, JsonElement fs2) {
+        //Prepare element 1
+        final JsonArray filters1 = new JsonArray();
+        if (fs1.isJsonObject()) {
+            filters1.add(fs1.getAsJsonObject());
+        } else {
+            filters1.addAll(fs1.getAsJsonArray());
+        }
+
+        //Prepare element 2
+        final JsonArray filters2 = new JsonArray();
+        if (fs2.isJsonObject()) {
+            filters2.add(fs2.getAsJsonObject());
+        } else {
+            filters2.addAll(fs2.getAsJsonArray());
+        }
+
+        return equalFilters(filters1,filters2);
+    }
+
+    private Boolean equalFilters(JsonArray fs1, JsonArray fs2) {
+        //compare element size
+        if(fs1.size() == fs2.size()){
+            //Check if every filter is in the second list of filters
+            return Streams.stream(fs1.iterator()).allMatch( f1 ->
+                    Streams.stream(fs2.iterator())
+                            .anyMatch( f -> equalFilters(f.getAsJsonObject(),f1.getAsJsonObject()))
+            );
+        }
+
+        return false;
+    }
+
+    private Boolean equalFilters(JsonObject f1, JsonObject f2) {
+        if (f1.get("type").getAsString().equals(f2.get("type").getAsString())
+                && f1.get("scope").getAsString().equals(f2.get("scope").getAsString())) {
+            if(f1.has("delegates") && f2.has("delegates")) {
+
+                return equalFilters(f1.get("delegates"),f2.get("delegates"));
+            } else {
+                return f1.equals(f2);
+            }
+        }
+        return false;
+    }
+
+    private Boolean bulkUpdate(Set<JsonObject> results) {
+
+        //TODO:fixType
+        elasticClient.bulkUpdate(Lists.newArrayList(results),"type");
+        return false;
+    }
 
 }

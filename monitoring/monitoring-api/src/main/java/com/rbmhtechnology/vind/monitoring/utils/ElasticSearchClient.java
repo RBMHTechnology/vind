@@ -3,6 +3,7 @@
  */
 package com.rbmhtechnology.vind.monitoring.utils;
 
+import com.google.gson.JsonObject;
 import io.searchbox.client.JestClient;
 import io.searchbox.client.JestResult;
 import io.searchbox.core.*;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 /**
  * Created on 28.02.18.
@@ -215,6 +217,33 @@ public class ElasticSearchClient {
 
         } else {
             log.warn("Content {} won't be cached, there is not target bucket", content);
+        }
+    }
+
+    public void bulkUpdate(List<JsonObject> updates, String docType){
+
+        final Bulk.Builder bulkProcessor = new Bulk.Builder();
+
+        //prepare update actions
+        updates.forEach( u -> {
+            final JsonObject updateDoc = new JsonObject();
+            updateDoc.add("doc",u.get("process").getAsJsonObject());
+            final Update update = new Update
+                    .Builder(updateDoc.toString())
+                    .index(elasticIndex)
+                    .id(u.get("_id").getAsString())
+                    .type(docType).build();
+
+            bulkProcessor.addAction(update);
+        });
+
+
+        final JestClient client = getElasticSearchClient();
+        try {
+            client.execute(bulkProcessor.build());
+        } catch (IOException e) {
+            log.error("Error executing bulk update: {}", e.getMessage(),e);
+            throw new RuntimeException("Error executing bulk update: " + e.getMessage(), e);
         }
     }
 }

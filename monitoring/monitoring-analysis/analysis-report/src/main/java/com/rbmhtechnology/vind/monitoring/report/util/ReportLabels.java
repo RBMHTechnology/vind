@@ -19,6 +19,8 @@ public class ReportLabels {
     public static final String SEARCH_SKIP = "skip";
     public static final String SEARCH_DUPLICATE = "duplicate";
     public static final String SEARCH_EMPTY = "empty";
+    public static final String SEARCH_SORTING = "sorting";
+    public static final String SEARCH_PAGING = "paging";
 
 
 
