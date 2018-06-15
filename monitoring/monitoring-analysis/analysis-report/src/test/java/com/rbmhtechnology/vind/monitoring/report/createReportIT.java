@@ -3,12 +3,10 @@
  */
 package com.rbmhtechnology.vind.monitoring.report;
 
+import com.google.gson.JsonObject;
 import com.rbmhtechnology.vind.monitoring.report.preprocess.ReportPreprocessor;
 import com.rbmhtechnology.vind.monitoring.report.writer.HtmlReportWriter;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,9 +21,10 @@ public class createReportIT {
 
     private final String esHost = "localhost";
     private final String esPort = "9200";
-    private final String esIndex ="logindex";
+    private final String esIndex = "logindex";
+    private final String esEntryType = "logEntry";
     private final String applicationName = "Application name - 0.0.0";
-    private final String messageWrapper = "message_json";
+    private final String messageWrapper = "";
     private ElasticSearchReportService esRepsortService;
 
     private Report report;
@@ -39,13 +38,11 @@ public class createReportIT {
     @Before
     public void setUp() throws IOException {
         from = ZonedDateTime.now().minusYears(1);
-        to = ZonedDateTime.now().plusYears(1);
+        to   = ZonedDateTime.now().plusYears(1);
 
-        reportPreprocessor = new ReportPreprocessor(esHost, esPort, esIndex, from, to, applicationName, messageWrapper);
+        reportPreprocessor = new ReportPreprocessor(esHost, esPort, esIndex, from, to, applicationName, messageWrapper,"logEntry");
 
-        esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, from, to, applicationName);
-        esRepsortService.setMessageWrapper(messageWrapper);
-
+        esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, esEntryType, from, to, applicationName, messageWrapper);
 
         reportFile = File.createTempFile("reportTest", ".html");
 
@@ -63,7 +60,8 @@ public class createReportIT {
     @Test
     @Ignore
     public void createReportIT() {
-        final LinkedHashMap<String, Long> topFaceFields = esRepsortService.getTopFaceFields();
+        esRepsortService.preprocessData("static_partitionID");
+        final LinkedHashMap<String, JsonObject> topFaceFields = esRepsortService.getTopFaceFields();
         final ArrayList<String> facetFields = new ArrayList<>(topFaceFields.keySet());
 
         final LinkedHashMap<String, Long> topSuggestionFields = esRepsortService.getTopSuggestionFields();
@@ -80,13 +78,13 @@ public class createReportIT {
                 .setTopFacetFields(topFaceFields)
                 .setTopQueries(esRepsortService.getTopQueries())
                 .setTopUsers(esRepsortService.getTopUsers());
-        Assert.assertTrue(reportWriter.write(this.report,"/home/fonso/reportTest.html"/*reportFile.getAbsolutePath()*/));
+        Assert.assertTrue(reportWriter.write(this.report,reportFile.getAbsolutePath()));
 
         System.out.println("Report has been written to " + reportFile.getAbsolutePath());
 
     }
 
-    //@After
+    @After
     public void cleanUp() throws Exception {
         esRepsortService.close();
 

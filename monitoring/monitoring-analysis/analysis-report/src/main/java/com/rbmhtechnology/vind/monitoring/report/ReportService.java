@@ -3,6 +3,8 @@
  */
 package com.rbmhtechnology.vind.monitoring.report;
 
+import com.google.gson.JsonObject;
+
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -102,7 +104,7 @@ public abstract class ReportService implements AutoCloseable {
 
     //Facets
     ///Facet Fields
-    public abstract LinkedHashMap<String, Long> getTopFaceFields();
+    public abstract LinkedHashMap<String, JsonObject> getTopFaceFields();
 
     ///Facet Values per field?
     public abstract LinkedHashMap<String, LinkedHashMap<Object,Long>> getFacetFieldsValues(List<String> fields);

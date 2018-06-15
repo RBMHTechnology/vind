@@ -192,17 +192,25 @@
                 <th>Ranking</th>
                 <th>Name</th>
                 <th>#Usages</th>
+                <th>#Usages as 1</th>
+                <th>#Usages as 2</th>
+                <th>#Usages as 3</th>
+                <th>#Usages as 4</th>
                 <#list configuration.facetFieldsExtension?keys as name>
                 <th>${name}</th>
                 </#list>
             </tr>
             </thead>
             <tbody>
-            <#list topFacetFields as field, count>
+            <#list topFacetFields as field, value>
                 <tr>
                     <td>${field?counter}</td>
                     <td>${field}</td>
-                    <td>${count}</td>
+                    <td>${value.total}</td>
+                    <td>${value.first}</td>
+                    <td>${value.second}</td>
+                    <td>${value.third}</td>
+                    <td>${value.fourth}</td>
                     <#list configuration.facetFieldsExtension as column, fields>
                     <td>${fields[field]!"-"}</td>
                     </#list>

@@ -4,6 +4,7 @@
 package com.rbmhtechnology.vind.monitoring.report.writer;
 
 
+import com.google.gson.JsonObject;
 import com.rbmhtechnology.vind.monitoring.report.Report;
 import org.junit.Assert;
 import org.junit.Before;
@@ -24,10 +25,17 @@ public class HtmlReportWriterTest {
     @Before
     public void setUp() {
 
-        final LinkedHashMap<String, Long> fieldsMap = new LinkedHashMap<>();
-        fieldsMap.put("field1", 34000l);
-        fieldsMap.put("field2", 10453l);
-        fieldsMap.put("field3", 3957l);
+        final LinkedHashMap<String, Long> suggestFieldsMap = new LinkedHashMap<>();
+        suggestFieldsMap.put("field1", 34000l);
+        suggestFieldsMap.put("field2", 10453l);
+        suggestFieldsMap.put("field3", 3957l);
+
+        final LinkedHashMap<String, JsonObject> fieldsMap = new LinkedHashMap<>();
+        JsonObject result = new JsonObject();
+        result.addProperty("total",34000l );
+        fieldsMap.put("field1", result);
+        fieldsMap.put("field2", result);
+        fieldsMap.put("field3", result);
 
         final LinkedHashMap<Object, Long> valuesMap = new LinkedHashMap<>();
         valuesMap.put("value1", 3400l);
@@ -58,7 +66,7 @@ public class HtmlReportWriterTest {
                 .setFrom(ZonedDateTime.now().minusDays(1))
                 .setTo(ZonedDateTime.now().plusDays(1))
                 .setRequests(10000)
-                .setTopSuggestionFields(fieldsMap)
+                .setTopSuggestionFields(suggestFieldsMap)
                 .setFacetFieldsValues(fieldsValuesMap)
                 .setTopFacetFields(fieldsMap)
                 .setTopDays(topDays)

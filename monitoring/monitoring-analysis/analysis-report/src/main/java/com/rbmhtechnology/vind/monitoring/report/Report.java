@@ -3,6 +3,8 @@
  */
 package com.rbmhtechnology.vind.monitoring.report;
 
+import com.google.gson.JsonObject;
+
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -30,7 +32,7 @@ public class Report {
     private long requests;
     private  LinkedHashMap<ZonedDateTime, Long> topDays = new LinkedHashMap<>();
     private  LinkedHashMap<String, Long> topUsers = new LinkedHashMap<>();
-    private  LinkedHashMap<String, Long> topFacetFields = new LinkedHashMap<>();
+    private  LinkedHashMap<String, JsonObject> topFacetFields = new LinkedHashMap<>();
     private  LinkedHashMap<String, LinkedHashMap<Object,Long>> facetFieldsValues = new LinkedHashMap<>();
     private  LinkedHashMap<String, Long> topSuggestionFields = new LinkedHashMap<>();
     private  LinkedHashMap<String, LinkedHashMap<Object,Long>> suggestionFieldsValues = new LinkedHashMap<>();
@@ -120,11 +122,11 @@ public class Report {
         return this;
     }
 
-    public LinkedHashMap<String, Long> getTopFacetFields() {
+    public LinkedHashMap<String, JsonObject> getTopFacetFields() {
         return topFacetFields;
     }
 
-    public Report setTopFacetFields(LinkedHashMap<String, Long> topFaceFields) {
+    public Report setTopFacetFields(LinkedHashMap<String, JsonObject> topFaceFields) {
         this.topFacetFields = topFaceFields;
         return this;
     }

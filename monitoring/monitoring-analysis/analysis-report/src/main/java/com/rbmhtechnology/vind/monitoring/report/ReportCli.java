@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.monitoring.report;
 
+import com.google.gson.JsonObject;
 import com.rbmhtechnology.vind.monitoring.report.writer.HtmlReportWriter;
 import com.rbmhtechnology.vind.monitoring.report.writer.ReportWriter;
 import org.apache.commons.cli.*;
@@ -55,7 +56,7 @@ public class ReportCli {
 
         final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, entryType, from, to, applicationId, messageWrapper);
 
-        final LinkedHashMap<String, Long> topFaceFields = esRepsortService.getTopFaceFields();
+        final LinkedHashMap<String, JsonObject> topFaceFields = esRepsortService.getTopFaceFields();
         final ArrayList<String> facetFields = new ArrayList<>(topFaceFields.keySet());
 
         final LinkedHashMap<String, Long> topSuggestionFields = esRepsortService.getTopSuggestionFields();
