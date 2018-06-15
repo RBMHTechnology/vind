@@ -5,7 +5,11 @@
             "must":[
                 {"term":{"%stype.raw":"fulltext"}},
                 {"term":{"%sapplication.id.raw":"%s"}}
+                {"exists":{"field":"%sprocess"}}
             ],
+            "must_not":{
+                "match":{"%sprocessresult.skip":"true"}
+             },
             "filter": [
                 {
                     "range":{

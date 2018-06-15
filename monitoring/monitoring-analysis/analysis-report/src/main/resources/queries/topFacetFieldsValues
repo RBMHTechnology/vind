@@ -8,8 +8,12 @@
                 {"term":{"%sapplication.id.raw":"%s"}},
                 {"terms":{"%srequest.filter.delegates.scope.raw":["%s"]}},
                 {"terms":{"%srequest.filter.delegates.type.raw":["TermFilter", "DescriptorFilter"]}},
-                {"terms":{"%srequest.filter.delegates.field.raw":[%s]}}
+                {"terms":{"%srequest.filter.delegates.field.raw":[%s]}},
+                {"exists":{"field":"%sprocess"}}
             ],
+            "must_not":{
+                "match":{"%sprocessresult.skip":"true"}
+             },
             "filter": [
                 {
                     "range":{

@@ -3,16 +3,21 @@
  */
 package com.rbmhtechnology.vind.monitoring.utils;
 
+import com.google.common.io.ByteStreams;
 import com.google.gson.JsonObject;
 import io.searchbox.client.JestClient;
 import io.searchbox.client.JestResult;
 import io.searchbox.core.*;
 import io.searchbox.indices.CreateIndex;
+import io.searchbox.indices.IndicesExists;
+import io.searchbox.indices.mapping.PutMapping;
 import io.searchbox.params.Parameters;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,10 +38,14 @@ public class ElasticSearchClient {
     private String logType;
 
     public boolean init(String elasticHost, String elasticPort, String elasticIndex) {
-        return init(elasticHost, elasticPort, elasticIndex,null);
+        return init(elasticHost, elasticPort, elasticIndex,null, null);
     }
 
     public boolean init(String elasticHost, String elasticPort, String elasticIndex, String logType) {
+        return init(elasticHost, elasticPort, elasticIndex, logType, null);
+    }
+
+    public boolean init(String elasticHost, String elasticPort, String elasticIndex, String logType, String processResultMappingFile) {
         this.elasticHost = elasticHost;
         this.elasticPort = elasticPort;
         this.elasticIndex = elasticIndex;
@@ -44,7 +53,22 @@ public class ElasticSearchClient {
 
         try {
             final JestClient client = getElasticSearchClient();
-            client.execute(new CreateIndex.Builder(elasticIndex).build());
+            boolean indexExists = client.execute(new IndicesExists.Builder(elasticIndex).build()).isSucceeded();
+            if (indexExists && StringUtils.isNotBlank(logType) && StringUtils.isNotBlank(processResultMappingFile)) {
+
+                final String mappingJson = new String(ByteStreams.toByteArray(new FileInputStream(processResultMappingFile)));
+                log.info("Updating elasticsearch type mapping.");
+                client.execute(new PutMapping.Builder(elasticIndex, logType, mappingJson).build());
+            } else {
+                log.info("Creating elasticsearch index.");
+                client.execute(new CreateIndex.Builder(elasticIndex).build());
+                if (StringUtils.isNotBlank(logType) && StringUtils.isNotBlank(processResultMappingFile)) {
+                    log.info("Updating type mapping.");
+                    final String mappingJson = new String(ByteStreams.toByteArray(new FileInputStream(processResultMappingFile)));
+                    client.execute(new PutMapping.Builder(elasticIndex, logType, mappingJson).build());
+                }
+            }
+
             log.info("Established elasticsearch connection to host '{}:{}', index '{}'.", elasticHost, elasticPort, elasticIndex);
             elasticClient = client;
         } catch (IOException e) {
@@ -226,12 +250,13 @@ public class ElasticSearchClient {
 
         //prepare update actions
         updates.forEach( u -> {
+            final String id = u.remove("_id").getAsString();
             final JsonObject updateDoc = new JsonObject();
-            updateDoc.add("doc",u.get("process").getAsJsonObject());
+            updateDoc.add("doc",u.getAsJsonObject());
             final Update update = new Update
                     .Builder(updateDoc.toString())
                     .index(elasticIndex)
-                    .id(u.get("_id").getAsString())
+                    .id(id)
                     .type(docType).build();
 
             bulkProcessor.addAction(update);

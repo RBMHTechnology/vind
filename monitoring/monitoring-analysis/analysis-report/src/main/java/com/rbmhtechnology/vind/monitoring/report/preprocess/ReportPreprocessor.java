@@ -46,7 +46,9 @@ public class ReportPreprocessor {
     public ReportPreprocessor(String esHost, String esPort, String esIndex, ZonedDateTime from, ZonedDateTime to, String appId, String messageWrapper) {
         this.from = from.toInstant().toEpochMilli();
         this.to = to.toInstant().toEpochMilli();
-        this.messageWrapper = messageWrapper + ".";
+        if(StringUtils.isNotBlank(messageWrapper) && !messageWrapper.endsWith(".")) {
+            this.messageWrapper = messageWrapper + ".";
+        }
         this.appId = appId;
 
         elasticClient.init(esHost, esPort, esIndex);
@@ -60,8 +62,20 @@ public class ReportPreprocessor {
         elasticClient.init(esHost, esPort, esIndex);
     }
 
+    public ReportPreprocessor(String esHost, String esPort, String esIndex, ZonedDateTime from, ZonedDateTime to, String appId, String messageWrapper, String baseType) {
+        this.from = from.toInstant().toEpochMilli();
+        this.to = to.toInstant().toEpochMilli();
+        this.appId = appId;
+        if(StringUtils.isNotBlank(messageWrapper) && !messageWrapper.endsWith(".")) {
+            this.messageWrapper = messageWrapper + ".";
+        }
+        elasticClient.init(esHost, esPort, esIndex, baseType, ReportPreprocessor.class.getClassLoader().getResource("processMapping.json").getPath());
+    }
+
     public ReportPreprocessor setMessageWrapper(String messageWrapper) {
-        this.messageWrapper = messageWrapper + ".";
+        if(StringUtils.isNotBlank(messageWrapper) && !messageWrapper.endsWith(".")) {
+            this.messageWrapper = messageWrapper + ".";
+        }
         return this;
     }
 

@@ -7,7 +7,7 @@
                 {"term":{"%stype.raw":"fulltext"}}
             ],
             "must_not":{
-                "exists":{"field":"%sprocessed"}
+                "exists":{"field":"%sprocess"}
              },
             "filter": [
                 {

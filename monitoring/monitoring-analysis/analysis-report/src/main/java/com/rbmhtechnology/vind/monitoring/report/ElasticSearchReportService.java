@@ -13,6 +13,7 @@ import com.rbmhtechnology.vind.monitoring.utils.ElasticSearchClientBuilder;
 import io.searchbox.core.SearchResult;
 import io.searchbox.core.search.aggregation.DateHistogramAggregation;
 import io.searchbox.core.search.aggregation.TermsAggregation;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +64,9 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
 
     public ElasticSearchReportService setMessageWrapper(String wrapper) {
-        this.messageWrapper = wrapper + ".";
+        if (StringUtils.isNotBlank(wrapper) && !wrapper.endsWith(".")) {
+            this.messageWrapper = wrapper + ".";
+        }
         return this;
     }
 
@@ -74,6 +77,8 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 this.messageWrapper,
                 this.messageWrapper,
                 this.getApplicationId(),
+                this.messageWrapper,
+                this.messageWrapper,
                 this.messageWrapper,
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli());
@@ -88,6 +93,8 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 this.messageWrapper,
                 this.messageWrapper,
                 this.getApplicationId(),
+                this.messageWrapper,
+                this.messageWrapper,
                 this.messageWrapper,
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli(),
@@ -109,6 +116,8 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 this.messageWrapper,
                 this.getApplicationId(),
                 this.messageWrapper,
+                this.messageWrapper,
+                this.messageWrapper,
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli(),
                 this.messageWrapper);
@@ -128,6 +137,8 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 this.messageWrapper,
                 this.messageWrapper,
                 this.getApplicationId(),
+                this.messageWrapper,
+                this.messageWrapper,
                 this.messageWrapper,
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli(),
@@ -193,6 +204,8 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 this.messageWrapper,
                 this.getApplicationId(),
                 this.messageWrapper,
+                this.messageWrapper,
+                this.messageWrapper,
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli(),
                 this.messageWrapper);
@@ -256,6 +269,8 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 this.messageWrapper,
                 this.getApplicationId(),
                 this.messageWrapper,
+                this.messageWrapper,
+                this.messageWrapper,
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli(),
                 this.messageWrapper);
@@ -307,6 +322,8 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 this.messageWrapper,
                 "\"".concat(Joiner.on("\", \"").skipNulls().join(fields)).concat("\""),
                 this.messageWrapper,
+                this.messageWrapper,
+                this.messageWrapper,
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli()
         );
@@ -328,6 +345,8 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                     this.messageWrapper,
                     this.messageWrapper,
                     "\"".concat(Joiner.on("\", \"").skipNulls().join(fields)).concat("\""),
+                    this.messageWrapper,
+                    this.messageWrapper,
                     this.messageWrapper,
                     this.getFrom().toInstant().toEpochMilli(),
                     this.getTo().toInstant().toEpochMilli()

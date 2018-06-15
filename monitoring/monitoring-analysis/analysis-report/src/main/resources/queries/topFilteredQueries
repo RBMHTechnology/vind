@@ -5,8 +5,10 @@
             "must":[
                 {"term":{"type.keyword":"fulltext"}},
                 {"term":{"application.id.keyword":"%s"}}
+                {"exists":{"field":"%sprocess"}}
             ],
             "must_not":[
+                "match":{"%sprocessresult.skip":"true"},
                 {"regexp":{"request.query.keyword":"%s"}}
             ],
             "filter": [

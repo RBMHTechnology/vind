@@ -4,8 +4,12 @@
         "bool":{
             "must":[
                 {"term":{"%stype":"fulltext"}},
-                {"term":{"%sapplication.id.raw":"%s"}}
+                {"term":{"%sapplication.id.raw":"%s"}},
+                {"exists":{"field":"%sprocess"}}
             ],
+            "must_not":{
+                "match":{"%sprocessresult.skip":"true"}
+            },
             "filter": [
                 {
                     "range":{
