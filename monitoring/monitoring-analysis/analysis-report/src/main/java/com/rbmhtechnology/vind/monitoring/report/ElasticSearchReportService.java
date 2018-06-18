@@ -166,7 +166,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     }
 
     @Override
-    public LinkedHashMap<String, JsonObject> getTopFaceFields() {
+    public LinkedHashMap<String, JsonObject> getTopFacetFields() {
         final String query = elasticClient.loadQueryFromFile("topFacetFields",
                 this.messageWrapper,
                 this.messageWrapper,
@@ -285,7 +285,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
         //Sort the results
         final LinkedHashMap sortedResult = result.entrySet().stream()
-                .filter( e -> e.getValue() > 0)
+                //.filter( e -> e.getValue() > 0)
                 .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                 .map(e ->{
                     final JsonObject facetResult = new JsonObject();
@@ -319,14 +319,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                     final Map<String, Long> fieldFilters = facetFilters.stream()
                             .filter( filter -> filter.get("field").getAsString().equals(field))
                             //TODO: fix this hack or find a better way to do it
-                            .map( filter -> {
-                                if (filter.has("term")){
-                                    return filter.get("term").getAsString();
-                                }
-                                if (filter.has("start") && filter.has("end")){
-                                    return filter.get("start").getAsString() + " - " + filter.get("end").getAsString();
-                                } else return "";
-                            })
+                            .map( filter -> filterParser(filter))
                             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
                     //Sort the results
@@ -342,7 +335,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
 
     @Override
-    public LinkedHashMap<String, Long> getTopSuggestionFields() {
+    public LinkedHashMap<String, JsonObject> getTopSuggestionFields() {
         final String query = elasticClient.loadQueryFromFile("topSuggestionFields",
                 this.messageWrapper,
                 this.messageWrapper,
@@ -375,13 +368,102 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                     result.put(field, fieldCount);
                 });
 
+        //TODO:refactor to a method
+        //Calculate Results as #1
+        final List<JsonObject> suggestionFiltersAsFirst = descriptorFacetFilters.stream()
+                .filter(e -> e.getAsJsonObject("steps").has("1"))
+                .map(e -> e.getAsJsonObject("steps").getAsJsonArray("1"))
+                .flatMap(Streams::stream)
+                .map(JsonElement::getAsJsonObject)
+                .collect(Collectors.toList());
+
+        final LinkedHashMap<String, Long> resultsAsFirst = new LinkedHashMap<>();
+
+        suggestionFields.stream()
+                .forEach( field -> {
+                    final long fieldCount = suggestionFiltersAsFirst.stream()
+                            .filter( filter -> filter.get("field").getAsString().equals(field))
+                            .count();
+
+                    resultsAsFirst.put(field, fieldCount);
+                });
+
+        //TODO:refactor to a method
+        //Calculate Results as #2
+        final List<JsonObject> suggestionFiltersAsSecond = descriptorFacetFilters.stream()
+                .filter(e -> e.getAsJsonObject("steps").has("2"))
+                .map(e -> e.getAsJsonObject("steps").getAsJsonArray("2"))
+                .flatMap(Streams::stream)
+                .map(JsonElement::getAsJsonObject)
+                .collect(Collectors.toList());
+
+        final LinkedHashMap<String, Long> resultsAsSecond = new LinkedHashMap<>();
+
+        suggestionFields.stream()
+                .forEach( field -> {
+                    final long fieldCount = suggestionFiltersAsSecond.stream()
+                            .filter( filter -> filter.get("field").getAsString().equals(field))
+                            .count();
+
+                    resultsAsSecond.put(field, fieldCount);
+                });
+
+        //TODO:refactor to a method
+        //Calculate Results as #3
+        final List<JsonObject> suggestionFiltersAsThird = descriptorFacetFilters.stream()
+                .filter(e -> e.getAsJsonObject("steps").has("3"))
+                .map(e -> e.getAsJsonObject("steps").getAsJsonArray("3"))
+                .flatMap(Streams::stream)
+                .map(JsonElement::getAsJsonObject)
+                .collect(Collectors.toList());
+
+        final LinkedHashMap<String, Long> resultsAsThird = new LinkedHashMap<>();
+
+        suggestionFields.stream()
+                .forEach( field -> {
+                    final long fieldCount = suggestionFiltersAsThird.stream()
+                            .filter( filter -> filter.get("field").getAsString().equals(field))
+                            .count();
+
+                    resultsAsThird.put(field, fieldCount);
+                });
+
+        //TODO:refactor to a method
+        //Calculate Results as #4
+        final List<JsonObject> suggestionFiltersAsFourth = descriptorFacetFilters.stream()
+                .filter(e -> e.getAsJsonObject("steps").has("4"))
+                .map(e -> e.getAsJsonObject("steps").getAsJsonArray("4"))
+                .flatMap(Streams::stream)
+                .map(JsonElement::getAsJsonObject)
+                .collect(Collectors.toList());
+
+        final LinkedHashMap<String, Long> resultsAsFourth = new LinkedHashMap<>();
+
+        suggestionFields.stream()
+                .forEach( field -> {
+                    final long fieldCount = suggestionFiltersAsFourth.stream()
+                            .filter( filter -> filter.get("field").getAsString().equals(field))
+                            .count();
+
+                    resultsAsFourth.put(field, fieldCount);
+                });
 
         //Sort the results
         final LinkedHashMap sortedResult = result.entrySet().stream()
-                .filter( e -> e.getValue() > 0)
+                //.filter( e -> e.getValue() > 0)
                 .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .map(e ->{
+                    final JsonObject facetResult = new JsonObject();
+                    facetResult.addProperty("total",e.getValue());
+                    facetResult.addProperty("first", resultsAsFirst.get(e.getKey()));
+                    facetResult.addProperty("second", resultsAsSecond.get(e.getKey()));
+                    facetResult.addProperty("third", resultsAsThird.get(e.getKey()));
+                    facetResult.addProperty("fourth", resultsAsFourth.get(e.getKey()));
+                    return new AbstractMap.SimpleEntry<>(e.getKey(), facetResult);
+                })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
                         (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+
         return sortedResult;
     }
 
@@ -456,7 +538,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     }
 
     @Override
-    public LinkedHashMap<String, Long> getTopFilterFields() {
+    public LinkedHashMap<String, JsonObject> getTopFilterFields() {
         final String query = elasticClient.loadQueryFromFile("topFilterFields",
                 this.messageWrapper,
                 this.messageWrapper,
@@ -492,12 +574,101 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                     result.put(field, fieldCount);
                 });
 
+        //TODO:refactor to a method
+        //Calculate Results as #1
+        final List<JsonObject> filterFiltersAsFirst = descriptorFacetFilters.stream()
+                .filter(e -> e.getAsJsonObject("steps").has("1"))
+                .map(e -> e.getAsJsonObject("steps").getAsJsonArray("1"))
+                .flatMap(Streams::stream)
+                .map(JsonElement::getAsJsonObject)
+                .collect(Collectors.toList());
+
+        final LinkedHashMap<String, Long> resultsAsFirst = new LinkedHashMap<>();
+
+        filterFields.stream()
+                .forEach( field -> {
+                    final long fieldCount = filterFiltersAsFirst.stream()
+                            .filter( filter -> filter.get("field").getAsString().equals(field))
+                            .count();
+
+                    resultsAsFirst.put(field, fieldCount);
+                });
+
+        //TODO:refactor to a method
+        //Calculate Results as #2
+        final List<JsonObject> filterFiltersAsSecond = descriptorFacetFilters.stream()
+                .filter(e -> e.getAsJsonObject("steps").has("2"))
+                .map(e -> e.getAsJsonObject("steps").getAsJsonArray("2"))
+                .flatMap(Streams::stream)
+                .map(JsonElement::getAsJsonObject)
+                .collect(Collectors.toList());
+
+        final LinkedHashMap<String, Long> resultsAsSecond = new LinkedHashMap<>();
+
+        filterFields.stream()
+                .forEach( field -> {
+                    final long fieldCount = filterFiltersAsSecond.stream()
+                            .filter( filter -> filter.get("field").getAsString().equals(field))
+                            .count();
+
+                    resultsAsSecond.put(field, fieldCount);
+                });
+
+        //TODO:refactor to a method
+        //Calculate Results as #3
+        final List<JsonObject> filterFiltersAsThird = descriptorFacetFilters.stream()
+                .filter(e -> e.getAsJsonObject("steps").has("3"))
+                .map(e -> e.getAsJsonObject("steps").getAsJsonArray("3"))
+                .flatMap(Streams::stream)
+                .map(JsonElement::getAsJsonObject)
+                .collect(Collectors.toList());
+
+        final LinkedHashMap<String, Long> resultsAsThird = new LinkedHashMap<>();
+
+        filterFields.stream()
+                .forEach( field -> {
+                    final long fieldCount = filterFiltersAsThird.stream()
+                            .filter( filter -> filter.get("field").getAsString().equals(field))
+                            .count();
+
+                    resultsAsThird.put(field, fieldCount);
+                });
+
+        //TODO:refactor to a method
+        //Calculate Results as #4
+        final List<JsonObject> filterFiltersAsFourth = descriptorFacetFilters.stream()
+                .filter(e -> e.getAsJsonObject("steps").has("4"))
+                .map(e -> e.getAsJsonObject("steps").getAsJsonArray("4"))
+                .flatMap(Streams::stream)
+                .map(JsonElement::getAsJsonObject)
+                .collect(Collectors.toList());
+
+        final LinkedHashMap<String, Long> resultsAsFourth = new LinkedHashMap<>();
+
+        filterFields.stream()
+                .forEach( field -> {
+                    final long fieldCount = filterFiltersAsFourth.stream()
+                            .filter( filter -> filter.get("field").getAsString().equals(field))
+                            .count();
+
+                    resultsAsFourth.put(field, fieldCount);
+                });
+
         //Sort the results
         final LinkedHashMap sortedResult = result.entrySet().stream()
-                .filter( e -> e.getValue() > 0)
                 .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .map(e ->{
+                    final JsonObject facetResult = new JsonObject();
+                    facetResult.addProperty("total",e.getValue());
+                    facetResult.addProperty("first", resultsAsFirst.get(e.getKey()));
+                    facetResult.addProperty("second", resultsAsSecond.get(e.getKey()));
+                    facetResult.addProperty("third", resultsAsThird.get(e.getKey()));
+                    facetResult.addProperty("fourth", resultsAsFourth.get(e.getKey()));
+                    return new AbstractMap.SimpleEntry<>(e.getKey(), facetResult);
+                })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
                         (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+
         return sortedResult;
     }
 
@@ -518,7 +689,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 .forEach( field -> {
                     final Map<String, Long> fieldFilters = filterFilters.stream()
                             .filter( filter -> filter.get("field").getAsString().equals(field))
-                            .map( filter -> filter.get("term").getAsString())
+                            .map(this::filterParser)
                             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
                     //Sort the results
@@ -623,5 +794,30 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 .collect(Collectors.toList());
 
         return finalQueries;
+    }
+
+    private String filterParser(JsonObject filter) {
+        final String type = filter.get("type").getAsString();
+        //TODO:find a better way to do this
+        switch(type) {
+            case "AfterFilter":
+                return ">" + filter.getAsJsonObject("date").get("timeStamp").getAsString();
+            case "BeforeFilter":
+                return "<" +filter.getAsJsonObject("date").get("timeStamp").getAsString();
+            case "DescriptorFilter":
+                return filter.get("term").getAsString();
+            case "TermFilter":
+                return filter.get("term").getAsString();
+            case "NotEmptyTextFilter":
+                return "\"NotEmptyText\"";
+            case "NotEmptyFilter":
+                return "\"NotEmpty\"";
+            case "BetweenDatesFilter":
+                return  filter.get("start").getAsString() + " TO " + filter.get("end").getAsString();
+            case "BetweenNumericFilter":
+                return  filter.get("start").getAsString() + " TO " + filter.get("end").getAsString();
+            default:
+                return "NA";
+        }
     }
 }

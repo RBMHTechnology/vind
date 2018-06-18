@@ -25,11 +25,6 @@ public class HtmlReportWriterTest {
     @Before
     public void setUp() {
 
-        final LinkedHashMap<String, Long> suggestFieldsMap = new LinkedHashMap<>();
-        suggestFieldsMap.put("field1", 34000l);
-        suggestFieldsMap.put("field2", 10453l);
-        suggestFieldsMap.put("field3", 3957l);
-
         final LinkedHashMap<String, JsonObject> fieldsMap = new LinkedHashMap<>();
         JsonObject result = new JsonObject();
         result.addProperty("total",34000l );
@@ -66,7 +61,7 @@ public class HtmlReportWriterTest {
                 .setFrom(ZonedDateTime.now().minusDays(1))
                 .setTo(ZonedDateTime.now().plusDays(1))
                 .setRequests(10000)
-                .setTopSuggestionFields(suggestFieldsMap)
+                .setTopSuggestionFields(fieldsMap)
                 .setFacetFieldsValues(fieldsValuesMap)
                 .setTopFacetFields(fieldsMap)
                 .setTopDays(topDays)

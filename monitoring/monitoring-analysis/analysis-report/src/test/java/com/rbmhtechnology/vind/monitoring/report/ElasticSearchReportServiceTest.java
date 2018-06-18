@@ -65,7 +65,7 @@ public class ElasticSearchReportServiceTest {
     public void getTopFacetFieldsTest() throws Exception {
         final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, esEntryType, ZonedDateTime.now().minusYears(1), ZonedDateTime.now().plusYears(1), applicationName, messageWrapper);
 
-        final LinkedHashMap<String, JsonObject> topFaceFields = esRepsortService.getTopFaceFields();
+        final LinkedHashMap<String, JsonObject> topFaceFields = esRepsortService.getTopFacetFields();
 
         Assert.assertEquals(2, topFaceFields.size());
 
@@ -88,7 +88,7 @@ public class ElasticSearchReportServiceTest {
     @Ignore
     public void getTopSuggestionFieldsTest() throws Exception {
         final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, esEntryType, ZonedDateTime.now().minusYears(1), ZonedDateTime.now().plusYears(1), applicationName, messageWrapper);
-        final LinkedHashMap<String, Long> topSuggestionFields = esRepsortService.getTopSuggestionFields();
+        final LinkedHashMap<String, JsonObject> topSuggestionFields = esRepsortService.getTopSuggestionFields();
 
         Assert.assertEquals(1, topSuggestionFields.size());
 

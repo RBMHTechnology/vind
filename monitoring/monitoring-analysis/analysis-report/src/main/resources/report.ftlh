@@ -237,11 +237,12 @@
         <h4>Facet Values</h4>
         <p>
         <#list facetFieldsValues as field, values>
+            <#if values?has_content >
         <h5>Top values for <i>${field}</i></h5>
         <table class="data">
             <thead>
-                <tr>
-                    <th>Ranking</th>
+            <tr>
+                <th>Ranking</th>
                     <th>Value</th>
                     <th>#Usages</th>
                 </tr>
@@ -256,6 +257,7 @@
             </#list>
             </tbody>
         </table>
+            </#if>
         </#list>
         </p>
     </div>
@@ -266,17 +268,25 @@
                     <th>Ranking</th>
                     <th>Name</th>
                     <th>#Usages</th>
+                    <th>#Usages as 1</th>
+                    <th>#Usages as 2</th>
+                    <th>#Usages as 3</th>
+                    <th>#Usages as 4</th>
                     <#list configuration.suggestionFieldsExtension?keys as name>
                     <th>${name}</th>
                     </#list>
                 </tr>
             </thead>
             <tbody>
-            <#list topSuggestionFields as field, count>
+            <#list topSuggestionFields as field, value>
                 <tr>
                     <td>${field?counter}</td>
                     <td>${field}</td>
-                    <td>${count}</td>
+                    <td>${value.total}</td>
+                    <td>${value.first}</td>
+                    <td>${value.second}</td>
+                    <td>${value.third}</td>
+                    <td>${value.fourth}</td>
                     <#list configuration.suggestionFieldsExtension as column, fields>
                     <td>${fields[field]!"-"}</td>
                     </#list>
@@ -287,7 +297,69 @@
         <h4>Suggestion Values</h4>
         <p>
         <#list suggestionFieldsValues as field, values>
+            <#if values?has_content >
+
         <h5>Top values for <i>${field}</i></h5>
+        <table class="data">
+            <thead>
+            <tr>
+                <th>Ranking</th>
+                <th>Value</th>
+                <th>#Usages</th>
+            </tr>
+            </thead>
+            <tbody>
+            <#list values as value, count>
+            <tr>
+                <td>${value?counter}</td>
+                <td>${value}</td>
+                <td>${count}</td>
+            </tr>
+        </#list>
+            </tbody>
+        </table>
+            </#if>
+        </#list>
+        </p>
+    </div>
+    <div class="section"><h3>Filters</h3><h4>Filter Fields</h4>
+        <table class="data">
+            <thead>
+            <tr>
+                <th>Ranking</th>
+                <th>Name</th>
+                <th>#Usages</th>
+                <th>#Usages as 1</th>
+                <th>#Usages as 2</th>
+                <th>#Usages as 3</th>
+                <th>#Usages as 4</th>
+                <#list configuration.filterFieldsExtension?keys as name>
+                <th>${name}</th>
+                </#list>
+            </tr>
+            </thead>
+            <tbody>
+            <#list topFilterFields as field, value>
+            <tr>
+                <td>${field?counter}</td>
+                <td>${field}</td>
+                <td>${value.total}</td>
+                <td>${value.first}</td>
+                <td>${value.second}</td>
+                <td>${value.third}</td>
+                <td>${value.fourth}</td>
+                <#list configuration.filterFieldsExtension as column, fields>
+                <td>${fields[field]!"-"}</td>
+                </#list>
+            </tr>
+            </#list>
+            </tbody>
+        </table>
+        <h4>Filter Values</h4>
+        <p>
+        <#list filterFieldsValues as field, values>
+        <#if values?has_content >
+            <h5>Top values for <i>${field}</i></h5>
         <table class="data">
             <thead>
             <tr>
@@ -306,7 +378,9 @@
             </#list>
             </tbody>
         </table>
+        </#if>
         </#list>
+
         </p>
     </div>
     <div class="section">

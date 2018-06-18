@@ -104,16 +104,16 @@ public abstract class ReportService implements AutoCloseable {
 
     //Facets
     ///Facet Fields
-    public abstract LinkedHashMap<String, JsonObject> getTopFaceFields();
+    public abstract LinkedHashMap<String, JsonObject> getTopFacetFields();
 
     ///Facet Values per field?
     public abstract LinkedHashMap<String, LinkedHashMap<Object,Long>> getFacetFieldsValues(List<String> fields);
 
     //Suggestions
     ///Suggestion fields
-    public abstract LinkedHashMap<String, Long> getTopSuggestionFields();
+    public abstract LinkedHashMap<String, JsonObject> getTopSuggestionFields();
 
-    public abstract LinkedHashMap<String, Long> getTopFilterFields();
+    public abstract LinkedHashMap<String, JsonObject> getTopFilterFields();
 
     ///Suggestion values per field
     public abstract LinkedHashMap<String, LinkedHashMap<Object, Long>> getSuggestionFieldsValues(List<String> fields);
