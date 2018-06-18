@@ -8,7 +8,7 @@
                 {"term":{"%sapplication.id.raw":"%s"}},
                 {"terms":{"%sprocess.filters.scope.raw":["%s"]}},
                 {"terms":{"%sprocess.filters.field.raw":[%s]}},
-                {"exists":{"field":"%sprocess"}}
+                {"match":{"%sprocess.final":"true"}}
             ],
             "must_not":{
                 "match":{"%sprocess.skip":"true"}

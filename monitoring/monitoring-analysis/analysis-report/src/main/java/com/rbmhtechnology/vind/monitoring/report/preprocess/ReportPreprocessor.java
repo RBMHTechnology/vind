@@ -16,8 +16,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -45,7 +43,6 @@ public class ReportPreprocessor {
     private List<JsonElement> environmentFilters = new ArrayList<>();
     private List<String> sessionIds = new ArrayList<>();
     private List<String> systemFieldFilters = new ArrayList<>();
-
 
     public ReportPreprocessor(String esHost, String esPort, String esIndex, ZonedDateTime from, ZonedDateTime to, String appId, String baseType) {
         this.from = from.toInstant().toEpochMilli();
@@ -90,22 +87,25 @@ public class ReportPreprocessor {
         }
         return this;
     }
-    public void preprocess(){
-        prepareProcessing();
-        sessionIds.forEach(this::preprocessSession);
+    public void preprocess(boolean force){
+        prepareProcessing(force);
+        sessionIds.forEach(s -> preprocessSession(s, force));
     }
 
     //Gets the list of sessions to preprocess and figures out the
     // general filters which apply to all queries.
-    private void prepareProcessing() {
+    private void prepareProcessing(boolean force) {
         log.info("Getting sessions and common filter for the period [{} - {}]",from, to);
+
+        final String skipPreprocessed =
+                ",\n\"must_not\":{\"exists\":{\"field\":\"%sprocess\"}}";
 
         final String query = elasticClient.loadQueryFromFile("prepare",
                 this.scrollSpan,
                 this.messageWrapper,
                 this.appId,
                 this.messageWrapper,
-                this.messageWrapper,
+                force? "" : String.format(skipPreprocessed, this.messageWrapper),
                 this.messageWrapper,
                 this.from,
                 this.to);
@@ -177,7 +177,11 @@ public class ReportPreprocessor {
         log.debug("{} different environment filter found for the period [{} - {}]", environmentFilters.size(), from, to);
     }
 
-    public Boolean preprocessSession(String sessionId) {
+    public Boolean preprocessSession(String sessionId, boolean force) {
+
+        final String skipPreprocessed =
+                ",\n\"must_not\":{\"exists\":{\"field\":\"%sprocess\"}}";
+
 
         log.info("Starting pre-processing of vind monitoring entries for session [{}],",sessionId);
         //fetch all the entries for the session
@@ -187,7 +191,7 @@ public class ReportPreprocessor {
                 this.appId,
                 this.messageWrapper,
                 sessionId,
-                this.messageWrapper);
+                force? "" : String.format(skipPreprocessed, this.messageWrapper));
 
         final Set<JsonObject> requests =  new HashSet<>();
 
@@ -273,6 +277,7 @@ public class ReportPreprocessor {
         final List<JsonObject> lastAccesses = new ArrayList<>();
         int searchStep = 1;
 
+        //TODO: change to stream
         for ( int i = 0 ; i < cleanList.size() ; i++){
 
             final JsonObject actual = cleanList.get(i);
@@ -301,16 +306,19 @@ public class ReportPreprocessor {
                             process.addProperty(SEARCH_SKIP,true);
                         }
                     }
-
-                    //TODO:Is the select interaction the end of a user query flow?
-                    searchStep = 1;
-                    lastQuery = null;
                 }
             }
 
             //FULLTEXT QUERIES
             if (actual.get("type").getAsString().equals("fulltext")) {
-
+                //When the last query had interaction in between we start from scratch
+                if (Objects.nonNull(lastQuery)
+                        && lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).get(SEARCH_INTERACTION_SELECT).getAsLong() > 0) {
+                    //TODO:Is the select interaction the end of a user query flow?
+                    searchStep = 1;
+                    lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).addProperty(SEARCH_FINAL_QUERY, true);
+                    lastQuery = null;
+                }
                 //empty check
                 if (isEmptyQuery(actual)) {
                     log.debug("Empty entry: Resetting step count to 1 and lastQuery to null.");
@@ -318,7 +326,10 @@ public class ReportPreprocessor {
                     process.addProperty(SEARCH_EMPTY,true);
                     //empty query is the end of an user iteration
                     searchStep = 1;
-                    lastQuery = null;
+                    if(Objects.nonNull(lastQuery)) {
+                        lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).addProperty(SEARCH_FINAL_QUERY, true);
+                        lastQuery = null;
+                    }
                 } else {
                     //check if it is a duplicated query
                     if(Objects.nonNull(lastQuery) && isDuplicatedQuery(actual, lastQuery)) {
@@ -342,6 +353,8 @@ public class ReportPreprocessor {
                         //Initialize process result json object
                         process.addProperty(SEARCH_INTERACTION_SELECT, 0);
                         process.add(SEARCH_STEPS, new JsonObject());
+                        process.addProperty(SEARCH_FINAL_QUERY,false);
+
 
                         //Calculate flattened list of filters
                         //TODO: do not ignore conditional filters
@@ -370,6 +383,7 @@ public class ReportPreprocessor {
                                 lastQuery = actual;
                             } else {
                                 searchStep = 1;
+                                lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).addProperty(SEARCH_FINAL_QUERY, true);
                                 lastQuery = actual;
                             }
                         } else {

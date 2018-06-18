@@ -5,7 +5,7 @@
             "must":[
                 {"term":{"type.keyword":"fulltext"}},
                 {"term":{"application.id.keyword":"%s"}}
-                {"exists":{"field":"%sprocess"}}
+                {"match":{"%sprocess.final":"true"}}
             ],
             "must_not":[
                 "match":{"%sprocess.skip":"true"},

@@ -97,11 +97,11 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     }
 
 
-    public void preprocessData(String ... systemFilterFields) {
+    public void preprocessData(boolean force, String ... systemFilterFields) {
         if (Objects.nonNull(systemFilterFields)) {
             preprocessor.addSystemFilterField(systemFilterFields);
         }
-        preprocessor.preprocess();
+        preprocessor.preprocess(force);
     }
 
     @Override
@@ -452,6 +452,83 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         termEntries.stream().sorted(Comparator.comparingLong(TermsAggregation.Entry::getCount).reversed())
                 .forEach(entry -> result.put(entry.getKey(), entry.getCount()));
 
+        return result;
+    }
+
+    @Override
+    public LinkedHashMap<String, Long> getTopFilterFields() {
+        final String query = elasticClient.loadQueryFromFile("topFilterFields",
+                this.messageWrapper,
+                this.messageWrapper,
+                this.getApplicationId(),
+                this.messageWrapper,
+                this.messageWrapper,
+                this.messageWrapper,
+                this.messageWrapper,
+                this.getFrom().toInstant().toEpochMilli(),
+                this.getTo().toInstant().toEpochMilli(),
+                this.messageWrapper);
+
+        final SearchResult searchResult = elasticClient.getQuery(query);
+        final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("filterFields").getBuckets();
+        final List<String> filterFields = termEntries.stream().map(e -> e.getKey()).collect(Collectors.toList());
+
+        final List<JsonObject> descriptorFacetFilters = getDescriptorFilters(filterFields ,"Filter");
+
+        final List<JsonObject> filterFilters = descriptorFacetFilters.stream()
+                .map(e -> e.getAsJsonArray("Filter"))
+                .flatMap(Streams::stream)
+                .map(JsonElement::getAsJsonObject)
+                .collect(Collectors.toList());
+
+        final LinkedHashMap<String, Long> result = new LinkedHashMap<>();
+
+        filterFields.stream()
+                .forEach( field -> {
+                    final long fieldCount = filterFilters.stream()
+                            .filter( filter -> filter.get("field").getAsString().equals(field))
+                            .count();
+
+                    result.put(field, fieldCount);
+                });
+
+        //Sort the results
+        final LinkedHashMap sortedResult = result.entrySet().stream()
+                .filter( e -> e.getValue() > 0)
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+        return sortedResult;
+    }
+
+    @Override
+    public LinkedHashMap<String, LinkedHashMap<Object, Long>> getFilterFieldsValues(List<String> fields) {
+
+        final List<JsonObject> descriptorFacetFilters = getDescriptorFilters(fields ,"Filter");
+
+        final List<JsonObject> filterFilters = descriptorFacetFilters.stream()
+                .map(e -> e.getAsJsonArray("Filter"))
+                .flatMap(Streams::stream)
+                .map(JsonElement::getAsJsonObject)
+                .collect(Collectors.toList());
+
+        final LinkedHashMap<String, LinkedHashMap<Object,Long>> result = new LinkedHashMap<>();
+
+        fields.stream()
+                .forEach( field -> {
+                    final Map<String, Long> fieldFilters = filterFilters.stream()
+                            .filter( filter -> filter.get("field").getAsString().equals(field))
+                            .map( filter -> filter.get("term").getAsString())
+                            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+                    //Sort the results
+                    final LinkedHashMap values = fieldFilters.entrySet().stream()
+                            .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                                    (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+
+                    result.put(field, values);
+                });
         return result;
     }
 

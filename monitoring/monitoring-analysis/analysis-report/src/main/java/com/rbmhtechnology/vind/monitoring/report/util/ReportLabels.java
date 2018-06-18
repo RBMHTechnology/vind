@@ -21,9 +21,6 @@ public class ReportLabels {
     public static final String SEARCH_EMPTY = "empty";
     public static final String SEARCH_SORTING = "sorting";
     public static final String SEARCH_PAGING = "paging";
-
-
-
-
+    public static final String SEARCH_FINAL_QUERY = "final";
 
 }

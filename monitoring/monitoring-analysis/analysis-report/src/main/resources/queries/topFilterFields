@@ -3,9 +3,10 @@
     "query":{
         "bool":{
             "must":[
-                {"term":{"%stype":"fulltext"}},
+                {"term":{"%stype.raw":"fulltext"}},
                 {"term":{"%sapplication.id.raw":"%s"}},
-                {"match":{"%sprocess.final":"true"}}
+                {"match":{"%sprocess.final":"true"}},
+                {"match":{"%sprocess.filters.scope":"Filter"}}
             ],
             "must_not":{
                 "match":{"%sprocess.skip":"true"}
@@ -21,6 +22,17 @@
                     }
                 }
             ]
+        }
+    },
+    "aggs":{
+        "filterFields":{
+            "terms":{
+                "field":"%sprocess.filters.field.raw",
+                "size":100,
+                "order":{
+                    "_count":"desc"
+                }
+            }
         }
     }
 }
