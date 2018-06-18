@@ -2,11 +2,14 @@
 <head>
     <meta charset="utf-8"/>
     <link href="http://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css"/>
-    <link href="http://cdn.datatables.net/1.10.15/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css"/>
-    <script src="http://code.jquery.com/jquery-1.12.4.js" type="text/javascript"></script>
-    <script src="http://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js" type="text/javascript"></script>
-    <!--script(type='text/javascript')--><!--  $(document).ready(function() {--><!--  $('table.data').DataTable();-->
-    <!--  });-->
+    <link href="http://cdn.datatables.net/1.10.18/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css"/>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+    <script src="http://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js" type="text/javascript"></script>
+    <script>
+        $(document).ready( function () {
+            $('.data').DataTable();
+        } );
+    </script>
     <style>
     body {
         font-family: 'Roboto', sans-serif;
@@ -171,11 +174,24 @@
             <tr>
                 <th>Top Searchers</th>
                 <td>
-                    <ol>
-                    <#list topUsers as user, count>
-                        <li>${user} (${count})</li>
-                    </#list>
-                    </ol>
+                    <table class="data">
+                        <thead>
+                            <tr>
+                                <th>Ranking</th>
+                                <th>Name</th>
+                                <th>Number of Queries</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <#list topUsers as user, count>
+                            <tr>
+                                <td>${user?counter}</td>
+                                <td>${user}</td>
+                                <td>${count}</td>
+                            </tr>
+                            </#list>
+                        </tbody>
+                    </table>
                 </td>
             </tr>
         </table>
