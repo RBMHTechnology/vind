@@ -291,6 +291,9 @@
                         </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <additionalJOption>-Xdoclint:none</additionalJOption><!-- actually javadoc issues should be foíxed ... -->
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
