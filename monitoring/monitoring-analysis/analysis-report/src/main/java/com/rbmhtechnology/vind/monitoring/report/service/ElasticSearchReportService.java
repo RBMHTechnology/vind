@@ -718,23 +718,13 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
             from += resultSize;
         }
 
-
-        final Map<String, List<JsonObject>> resultsPerId =
-                results.stream()
-                        .collect(Collectors.groupingBy(r -> r.get("id").getAsString()));
-
-        final List<JsonObject> finalQueries = resultsPerId.entrySet().stream()
-                .map(e -> {
-                    if (e.getValue().size() > 1) {
-                        return e.getValue().stream().max(Comparator.comparingLong( l -> l.get("step").getAsLong())).get();
-
-                    } else {
-                        return e.getValue().get(0);
-                    }
-                })
+        final List<JsonObject> finalQueries = results.stream()
                 .map( r -> {
-                    JsonArray filters = Streams.stream(r.getAsJsonArray("filters").iterator())
-                            .filter(f -> f.getAsJsonObject().get("scope").getAsString().equals(scope))
+                    final JsonObject steps = r.getAsJsonObject("steps");
+                    final JsonArray filters = steps.entrySet().stream()
+                            .flatMap( e -> Streams.stream(e.getValue().getAsJsonArray().iterator()))
+                            .map(JsonElement::getAsJsonObject)
+                            .filter( f -> f.get("scope").getAsString().equals(scope))
                             .collect(JsonArray::new,
                                         JsonArray::add,
                                         JsonArray::addAll);
