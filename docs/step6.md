@@ -39,6 +39,7 @@ Currently the following properties are supported:
 | *vind.properties.file* | STRING | Path to property file |
 
 **Environment Properties**
+
 Environment Properties have a slightly different format. They start with the prefix `VIND_`, are uppercased and the dots are replaced underscored.
 So e.g. `server.solr.cloud` turns to `VIND_SERVER_SOLR_CLOUD`.
 
@@ -83,6 +84,7 @@ SearchConfiguration.set(SearchConfiguration.SERVER_SOLR_COLLECTION, "collection1
 ```
    
 *HINT*
+
 If you want to test things with a standalone Solr Server we created a small script that helps you with that. The script is located
 in the main directory of the project. Usage:
 
