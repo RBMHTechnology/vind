@@ -22,7 +22,9 @@ It comes with some basic configurations (like pagesize) that can be changed. The
 Default Properties < Environment Variables < Property File.
 
 Currently the following properties are supported:
+
 | Key | Type | Description |
+| --- | --- | --- |
 | *server.collection* | STRING | The solr collection name |
 | *server.host* | STRING | The solr host or hostlist |
 | *server.provider* | STRING | Fully qualified name of the solr provider |
@@ -37,7 +39,7 @@ Currently the following properties are supported:
 | *vind.properties.file* | STRING | Path to property file |
 
 **Environment Properties**
-Environment Properties have a slightly different format. They start with the prefix *VIND_*, are uppercased and the dots are replaced underscored.
+Environment Properties have a slightly different format. They start with the prefix `VIND_`, are uppercased and the dots are replaced underscored.
 So e.g. `server.solr.cloud` turns to `VIND_SERVER_SOLR_CLOUD`.
 
 **Property File**
