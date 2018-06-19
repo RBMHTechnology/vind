@@ -54,4 +54,16 @@ public class ElasticSearchReportConfiguration extends ReportConfiguration {
         super.setReportWriterConfiguration(reportWriterConfiguration);
         return this;
     }
+
+    @Override
+    public ElasticSearchReportConfiguration setSystemFilterFields(String ... systemFilterFields) {
+        super.setSystemFilterFields(systemFilterFields);
+        return this;
+    }
+
+    @Override
+    public ElasticSearchReportConfiguration setForcePreprocessing(boolean forcePreprocessing) {
+        super.setForcePreprocessing(forcePreprocessing);
+        return this;
+    }
 }

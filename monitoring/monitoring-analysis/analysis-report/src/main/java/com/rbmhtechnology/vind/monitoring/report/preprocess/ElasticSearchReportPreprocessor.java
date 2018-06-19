@@ -72,7 +72,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
 
     //Gets the list of sessions to preprocess and figures out the
     // general filters which apply to all queries.
-    void beforePreprocessing(boolean force) {
+    void beforePreprocessing() {
         log.info("Getting sessions and common filter for the period [{} - {}]",from, to);
 
         final String skipPreprocessed =
@@ -83,7 +83,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                 this.configuration.getMessageWrapper(),
                 this.configuration.getApplicationId(),
                 this.configuration.getMessageWrapper(),
-                force? "" : String.format(skipPreprocessed, this.configuration.getMessageWrapper()),
+                configuration.isForcePreprocessing()? "" : String.format(skipPreprocessed, this.configuration.getMessageWrapper()),
                 this.configuration.getMessageWrapper(),
                 this.from,
                 this.to);
@@ -155,7 +155,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         log.debug("{} different environment filter found for the period [{} - {}]", environmentFilters.size(), from, to);
     }
 
-    public Boolean preprocessSession(String sessionId, boolean force) {
+    public Boolean preprocessSession(String sessionId) {
 
         final String skipPreprocessed =
                 ",\n\"must_not\":{\"exists\":{\"field\":\"%sprocess\"}}";
@@ -168,7 +168,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                 this.configuration.getApplicationId(),
                 this.configuration.getMessageWrapper(),
                 sessionId,
-                force? "" : String.format(skipPreprocessed, this.configuration.getMessageWrapper()));
+                configuration.isForcePreprocessing()? "" : String.format(skipPreprocessed, this.configuration.getMessageWrapper()));
 
         final Set<JsonObject> requests =  new HashSet<>();
 

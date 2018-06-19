@@ -4,6 +4,7 @@
 package com.rbmhtechnology.vind.monitoring.report;
 
 import com.google.gson.JsonObject;
+import com.rbmhtechnology.vind.monitoring.report.configuration.ReportConfiguration;
 import com.rbmhtechnology.vind.monitoring.report.configuration.ReportWriterConfiguration;
 
 import java.time.ZoneId;
@@ -19,13 +20,14 @@ import java.util.Map;
  */
 public class Report {
 
+    private ReportConfiguration configuration;
+
     private String dateFormat = "dd/MM/yyyy VV";
     private String longDateFormat = "EEEE, MMMM dd, yyyy hh:mm a";
     private ZoneId zoneId = ZoneOffset.UTC;
     private String imageUrl = "https://image3.redbull.com/rbx00023/0001/1/210/403/logos/logos-homepage/brandlogos/jpg/red-bull-mediahouse-01.jpg"; //TODO make configurable
 
     private ZonedDateTime today = ZonedDateTime.now();
-    private String applicationName;
     private ZonedDateTime from;
     private ZonedDateTime to;
     private long requests;
@@ -40,7 +42,10 @@ public class Report {
     private LinkedHashMap<String, Long> topQueries = new LinkedHashMap<>();
     private LinkedHashMap<String, Long> topFilteredQueries = new LinkedHashMap<>();
 
-    private ReportWriterConfiguration reportWriterConfiguration = new ReportWriterConfiguration();
+
+    public Report(ReportConfiguration configuration) {
+        this.configuration = configuration;
+    }
 
     public ZonedDateTime getToday() {
         return today;
@@ -55,12 +60,7 @@ public class Report {
     }
 
     public String getApplicationName() {
-        return applicationName;
-    }
-
-    public Report setApplicationName(String applicationName) {
-        this.applicationName = applicationName;
-        return this;
+        return configuration.getApplicationId();
     }
 
     public ZonedDateTime getFrom() {
@@ -200,7 +200,7 @@ public class Report {
         return this;
     }
 
-    public ReportWriterConfiguration getReportWriterConfiguration() {
-        return reportWriterConfiguration;
+    public ReportConfiguration getConfiguration() {
+        return configuration;
     }
 }

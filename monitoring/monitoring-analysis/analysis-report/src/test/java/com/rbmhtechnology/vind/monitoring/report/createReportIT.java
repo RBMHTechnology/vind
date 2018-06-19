@@ -26,6 +26,8 @@ public class createReportIT {
     private ElasticSearchReportService esRepsortService;
 
     private final ElasticSearchReportConfiguration config = new ElasticSearchReportConfiguration()
+            .setForcePreprocessing(false)
+            .setSystemFilterFields("static_partitionID")
             .setApplicationId("mediamanager-Media Manager Content Management-Assets")
             .setEsEntryType("logback")
             .setMessageWrapper("message_json")
@@ -46,7 +48,7 @@ public class createReportIT {
     @Before
     public void setUp() throws IOException {
         from = ZonedDateTime.now().minusMonths(1);
-        to   = ZonedDateTime.now().minusMonths(1).plusWeeks(1);
+        to   = ZonedDateTime.now().minusMonths(1).plusDays(1);
 
         reportPreprocessor = new ElasticSearchReportPreprocessor(config, from, to);
 
@@ -59,16 +61,15 @@ public class createReportIT {
     @Test
     @Ignore
     public void preprocessIT() {
-        reportPreprocessor
-                .addSystemFilterField("static_partitionID")
-                .preprocess(true);
+        reportPreprocessor.preprocess();
 
     }
 
     @Test
     //@Ignore
     public void createReportIT() {
-        esRepsortService.preprocessData(false,"static_partitionID");
+
+        esRepsortService.preprocessData();
 
         final LinkedHashMap<String, JsonObject> topFaceFields = esRepsortService.getTopFacetFields();
         final ArrayList<String> facetFields = new ArrayList<>(topFaceFields.keySet());
@@ -79,8 +80,7 @@ public class createReportIT {
         final LinkedHashMap<String, JsonObject> topFilterFields = esRepsortService.getTopFilterFields();;
         final ArrayList<String> filterFields = new ArrayList<>(topFilterFields.keySet());
 
-        this.report = new Report()
-                .setApplicationName(esRepsortService.getConfiguration().getApplicationId())
+        this.report = new Report(config)
                 .setFrom(from)
                 .setTo(to)
                 .setTopDays(esRepsortService.getTopDays())
@@ -90,7 +90,10 @@ public class createReportIT {
                 .setFacetFieldsValues(esRepsortService.getFacetFieldsValues(facetFields))
                 .setTopFacetFields(topFaceFields)
                 .setTopQueries(esRepsortService.getTopQueries())
-                .setTopUsers(esRepsortService.getTopUsers());
+                .setTopUsers(esRepsortService.getTopUsers())
+                .setTopFilterFields(topFilterFields)
+                .setFilterFieldsValues(esRepsortService.getFilterFieldsValues(filterFields));
+
         Assert.assertTrue(reportWriter.write(this.report,reportFile.getAbsolutePath()));
 
         System.out.println("Report has been written to " + reportFile.getAbsolutePath());

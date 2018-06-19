@@ -4,14 +4,14 @@
 package com.rbmhtechnology.vind.monitoring.report.service;
 
 import com.google.gson.JsonObject;
+import com.rbmhtechnology.vind.monitoring.report.Report;
 import com.rbmhtechnology.vind.monitoring.report.configuration.ReportConfiguration;
+import com.rbmhtechnology.vind.monitoring.report.preprocess.ReportPreprocessor;
 
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created on 28.02.18.
@@ -40,6 +40,43 @@ public abstract class ReportService implements AutoCloseable {
         this.zoneId = ZoneId.of(zoneId);
         this.from = ZonedDateTime.ofInstant(from.toInstant(), this.zoneId);
         this.to = ZonedDateTime.ofInstant(to.toInstant(), this.zoneId);
+    }
+
+    abstract ReportPreprocessor getPreprocessor();
+
+    public void preprocessData() {
+        if (Objects.nonNull(configuration.getSystemFilterFields())) {
+            getPreprocessor().addSystemFilterField(configuration.getSystemFilterFields());
+        }
+        getPreprocessor().preprocess();
+    }
+
+    public Report generateReport() {
+
+        this.preprocessData();
+
+        final LinkedHashMap<String, JsonObject> topFaceFields = this.getTopFacetFields();
+        final ArrayList<String> facetFields = new ArrayList<>(topFaceFields.keySet());
+
+        final LinkedHashMap<String, JsonObject> topSuggestionFields = this.getTopSuggestionFields();
+        final ArrayList<String> suggestFields = new ArrayList<>(topSuggestionFields.keySet());
+
+        final LinkedHashMap<String, JsonObject> topFilterFields = this.getTopFilterFields();;
+        final ArrayList<String> filterFields = new ArrayList<>(topFilterFields.keySet());
+
+        return new Report(configuration)
+                .setFrom(this.getFrom())
+                .setTo(this.getTo())
+                .setTopDays(this.getTopDays())
+                .setRequests(this.getTotalRequests())
+                .setTopSuggestionFields(topSuggestionFields)
+                .setSuggestionFieldsValues(this.getSuggestionFieldsValues(suggestFields))
+                .setFacetFieldsValues(this.getFacetFieldsValues(facetFields))
+                .setTopFacetFields(topFaceFields)
+                .setTopQueries(this.getTopQueries())
+                .setTopUsers(this.getTopUsers())
+                .setTopFilterFields(topFilterFields)
+                .setFilterFieldsValues(this.getFilterFieldsValues(filterFields));
     }
 
     //Getters

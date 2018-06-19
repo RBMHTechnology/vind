@@ -144,7 +144,7 @@
             <th>AppId:</th>
             <td>${applicationName}</td>
         </tr>
-        <#list reportWriterConfiguration.generalFilters as name, value>
+        <#list configuration.reportWriterConfiguration.generalFilters as name, value>
         <tr>
             <th>${name}</th>
             <td>${value}</td>
@@ -212,7 +212,7 @@
                 <th>#Usages as 2</th>
                 <th>#Usages as 3</th>
                 <th>#Usages as 4</th>
-                <#list reportWriterConfiguration.facetFieldsExtension?keys as name>
+                <#list configuration.reportWriterConfiguration.facetFieldsExtension?keys as name>
                 <th>${name}</th>
                 </#list>
             </tr>
@@ -227,7 +227,7 @@
                     <td>${value.second}</td>
                     <td>${value.third}</td>
                     <td>${value.fourth}</td>
-                    <#list reportWriterConfiguration.facetFieldsExtension as column, fields>
+                    <#list configuration.reportWriterConfiguration.facetFieldsExtension as column, fields>
                     <td>${fields[field]!"-"}</td>
                     </#list>
                 </tr>
@@ -272,7 +272,7 @@
                     <th>#Usages as 2</th>
                     <th>#Usages as 3</th>
                     <th>#Usages as 4</th>
-                    <#list reportWriterConfiguration.suggestionFieldsExtension?keys as name>
+                    <#list configuration.reportWriterConfiguration.suggestionFieldsExtension?keys as name>
                     <th>${name}</th>
                     </#list>
                 </tr>
@@ -287,7 +287,7 @@
                     <td>${value.second}</td>
                     <td>${value.third}</td>
                     <td>${value.fourth}</td>
-                    <#list reportWriterConfiguration.suggestionFieldsExtension as column, fields>
+                    <#list configuration.reportWriterConfiguration.suggestionFieldsExtension as column, fields>
                     <td>${fields[field]!"-"}</td>
                     </#list>
                 </tr>
@@ -333,7 +333,7 @@
                 <th>#Usages as 2</th>
                 <th>#Usages as 3</th>
                 <th>#Usages as 4</th>
-                <#list reportWriterConfiguration.filterFieldsExtension?keys as name>
+                <#list configuration.reportWriterConfiguration.filterFieldsExtension?keys as name>
                 <th>${name}</th>
                 </#list>
             </tr>
@@ -348,7 +348,7 @@
                 <td>${value.second}</td>
                 <td>${value.third}</td>
                 <td>${value.fourth}</td>
-                <#list reportWriterConfiguration.filterFieldsExtension as column, fields>
+                <#list configuration.reportWriterConfiguration.filterFieldsExtension as column, fields>
                 <td>${fields[field]!"-"}</td>
                 </#list>
             </tr>
@@ -393,7 +393,7 @@
                     <th>Ranking</th>
                     <th>Value</th>
                     <th>#Usages</th>
-                    <#list reportWriterConfiguration.fulltextQueryExtension?keys as name>
+                    <#list configuration.reportWriterConfiguration.fulltextQueryExtension?keys as name>
                     <th>${name}</th>
                     </#list>
                 </tr>
@@ -404,7 +404,7 @@
                     <td>${query?counter}</td>
                     <td>${query}</td>
                     <td>${count}</td>
-                    <#list reportWriterConfiguration.fulltextQueryExtension as column, queries>
+                    <#list configuration.reportWriterConfiguration.fulltextQueryExtension as column, queries>
                     <td>${queries[query]!"-"}</td>
                     </#list>
                 </tr>
@@ -412,7 +412,7 @@
             </tbody>
         </table>
         <h3>Top Filtered Fulltext Queries</h3>
-        <p>Filter: without <#list reportWriterConfiguration.queryFilters as filter>${filter}  </#list></p>
+        <p>Filter: without <#list configuration.reportWriterConfiguration.queryFilters as filter>${filter}  </#list></p>
         <p>14769 queries with 3133 distinct search terms.</p>
         <table class="data">
             <thead>

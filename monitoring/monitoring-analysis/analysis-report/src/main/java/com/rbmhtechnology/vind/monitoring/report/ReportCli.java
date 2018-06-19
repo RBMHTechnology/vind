@@ -79,18 +79,7 @@ public class ReportCli {
 
         final ReportWriter reportWriter = new HtmlReportWriter();//TODO make format aware
 
-        final Report report = new Report()
-                .setApplicationName(applicationId)
-                .setFrom(from)
-                .setTo(to)
-                .setTopDays(esRepsortService.getTopDays())
-                .setRequests(esRepsortService.getTotalRequests())
-                .setTopSuggestionFields(topSuggestionFields)
-                .setSuggestionFieldsValues(esRepsortService.getSuggestionFieldsValues(suggestFields))
-                .setFacetFieldsValues(esRepsortService.getFacetFieldsValues(facetFields))
-                .setTopFacetFields(topFaceFields)
-                .setTopQueries(esRepsortService.getTopQueries())
-                .setTopUsers(esRepsortService.getTopUsers());
+        final Report report = esRepsortService.generateReport();
 
 
         Path filePath = Files.createFile(Paths.get("./testout/" +  getCleanFilename(applicationId, resultFormat)));

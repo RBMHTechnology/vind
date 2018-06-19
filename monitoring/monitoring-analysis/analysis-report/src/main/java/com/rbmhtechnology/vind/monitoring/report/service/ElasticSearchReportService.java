@@ -8,8 +8,10 @@ import com.google.common.collect.Streams;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.rbmhtechnology.vind.monitoring.report.Report;
 import com.rbmhtechnology.vind.monitoring.report.configuration.ElasticSearchReportConfiguration;
 import com.rbmhtechnology.vind.monitoring.report.preprocess.ElasticSearchReportPreprocessor;
+import com.rbmhtechnology.vind.monitoring.report.preprocess.ReportPreprocessor;
 import com.rbmhtechnology.vind.monitoring.utils.ElasticSearchClient;
 import com.rbmhtechnology.vind.monitoring.utils.ElasticSearchClientBuilder;
 import io.searchbox.core.SearchResult;
@@ -35,7 +37,6 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     private ElasticSearchClient elasticClient = new ElasticSearchClient();
     private final ElasticSearchReportConfiguration configuration;
 
-
     public ElasticSearchReportService(ElasticSearchReportConfiguration configuration, ZonedDateTime from, ZonedDateTime to) {
         super(configuration, from, to);
         elasticClient.init(
@@ -48,12 +49,9 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         this.preprocessor = new ElasticSearchReportPreprocessor(configuration, from, to);
     }
 
-
-    public void preprocessData(boolean force, String ... systemFilterFields) {
-        if (Objects.nonNull(systemFilterFields)) {
-            preprocessor.addSystemFilterField(systemFilterFields);
-        }
-        preprocessor.preprocess(force);
+    @Override
+    ReportPreprocessor getPreprocessor() {
+        return this.preprocessor;
     }
 
     @Override
