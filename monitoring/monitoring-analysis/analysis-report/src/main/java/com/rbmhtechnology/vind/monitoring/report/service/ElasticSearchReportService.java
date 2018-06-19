@@ -14,6 +14,7 @@ import com.rbmhtechnology.vind.monitoring.report.preprocess.ElasticSearchReportP
 import com.rbmhtechnology.vind.monitoring.report.preprocess.ReportPreprocessor;
 import com.rbmhtechnology.vind.monitoring.utils.ElasticSearchClient;
 import com.rbmhtechnology.vind.monitoring.utils.ElasticSearchClientBuilder;
+import io.searchbox.client.JestResult;
 import io.searchbox.core.SearchResult;
 import io.searchbox.core.search.aggregation.DateHistogramAggregation;
 import io.searchbox.core.search.aggregation.TermsAggregation;
@@ -659,12 +660,10 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     }
 
     private List<JsonObject> getDescriptorFilters(List<String> fields, String scope) {
-        int from = 0;
-        int resultSize = 0;
 
-        final String query = elasticClient.loadQueryFromFile("topFacetFieldsValues",
-                resultSize, //page size
-                from,
+        final Long scrollSpan = 1000l;
+        final String query = elasticClient.loadQueryFromFile("scopedProcessResultsForFields",
+                scrollSpan, //page size
                 this.configuration.getMessageWrapper(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getApplicationId(),
@@ -679,43 +678,38 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 this.getTo().toInstant().toEpochMilli()
         );
 
-        final SearchResult matchingResults = elasticClient.getQuery(query);
-        final Long totalResults = matchingResults.getTotal();
+
         final List<JsonObject> results = new ArrayList<>();
 
-        resultSize = 100;
-        while (from < totalResults) {
-            final String q = elasticClient.loadQueryFromFile("topFacetFieldsValues",
-                    resultSize, //page size
-                    from,
-                    this.configuration.getMessageWrapper(),
-                    this.configuration.getMessageWrapper(),
-                    this.configuration.getApplicationId(),
-                    this.configuration.getMessageWrapper(),
-                    scope,
-                    this.configuration.getMessageWrapper(),
-                    "\"".concat(Joiner.on("\", \"").skipNulls().join(fields)).concat("\""),
-                    this.configuration.getMessageWrapper(),
-                    this.configuration.getMessageWrapper(),
-                    this.configuration.getMessageWrapper(),
-                    this.getFrom().toInstant().toEpochMilli(),
-                    this.getTo().toInstant().toEpochMilli()
-            );
+        String scrollId = null;
+        Long start = 0l;
+        Long totalResults = 1l;
+        while (start < totalResults) {
 
-            final SearchResult searchResult = elasticClient.getQuery(q);
+            final JestResult scrollResult;
+            if (Objects.nonNull(scrollId)) {
+                scrollResult =  elasticClient.scrollResults(scrollId);
+            } else {
+                scrollResult = elasticClient.getScrollQuery(query);
+                totalResults =scrollResult.getJsonObject().getAsJsonObject("hits").get("total").getAsLong();
+            }
 
-            results.addAll(searchResult.getHits(JsonElement.class).stream()
-                    .map(es -> {
-                        final JsonObject result = es.source.getAsJsonObject()
-                                 .getAsJsonObject("message_json")
-                                 .getAsJsonObject("process");
-                        result.addProperty("id", es.id);
+            scrollId =
+                    scrollResult.getJsonObject().getAsJsonPrimitive("_scroll_id").getAsString();
+
+            final JsonArray scrollHits = scrollResult.getJsonObject().getAsJsonObject("hits").getAsJsonArray("hits");
+            results.addAll(Streams.stream(scrollHits)
+                    .map(hit -> {
+                        final JsonObject result = hit.getAsJsonObject()
+                                .getAsJsonObject("_source")
+                                .getAsJsonObject("message_json")
+                                .getAsJsonObject("process");
+                        result.addProperty("id", hit.getAsJsonObject().get("_id").getAsString());
                         return result;
                     })
                     .collect(Collectors.toList()));
 
-
-            from += resultSize;
+            start += scrollSpan;
         }
 
         final List<JsonObject> finalQueries = results.stream()
