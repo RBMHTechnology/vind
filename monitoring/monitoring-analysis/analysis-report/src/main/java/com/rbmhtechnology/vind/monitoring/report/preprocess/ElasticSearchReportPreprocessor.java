@@ -30,12 +30,13 @@ import static com.rbmhtechnology.vind.monitoring.report.util.ReportLabels.*;
  */
 public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchReportPreprocessor.class);
+    private static final int MAX_LEVENSHTEIN_DISTANCE = 1;
 
     private final Long from;
     private final Long to;
 
     private final  ElasticSearchClient elasticClient = new ElasticSearchClient();
-    private Long scrollSpan = 1000l;
+    private final Long scrollSpan = 1000L;
     private DateTimeFormatter esDateFormater = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
     private List<JsonElement> environmentFilters = new ArrayList<>();
@@ -52,7 +53,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                 configuration.getConnectionConfiguration().getEsPort(),
                 configuration.getConnectionConfiguration().getEsIndex(),
                 configuration.getEsEntryType(),
-                ElasticSearchReportPreprocessor.class.getClassLoader().getResource("processMapping.json").getPath()
+                Objects.requireNonNull(ElasticSearchReportPreprocessor.class.getClassLoader().getResource("processMapping.json")).getPath()
         );
 
         this.configuration = configuration;
@@ -92,8 +93,8 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         final ArrayList<JsonElement> commonFilters = new ArrayList<>();
 
         String scrollId = null;
-        Long start = 0l;
-        Long totalResults = 1l;
+        Long start = 0L;
+        Long totalResults = 1L;
         while (start < totalResults) {
 
             final JestResult scrollResult;
@@ -173,8 +174,8 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         final Set<JsonObject> requests =  new HashSet<>();
 
         String scrollId = null;
-        Long start = 0l;
-        Long totalResults = 1l;
+        Long start = 0L;
+        Long totalResults = 1L;
         while (start < totalResults) {
             final JestResult scrollResult;
             if (Objects.nonNull(scrollId)) {
@@ -254,25 +255,22 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         final List<JsonObject> lastAccesses = new ArrayList<>();
         int searchStep = 1;
 
-        //TODO: change to stream
-        for ( int i = 0 ; i < cleanList.size() ; i++){
-
-            final JsonObject actual = cleanList.get(i);
+        for (final JsonObject actual : cleanList) {
 
             //Add pre-processing info
             final JsonObject process = new JsonObject();
-            actual.add(SEARCH_PRE_PROCESS_RESULT, process );
+            actual.add(SEARCH_PRE_PROCESS_RESULT, process);
 
             //INTERACTIONS
             if (actual.get("type").getAsString().equals("interaction")) {
                 final JsonObject access = actual.getAsJsonObject("request");
-                if(access.get("action").getAsString().equals("select")){
+                if (access.get("action").getAsString().equals("select")) {
 
                     //Check duplicated accesses
                     if (CollectionUtils.isNotEmpty(lastAccesses)
                             && lastAccesses.contains(access)) {
-                        process.addProperty(SEARCH_DUPLICATE,true);
-                        process.addProperty(SEARCH_SKIP,true);
+                        process.addProperty(SEARCH_DUPLICATE, true);
+                        process.addProperty(SEARCH_SKIP, true);
 
                     } else {
                         lastAccesses.add(access);
@@ -280,7 +278,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                             final JsonObject processInfo = lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT);
                             processInfo.addProperty(SEARCH_INTERACTION_SELECT, processInfo.get(SEARCH_INTERACTION_SELECT).getAsLong() + 1);
                         } else {
-                            process.addProperty(SEARCH_SKIP,true);
+                            process.addProperty(SEARCH_SKIP, true);
                         }
                     }
                 }
@@ -299,29 +297,29 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                 //empty check
                 if (isEmptyQuery(actual)) {
                     log.debug("Empty entry: Resetting step count to 1 and lastQuery to null.");
-                    process.addProperty(SEARCH_SKIP,true);
-                    process.addProperty(SEARCH_EMPTY,true);
+                    process.addProperty(SEARCH_SKIP, true);
+                    process.addProperty(SEARCH_EMPTY, true);
                     //empty query is the end of an user iteration
                     searchStep = 1;
-                    if(Objects.nonNull(lastQuery)) {
+                    if (Objects.nonNull(lastQuery)) {
                         lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).addProperty(SEARCH_FINAL_QUERY, true);
                         lastQuery = null;
                     }
                 } else {
                     //check if it is a duplicated query
-                    if(Objects.nonNull(lastQuery) && isDuplicatedQuery(actual, lastQuery)) {
+                    if (Objects.nonNull(lastQuery) && isDuplicatedQuery(actual, lastQuery)) {
                         log.debug("Duplicated entry: checking if is a paging, sorting or duplicated.");
-                        if(isPaging(actual,lastQuery)) {
+                        if (isPaging(actual, lastQuery)) {
                             process.addProperty(SEARCH_PAGING, true);
                         }
-                        if(isSorting(actual,lastQuery)) {
+                        if (isSorting(actual, lastQuery)) {
                             process.addProperty(SEARCH_SORTING, true);
                         }
-                        if (!(isSorting(actual,lastQuery) || isPaging(actual,lastQuery))) {
+                        if (!(isSorting(actual, lastQuery) || isPaging(actual, lastQuery))) {
                             process.addProperty(SEARCH_DUPLICATE, true);
                         }
 
-                        process.addProperty(SEARCH_SKIP,true);
+                        process.addProperty(SEARCH_SKIP, true);
 
                     } else {
                         //Clear list of accesses
@@ -330,7 +328,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                         //Initialize process result json object
                         process.addProperty(SEARCH_INTERACTION_SELECT, 0);
                         process.add(SEARCH_STEPS, new JsonObject());
-                        process.addProperty(SEARCH_FINAL_QUERY,false);
+                        process.addProperty(SEARCH_FINAL_QUERY, false);
 
 
                         //Calculate flattened list of filters
@@ -342,21 +340,19 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
 
                         final JsonArray stepFilters = new JsonArray();
                         stepFilters.addAll(flattenedFilters);
-                        if(Objects.nonNull(lastQuery)) {
-                            if(isRefinedQuery(actual,lastQuery)) {
+                        if (Objects.nonNull(lastQuery)) {
+                            if (isRefinedQuery(actual, lastQuery)) {
                                 //Copy previous steps info into this query
                                 final JsonObject previousSteps = lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).get(SEARCH_STEPS).getAsJsonObject();
                                 final JsonObject copy = deepCopy(previousSteps);
-
-
                                 process.add(SEARCH_STEPS, copy);
 
-                                final JsonArray lastFilters = lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).getAsJsonArray(SEARCH_FILTERS);
                                 //Select new filters for this step
+                                final JsonArray lastFilters = lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).getAsJsonArray(SEARCH_FILTERS);
                                 Streams.stream(flattenedFilters.iterator())
                                         .filter(lastFilters::contains)
-                                        .forEach(f -> stepFilters.remove(f));
-                                searchStep ++;
+                                        .forEach(stepFilters::remove);
+                                searchStep++;
                                 lastQuery = actual;
                             } else {
                                 searchStep = 1;
@@ -364,9 +360,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                                 lastQuery = actual;
                             }
                         } else {
-                            searchStep = 1;
                             lastQuery = actual;
-
                         }
 
                         process.getAsJsonObject(SEARCH_STEPS).add(String.valueOf(searchStep), stepFilters);
@@ -389,9 +383,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         if(actualQueryText.equals(oldQueryText)) {
             final JsonElement previousFilters = lastQuery.getAsJsonObject("request").get("filter");
             final JsonElement actualFilters = query.getAsJsonObject("request").get("filter");
-            if(equalFilters(actualFilters, previousFilters)){
-                return true;
-            }
+            return equalFilters(actualFilters, previousFilters);
         }
         return false;
     }
@@ -401,9 +393,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         if(isDuplicatedQuery(query,lastQuery)){
             final JsonObject oldPaging = lastQuery.getAsJsonObject("paging");
             final JsonObject actualPaging = query.getAsJsonObject("paging");
-            if(!actualPaging.equals(oldPaging)) {
-                return true;
-            }
+            return !actualPaging.equals(oldPaging);
         }
         return false;
     }
@@ -413,9 +403,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         if(isDuplicatedQuery(query,lastQuery)){
             final JsonArray oldSorting = lastQuery.getAsJsonArray("sorting");
             final JsonArray actualSorting = query.getAsJsonArray("sorting");
-            if(!actualSorting.equals(oldSorting)) {
-                return true;
-            }
+            return !actualSorting.equals(oldSorting);
         }
         return false;
     }
@@ -425,9 +413,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         final String queryText = query.getAsJsonObject("request").get("query").getAsString();
         if (queryText.equals("*")) {
             final JsonArray queryFilters = extractFilterFields(query.getAsJsonObject("request").get("filter"));
-            if (queryFilters.size() == 0) {
-                return true;
-            }
+            return queryFilters.size() == 0;
         }
         return false;
     }
@@ -443,9 +429,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
             final Long intersectionCount = Streams.stream(actualFilters.iterator())
                     .filter(previousFilters::contains)
                     .count();
-            if ((previousFilters.size() - intersectionCount) <= 1) {
-                return true;
-            }
+            return (previousFilters.size() - intersectionCount) <= 1;
         }
         return false;
     }
@@ -455,10 +439,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
             return true;
         } else  if (text.contains(lastText)) {
             return true;
-        } else if(SimilarityUtils.levenshteinDistance(text, lastText) <= 2) {
-            return true;
-        }
-        return false;
+        } else return SimilarityUtils.levenshteinDistance(text, lastText) <= MAX_LEVENSHTEIN_DISTANCE;
     }
 
     private JsonArray extractFilterFields(JsonElement filters) {
@@ -536,9 +517,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
     private JsonObject deepCopy(JsonObject object) {
         final JsonObject copy = new JsonObject();
 
-        final Iterator members = object.getAsJsonObject().entrySet().iterator();
-        while(members.hasNext()) {
-            Map.Entry<String, JsonElement> entry = (Map.Entry)members.next();
+        for (Map.Entry<String, JsonElement> entry : object.getAsJsonObject().entrySet()) {
             copy.add(entry.getKey(), deepCopy(entry.getValue()));
         }
 
@@ -552,13 +531,11 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         }
         else {
             final JsonArray copy = new JsonArray();
-            final Iterator jsonElements = object.getAsJsonArray().iterator();
-            while(jsonElements.hasNext()) {
-                copy.add(deepCopy((JsonElement) jsonElements.next()));
+            for (JsonElement o : object.getAsJsonArray()) {
+                copy.add(deepCopy(o));
             }
             return copy;
         }
-
     }
 
     private Boolean bulkUpdate(Set<JsonObject> results) {

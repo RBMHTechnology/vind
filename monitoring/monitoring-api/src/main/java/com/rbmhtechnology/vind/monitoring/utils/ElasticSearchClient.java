@@ -30,6 +30,7 @@ import java.util.List;
 public class ElasticSearchClient {
 
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchClient.class);
+    public static final String SCROLL_TIME_SESSION = "20m";
 
     private String elasticPort;
     private String elasticHost;
@@ -136,7 +137,7 @@ public class ElasticSearchClient {
         final JestClient client = getElasticSearchClient();
         if (client != null) {
 
-            final SearchScroll scroll = new SearchScroll.Builder(scrollId, "10m").build();
+            final SearchScroll scroll = new SearchScroll.Builder(scrollId, SCROLL_TIME_SESSION).build();
 
             try {
                 final JestResult result = client.execute(scroll);
@@ -156,11 +157,7 @@ public class ElasticSearchClient {
 
             final Search.Builder searchBuilder = new Search.Builder(query)
                     .addIndex(elasticIndex)
-                    .setParameter(Parameters.SCROLL,"10m");
-
-            /*if (StringUtils.isNotEmpty(this.logType)) {
-                searchBuilder.addType(this.logType);
-            }*/
+                    .setParameter(Parameters.SCROLL, SCROLL_TIME_SESSION);
 
             final Search search = searchBuilder.build();
 

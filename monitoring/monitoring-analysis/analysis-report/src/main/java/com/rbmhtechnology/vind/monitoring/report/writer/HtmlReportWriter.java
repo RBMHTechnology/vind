@@ -21,8 +21,8 @@ import java.nio.file.Paths;
  */
 public class HtmlReportWriter implements ReportWriter{
 
-    public static final String DEFAULT_HTML_TEMPLATE = "report.ftlh";
-    public static final String DEFAULT_ENCODING = "UTF-8";
+    private static final String DEFAULT_HTML_TEMPLATE = "report.ftlh";
+    private static final String DEFAULT_ENCODING = "UTF-8";
     final private Configuration cfg;
     final private Template reportTemplate;
 

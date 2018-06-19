@@ -8,7 +8,6 @@ import com.google.common.collect.Streams;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.rbmhtechnology.vind.monitoring.report.Report;
 import com.rbmhtechnology.vind.monitoring.report.configuration.ElasticSearchReportConfiguration;
 import com.rbmhtechnology.vind.monitoring.report.preprocess.ElasticSearchReportPreprocessor;
 import com.rbmhtechnology.vind.monitoring.report.preprocess.ReportPreprocessor;
@@ -18,7 +17,6 @@ import io.searchbox.client.JestResult;
 import io.searchbox.core.SearchResult;
 import io.searchbox.core.search.aggregation.DateHistogramAggregation;
 import io.searchbox.core.search.aggregation.TermsAggregation;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,7 +88,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         searchResult.getAggregations().getDateHistogramAggregation("days" )
                 .getBuckets().stream().sorted(Comparator.comparingLong(DateHistogramAggregation.DateHistogram::getCount).reversed())
                 .forEach( dateHistogram ->
-                        result.put(ZonedDateTime.ofInstant(Instant.ofEpochMilli(dateHistogram.getTime()), this.getZoneId()), dateHistogram.getCount().longValue()));
+                        result.put(ZonedDateTime.ofInstant(Instant.ofEpochMilli(dateHistogram.getTime()), this.getZoneId()), dateHistogram.getCount()));
         return result;
     }
 
@@ -132,7 +130,9 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
         final SearchResult searchResult = elasticClient.getQuery(query);
         final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("facets").getBuckets();
-        final List<String> facetFields = termEntries.stream().map(e -> e.getKey()).collect(Collectors.toList());
+        final List<String> facetFields = termEntries.stream()
+                .map(TermsAggregation.Entry::getKey)
+                .collect(Collectors.toList());
         
         return prepareScopeFilterResults(facetFields, "Facet");
     }
@@ -149,19 +149,17 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 .map(JsonElement::getAsJsonObject)
                 .collect(Collectors.toList());
 
-        fields.stream()
-                .forEach( field -> {
+        fields.forEach( field -> {
                     final Map<String, Long> fieldFilters = facetFilters.stream()
-                            .filter( filter -> filter.get("field").getAsString().equals(field))
-                            //TODO: fix this hack or find a better way to do it
-                            .map( filter -> filterParser(filter))
-                            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+                        .filter( filter -> filter.get("field").getAsString().equals(field))
+                        .map(this::filterParser)
+                        .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
                     //Sort the results
                     final LinkedHashMap values = fieldFilters.entrySet().stream()
-                            .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-                                    (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+                        .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                                (oldValue, newValue) -> oldValue, LinkedHashMap::new));
 
                     result.put(field, values);
                 });
@@ -181,8 +179,12 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 this.configuration.getMessageWrapper());
 
         final SearchResult searchResult = elasticClient.getQuery(query);
-        final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("suggestionFields").getBuckets();
-        final List<String> suggestionFields = termEntries.stream().map(e -> e.getKey()).collect(Collectors.toList());
+        final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations()
+                .getTermsAggregation("suggestionFields")
+                .getBuckets();
+        final List<String> suggestionFields = termEntries.stream()
+                .map(TermsAggregation.Entry::getKey)
+                .collect(Collectors.toList());
 
         return prepareScopeFilterResults(suggestionFields, "Suggest");
     }
@@ -200,21 +202,20 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
         final LinkedHashMap<String, LinkedHashMap<Object,Long>> result = new LinkedHashMap<>();
 
-        fields.stream()
-                .forEach( field -> {
-                    final Map<String, Long> fieldFilters = suggestFilters.stream()
-                            .filter( filter -> filter.get("field").getAsString().equals(field))
-                            .map( filter -> filter.get("term").getAsString())
-                            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        fields.forEach( field -> {
+            final Map<String, Long> fieldFilters = suggestFilters.stream()
+                .filter( filter -> filter.get("field").getAsString().equals(field))
+                .map( filter -> filter.get("term").getAsString())
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
-                    //Sort the results
-                    final LinkedHashMap values = fieldFilters.entrySet().stream()
-                            .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-                                    (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+            //Sort the results
+            final LinkedHashMap values = fieldFilters.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
 
-                    result.put(field, values);
-                });
+            result.put(field, values);
+        });
         return result;
     }
 
@@ -272,8 +273,12 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 this.configuration.getMessageWrapper());
 
         final SearchResult searchResult = elasticClient.getQuery(query);
-        final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("filterFields").getBuckets();
-        final List<String> filterFields = termEntries.stream().map(e -> e.getKey()).collect(Collectors.toList());
+        final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations()
+                .getTermsAggregation("filterFields")
+                .getBuckets();
+        final List<String> filterFields = termEntries.stream()
+                .map(TermsAggregation.Entry::getKey)
+                .collect(Collectors.toList());
 
         return prepareScopeFilterResults(filterFields, "Filter");
     }
@@ -291,21 +296,20 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
         final LinkedHashMap<String, LinkedHashMap<Object,Long>> result = new LinkedHashMap<>();
 
-        fields.stream()
-                .forEach( field -> {
-                    final Map<String, Long> fieldFilters = filterFilters.stream()
-                            .filter( filter -> filter.get("field").getAsString().equals(field))
-                            .map(this::filterParser)
-                            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        fields.forEach( field -> {
+            final Map<String, Long> fieldFilters = filterFilters.stream()
+                    .filter( filter -> filter.get("field").getAsString().equals(field))
+                    .map(this::filterParser)
+                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
-                    //Sort the results
-                    final LinkedHashMap values = fieldFilters.entrySet().stream()
-                            .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-                                    (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+            //Sort the results
+            final LinkedHashMap values = fieldFilters.entrySet().stream()
+                    .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                            (oldValue, newValue) -> oldValue, LinkedHashMap::new));
 
-                    result.put(field, values);
-                });
+            result.put(field, values);
+        });
         return result;
     }
 
@@ -316,7 +320,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
     private List<JsonObject> getDescriptorFilters(List<String> fields, String scope) {
 
-        final Long scrollSpan = 1000l;
+        final Long scrollSpan = 1000L;
         final String query = elasticClient.loadQueryFromFile("scopedProcessResultsForFields",
                 scrollSpan, //page size
                 this.configuration.getMessageWrapper(),
@@ -337,8 +341,8 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         final List<JsonObject> results = new ArrayList<>();
 
         String scrollId = null;
-        Long start = 0l;
-        Long totalResults = 1l;
+        Long start = 0L;
+        Long totalResults = 1L;
         while (start < totalResults) {
 
             final JestResult scrollResult;
@@ -367,7 +371,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
             start += scrollSpan;
         }
 
-        final List<JsonObject> finalQueries = results.stream()
+        return results.stream()
                 .map( r -> {
                     final JsonObject steps = r.getAsJsonObject("steps");
                     final JsonArray filters = steps.entrySet().stream()
@@ -381,8 +385,6 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                     return r;
                 })
                 .collect(Collectors.toList());
-
-        return finalQueries;
     }
 
     private String filterParser(JsonObject filter) {
@@ -423,8 +425,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
         final LinkedHashMap<String, Long> result = new LinkedHashMap<>();
 
-        fields.stream()
-                .forEach( field -> {
+        fields.forEach( field -> {
                     final long fieldCount = filters.stream()
                             .filter( filter -> filter.get("field").getAsString().equals(field))
                             .count();
@@ -439,7 +440,8 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         final LinkedHashMap<String, Long> resultsAsFourth = getFieldCountAs(4, descriptorFilters, fields);
         
         //Sort the results
-        final LinkedHashMap sortedResult = result.entrySet().stream()
+
+        return result.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                 .map(e ->{
                     final JsonObject facetResult = new JsonObject();
@@ -452,8 +454,6 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
                         (oldValue, newValue) -> oldValue, LinkedHashMap::new));
-
-        return sortedResult;
     }
 
     private LinkedHashMap<String, Long> getFieldCountAs(int step, List<JsonObject> descriptorFilters, List<String> filterFields) {
@@ -468,14 +468,13 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
         final LinkedHashMap<String, Long> resultsAs = new LinkedHashMap<>();
 
-        filterFields.stream()
-                .forEach( field -> {
-                    final long fieldCount = filterFiltersAs.stream()
-                            .filter( filter -> filter.get("field").getAsString().equals(field))
-                            .count();
+        filterFields.forEach( field -> {
+            final long fieldCount = filterFiltersAs.stream()
+                    .filter( filter -> filter.get("field").getAsString().equals(field))
+                    .count();
 
-                    resultsAs.put(field, fieldCount);
-                });
+            resultsAs.put(field, fieldCount);
+        });
 
         return resultsAs;
     }

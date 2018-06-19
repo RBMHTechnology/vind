@@ -34,11 +34,11 @@ public class SimilarityUtils {
         return dp[x.length()][y.length()];
     }
 
-    public static int costOfSubstitution(char a, char b) {
+    private static int costOfSubstitution(char a, char b) {
         return a == b ? 0 : 1;
     }
 
-    public static int min(int... numbers) {
+    private static int min(int... numbers) {
         return Arrays.stream(numbers)
                 .min().orElse(Integer.MAX_VALUE);
     }

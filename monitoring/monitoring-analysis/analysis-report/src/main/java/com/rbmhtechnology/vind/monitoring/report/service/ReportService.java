@@ -61,7 +61,7 @@ public abstract class ReportService implements AutoCloseable {
         final LinkedHashMap<String, JsonObject> topSuggestionFields = this.getTopSuggestionFields();
         final ArrayList<String> suggestFields = new ArrayList<>(topSuggestionFields.keySet());
 
-        final LinkedHashMap<String, JsonObject> topFilterFields = this.getTopFilterFields();;
+        final LinkedHashMap<String, JsonObject> topFilterFields = this.getTopFilterFields();
         final ArrayList<String> filterFields = new ArrayList<>(topFilterFields.keySet());
 
         return new Report(configuration)
