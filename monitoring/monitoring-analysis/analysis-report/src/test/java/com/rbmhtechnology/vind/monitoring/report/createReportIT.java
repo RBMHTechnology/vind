@@ -13,6 +13,7 @@ import org.junit.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -22,15 +23,6 @@ import java.util.LinkedHashMap;
  */
 public class createReportIT {
 
-    /*
-    private final String esHost = "localhost";
-    private final String esPort = "9200";
-    private final String esIndex = "logindex";
-    private final String esEntryType = "logEntry";
-    private final String applicationName = "Application name - 0.0.0";
-    private final String messageWrapper = "";
-    private ElasticSearchReportService esRepsortService;
-    */
     private ElasticSearchReportService esRepsortService;
 
     private final ElasticSearchReportConfiguration config = new ElasticSearchReportConfiguration()
@@ -54,7 +46,7 @@ public class createReportIT {
     @Before
     public void setUp() throws IOException {
         from = ZonedDateTime.now().minusMonths(1);
-        to   = ZonedDateTime.now().minusMonths(1).plusDays(5);
+        to   = ZonedDateTime.now().minusMonths(1).plusWeeks(1);
 
         reportPreprocessor = new ElasticSearchReportPreprocessor(config, from, to);
 
@@ -69,19 +61,24 @@ public class createReportIT {
     public void preprocessIT() {
         reportPreprocessor
                 .addSystemFilterField("static_partitionID")
-                .preprocess();
+                .preprocess(true);
 
     }
 
     @Test
     //@Ignore
     public void createReportIT() {
-        esRepsortService.preprocessData("static_partitionID");
-        final LinkedHashMap<String, JsonObject> topFaceFields = esRepsortService.getTopFaceFields();
+        esRepsortService.preprocessData(false,"static_partitionID");
+
+        final LinkedHashMap<String, JsonObject> topFaceFields = esRepsortService.getTopFacetFields();
         final ArrayList<String> facetFields = new ArrayList<>(topFaceFields.keySet());
 
-        final LinkedHashMap<String, Long> topSuggestionFields = esRepsortService.getTopSuggestionFields();
+        final LinkedHashMap<String, JsonObject> topSuggestionFields = esRepsortService.getTopSuggestionFields();
         final ArrayList<String> suggestFields = new ArrayList<>(topSuggestionFields.keySet());
+
+        final LinkedHashMap<String, JsonObject> topFilterFields = esRepsortService.getTopFilterFields();;
+        final ArrayList<String> filterFields = new ArrayList<>(topFilterFields.keySet());
+
         this.report = new Report()
                 .setApplicationName(esRepsortService.getConfiguration().getApplicationId())
                 .setFrom(from)

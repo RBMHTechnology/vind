@@ -72,15 +72,18 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
 
     //Gets the list of sessions to preprocess and figures out the
     // general filters which apply to all queries.
-    void beforePreprocessing() {
+    void beforePreprocessing(boolean force) {
         log.info("Getting sessions and common filter for the period [{} - {}]",from, to);
+
+        final String skipPreprocessed =
+                ",\n\"must_not\":{\"exists\":{\"field\":\"%sprocess\"}}";
 
         final String query = elasticClient.loadQueryFromFile("prepare",
                 this.scrollSpan,
                 this.configuration.getMessageWrapper(),
                 this.configuration.getApplicationId(),
                 this.configuration.getMessageWrapper(),
-                this.configuration.getMessageWrapper(),
+                force? "" : String.format(skipPreprocessed, this.configuration.getMessageWrapper()),
                 this.configuration.getMessageWrapper(),
                 this.from,
                 this.to);
@@ -152,7 +155,10 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         log.debug("{} different environment filter found for the period [{} - {}]", environmentFilters.size(), from, to);
     }
 
-    public Boolean preprocessSession(String sessionId) {
+    public Boolean preprocessSession(String sessionId, boolean force) {
+
+        final String skipPreprocessed =
+                ",\n\"must_not\":{\"exists\":{\"field\":\"%sprocess\"}}";
 
         log.info("Starting pre-processing of vind monitoring entries for session [{}],",sessionId);
         //fetch all the entries for the session
@@ -162,7 +168,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                 this.configuration.getApplicationId(),
                 this.configuration.getMessageWrapper(),
                 sessionId,
-                this.configuration.getMessageWrapper());
+                force? "" : String.format(skipPreprocessed, this.configuration.getMessageWrapper()));
 
         final Set<JsonObject> requests =  new HashSet<>();
 
@@ -248,6 +254,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         final List<JsonObject> lastAccesses = new ArrayList<>();
         int searchStep = 1;
 
+        //TODO: change to stream
         for ( int i = 0 ; i < cleanList.size() ; i++){
 
             final JsonObject actual = cleanList.get(i);
@@ -276,16 +283,19 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                             process.addProperty(SEARCH_SKIP,true);
                         }
                     }
-
-                    //TODO:Is the select interaction the end of a user query flow?
-                    searchStep = 1;
-                    lastQuery = null;
                 }
             }
 
             //FULLTEXT QUERIES
             if (actual.get("type").getAsString().equals("fulltext")) {
-
+                //When the last query had interaction in between we start from scratch
+                if (Objects.nonNull(lastQuery)
+                        && lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).get(SEARCH_INTERACTION_SELECT).getAsLong() > 0) {
+                    //TODO:Is the select interaction the end of a user query flow?
+                    searchStep = 1;
+                    lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).addProperty(SEARCH_FINAL_QUERY, true);
+                    lastQuery = null;
+                }
                 //empty check
                 if (isEmptyQuery(actual)) {
                     log.debug("Empty entry: Resetting step count to 1 and lastQuery to null.");
@@ -293,7 +303,10 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                     process.addProperty(SEARCH_EMPTY,true);
                     //empty query is the end of an user iteration
                     searchStep = 1;
-                    lastQuery = null;
+                    if(Objects.nonNull(lastQuery)) {
+                        lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).addProperty(SEARCH_FINAL_QUERY, true);
+                        lastQuery = null;
+                    }
                 } else {
                     //check if it is a duplicated query
                     if(Objects.nonNull(lastQuery) && isDuplicatedQuery(actual, lastQuery)) {
@@ -317,6 +330,8 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                         //Initialize process result json object
                         process.addProperty(SEARCH_INTERACTION_SELECT, 0);
                         process.add(SEARCH_STEPS, new JsonObject());
+                        process.addProperty(SEARCH_FINAL_QUERY,false);
+
 
                         //Calculate flattened list of filters
                         //TODO: do not ignore conditional filters
@@ -345,6 +360,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                                 lastQuery = actual;
                             } else {
                                 searchStep = 1;
+                                lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).addProperty(SEARCH_FINAL_QUERY, true);
                                 lastQuery = actual;
                             }
                         } else {

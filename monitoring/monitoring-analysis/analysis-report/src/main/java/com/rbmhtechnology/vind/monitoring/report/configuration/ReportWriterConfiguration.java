@@ -13,6 +13,7 @@ public class ReportWriterConfiguration {
     private Map<String, String> generalFilters = new HashMap<>();
     private Map<String, HashMap<String,String>> facetFieldsExtension = new HashMap<>();
     private Map<String, HashMap<String,String>> suggestionFieldsExtension = new HashMap<>();
+    private Map<String, HashMap<String,String>> filterFieldsExtension = new HashMap<>();
     private Map<String, HashMap<String,String>> fulltextQueryExtension = new HashMap<>();
     private List<String> queryFilters = new ArrayList<>();
 
@@ -52,6 +53,20 @@ public class ReportWriterConfiguration {
                 suggestionFieldsExtension = new HashMap<>();
             }
             this.suggestionFieldsExtension.put(extensionName, suggestionFieldsExtension);
+        }
+        return this;
+    }
+
+    public Map<String, HashMap<String, String>> getFilterFieldsExtension() {
+        return filterFieldsExtension;
+    }
+
+    public ReportWriterConfiguration addFilterFieldExtension(String extensionName, HashMap<String, String> filterFieldsExtension) {
+        if (Objects.nonNull(extensionName) ) {
+            if (Objects.isNull(filterFieldsExtension)) {
+                filterFieldsExtension = new HashMap<>();
+            }
+            this.filterFieldsExtension.put(extensionName, filterFieldsExtension);
         }
         return this;
     }

@@ -16,17 +16,17 @@ public abstract class ReportPreprocessor {
         return this;
     }
 
-    void beforePreprocessing() {};
+    void beforePreprocessing(boolean force) {};
 
     abstract List<String> getSessionIds();
 
-    public void preprocess(){
-        beforePreprocessing();
-        getSessionIds().forEach(this::preprocessSession);
-        afterPreprocessing();
+    public void preprocess(boolean force){
+        beforePreprocessing(force);
+        getSessionIds().forEach(s -> this.preprocessSession(s, force));
+        afterPreprocessing(force);
     }
 
-    void afterPreprocessing() { }
+    void afterPreprocessing(boolean force) { }
 
-    public abstract Boolean preprocessSession(String sessionId);
+    public abstract Boolean preprocessSession(String sessionId, boolean force);
 }

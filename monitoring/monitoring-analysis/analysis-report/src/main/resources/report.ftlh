@@ -144,7 +144,7 @@
             <th>AppId:</th>
             <td>${applicationName}</td>
         </tr>
-        <#list configuration.generalFilters as name, value>
+        <#list reportWriterConfiguration.generalFilters as name, value>
         <tr>
             <th>${name}</th>
             <td>${value}</td>
@@ -212,7 +212,7 @@
                 <th>#Usages as 2</th>
                 <th>#Usages as 3</th>
                 <th>#Usages as 4</th>
-                <#list configuration.facetFieldsExtension?keys as name>
+                <#list reportWriterConfiguration.facetFieldsExtension?keys as name>
                 <th>${name}</th>
                 </#list>
             </tr>
@@ -227,7 +227,7 @@
                     <td>${value.second}</td>
                     <td>${value.third}</td>
                     <td>${value.fourth}</td>
-                    <#list configuration.facetFieldsExtension as column, fields>
+                    <#list reportWriterConfiguration.facetFieldsExtension as column, fields>
                     <td>${fields[field]!"-"}</td>
                     </#list>
                 </tr>
@@ -237,11 +237,12 @@
         <h4>Facet Values</h4>
         <p>
         <#list facetFieldsValues as field, values>
+            <#if values?has_content >
         <h5>Top values for <i>${field}</i></h5>
         <table class="data">
             <thead>
-                <tr>
-                    <th>Ranking</th>
+            <tr>
+                <th>Ranking</th>
                     <th>Value</th>
                     <th>#Usages</th>
                 </tr>
@@ -256,6 +257,7 @@
             </#list>
             </tbody>
         </table>
+            </#if>
         </#list>
         </p>
     </div>
@@ -266,18 +268,26 @@
                     <th>Ranking</th>
                     <th>Name</th>
                     <th>#Usages</th>
-                    <#list configuration.suggestionFieldsExtension?keys as name>
+                    <th>#Usages as 1</th>
+                    <th>#Usages as 2</th>
+                    <th>#Usages as 3</th>
+                    <th>#Usages as 4</th>
+                    <#list reportWriterConfiguration.suggestionFieldsExtension?keys as name>
                     <th>${name}</th>
                     </#list>
                 </tr>
             </thead>
             <tbody>
-            <#list topSuggestionFields as field, count>
+            <#list topSuggestionFields as field, value>
                 <tr>
                     <td>${field?counter}</td>
                     <td>${field}</td>
-                    <td>${count}</td>
-                    <#list configuration.suggestionFieldsExtension as column, fields>
+                    <td>${value.total}</td>
+                    <td>${value.first}</td>
+                    <td>${value.second}</td>
+                    <td>${value.third}</td>
+                    <td>${value.fourth}</td>
+                    <#list reportWriterConfiguration.suggestionFieldsExtension as column, fields>
                     <td>${fields[field]!"-"}</td>
                     </#list>
                 </tr>
@@ -287,7 +297,69 @@
         <h4>Suggestion Values</h4>
         <p>
         <#list suggestionFieldsValues as field, values>
+            <#if values?has_content >
+
         <h5>Top values for <i>${field}</i></h5>
+        <table class="data">
+            <thead>
+            <tr>
+                <th>Ranking</th>
+                <th>Value</th>
+                <th>#Usages</th>
+            </tr>
+            </thead>
+            <tbody>
+            <#list values as value, count>
+            <tr>
+                <td>${value?counter}</td>
+                <td>${value}</td>
+                <td>${count}</td>
+            </tr>
+        </#list>
+            </tbody>
+        </table>
+            </#if>
+        </#list>
+        </p>
+    </div>
+    <div class="section"><h3>Filters</h3><h4>Filter Fields</h4>
+        <table class="data">
+            <thead>
+            <tr>
+                <th>Ranking</th>
+                <th>Name</th>
+                <th>#Usages</th>
+                <th>#Usages as 1</th>
+                <th>#Usages as 2</th>
+                <th>#Usages as 3</th>
+                <th>#Usages as 4</th>
+                <#list reportWriterConfiguration.filterFieldsExtension?keys as name>
+                <th>${name}</th>
+                </#list>
+            </tr>
+            </thead>
+            <tbody>
+            <#list topFilterFields as field, value>
+            <tr>
+                <td>${field?counter}</td>
+                <td>${field}</td>
+                <td>${value.total}</td>
+                <td>${value.first}</td>
+                <td>${value.second}</td>
+                <td>${value.third}</td>
+                <td>${value.fourth}</td>
+                <#list reportWriterConfiguration.filterFieldsExtension as column, fields>
+                <td>${fields[field]!"-"}</td>
+                </#list>
+            </tr>
+            </#list>
+            </tbody>
+        </table>
+        <h4>Filter Values</h4>
+        <p>
+        <#list filterFieldsValues as field, values>
+        <#if values?has_content >
+            <h5>Top values for <i>${field}</i></h5>
         <table class="data">
             <thead>
             <tr>
@@ -306,7 +378,9 @@
             </#list>
             </tbody>
         </table>
+        </#if>
         </#list>
+
         </p>
     </div>
     <div class="section">
@@ -319,7 +393,7 @@
                     <th>Ranking</th>
                     <th>Value</th>
                     <th>#Usages</th>
-                    <#list configuration.fulltextQueryExtension?keys as name>
+                    <#list reportWriterConfiguration.fulltextQueryExtension?keys as name>
                     <th>${name}</th>
                     </#list>
                 </tr>
@@ -330,7 +404,7 @@
                     <td>${query?counter}</td>
                     <td>${query}</td>
                     <td>${count}</td>
-                    <#list configuration.fulltextQueryExtension as column, queries>
+                    <#list reportWriterConfiguration.fulltextQueryExtension as column, queries>
                     <td>${queries[query]!"-"}</td>
                     </#list>
                 </tr>
@@ -338,7 +412,7 @@
             </tbody>
         </table>
         <h3>Top Filtered Fulltext Queries</h3>
-        <p>Filter: without <#list configuration.queryFilters as filter>${filter}  </#list></p>
+        <p>Filter: without <#list reportWriterConfiguration.queryFilters as filter>${filter}  </#list></p>
         <p>14769 queries with 3133 distinct search terms.</p>
         <table class="data">
             <thead>

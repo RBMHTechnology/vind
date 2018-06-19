@@ -102,14 +102,17 @@ public abstract class ReportService implements AutoCloseable {
 
     //Facets
     ///Facet Fields
-    public abstract LinkedHashMap<String, JsonObject> getTopFaceFields();
+    public abstract LinkedHashMap<String, JsonObject> getTopFacetFields();
 
     ///Facet Values per field?
     public abstract LinkedHashMap<String, LinkedHashMap<Object,Long>> getFacetFieldsValues(List<String> fields);
 
     //Suggestions
     ///Suggestion fields
-    public abstract LinkedHashMap<String, Long> getTopSuggestionFields();
+    public abstract LinkedHashMap<String, JsonObject> getTopSuggestionFields();
+
+    public abstract LinkedHashMap<String, JsonObject> getTopFilterFields();
+
     ///Suggestion values per field
     public abstract LinkedHashMap<String, LinkedHashMap<Object, Long>> getSuggestionFieldsValues(List<String> fields);
 
@@ -124,4 +127,5 @@ public abstract class ReportService implements AutoCloseable {
     //Filtered fulltext top queries?
     public abstract LinkedHashMap<String, Long> getTopFilteredQueries(String regexFilter);
 
+    public abstract LinkedHashMap<String, LinkedHashMap<Object, Long>> getFilterFieldsValues(List<String> fields);
 }

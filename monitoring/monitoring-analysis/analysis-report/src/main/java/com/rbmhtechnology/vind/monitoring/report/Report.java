@@ -29,15 +29,18 @@ public class Report {
     private ZonedDateTime from;
     private ZonedDateTime to;
     private long requests;
-    private  LinkedHashMap<ZonedDateTime, Long> topDays = new LinkedHashMap<>();
-    private  LinkedHashMap<String, Long> topUsers = new LinkedHashMap<>();
-    private  LinkedHashMap<String, JsonObject> topFacetFields = new LinkedHashMap<>();
-    private  LinkedHashMap<String, LinkedHashMap<Object,Long>> facetFieldsValues = new LinkedHashMap<>();
-    private  LinkedHashMap<String, Long> topSuggestionFields = new LinkedHashMap<>();
-    private  LinkedHashMap<String, LinkedHashMap<Object,Long>> suggestionFieldsValues = new LinkedHashMap<>();
-    private  LinkedHashMap<String, Long> topQueries = new LinkedHashMap<>();
-    private  LinkedHashMap<String, Long> topFilteredQueries = new LinkedHashMap<>();
+    private LinkedHashMap<ZonedDateTime, Long> topDays = new LinkedHashMap<>();
+    private LinkedHashMap<String, Long> topUsers = new LinkedHashMap<>();
+    private LinkedHashMap<String, JsonObject> topFacetFields = new LinkedHashMap<>();
+    private LinkedHashMap<String, LinkedHashMap<Object,Long>> facetFieldsValues = new LinkedHashMap<>();
+    private LinkedHashMap<String, JsonObject> topSuggestionFields = new LinkedHashMap<>();
+    private LinkedHashMap<String, LinkedHashMap<Object,Long>> suggestionFieldsValues = new LinkedHashMap<>();
+    private LinkedHashMap<String, JsonObject> topFilterFields = new LinkedHashMap<>();
+    private LinkedHashMap<String, LinkedHashMap<Object,Long>> filterFieldsValues = new LinkedHashMap<>();
+    private LinkedHashMap<String, Long> topQueries = new LinkedHashMap<>();
+    private LinkedHashMap<String, Long> topFilteredQueries = new LinkedHashMap<>();
 
+    private ReportWriterConfiguration reportWriterConfiguration = new ReportWriterConfiguration();
 
     public ZonedDateTime getToday() {
         return today;
@@ -139,11 +142,11 @@ public class Report {
         return this;
     }
 
-    public LinkedHashMap<String, Long> getTopSuggestionFields() {
+    public LinkedHashMap<String, JsonObject> getTopSuggestionFields() {
         return topSuggestionFields;
     }
 
-    public Report setTopSuggestionFields(LinkedHashMap<String, Long> topSuggestionFields) {
+    public Report setTopSuggestionFields(LinkedHashMap<String, JsonObject> topSuggestionFields) {
         this.topSuggestionFields = topSuggestionFields;
         return this;
     }
@@ -154,6 +157,24 @@ public class Report {
 
     public Report setSuggestionFieldsValues(LinkedHashMap<String, LinkedHashMap<Object,Long>> suggestionFieldsValues) {
         this.suggestionFieldsValues = suggestionFieldsValues;
+        return this;
+    }
+
+    public LinkedHashMap<String, JsonObject> getTopFilterFields() {
+        return topFilterFields;
+    }
+
+    public Report setTopFilterFields(LinkedHashMap<String, JsonObject> topFilterFields) {
+        this.topFilterFields = topFilterFields;
+        return this;
+    }
+
+    public LinkedHashMap<String, LinkedHashMap<Object, Long>> getFilterFieldsValues() {
+        return filterFieldsValues;
+    }
+
+    public Report setFilterFieldsValues(LinkedHashMap<String, LinkedHashMap<Object, Long>> filterFieldsValues) {
+        this.filterFieldsValues = filterFieldsValues;
         return this;
     }
 
@@ -177,5 +198,9 @@ public class Report {
     public Report setTopFilteredQueries(LinkedHashMap<String, Long> topFilteredQueries) {
         this.topFilteredQueries = topFilteredQueries;
         return this;
+    }
+
+    public ReportWriterConfiguration getReportWriterConfiguration() {
+        return reportWriterConfiguration;
     }
 }

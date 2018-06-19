@@ -71,10 +71,10 @@ public class ReportCli {
 
         final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(config, from, to);
 
-        final LinkedHashMap<String, JsonObject> topFaceFields = esRepsortService.getTopFaceFields();
+        final LinkedHashMap<String, JsonObject> topFaceFields = esRepsortService.getTopFacetFields();
         final ArrayList<String> facetFields = new ArrayList<>(topFaceFields.keySet());
 
-        final LinkedHashMap<String, Long> topSuggestionFields = esRepsortService.getTopSuggestionFields();
+        final LinkedHashMap<String, JsonObject> topSuggestionFields = esRepsortService.getTopSuggestionFields();
         final ArrayList<String> suggestFields = new ArrayList<>(topSuggestionFields.keySet());
 
         final ReportWriter reportWriter = new HtmlReportWriter();//TODO make format aware

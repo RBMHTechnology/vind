@@ -345,6 +345,9 @@
         },
         "duplicate": {
           "type": "boolean"
+        },
+        "final": {
+          "type": "boolean"
         }
       }
     }
