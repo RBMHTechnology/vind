@@ -48,10 +48,4 @@ public class ElasticSearchReportConfiguration extends ReportConfiguration {
         super.setApplicationId(applicationId);
         return this;
     }
-
-    @Override
-    public ElasticSearchReportConfiguration setReportWriterConfiguration(ReportWriterConfiguration reportWriterConfiguration) {
-        super.setReportWriterConfiguration(reportWriterConfiguration);
-        return this;
-    }
 }

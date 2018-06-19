@@ -411,9 +411,9 @@
             </#list>
             </tbody>
         </table>
+        <#if reportWriterConfiguration.queryFilters?has_content>
         <h3>Top Filtered Fulltext Queries</h3>
         <p>Filter: without <#list reportWriterConfiguration.queryFilters as filter>${filter}  </#list></p>
-        <p>14769 queries with 3133 distinct search terms.</p>
         <table class="data">
             <thead>
             <tr>
@@ -432,6 +432,7 @@
             </#list>
             </tbody>
         </table>
+        </#if>
     </div>
 </div>
 </body>
