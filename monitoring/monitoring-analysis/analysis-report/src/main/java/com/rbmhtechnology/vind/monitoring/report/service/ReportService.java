@@ -1,9 +1,10 @@
 /*
  * Copyright (c) 2018 Redlink GmbH.
  */
-package com.rbmhtechnology.vind.monitoring.report;
+package com.rbmhtechnology.vind.monitoring.report.service;
 
 import com.google.gson.JsonObject;
+import com.rbmhtechnology.vind.monitoring.report.configuration.ReportConfiguration;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -20,27 +21,25 @@ public abstract class ReportService implements AutoCloseable {
     private ZonedDateTime from;
     private ZonedDateTime to;
     private ZoneId zoneId;
-    private String applicationId;
+    private ReportConfiguration configuration;
 
-    public ReportService(ZonedDateTime from, ZonedDateTime to, String applicationId){
+    public ReportService(ReportConfiguration configuration, ZonedDateTime from, ZonedDateTime to){
         this.from = from;
         this.to = to;
         this.zoneId = from.getZone();
-        this.applicationId = applicationId;
+        this.configuration = configuration;
     }
 
-    public ReportService(long from, long to, String zoneId, String applicationId){
+    public ReportService(long from, long to, String zoneId, ReportConfiguration configuration){
         this.zoneId = ZoneId.of(zoneId);
         this.from = ZonedDateTime.ofInstant(Instant.ofEpochMilli(from), this.zoneId);
         this.to = ZonedDateTime.ofInstant(Instant.ofEpochMilli(to), this.zoneId);
-        this.applicationId = applicationId;
     }
 
-    public ReportService(Date from, Date to, String zoneId, String applicationId){
+    public ReportService(Date from, Date to, String zoneId, ReportConfiguration configuration){
         this.zoneId = ZoneId.of(zoneId);
         this.from = ZonedDateTime.ofInstant(from.toInstant(), this.zoneId);
         this.to = ZonedDateTime.ofInstant(to.toInstant(), this.zoneId);
-        this.applicationId = applicationId;
     }
 
     //Getters
@@ -52,12 +51,12 @@ public abstract class ReportService implements AutoCloseable {
         return to;
     }
 
-    public String getApplicationId() {
-        return applicationId;
-    }
-
     public ZoneId getZoneId() {
         return zoneId;
+    }
+
+    public ReportConfiguration getConfiguration() {
+        return configuration;
     }
 
     //Setters
@@ -89,9 +88,8 @@ public abstract class ReportService implements AutoCloseable {
 
     }
 
-    public ReportService setApplicationId(String applicationId) {
-        this.applicationId = applicationId;
-        return this;
+    public void setConfiguration(ReportConfiguration configuration) {
+        this.configuration = configuration;
     }
 
     //Total number of requests

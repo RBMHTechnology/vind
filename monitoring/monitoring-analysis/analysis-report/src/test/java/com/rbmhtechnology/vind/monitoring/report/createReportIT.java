@@ -4,7 +4,10 @@
 package com.rbmhtechnology.vind.monitoring.report;
 
 import com.google.gson.JsonObject;
-import com.rbmhtechnology.vind.monitoring.report.preprocess.ReportPreprocessor;
+import com.rbmhtechnology.vind.monitoring.report.configuration.ElasticSearchConnectionConfiguration;
+import com.rbmhtechnology.vind.monitoring.report.configuration.ElasticSearchReportConfiguration;
+import com.rbmhtechnology.vind.monitoring.report.preprocess.ElasticSearchReportPreprocessor;
+import com.rbmhtechnology.vind.monitoring.report.service.ElasticSearchReportService;
 import com.rbmhtechnology.vind.monitoring.report.writer.HtmlReportWriter;
 import org.junit.*;
 
@@ -19,6 +22,7 @@ import java.util.LinkedHashMap;
  */
 public class createReportIT {
 
+    /*
     private final String esHost = "localhost";
     private final String esPort = "9200";
     private final String esIndex = "logindex";
@@ -26,23 +30,35 @@ public class createReportIT {
     private final String applicationName = "Application name - 0.0.0";
     private final String messageWrapper = "";
     private ElasticSearchReportService esRepsortService;
+    */
+    private ElasticSearchReportService esRepsortService;
+
+    private final ElasticSearchReportConfiguration config = new ElasticSearchReportConfiguration()
+            .setApplicationId("mediamanager-Media Manager Content Management-Assets")
+            .setEsEntryType("logback")
+            .setMessageWrapper("message_json")
+            .setConnectionConfiguration(new ElasticSearchConnectionConfiguration(
+                    "172.20.30.95",
+                    "19200",
+                    "logstash-searchanalysis-2018.*"
+            ));
 
     private Report report;
     private HtmlReportWriter reportWriter =  new HtmlReportWriter();
     private File reportFile;
-    private ReportPreprocessor reportPreprocessor;
+    private ElasticSearchReportPreprocessor reportPreprocessor;
     private ZonedDateTime from;
     private ZonedDateTime to;
 
 
     @Before
     public void setUp() throws IOException {
-        from = ZonedDateTime.now().minusYears(1);
-        to   = ZonedDateTime.now().plusYears(1);
+        from = ZonedDateTime.now().minusMonths(1);
+        to   = ZonedDateTime.now().minusMonths(1).plusDays(5);
 
-        reportPreprocessor = new ReportPreprocessor(esHost, esPort, esIndex, from, to, applicationName, messageWrapper,"logEntry");
+        reportPreprocessor = new ElasticSearchReportPreprocessor(config, from, to);
 
-        esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, esEntryType, from, to, applicationName, messageWrapper);
+        esRepsortService = new ElasticSearchReportService(config, from, to);
 
         reportFile = File.createTempFile("reportTest", ".html");
 
@@ -58,7 +74,7 @@ public class createReportIT {
     }
 
     @Test
-    @Ignore
+    //@Ignore
     public void createReportIT() {
         esRepsortService.preprocessData("static_partitionID");
         final LinkedHashMap<String, JsonObject> topFaceFields = esRepsortService.getTopFaceFields();
@@ -67,7 +83,7 @@ public class createReportIT {
         final LinkedHashMap<String, Long> topSuggestionFields = esRepsortService.getTopSuggestionFields();
         final ArrayList<String> suggestFields = new ArrayList<>(topSuggestionFields.keySet());
         this.report = new Report()
-                .setApplicationName(applicationName)
+                .setApplicationName(esRepsortService.getConfiguration().getApplicationId())
                 .setFrom(from)
                 .setTo(to)
                 .setTopDays(esRepsortService.getTopDays())

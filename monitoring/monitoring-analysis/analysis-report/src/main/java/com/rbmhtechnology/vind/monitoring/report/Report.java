@@ -4,6 +4,7 @@
 package com.rbmhtechnology.vind.monitoring.report;
 
 import com.google.gson.JsonObject;
+import com.rbmhtechnology.vind.monitoring.report.configuration.ReportWriterConfiguration;
 
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -22,8 +23,6 @@ public class Report {
     private String longDateFormat = "EEEE, MMMM dd, yyyy hh:mm a";
     private ZoneId zoneId = ZoneOffset.UTC;
     private String imageUrl = "https://image3.redbull.com/rbx00023/0001/1/210/403/logos/logos-homepage/brandlogos/jpg/red-bull-mediahouse-01.jpg"; //TODO make configurable
-
-    private final ReportConfiguration configuration = new ReportConfiguration();
 
     private ZonedDateTime today = ZonedDateTime.now();
     private String applicationName;
@@ -178,9 +177,5 @@ public class Report {
     public Report setTopFilteredQueries(LinkedHashMap<String, Long> topFilteredQueries) {
         this.topFilteredQueries = topFilteredQueries;
         return this;
-    }
-
-    public ReportConfiguration getConfiguration() {
-        return configuration;
     }
 }

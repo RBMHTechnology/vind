@@ -1,20 +1,20 @@
 /*
  * Copyright (c) 2018 Redlink GmbH.
  */
-package com.rbmhtechnology.vind.monitoring.report;
+package com.rbmhtechnology.vind.monitoring.report.service;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Streams;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.rbmhtechnology.vind.monitoring.report.preprocess.ReportPreprocessor;
+import com.rbmhtechnology.vind.monitoring.report.configuration.ElasticSearchReportConfiguration;
+import com.rbmhtechnology.vind.monitoring.report.preprocess.ElasticSearchReportPreprocessor;
 import com.rbmhtechnology.vind.monitoring.utils.ElasticSearchClient;
 import com.rbmhtechnology.vind.monitoring.utils.ElasticSearchClientBuilder;
 import io.searchbox.core.SearchResult;
 import io.searchbox.core.search.aggregation.DateHistogramAggregation;
 import io.searchbox.core.search.aggregation.TermsAggregation;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,70 +30,21 @@ import java.util.stream.Collectors;
 public class ElasticSearchReportService extends ReportService implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchClientBuilder.class);
-    private final ReportPreprocessor preprocessor;
+    private final ElasticSearchReportPreprocessor preprocessor;
     private ElasticSearchClient elasticClient = new ElasticSearchClient();
-    private final String messageWrapper;
+    private final ElasticSearchReportConfiguration configuration;
 
 
-    public ElasticSearchReportService(String elasticHost, String elasticPort, String elasticIndex, String logType, ZonedDateTime from, ZonedDateTime to, String applicationId) {
-        super(from, to, applicationId);
-        elasticClient.init(elasticHost, elasticPort, elasticIndex, logType);
-        messageWrapper = "";
-        this.preprocessor = new ReportPreprocessor(elasticHost, elasticPort, elasticIndex, this.getFrom(),this.getTo(),applicationId,this.messageWrapper, logType);
-    }
-
-    public ElasticSearchReportService(String elasticHost, String elasticPort, String elasticIndex, String logType, ZonedDateTime from, ZonedDateTime to, String applicationId, String messageWrapper) {
-        super(from, to, applicationId);
-        elasticClient.init(elasticHost, elasticPort, elasticIndex, logType);
-        if(StringUtils.isNotBlank(messageWrapper) && !messageWrapper.endsWith(".")) {
-            this.messageWrapper = messageWrapper + ".";
-        } else if(StringUtils.isNotBlank(messageWrapper)) {
-            this.messageWrapper = messageWrapper;
-        } else {
-            this.messageWrapper = "";
-        }
-        this.preprocessor = new ReportPreprocessor(elasticHost, elasticPort, elasticIndex, this.getFrom(),this.getTo(),applicationId,this.messageWrapper, logType);
-    }
-
-    public ElasticSearchReportService(String elasticHost, String elasticPort, String elasticIndex, String logType,Date from, Date to, String timeZoneID, String applicationId) {
-        super(from, to, timeZoneID, applicationId);
-        elasticClient.init(elasticHost, elasticPort, elasticIndex, logType);
-        messageWrapper = "";
-        this.preprocessor = new ReportPreprocessor(elasticHost, elasticPort, elasticIndex, this.getFrom(),this.getTo(),applicationId,this.messageWrapper, logType);
-    }
-
-    public ElasticSearchReportService(String elasticHost, String elasticPort, String elasticIndex, String logType,Date from, Date to, String timeZoneID, String applicationId, String messageWrapper) {
-        super(from, to, timeZoneID, applicationId);
-        elasticClient.init(elasticHost, elasticPort, elasticIndex, logType);
-        if(StringUtils.isNotBlank(messageWrapper) && !messageWrapper.endsWith(".")) {
-            this.messageWrapper = messageWrapper + ".";
-        } else if(StringUtils.isNotBlank(messageWrapper)) {
-            this.messageWrapper = messageWrapper;
-        } else {
-            this.messageWrapper = "";
-        }
-        this.preprocessor = new ReportPreprocessor(elasticHost, elasticPort, elasticIndex, this.getFrom(),this.getTo(),applicationId,this.messageWrapper, logType);
-    }
-
-    public ElasticSearchReportService(String elasticHost, String elasticPort, String elasticIndex, String logType, long from, long to, String timeZoneId, String applicationId) {
-        super(from, to, timeZoneId, applicationId);
-        elasticClient.init(elasticHost, elasticPort, elasticIndex, logType);
-        messageWrapper = "";
-        this.preprocessor = new ReportPreprocessor(elasticHost, elasticPort, elasticIndex, this.getFrom(),this.getTo(),applicationId,this.messageWrapper, logType);
-    }
-
-    public ElasticSearchReportService(String elasticHost, String elasticPort, String elasticIndex, String logType, long from, long to, String timeZoneId, String applicationId, String messageWrapper) {
-        super(from, to, timeZoneId, applicationId);
-        elasticClient.init(elasticHost, elasticPort, elasticIndex, logType);
-        if(StringUtils.isNotBlank(messageWrapper) && !messageWrapper.endsWith(".")) {
-            this.messageWrapper = messageWrapper + ".";
-        } else if(StringUtils.isNotBlank(messageWrapper)) {
-            this.messageWrapper = messageWrapper;
-        } else {
-            this.messageWrapper = "";
-        }
-
-        this.preprocessor = new ReportPreprocessor(elasticHost, elasticPort, elasticIndex, this.getFrom(),this.getTo(),applicationId,this.messageWrapper, logType);
+    public ElasticSearchReportService(ElasticSearchReportConfiguration configuration, ZonedDateTime from, ZonedDateTime to) {
+        super(configuration, from, to);
+        elasticClient.init(
+                configuration.getConnectionConfiguration().getEsHost(),
+                configuration.getConnectionConfiguration().getEsPort(),
+                configuration.getConnectionConfiguration().getEsIndex(),
+                configuration.getEsEntryType()
+        );
+        this.configuration = configuration;
+        this.preprocessor = new ElasticSearchReportPreprocessor(configuration, from, to);
     }
 
 
@@ -108,12 +59,12 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     public long getTotalRequests() {
 
         final String query = elasticClient.loadQueryFromFile("totalRequests",
-                this.messageWrapper,
-                this.messageWrapper,
-                this.getApplicationId(),
-                this.messageWrapper,
-                this.messageWrapper,
-                this.messageWrapper,
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getApplicationId(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli());
 
@@ -124,15 +75,15 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public LinkedHashMap<ZonedDateTime, Long> getTopDays() {
         final String query = elasticClient.loadQueryFromFile("topDays",
-                this.messageWrapper,
-                this.messageWrapper,
-                this.getApplicationId(),
-                this.messageWrapper,
-                this.messageWrapper,
-                this.messageWrapper,
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getApplicationId(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli(),
-                this.messageWrapper);
+                this.configuration.getMessageWrapper());
 
         final SearchResult searchResult = elasticClient.getQuery(query);
         final LinkedHashMap<ZonedDateTime, Long> result = new LinkedHashMap<>();
@@ -146,15 +97,15 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public LinkedHashMap<String, Long> getTopUsers() {
         final String query = elasticClient.loadQueryFromFile("topUsers",
-                this.messageWrapper,
-                this.messageWrapper,
-                this.getApplicationId(),
-                this.messageWrapper,
-                this.messageWrapper,
-                this.messageWrapper,
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getApplicationId(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli(),
-                this.messageWrapper);
+                this.configuration.getMessageWrapper());
 
         final SearchResult searchResult = elasticClient.getQuery(query);
         final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("user").getBuckets();
@@ -168,16 +119,16 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public LinkedHashMap<String, JsonObject> getTopFaceFields() {
         final String query = elasticClient.loadQueryFromFile("topFacetFields",
-                this.messageWrapper,
-                this.messageWrapper,
-                this.getApplicationId(),
-                this.messageWrapper,
-                this.messageWrapper,
-                this.messageWrapper,
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getApplicationId(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli(),
-                this.messageWrapper,
-                this.messageWrapper);
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper());
 
         final SearchResult searchResult = elasticClient.getQuery(query);
         final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("facets").getBuckets();
@@ -344,13 +295,13 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public LinkedHashMap<String, Long> getTopSuggestionFields() {
         final String query = elasticClient.loadQueryFromFile("topSuggestionFields",
-                this.messageWrapper,
-                this.messageWrapper,
-                this.getApplicationId(),
-                this.messageWrapper,
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getApplicationId(),
+                this.configuration.getMessageWrapper(),
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli(),
-                this.messageWrapper);
+                this.configuration.getMessageWrapper());
 
         final SearchResult searchResult = elasticClient.getQuery(query);
         final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("suggestionFields").getBuckets();
@@ -419,15 +370,15 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public LinkedHashMap<String, Long> getTopQueries() {
         final String query = elasticClient.loadQueryFromFile("topQueries",
-                this.messageWrapper,
-                this.messageWrapper,
-                this.getApplicationId(),
-                this.messageWrapper,
-                this.messageWrapper,
-                this.messageWrapper,
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getApplicationId(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli(),
-                this.messageWrapper);
+                this.configuration.getMessageWrapper());
 
         final SearchResult searchResult = elasticClient.getQuery(query);
         final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("queries").getBuckets();
@@ -441,7 +392,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public LinkedHashMap<String, Long> getTopFilteredQueries(String regexFilter) {
         final String query = elasticClient.loadQueryFromFile("topFilteredQueries",
-                this.getApplicationId(),
+                this.configuration.getApplicationId(),
                 regexFilter,
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli());
@@ -467,16 +418,16 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         final String query = elasticClient.loadQueryFromFile("topFacetFieldsValues",
                 resultSize, //page size
                 from,
-                this.messageWrapper,
-                this.messageWrapper,
-                this.getApplicationId(),
-                this.messageWrapper,
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getApplicationId(),
+                this.configuration.getMessageWrapper(),
                 scope,
-                this.messageWrapper,
+                this.configuration.getMessageWrapper(),
                 "\"".concat(Joiner.on("\", \"").skipNulls().join(fields)).concat("\""),
-                this.messageWrapper,
-                this.messageWrapper,
-                this.messageWrapper,
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
                 this.getFrom().toInstant().toEpochMilli(),
                 this.getTo().toInstant().toEpochMilli()
         );
@@ -490,16 +441,16 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
             final String q = elasticClient.loadQueryFromFile("topFacetFieldsValues",
                     resultSize, //page size
                     from,
-                    this.messageWrapper,
-                    this.messageWrapper,
-                    this.getApplicationId(),
-                    this.messageWrapper,
+                    this.configuration.getMessageWrapper(),
+                    this.configuration.getMessageWrapper(),
+                    this.configuration.getApplicationId(),
+                    this.configuration.getMessageWrapper(),
                     scope,
-                    this.messageWrapper,
+                    this.configuration.getMessageWrapper(),
                     "\"".concat(Joiner.on("\", \"").skipNulls().join(fields)).concat("\""),
-                    this.messageWrapper,
-                    this.messageWrapper,
-                    this.messageWrapper,
+                    this.configuration.getMessageWrapper(),
+                    this.configuration.getMessageWrapper(),
+                    this.configuration.getMessageWrapper(),
                     this.getFrom().toInstant().toEpochMilli(),
                     this.getTo().toInstant().toEpochMilli()
             );
@@ -546,5 +497,10 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 .collect(Collectors.toList());
 
         return finalQueries;
+    }
+
+    @Override
+    public ElasticSearchReportConfiguration getConfiguration() {
+        return configuration;
     }
 }

@@ -1,14 +1,14 @@
 /*
  * Copyright (c) 2018 Redlink GmbH.
  */
-package com.rbmhtechnology.vind.monitoring.report;
+package com.rbmhtechnology.vind.monitoring.report.configuration;
 
 import java.util.*;
 
 /**
  * Created on 08.03.18.
  */
-public class ReportConfiguration {
+public class ReportWriterConfiguration {
 
     private Map<String, String> generalFilters = new HashMap<>();
     private Map<String, HashMap<String,String>> facetFieldsExtension = new HashMap<>();
@@ -20,7 +20,7 @@ public class ReportConfiguration {
         return generalFilters;
     }
 
-    public ReportConfiguration addGeneralFilter(String fieldName, String filterValue) {
+    public ReportWriterConfiguration addGeneralFilter(String fieldName, String filterValue) {
         if (Objects.nonNull(filterValue) & Objects.nonNull(fieldName)) {
             this.generalFilters.put(fieldName,filterValue);
         }
@@ -32,7 +32,7 @@ public class ReportConfiguration {
     }
 
 
-    public ReportConfiguration addFacetFieldExtension(String extensionName, HashMap<String, String> facetFieldsExtension) {
+    public ReportWriterConfiguration addFacetFieldExtension(String extensionName, HashMap<String, String> facetFieldsExtension) {
         if (Objects.nonNull(extensionName) ) {
             if (Objects.isNull(facetFieldsExtension)) {
                 facetFieldsExtension = new HashMap<>();
@@ -46,7 +46,7 @@ public class ReportConfiguration {
         return suggestionFieldsExtension;
     }
 
-    public ReportConfiguration addSuggestionFieldExtension(String extensionName, HashMap<String, String> suggestionFieldsExtension) {
+    public ReportWriterConfiguration addSuggestionFieldExtension(String extensionName, HashMap<String, String> suggestionFieldsExtension) {
         if (Objects.nonNull(extensionName) ) {
             if (Objects.isNull(suggestionFieldsExtension)) {
                 suggestionFieldsExtension = new HashMap<>();
@@ -60,7 +60,7 @@ public class ReportConfiguration {
         return fulltextQueryExtension;
     }
 
-    public ReportConfiguration addFulltextQueryExtension(String extensionName, HashMap<String, String> fulltextQueryExtension) {
+    public ReportWriterConfiguration addFulltextQueryExtension(String extensionName, HashMap<String, String> fulltextQueryExtension) {
         if (Objects.nonNull(extensionName) ) {
             if (Objects.isNull(fulltextQueryExtension)) {
                 fulltextQueryExtension = new HashMap<>();
@@ -74,19 +74,19 @@ public class ReportConfiguration {
         return queryFilters;
     }
 
-    public ReportConfiguration setQueryFilters(List<String> queryFilters) {
+    public ReportWriterConfiguration setQueryFilters(List<String> queryFilters) {
         this.queryFilters = queryFilters;
         return this;
     }
 
-    public ReportConfiguration setQueryFilters(String... queryFilters) {
+    public ReportWriterConfiguration setQueryFilters(String... queryFilters) {
         if (Objects.nonNull(queryFilters)) {
             this.queryFilters = Arrays.asList(queryFilters);
         }
         return this;
     }
 
-    public ReportConfiguration addQueryFilters(String... queryFilters) {
+    public ReportWriterConfiguration addQueryFilters(String... queryFilters) {
         if (Objects.nonNull(queryFilters)) {
             this.queryFilters.addAll(Arrays.asList(queryFilters));
         }

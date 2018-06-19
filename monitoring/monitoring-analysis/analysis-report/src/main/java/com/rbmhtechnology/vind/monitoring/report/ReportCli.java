@@ -1,6 +1,9 @@
 package com.rbmhtechnology.vind.monitoring.report;
 
 import com.google.gson.JsonObject;
+import com.rbmhtechnology.vind.monitoring.report.configuration.ElasticSearchConnectionConfiguration;
+import com.rbmhtechnology.vind.monitoring.report.configuration.ElasticSearchReportConfiguration;
+import com.rbmhtechnology.vind.monitoring.report.service.ElasticSearchReportService;
 import com.rbmhtechnology.vind.monitoring.report.writer.HtmlReportWriter;
 import com.rbmhtechnology.vind.monitoring.report.writer.ReportWriter;
 import org.apache.commons.cli.*;
@@ -54,7 +57,19 @@ public class ReportCli {
         final ZonedDateTime from = ZonedDateTime.parse(line.getOptionValue("from"));
         final ZonedDateTime to = ZonedDateTime.parse(line.getOptionValue("to"));
 
-        final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(esHost, esPort, esIndex, entryType, from, to, applicationId, messageWrapper);
+        final ElasticSearchConnectionConfiguration connectionConfig = new ElasticSearchConnectionConfiguration(
+                esHost,
+                esPort,
+                esIndex
+        );
+
+        final ElasticSearchReportConfiguration config = new ElasticSearchReportConfiguration();
+        config.setApplicationId(applicationId)
+                .setEsEntryType(entryType)
+                .setMessageWrapper(messageWrapper)
+                .setConnectionConfiguration(connectionConfig);
+
+        final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(config, from, to);
 
         final LinkedHashMap<String, JsonObject> topFaceFields = esRepsortService.getTopFaceFields();
         final ArrayList<String> facetFields = new ArrayList<>(topFaceFields.keySet());
