@@ -3,6 +3,7 @@
     "query":{
         "bool":{
             "must":[
+                %s
                 {"term":{"%stype.raw":"suggestion"}},
                 {"term":{"%sapplication.id.raw":"%s"}}
             ],

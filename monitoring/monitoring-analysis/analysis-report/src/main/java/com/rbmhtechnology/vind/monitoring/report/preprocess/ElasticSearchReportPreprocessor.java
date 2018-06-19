@@ -76,11 +76,14 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
     void beforePreprocessing() {
         log.info("Getting sessions and common filter for the period [{} - {}]",from, to);
 
+
+
         final String skipPreprocessed =
                 ",\n\"must_not\":{\"exists\":{\"field\":\"%sprocess\"}}";
 
         final String query = elasticClient.loadQueryFromFile("prepare",
                 this.scrollSpan,
+                getEsFilters(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getApplicationId(),
                 this.configuration.getMessageWrapper(),
@@ -165,6 +168,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         //fetch all the entries for the session
         final String query = elasticClient.loadQueryFromFile("session",
                 this.scrollSpan,
+                getEsFilters(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getApplicationId(),
                 this.configuration.getMessageWrapper(),
@@ -221,8 +225,6 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
             start += scrollSpan;
 
         }
-
-        //preprocess the entries
 
         //Sort entries by timeStamp
         final List<JsonObject> sortedRequest = requests.stream()
@@ -567,4 +569,14 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         return true;
     }
 
+    private String getEsFilters(){
+        if(configuration.getEsFilters().size() > 0 ) {
+            final String jsonMatchFilterPattern = "{\"match\":{\"%s\":\"%s\"}}";
+            final String filters = configuration.getEsFilters().entrySet().stream()
+                    .map(e -> String.format(jsonMatchFilterPattern, e.getKey(), e.getValue()))
+                    .collect(Collectors.joining(",\n"));
+
+            return filters + ",\n";
+        } else return "";
+    }
 }

@@ -3,6 +3,7 @@
     "query":{
         "bool":{
             "must":[
+                %s
                 {"term":{"type.keyword":"fulltext"}},
                 {"term":{"application.id.keyword":"%s"}}
                 {"match":{"%sprocess.final":"true"}}

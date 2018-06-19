@@ -57,6 +57,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     public long getTotalRequests() {
 
         final String query = elasticClient.loadQueryFromFile("totalRequests",
+                getEsFilters(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getApplicationId(),
@@ -73,6 +74,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public LinkedHashMap<ZonedDateTime, Long> getTopDays() {
         final String query = elasticClient.loadQueryFromFile("topDays",
+                getEsFilters(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getApplicationId(),
@@ -95,6 +97,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public LinkedHashMap<String, Long> getTopUsers() {
         final String query = elasticClient.loadQueryFromFile("topUsers",
+                getEsFilters(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getApplicationId(),
@@ -117,6 +120,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public LinkedHashMap<String, JsonObject> getTopFacetFields() {
         final String query = elasticClient.loadQueryFromFile("topFacetFields",
+                getEsFilters(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getApplicationId(),
@@ -170,6 +174,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public LinkedHashMap<String, JsonObject> getTopSuggestionFields() {
         final String query = elasticClient.loadQueryFromFile("topSuggestionFields",
+                getEsFilters(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getApplicationId(),
@@ -222,6 +227,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public LinkedHashMap<String, Long> getTopQueries() {
         final String query = elasticClient.loadQueryFromFile("topQueries",
+                getEsFilters(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getApplicationId(),
@@ -244,6 +250,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public LinkedHashMap<String, Long> getTopFilteredQueries(String regexFilter) {
         final String query = elasticClient.loadQueryFromFile("topFilteredQueries",
+                getEsFilters(),
                 this.configuration.getApplicationId(),
                 regexFilter,
                 this.getFrom().toInstant().toEpochMilli(),
@@ -261,6 +268,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     @Override
     public LinkedHashMap<String, JsonObject> getTopFilterFields() {
         final String query = elasticClient.loadQueryFromFile("topFilterFields",
+                getEsFilters(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getApplicationId(),
@@ -323,6 +331,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         final Long scrollSpan = 1000L;
         final String query = elasticClient.loadQueryFromFile("scopedProcessResultsForFields",
                 scrollSpan, //page size
+                getEsFilters(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getMessageWrapper(),
                 this.configuration.getApplicationId(),
@@ -477,5 +486,16 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         });
 
         return resultsAs;
+    }
+
+    private String getEsFilters(){
+        if(configuration.getEsFilters().size() > 0 ) {
+            final String jsonMatchFilterPattern = "{\"match\":{\"%s\":\"%s\"}}";
+            final String filters = configuration.getEsFilters().entrySet().stream()
+                    .map(e -> String.format(jsonMatchFilterPattern, e.getKey(), e.getValue()))
+                    .collect(Collectors.joining(",\n"));
+
+            return filters + ",\n";
+        } else return "";
     }
 }

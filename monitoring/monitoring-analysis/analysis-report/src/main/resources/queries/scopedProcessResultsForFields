@@ -3,6 +3,7 @@
     "query":{
         "bool":{
             "must":[
+                %s
                 {"term":{"%stype.raw":"fulltext"}},
                 {"term":{"%sapplication.id.raw":"%s"}},
                 {"terms":{"%sprocess.filters.scope.raw":["%s"]}},

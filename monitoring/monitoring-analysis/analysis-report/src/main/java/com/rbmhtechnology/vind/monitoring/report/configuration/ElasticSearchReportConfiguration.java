@@ -2,9 +2,14 @@ package com.rbmhtechnology.vind.monitoring.report.configuration;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
 public class ElasticSearchReportConfiguration extends ReportConfiguration {
 
     private String messageWrapper;
+    private Map<String, String> esFilters = new HashMap<>();
     private String esEntryType;
     private ElasticSearchConnectionConfiguration connectionConfiguration;
 
@@ -40,6 +45,22 @@ public class ElasticSearchReportConfiguration extends ReportConfiguration {
 
     public ElasticSearchReportConfiguration setConnectionConfiguration(ElasticSearchConnectionConfiguration connectionConfiguration) {
         this.connectionConfiguration = connectionConfiguration;
+        return this;
+    }
+
+    public Map<String, String> getEsFilters() {
+        return esFilters;
+    }
+
+    public ElasticSearchReportConfiguration setEsFilters(Map<String, String> esFilters) {
+        this.esFilters = esFilters;
+        return this;
+    }
+
+    public ElasticSearchReportConfiguration addEsFilter(String field, String value) {
+        if(Objects.nonNull(field) && Objects.nonNull(value)) {
+            this.esFilters.put(field, value);
+        }
         return this;
     }
 

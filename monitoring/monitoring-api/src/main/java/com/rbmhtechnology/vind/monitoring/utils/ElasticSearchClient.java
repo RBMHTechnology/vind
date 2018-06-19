@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created on 28.02.18.
@@ -145,7 +146,7 @@ public class ElasticSearchClient {
                 return result;
             } catch (IOException e) {
                 log.error("Error in scroll request query: {}", e.getMessage(), e);
-                return null;
+                throw new RuntimeException("Error in scroll request query: " + e.getMessage(), e);
             }
         }
         return null;
@@ -167,7 +168,7 @@ public class ElasticSearchClient {
                 return result;
             } catch (IOException e) {
                 log.error("Error in scroll request query: {}", e.getMessage(), e);
-                return null;
+                throw new RuntimeException("Error in scroll request query: " + e.getMessage(), e);
             }
             //TODO: move to async at some point
             /*client.executeAsync(search,new JestResultHandler<JestResult>() {
@@ -191,7 +192,7 @@ public class ElasticSearchClient {
     }
 
     public String loadQueryFromFile(String fileName, Object ... args) {
-        final Path path = Paths.get(ElasticSearchClient.class.getClassLoader().getResource("queries/" + fileName).getPath());
+        final Path path = Paths.get(Objects.requireNonNull(ElasticSearchClient.class.getClassLoader().getResource("queries/" + fileName)).getPath());
         try {
             final byte[] encoded = Files.readAllBytes(path);
             final String query = new String(encoded, "UTF-8");
@@ -260,7 +261,10 @@ public class ElasticSearchClient {
 
         final JestClient client = getElasticSearchClient();
         try {
-            client.execute(bulkProcessor.build());
+            BulkResult result = client.execute(bulkProcessor.build());
+            if (result.getFailedItems().size() > 0) {
+                log.error("Error executing bulk update: {} items where no updated.", result.getFailedItems().size());
+            }
         } catch (IOException e) {
             log.error("Error executing bulk update: {}", e.getMessage(),e);
             throw new RuntimeException("Error executing bulk update: " + e.getMessage(), e);
