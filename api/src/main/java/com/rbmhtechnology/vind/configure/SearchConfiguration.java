@@ -6,9 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * @author Thomas Kurz (tkurz@apache.org)
@@ -42,7 +40,7 @@ public class SearchConfiguration {
     public static final String VIND_PROPERTIES_FILE = "vind.properties";
     public static final String DEFAULT_PROPERTIES_FILE = "default.properties";
 
-    public static final String configPropertyName = "search.lib.config";
+    public static final String VIND_ENV_PREFIX = "VIND_";
 
     private static Properties PROPERTIES;
 
@@ -52,6 +50,9 @@ public class SearchConfiguration {
             defaultProps.load(Resources.getResource(DEFAULT_PROPERTIES_FILE).openStream());
 
             PROPERTIES = new Properties(defaultProps);
+
+            //Try to load from EnvironmentVariables
+            loadEnvVarProperties().forEach((key, value) -> PROPERTIES.setProperty(key, value));
 
             log.info("Trying to load configurations file from System properties var '{}':...", VIND_FILE_SYSTEM_PROPERTY);
             final String propertyFilePath = System.getProperty(VIND_FILE_SYSTEM_PROPERTY);
@@ -80,9 +81,26 @@ public class SearchConfiguration {
             }
 
         } catch (IOException e) {
-            log.error("Cannot load configuration from path {}", System.getProperty(configPropertyName), e);
+            log.error("Cannot load configuration from path {}", System.getProperty(VIND_FILE_SYSTEM_PROPERTY), e);
             throw new RuntimeException(e);
         }
+    }
+
+    protected static Map<String, String> loadEnvVarProperties() {
+        Map<String,String> envVarProps = new HashMap<>();
+
+        System.getenv()
+                .entrySet().stream()
+                .filter(e -> e.getKey().startsWith(VIND_ENV_PREFIX))
+                .forEach(e -> {
+                    envVarProps.put(getPropertyNameFromEnvVar(e.getKey()), e.getValue());
+                });
+
+        return envVarProps;
+    }
+
+    protected static String getPropertyNameFromEnvVar(String key) {
+        return key.substring(VIND_ENV_PREFIX.length()).toLowerCase().replaceAll("_", ".");
     }
 
     static {

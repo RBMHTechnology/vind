@@ -17,22 +17,47 @@ In order to use a Solr Remote Backend we have to switch the dependency to this.
 
 ### 7.2 Configuration
 
-The searchlib uses property files for configuration. It comes with some basic configurations (like pagesize) that can be changed. 
- For configuring the remote host you have to place a file called searchlib.properties in the classpath which includes
- the host information.
+Vind supports various types for configuration, which configuration by *environment variables*, by *property file* or/and by *code interface*.
+It comes with some basic configurations (like pagesize) that can be changed. The properties are overwritten following the ordering:
+Default Properties < Environment Variables < Property File.
+
+Currently the following properties are supported:
+| Key | Type | Description |
+| *server.collection* | STRING | The solr collection name |
+| *server.host* | STRING | The solr host or hostlist |
+| *server.provider* | STRING | Fully qualified name of the solr provider |
+| *server.connection.timeout* | LONG | Connection timeout for remote server |
+| *server.so.timeout* | LONG | Zookeeper client timeout |
+| *server.solr.cloud* | BOOL | If remote solr runs in cloud mode |
+| *application.executor.threads* | INT | Max. parallel threads for async connection |
+| *search.result.pagesize* | INT | Result pagesize |
+| *search.result.showScore* | BOOL | Include score in the result objects |
+| *search.result.facet.includeEmpty* | BOOL | Include empty facets |
+| *search.result.facet.length* | INT | Length for facet list |
+| *vind.properties.file* | STRING | Path to property file |
+
+**Environment Properties**
+Environment Properties have a slightly different format. They start with the prefix *VIND_*, are uppercased and the dots are replaced underscored.
+So e.g. `server.solr.cloud` turns to `VIND_SERVER_SOLR_CLOUD`.
+
+**Property File**
+
+For configuring e.g the remote host you have to place a file called searchlib.properties in the classpath which includes the host information.
 
 ```
 //configure http client
-server.solr.host=http://localhost:8983/solr/searchindex
+server.host=http://localhost:8983/solr/searchindex
 
 //configure zookeeper client
+server.host=zkServerA:2181,zkServerB:2181,zkServerC:2181
 server.solr.cloud=true
-server.solr.host=zkServerA:2181,zkServerB:2181,zkServerC:2181
 server.solr.collection=collection1
 
 //change pagesize
 search.result.pagesize=7
 ```
+ 
+**Code Interface**
  
 In addition to property file the static configuration interface allows also changes on runtime.
 ```java
