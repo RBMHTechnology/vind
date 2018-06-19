@@ -411,7 +411,7 @@
             </#list>
             </tbody>
         </table>
-        <#if reportWriterConfiguration.queryFilters?has_content>
+        <#if configuration.reportWriterConfiguration.queryFilters?has_content>
         <h3>Top Filtered Fulltext Queries</h3>
         <p>Filter: without <#list configuration.reportWriterConfiguration.queryFilters as filter>${filter}  </#list></p>
         <table class="data">

@@ -29,6 +29,10 @@ public class HtmlReportWriterTest {
         final LinkedHashMap<String, JsonObject> fieldsMap = new LinkedHashMap<>();
         JsonObject result = new JsonObject();
         result.addProperty("total",34000l );
+        result.addProperty("first",1000l );
+        result.addProperty("second",4000l );
+        result.addProperty("third",60l );
+        result.addProperty("fourth",70l );
         fieldsMap.put("field1", result);
         fieldsMap.put("field2", result);
         fieldsMap.put("field3", result);

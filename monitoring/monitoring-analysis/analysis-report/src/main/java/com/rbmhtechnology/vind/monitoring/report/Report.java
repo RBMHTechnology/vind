@@ -5,7 +5,6 @@ package com.rbmhtechnology.vind.monitoring.report;
 
 import com.google.gson.JsonObject;
 import com.rbmhtechnology.vind.monitoring.report.configuration.ReportConfiguration;
-import com.rbmhtechnology.vind.monitoring.report.configuration.ReportWriterConfiguration;
 
 import java.time.ZoneId;
 import java.time.ZoneOffset;
