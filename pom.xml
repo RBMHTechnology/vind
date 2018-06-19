@@ -91,6 +91,7 @@
         <commons-httpclient.version>3.1</commons-httpclient.version>
         <commons-cli.version>1.4</commons-cli.version>
         <commons-codec.version>1.10</commons-codec.version>
+        <httpclient.version>4.4.1</httpclient.version>
 
         <jackson.version>2.7.5</jackson.version>
         <sparkjava.version>2.5</sparkjava.version>
@@ -160,6 +161,11 @@
                 <groupId>commons-httpclient</groupId>
                 <artifactId>commons-httpclient</artifactId>
                 <version>${commons-httpclient.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${httpclient.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-cli</groupId>
