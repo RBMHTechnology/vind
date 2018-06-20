@@ -443,10 +443,10 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 });
 
 
-        final LinkedHashMap<String, Long> resultsAsFirst = getFieldCountAs(1, descriptorFilters, fields);
-        final LinkedHashMap<String, Long> resultsAsSecond = getFieldCountAs(2, descriptorFilters, fields);
-        final LinkedHashMap<String, Long> resultsAsThird = getFieldCountAs(3, descriptorFilters, fields);
-        final LinkedHashMap<String, Long> resultsAsFourth = getFieldCountAs(4, descriptorFilters, fields);
+        final LinkedHashMap<String, Long> resultsAsFirst = getFieldCountAs(1, descriptorFilters, fields, scope);
+        final LinkedHashMap<String, Long> resultsAsSecond = getFieldCountAs(2, descriptorFilters, fields, scope);
+        final LinkedHashMap<String, Long> resultsAsThird = getFieldCountAs(3, descriptorFilters, fields, scope);
+        final LinkedHashMap<String, Long> resultsAsFourth = getFieldCountAs(4, descriptorFilters, fields, scope);
         
         //Sort the results
 
@@ -465,7 +465,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                         (oldValue, newValue) -> oldValue, LinkedHashMap::new));
     }
 
-    private LinkedHashMap<String, Long> getFieldCountAs(int step, List<JsonObject> descriptorFilters, List<String> filterFields) {
+    private LinkedHashMap<String, Long> getFieldCountAs(int step, List<JsonObject> descriptorFilters, List<String> filterFields, String scope) {
 
         final String position = String.valueOf(step);
         final List<JsonObject> filterFiltersAs = descriptorFilters.stream()
@@ -473,6 +473,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 .map(e -> e.getAsJsonObject("steps").getAsJsonArray(position))
                 .flatMap(Streams::stream)
                 .map(JsonElement::getAsJsonObject)
+                .filter(f -> f.get("scope").getAsString().equals(scope))
                 .collect(Collectors.toList());
 
         final LinkedHashMap<String, Long> resultsAs = new LinkedHashMap<>();
