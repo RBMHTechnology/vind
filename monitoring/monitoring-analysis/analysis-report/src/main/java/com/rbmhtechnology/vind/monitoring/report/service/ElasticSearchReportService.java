@@ -401,9 +401,9 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         //TODO:find a better way to do this
         switch(type) {
             case "AfterFilter":
-                return ">" + filter.getAsJsonObject("date").get("timeStamp").getAsString();
+                return "> " + filter.getAsJsonObject("date").get("timeStamp").getAsString();
             case "BeforeFilter":
-                return "<" +filter.getAsJsonObject("date").get("timeStamp").getAsString();
+                return "< " +filter.getAsJsonObject("date").get("timeStamp").getAsString();
             case "DescriptorFilter":
                 return filter.get("term").getAsString();
             case "TermFilter":
@@ -416,6 +416,10 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
                 return  filter.get("start").getAsString() + " TO " + filter.get("end").getAsString();
             case "BetweenNumericFilter":
                 return  filter.get("start").getAsString() + " TO " + filter.get("end").getAsString();
+            case "GreaterThanFilter":
+                return  "> " + filter.get("number").getAsString();
+            case "LowerThanFilter":
+                return  "< " + filter.get("number").getAsString();
             default:
                 return "NA";
         }
