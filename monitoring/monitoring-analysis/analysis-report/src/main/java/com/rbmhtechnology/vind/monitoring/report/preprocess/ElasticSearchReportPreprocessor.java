@@ -30,7 +30,8 @@ import static com.rbmhtechnology.vind.monitoring.report.util.ReportLabels.*;
  */
 public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchReportPreprocessor.class);
-    private static final int MAX_LEVENSHTEIN_DISTANCE = 1;
+    private static final int MAX_LEVENSHTEIN_DISTANCE = 0;
+    public static final int MAX_FILTER_DIFFERENCE = 1;
 
     private final Long from;
     private final Long to;
@@ -75,10 +76,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
     // general filters which apply to all queries.
     void beforePreprocessing() {
         log.info("Getting sessions and common filter for the period [{} - {}]",from, to);
-
-
-
-        final String skipPreprocessed =
+       final String skipPreprocessed =
                 ",\n\"must_not\":{\"exists\":{\"field\":\"%sprocess\"}}";
 
         final String query = elasticClient.loadQueryFromFile("prepare",
@@ -240,7 +238,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                 .sorted(Comparator.comparingLong(jo -> jo.get("timeStamp").getAsLong()))
                 .collect(Collectors.toList());
 
-        log.info("A total of {} vind monitoring entries for session [{}],",sortedRequest.size() ,sessionId);
+        log.debug("A total of {} vind monitoring entries for session [{}],",sortedRequest.size() ,sessionId);
         processSession(sortedRequest);
 
         return bulkUpdate(requests);
@@ -431,7 +429,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
             final Long intersectionCount = Streams.stream(actualFilters.iterator())
                     .filter(previousFilters::contains)
                     .count();
-            return (previousFilters.size() - intersectionCount) <= 1;
+            return (previousFilters.size() - intersectionCount) <= MAX_FILTER_DIFFERENCE;
         }
         return false;
     }
@@ -564,7 +562,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                 })
                 .collect(Collectors.toList());
 
-        log.info("Writing {} processing results to elasticsearch",processResults.size());
+        log.debug("Writing {} processing results to elasticsearch",processResults.size());
         elasticClient.bulkUpdate(processResults, this.configuration.getEsEntryType());
         return true;
     }
