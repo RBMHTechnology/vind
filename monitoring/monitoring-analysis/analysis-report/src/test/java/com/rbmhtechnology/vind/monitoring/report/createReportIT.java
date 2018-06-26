@@ -13,9 +13,12 @@ import org.junit.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 /**
  * Created on 08.06.18.
@@ -27,13 +30,13 @@ public class createReportIT {
     private final ElasticSearchReportConfiguration config = new ElasticSearchReportConfiguration()
             .setForcePreprocessing(false)
             .setSystemFilterFields("static_partitionID")
-            .setApplicationId("mediamanager-Media Manager Content Management-Assets")
+            .setApplicationId("someAPP")
             .setEsEntryType("logback")
             .setMessageWrapper("message_json")
             .setConnectionConfiguration(new ElasticSearchConnectionConfiguration(
-                    "172.20.30.95",
-                    "19200",
-                    "logstash-searchanalysis-2018.*"
+                    "1.1.1.1",
+                    "1920",
+                    "logstash-2018.*"
             ));
 
     private Report report;
@@ -46,8 +49,8 @@ public class createReportIT {
 
     @Before
     public void setUp() throws IOException {
-        from = ZonedDateTime.now().minusMonths(1);
-        to   = ZonedDateTime.now().minusMonths(1).plusDays(1);
+        from = ZonedDateTime.of(2018, 4, 30, 0, 0, 0, 0, ZoneId.systemDefault());
+        to   = from.plusWeeks(2);
 
         reportPreprocessor = new ElasticSearchReportPreprocessor(config, from, to);
 
@@ -65,12 +68,14 @@ public class createReportIT {
     }
 
     @Test
-    //@Ignore
+    @Ignore
     public void createReportIT() {
 
         esRepsortService.preprocessData();
 
-        final LinkedHashMap<String, JsonObject> topFaceFields = esRepsortService.getTopFacetFields();
+        final List<String> topFaceFieldNames = esRepsortService.getTopFacetFields();
+
+        final LinkedHashMap<String, JsonObject> topFaceFields = esRepsortService.prepareScopeFilterResults(topFaceFieldNames, "facet");
         final ArrayList<String> facetFields = new ArrayList<>(topFaceFields.keySet());
 
         final LinkedHashMap<String, JsonObject> topSuggestionFields = esRepsortService.getTopSuggestionFields();

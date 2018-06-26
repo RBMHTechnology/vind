@@ -12,8 +12,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 /**
  * Created on 01.03.18.
@@ -70,7 +72,9 @@ public class ElasticSearchReportServiceTest {
     public void getTopFacetFieldsTest() throws Exception {
         final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(config, ZonedDateTime.now().minusYears(1), ZonedDateTime.now().plusYears(1));
 
-        final LinkedHashMap<String, JsonObject> topFaceFields = esRepsortService.getTopFacetFields();
+        final List<String> topFaceFieldNames = esRepsortService.getTopFacetFields();
+
+        final LinkedHashMap<String, JsonObject> topFaceFields = esRepsortService.prepareScopeFilterResults(topFaceFieldNames, "facet");
 
         Assert.assertEquals(2, topFaceFields.size());
 
