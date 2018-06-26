@@ -24,8 +24,7 @@ public class Report {
     private String dateFormat = "dd/MM/yyyy VV";
     private String longDateFormat = "EEEE, MMMM dd, yyyy hh:mm a";
     private ZoneId zoneId = ZoneOffset.UTC;
-    //TODO make configurable
-    private String imageUrl = "";
+    private String imageUrl = null;
 
     private ZonedDateTime today = ZonedDateTime.now();
     private ZonedDateTime from;
@@ -57,6 +56,11 @@ public class Report {
 
     public String getImageUrl() {
         return imageUrl;
+    }
+
+    public Report setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+        return this;
     }
 
     public String getApplicationName() {
@@ -133,6 +137,10 @@ public class Report {
         return this;
     }
 
+    public long getCountOfUnusedFacetFields() {
+        return topFacetFields.keySet().stream().filter(k -> {return topFacetFields.get(k).get("total").getAsLong() == 0;}).count();
+    }
+
     public LinkedHashMap<String, LinkedHashMap<Object,Long>> getFacetFieldsValues() {
         return facetFieldsValues;
     }
@@ -151,6 +159,10 @@ public class Report {
         return this;
     }
 
+    public long getCountOfUnusedSuggestionFields() {
+        return topSuggestionFields.keySet().stream().filter(k -> {return topSuggestionFields.get(k).get("total").getAsLong() == 0;}).count();
+    }
+
     public LinkedHashMap<String, LinkedHashMap<Object,Long>> getSuggestionFieldsValues() {
         return suggestionFieldsValues;
     }
@@ -167,6 +179,10 @@ public class Report {
     public Report setTopFilterFields(LinkedHashMap<String, JsonObject> topFilterFields) {
         this.topFilterFields = topFilterFields;
         return this;
+    }
+
+    public long getCountOfUnusedFilterFields() {
+        return topFilterFields.keySet().stream().filter(k -> {return topFilterFields.get(k).get("total").getAsLong() == 0;}).count();
     }
 
     public LinkedHashMap<String, LinkedHashMap<Object, Long>> getFilterFieldsValues() {
