@@ -15,7 +15,7 @@ public class ReportWriterConfiguration {
     private Map<String, HashMap<String,String>> suggestionFieldsExtension = new HashMap<>();
     private Map<String, HashMap<String,String>> filterFieldsExtension = new HashMap<>();
     private Map<String, HashMap<String,String>> fulltextQueryExtension = new HashMap<>();
-    private List<String> queryFilters = new ArrayList<>();
+    private String queryFilter;
 
     public Map<String, String> getGeneralFilters() {
         return generalFilters;
@@ -85,26 +85,12 @@ public class ReportWriterConfiguration {
         return this;
     }
 
-    public List<String> getQueryFilters() {
-        return queryFilters;
+    public String getQueryFilter() {
+        return queryFilter;
     }
 
-    public ReportWriterConfiguration setQueryFilters(List<String> queryFilters) {
-        this.queryFilters = queryFilters;
-        return this;
-    }
-
-    public ReportWriterConfiguration setQueryFilters(String... queryFilters) {
-        if (Objects.nonNull(queryFilters)) {
-            this.queryFilters = Arrays.asList(queryFilters);
-        }
-        return this;
-    }
-
-    public ReportWriterConfiguration addQueryFilters(String... queryFilters) {
-        if (Objects.nonNull(queryFilters)) {
-            this.queryFilters.addAll(Arrays.asList(queryFilters));
-        }
+    public ReportWriterConfiguration setQueryFilter(String queryFilter) {
+        this.queryFilter = queryFilter;
         return this;
     }
 }

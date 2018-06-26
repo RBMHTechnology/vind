@@ -4,18 +4,18 @@
         "bool":{
             "must":[
                 %s
-                {"term":{"type.keyword":"fulltext"}},
-                {"term":{"application.id.keyword":"%s"}}
+                {"term":{"%stype.raw":"fulltext"}},
+                {"term":{"%sapplication.id.raw":"%s"}},
                 {"match":{"%sprocess.final":"true"}}
             ],
             "must_not":[
-                "match":{"%sprocess.skip":"true"},
-                {"regexp":{"request.query.keyword":"%s"}}
+                {"match":{"%sprocess.skip":"true"}},
+                {"regexp":{"%srequest.query.raw":"%s"}}
             ],
             "filter": [
                 {
                     "range":{
-                        "timeStamp":{
+                        "%stimeStamp":{
                             "gte":%d,
                             "lte":%d,
                             "format":"epoch_millis"
@@ -28,7 +28,7 @@
     "aggs":{
          "queries":{
              "terms":{
-                 "field":"request.query.keyword",
+                 "field":"%srequest.query.raw",
                  "size":1000,
                  "order":{
                      "_count":"desc"
