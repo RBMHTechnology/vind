@@ -50,7 +50,7 @@ public class ElasticSearchClient {
         return init(elasticHost, elasticPort, elasticIndex, logType, null);
     }
 
-    public boolean init(String elasticHost, String elasticPort, String elasticIndex, String logType, String processResultMappingFile) {
+    public boolean init(String elasticHost, String elasticPort, String elasticIndex, String logType, Path processResultMappingFile) {
         this.elasticHost = elasticHost;
         this.elasticPort = elasticPort;
         this.elasticIndex = elasticIndex;
@@ -64,9 +64,9 @@ public class ElasticSearchClient {
                 client.execute(new CreateIndex.Builder(elasticIndex).build());
             }
 
-            if (StringUtils.isNotBlank(logType) && StringUtils.isNotBlank(processResultMappingFile)) {
+            if (StringUtils.isNotBlank(logType) && (processResultMappingFile != null)) {
                 log.info("Updating type mapping.");
-                final String mappingJson = new String(ByteStreams.toByteArray(new FileInputStream(processResultMappingFile)));
+                final String mappingJson = new String(ByteStreams.toByteArray(Files.newInputStream(processResultMappingFile)));
                 client.execute(new PutMapping.Builder(elasticIndex, logType, mappingJson).build());
             }
 

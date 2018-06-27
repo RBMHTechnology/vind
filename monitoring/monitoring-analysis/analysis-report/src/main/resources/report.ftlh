@@ -36,7 +36,7 @@
         font-family: 'Roboto', sans-serif;
         font-size: 13px;
         color: #606163;
-        margin: 200px 30px 0 30px;
+        margin: 0 30px 0 30px;
     }
 
     p {

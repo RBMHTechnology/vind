@@ -11,6 +11,7 @@ import com.google.gson.JsonObject;
 import com.rbmhtechnology.vind.monitoring.report.configuration.ElasticSearchReportConfiguration;
 import com.rbmhtechnology.vind.monitoring.report.util.SimilarityUtils;
 import com.rbmhtechnology.vind.monitoring.utils.ElasticSearchClient;
+import io.redlink.utils.ResourceLoaderUtils;
 import io.searchbox.client.JestResult;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -54,7 +55,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                 configuration.getConnectionConfiguration().getEsPort(),
                 configuration.getConnectionConfiguration().getEsIndex(),
                 configuration.getEsEntryType(),
-                Objects.requireNonNull(ElasticSearchReportPreprocessor.class.getClassLoader().getResource("processMapping.json")).getPath()
+                ResourceLoaderUtils.getResourceAsPath("processMapping.json")
         );
 
         this.configuration = configuration;
