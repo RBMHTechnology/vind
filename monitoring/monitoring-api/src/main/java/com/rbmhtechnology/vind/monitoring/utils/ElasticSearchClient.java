@@ -5,6 +5,7 @@ package com.rbmhtechnology.vind.monitoring.utils;
 
 import com.google.common.io.ByteStreams;
 import com.google.gson.JsonObject;
+import io.redlink.utils.ResourceLoaderUtils;
 import io.searchbox.client.JestClient;
 import io.searchbox.client.JestResult;
 import io.searchbox.core.*;
@@ -224,7 +225,7 @@ public class ElasticSearchClient {
     }
 
     public String loadQueryFromFile(String fileName, Object ... args) {
-        final Path path = Paths.get(Objects.requireNonNull(ElasticSearchClient.class.getClassLoader().getResource("queries/" + fileName)).getPath());
+        final Path path = ResourceLoaderUtils.getResourceAsPath("queries/" + fileName);
         try {
             final byte[] encoded = Files.readAllBytes(path);
             final String query = new String(encoded, "UTF-8");
