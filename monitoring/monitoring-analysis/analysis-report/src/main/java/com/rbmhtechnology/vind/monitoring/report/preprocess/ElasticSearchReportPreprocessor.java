@@ -11,12 +11,14 @@ import com.google.gson.JsonObject;
 import com.rbmhtechnology.vind.monitoring.report.configuration.ElasticSearchReportConfiguration;
 import com.rbmhtechnology.vind.monitoring.report.util.SimilarityUtils;
 import com.rbmhtechnology.vind.monitoring.utils.ElasticSearchClient;
+import io.redlink.utils.ResourceLoaderUtils;
 import io.searchbox.client.JestResult;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -49,14 +51,6 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         this.from = from.toInstant().toEpochMilli();
         this.to = to.toInstant().toEpochMilli();
 
-        elasticClient.init(
-                configuration.getConnectionConfiguration().getEsHost(),
-                configuration.getConnectionConfiguration().getEsPort(),
-                configuration.getConnectionConfiguration().getEsIndex(),
-                configuration.getEsEntryType(),
-                Objects.requireNonNull(ElasticSearchReportPreprocessor.class.getClassLoader().getResource("processMapping.json")).getPath()
-        );
-
         this.configuration = configuration;
     }
 
@@ -72,9 +66,27 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         return this.sessionIds;
     }
 
+    @Override
+    void afterPreprocessing() {
+        try {
+            elasticClient.destroy();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        super.afterPreprocessing();
+    }
+
     //Gets the list of sessions to preprocess and figures out the
     // general filters which apply to all queries.
     void beforePreprocessing() {
+
+        elasticClient.init(
+                configuration.getConnectionConfiguration().getEsHost(),
+                configuration.getConnectionConfiguration().getEsPort(),
+                configuration.getConnectionConfiguration().getEsIndex(),
+                configuration.getEsEntryType(),
+                ResourceLoaderUtils.getResourceAsPath("processMapping.json")
+        );
 
         log.info("Getting sessions and common filter for the period [{} - {}]",from, to);
 

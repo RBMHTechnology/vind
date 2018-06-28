@@ -5,6 +5,7 @@ package com.rbmhtechnology.vind.monitoring.utils;
 
 import com.google.common.io.ByteStreams;
 import com.google.gson.JsonObject;
+import io.redlink.utils.ResourceLoaderUtils;
 import io.searchbox.client.JestClient;
 import io.searchbox.client.JestResult;
 import io.searchbox.core.*;
@@ -49,7 +50,7 @@ public class ElasticSearchClient {
         return init(elasticHost, elasticPort, elasticIndex, logType, null);
     }
 
-    public boolean init(String elasticHost, String elasticPort, String elasticIndex, String logType, String processResultMappingFile) {
+    public boolean init(String elasticHost, String elasticPort, String elasticIndex, String logType, Path processResultMappingFile) {
         this.elasticHost = elasticHost;
         this.elasticPort = elasticPort;
         this.elasticIndex = elasticIndex;
@@ -63,9 +64,9 @@ public class ElasticSearchClient {
                 client.execute(new CreateIndex.Builder(elasticIndex).build());
             }
 
-            if (StringUtils.isNotBlank(logType) && StringUtils.isNotBlank(processResultMappingFile)) {
+            if (StringUtils.isNotBlank(logType) && (processResultMappingFile != null)) {
                 log.info("Updating type mapping.");
-                final String mappingJson = new String(ByteStreams.toByteArray(new FileInputStream(processResultMappingFile)));
+                final String mappingJson = new String(ByteStreams.toByteArray(Files.newInputStream(processResultMappingFile)));
                 client.execute(new PutMapping.Builder(elasticIndex, logType, mappingJson).build());
             }
 
@@ -78,24 +79,24 @@ public class ElasticSearchClient {
         return true;
     }
 
-    public void destroy() throws IOException {
-        if (elasticClient != null) {
+    private synchronized JestClient getElasticSearchClient(boolean forceRebuild) {
+        if(forceRebuild) {
             try {
-                elasticClient.close();
+                this.elasticClient.close();
             } catch (IOException e) {
-                log.error("Error closing ElasticSearch client: {}", e.getMessage(), e);
-                throw e;
+                throw new RuntimeException(e);
             }
-            elasticClient = null;
-            log.info("Destroyed ElasticSearch client");
+            this.elasticClient = null;
         }
-    }
 
-    private synchronized JestClient getElasticSearchClient() {
         if (elasticClient == null) {
             elasticClient =  ElasticSearchClientBuilder.build(elasticHost, elasticPort);
         }
         return elasticClient;
+    }
+
+    private synchronized JestClient getElasticSearchClient() {
+        return this.getElasticSearchClient(false);
     }
 
     public synchronized SearchResult  getQuery(String query) {
@@ -106,7 +107,6 @@ public class ElasticSearchClient {
                     .addIndex(elasticIndex);
 
             if (StringUtils.isNotEmpty(this.logType)) {
-                searchBuilder.addType(this.logType);
                 searchBuilder.addType(this.logType);
             }
 
@@ -136,6 +136,20 @@ public class ElasticSearchClient {
         return null;
     }
 
+    public void destroy() throws IOException {
+        if (elasticClient != null) {
+            try {
+                elasticClient.close();
+            } catch (IOException e) {
+                log.error("Error closing ElasticSearch client: {}", e.getMessage(), e);
+                throw e;
+            }
+            elasticClient = null;
+            log.info("Destroyed ElasticSearch client");
+        }
+    }
+
+
     public synchronized JestResult scrollResults(String scrollId) {
         final JestClient client = getElasticSearchClient();
         try {
@@ -157,7 +171,10 @@ public class ElasticSearchClient {
                 log.warn("Error in scroll request query: {}", e.getMessage(), e);
                 if(retry > ES_MAX_TRIES) {
                     log.error("Error in scroll request: reached maximum number of scroll tries [{}].", retry);
-                    throw new RuntimeException("Error in scroll request query: " + e.getMessage(), e);
+                    //throw new RuntimeException("Error in scroll request query: " + e.getMessage(), e);
+                    this.elasticClient = getElasticSearchClient(true);
+                    return scrollResults(scrollId, 0, client);
+
                 } else {
                     Thread.sleep(ES_WAIT_TIME);
                     return scrollResults(scrollId, retry + 1, client);
@@ -224,7 +241,7 @@ public class ElasticSearchClient {
     }
 
     public String loadQueryFromFile(String fileName, Object ... args) {
-        final Path path = Paths.get(Objects.requireNonNull(ElasticSearchClient.class.getClassLoader().getResource("queries/" + fileName)).getPath());
+        final Path path = ResourceLoaderUtils.getResourceAsPath("queries/" + fileName);
         try {
             final byte[] encoded = Files.readAllBytes(path);
             final String query = new String(encoded, "UTF-8");
@@ -306,7 +323,7 @@ public class ElasticSearchClient {
                     final String errorIds = result.getFailedItems().stream()
                                 .map( fi -> fi.id)
                                 .collect(Collectors.joining(", "));
-                    log.error("Error executing bulk update: {} items where no updated [].", result.getFailedItems().size(), errorIds);
+                    log.error("Error executing bulk update: {} items where no updated [{}].", result.getFailedItems().size(), errorIds);
 
                 }
             } catch (IOException e) {

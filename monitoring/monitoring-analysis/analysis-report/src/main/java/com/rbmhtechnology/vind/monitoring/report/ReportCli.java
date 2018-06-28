@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 public class ReportCli {
 
@@ -70,12 +71,6 @@ public class ReportCli {
                 .setConnectionConfiguration(connectionConfig);
 
         final ElasticSearchReportService esRepsortService = new ElasticSearchReportService(config, from, to);
-
-        final LinkedHashMap<String, JsonObject> topFaceFields = esRepsortService.getTopFacetFields();
-        final ArrayList<String> facetFields = new ArrayList<>(topFaceFields.keySet());
-
-        final LinkedHashMap<String, JsonObject> topSuggestionFields = esRepsortService.getTopSuggestionFields();
-        final ArrayList<String> suggestFields = new ArrayList<>(topSuggestionFields.keySet());
 
         final ReportWriter reportWriter = new HtmlReportWriter();//TODO make format aware
 

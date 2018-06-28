@@ -55,7 +55,9 @@ public abstract class ReportService implements AutoCloseable {
 
         this.preprocessData();
 
-        final LinkedHashMap<String, JsonObject> topFaceFields = this.getTopFacetFields();
+        final List<String> topFaceFieldNames = this.getTopFacetFields();
+
+        final LinkedHashMap<String, JsonObject> topFaceFields = this.prepareScopeFilterResults(topFaceFieldNames, "facet");
         final ArrayList<String> facetFields = new ArrayList<>(topFaceFields.keySet());
 
         final LinkedHashMap<String, JsonObject> topSuggestionFields = this.getTopSuggestionFields();
@@ -110,6 +112,8 @@ public abstract class ReportService implements AutoCloseable {
         return this.setFrom(ZonedDateTime.ofInstant(Instant.ofEpochMilli(from), ZoneId.of(timeZoneId)));
     }
 
+    public abstract LinkedHashMap<String, JsonObject> prepareScopeFilterResults(List<String> fields, String scope);
+
     public ReportService setTo(ZonedDateTime to) {
         this.to = to;
         return this;
@@ -139,7 +143,7 @@ public abstract class ReportService implements AutoCloseable {
 
     //Facets
     ///Facet Fields
-    public abstract LinkedHashMap<String, JsonObject> getTopFacetFields();
+    public abstract List<String> getTopFacetFields();
 
     ///Facet Values per field?
     public abstract LinkedHashMap<String, LinkedHashMap<Object,Long>> getFacetFieldsValues(List<String> fields);
@@ -162,7 +166,7 @@ public abstract class ReportService implements AutoCloseable {
     public abstract LinkedHashMap<String, Long> getTopQueries();
 
     //Filtered fulltext top queries?
-    public abstract LinkedHashMap<String, Long> getTopFilteredQueries(String regexFilter);
+    public abstract LinkedHashMap<String, Long> getTopFilteredQueries();
 
     public abstract LinkedHashMap<String, LinkedHashMap<Object, Long>> getFilterFieldsValues(List<String> fields);
 }

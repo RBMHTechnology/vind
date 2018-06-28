@@ -118,7 +118,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     }
 
     @Override
-    public LinkedHashMap<String, JsonObject> getTopFacetFields() {
+    public List<String> getTopFacetFields() {
         final String query = elasticClient.loadQueryFromFile("topFacetFields",
                 getEsFilters(),
                 this.configuration.getMessageWrapper(),
@@ -134,11 +134,9 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
         final SearchResult searchResult = elasticClient.getQuery(query);
         final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("facets").getBuckets();
-        final List<String> facetFields = termEntries.stream()
+        return termEntries.stream()
                 .map(TermsAggregation.Entry::getKey)
                 .collect(Collectors.toList());
-        
-        return prepareScopeFilterResults(facetFields, "Facet");
     }
 
     @Override
@@ -248,13 +246,21 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
     }
 
     @Override
-    public LinkedHashMap<String, Long> getTopFilteredQueries(String regexFilter) {
+    public LinkedHashMap<String, Long> getTopFilteredQueries() {
         final String query = elasticClient.loadQueryFromFile("topFilteredQueries",
                 getEsFilters(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
                 this.configuration.getApplicationId(),
-                regexFilter,
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getMessageWrapper(),
+                this.configuration.getReportWriterConfiguration().getQueryFilter(),
+                this.configuration.getMessageWrapper(),
                 this.getFrom().toInstant().toEpochMilli(),
-                this.getTo().toInstant().toEpochMilli());
+                this.getTo().toInstant().toEpochMilli(),
+                this.configuration.getMessageWrapper());
+
 
         final SearchResult searchResult = elasticClient.getQuery(query);
         final List<TermsAggregation.Entry> termEntries = searchResult.getAggregations().getTermsAggregation("queries").getBuckets();
@@ -323,7 +329,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
     @Override
     public void close() throws Exception {
-        this.elasticClient.destroy();
+        elasticClient.destroy();
     }
 
     private List<JsonObject> getDescriptorFilters(List<String> fields, String scope) {
@@ -425,7 +431,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         }
     }
 
-    private LinkedHashMap<String, JsonObject> prepareScopeFilterResults(List<String> fields, String scope) {
+    public LinkedHashMap<String, JsonObject> prepareScopeFilterResults(List<String> fields, String scope) {
 
         final List<JsonObject> descriptorFilters = getDescriptorFilters(fields ,scope);
 
@@ -451,7 +457,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
         final LinkedHashMap<String, Long> resultsAsSecond = getFieldCountAs(2, descriptorFilters, fields, scope);
         final LinkedHashMap<String, Long> resultsAsThird = getFieldCountAs(3, descriptorFilters, fields, scope);
         final LinkedHashMap<String, Long> resultsAsFourth = getFieldCountAs(4, descriptorFilters, fields, scope);
-        
+
         //Sort the results
 
         return result.entrySet().stream()

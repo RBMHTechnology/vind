@@ -4,18 +4,39 @@
     <link href="http://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css"/>
     <link href="http://cdn.datatables.net/1.10.18/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css"/>
     <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script src="http://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js" type="text/javascript"></script>
     <script>
         $(document).ready( function () {
-            $('.data').DataTable();
-        } );
+
+            var url = new URL(window.location.href);
+            var isFlat = url.searchParams.get("flat") ;
+
+            if(isFlat === null || isFlat === 'false') {
+                $('.data').DataTable();
+                $('#content').tabs();
+                $('.tabs').tabs();
+                $('#actions').append(
+                        $('<button>').text('Show flat report').click(function(){
+                            window.location.href = url.origin + url.pathname + '?flat';
+                        })
+                )
+            } else {
+                $('#actions').append(
+                        $('<button>').text('Show compact report').click(function(){
+                            window.location.href = url.origin + url.pathname;
+                        })
+                );
+
+            }
+        });
     </script>
     <style>
     body {
         font-family: 'Roboto', sans-serif;
         font-size: 13px;
         color: #606163;
-        margin: 200px 30px 0 30px;
+        margin: 0 30px 0 30px;
     }
 
     p {
@@ -107,12 +128,24 @@
         padding: 5px 10px;
     }
 
+    #content {
+        margin-bottom:200px;
+    }
+
     #content tr.unusedAll {
+        color: red;
+    }
+
+    span.important {
         color: red;
     }
 
     #content tr.unused {
         color: orange;
+    }
+
+    #actions {
+        margin-top:20px;
     }
 
     .overall {
@@ -127,11 +160,50 @@
     .overall ol {
         padding-left: 15px;
     }
+
+    .tab-header {
+        padding: 13px 0;
+        margin-top:20px;
+        margin-bottom: 40px;
+        border-bottom: 1px solid lightgray;
+    }
+    .tab-header li.ui-state-active  a {
+        border-bottom: 3px solid red;
+        color: red;
+    }
+
+    .tab-header li{
+        display:inline;
+    }
+
+    .tab-header li a {
+        outline: none;
+        padding: 10px 22px;
+        border-bottom: 3px solid white;
+        font-size: 18px;
+        text-decoration: none;
+        color: #606163;
+    }
+
+    .tab-header.small li a {
+        padding: 5px 12px !important;
+        font-size: 14px !important;
+    }
+
+    .tab-header.small{
+        padding:2px;
+    }
+
+    .tab-header.small li {
+        line-height: 2 !important;
+    }
     </style>
 </head>
 <body>
 <div id="header">
-    <img src="${imageUrl}"/>
+    <#if imageUrl?has_content>
+        <img src="${imageUrl}"/>
+    </#if>
     <h1>Vind - Report</h1>
     <h2>${prettyToday}</h2>
     <table>
@@ -159,9 +231,17 @@
             <td>${prettyTo}</td>
         </tr>
     </table>
+    <div id="actions"></div>
 </div>
 <div id="content">
-    <div class="section"><h2>Overall</h2>
+    <ul class="tab-header">
+        <li><a href="#overall">Overall</a></li>
+        <li><a href="#facets">Facets</a></li>
+        <li><a href="#suggestions">Suggestions</a></li>
+        <li><a href="#advanced">Advanced</a></li>
+        <li><a href="#fulltext">Fulltext</a></li>
+    </ul>
+    <div id="overall" class="section">
         <table class="overall">
             <tr>
                 <th>Number of Requests</th>
@@ -196,12 +276,7 @@
             </tr>
         </table>
     </div>
-    <div class="section"><h2>Filters</h2>
-        <p>This part shows which fields are set for filters in facets, suggestions and advanced and how they are used
-            within the given timerange.
-            The evaluation for each filter type is split in two parts:<i>Fields</i> and <i>Values</i>
-
-    <div class="section"><h3>Facets</h3><h4>Facet Fields</h4>
+    <div id="facets" class="section"><h3>Fields</h3>
         <table class="data">
             <thead>
             <tr>
@@ -234,34 +309,45 @@
             </#list>
             </tbody>
         </table>
-        <h4>Facet Values</h4>
         <p>
+           Hint: <span class="important">${countOfUnusedFacetFields} are not in use.</span>
+        </p>
+        <h3>Values</h3>
+        <div class="tabs">
+            <ul class="tab-header small">
+            <#list facetFieldsValues as field, values>
+                <#if values?has_content >
+                    <li><a href="#facet-${field}">${field}</a></li>
+                </#if>
+            </#list>
+            </ul>
         <#list facetFieldsValues as field, values>
             <#if values?has_content >
-        <h5>Top values for <i>${field}</i></h5>
-        <table class="data">
-            <thead>
-            <tr>
-                <th>Ranking</th>
-                    <th>Value</th>
-                    <th>#Usages</th>
-                </tr>
-            </thead>
-            <tbody>
-            <#list values as value, count>
-                <tr>
-                    <td>${value?counter}</td>
-                    <td>${value}</td>
-                    <td>${count}</td>
-                </tr>
-            </#list>
-            </tbody>
-        </table>
+                <div id="facet-${field}">
+                    <table class="data">
+                        <thead>
+                        <tr>
+                            <th>Ranking</th>
+                            <th>Value</th>
+                            <th>#Usages</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            <#list values as value, count>
+                            <tr>
+                                <td>${value?counter}</td>
+                                <td>${value}</td>
+                                <td>${count}</td>
+                            </tr>
+                            </#list>
+                        </tbody>
+                    </table>
+                </div>
             </#if>
         </#list>
-        </p>
+        </div>
     </div>
-    <div class="section"><h3>Suggestions</h3><h4>Suggestion Fields</h4>
+    <div id="suggestions" class="section"><h3>Fields</h3>
         <table class="data">
             <thead>
                 <tr>
@@ -294,35 +380,45 @@
             </#list>
             </tbody>
         </table>
-        <h4>Suggestion Values</h4>
         <p>
+            Hint: <span class="important">${countOfUnusedSuggestionFields} are not in use.</span>
+        </p>
+        <h3>Values</h3>
+        <div class="tabs">
+        <ul class="tab-header small">
+            <#list suggestionFieldsValues as field, values>
+                <#if values?has_content >
+                    <li><a href="#suggestion-${field}">${field}</a></li>
+                </#if>
+            </#list>
+        </ul>
         <#list suggestionFieldsValues as field, values>
             <#if values?has_content >
-
-        <h5>Top values for <i>${field}</i></h5>
-        <table class="data">
-            <thead>
-            <tr>
-                <th>Ranking</th>
-                <th>Value</th>
-                <th>#Usages</th>
-            </tr>
-            </thead>
-            <tbody>
-            <#list values as value, count>
-            <tr>
-                <td>${value?counter}</td>
-                <td>${value}</td>
-                <td>${count}</td>
-            </tr>
-        </#list>
-            </tbody>
-        </table>
+                <div id="suggestion-${field}">
+                    <table class="data">
+                        <thead>
+                        <tr>
+                            <th>Ranking</th>
+                            <th>Value</th>
+                            <th>#Usages</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <#list values as value, count>
+                            <tr>
+                                <td>${value?counter}</td>
+                                <td>${value}</td>
+                                <td>${count}</td>
+                            </tr>
+                        </#list>
+                        </tbody>
+                    </table>
+                </div>
             </#if>
         </#list>
-        </p>
+        </div>
     </div>
-    <div class="section"><h3>Filters</h3><h4>Filter Fields</h4>
+    <div id="advanced" class="section"><h3>Fields</h3>
         <table class="data">
             <thead>
             <tr>
@@ -355,36 +451,45 @@
             </#list>
             </tbody>
         </table>
-        <h4>Filter Values</h4>
         <p>
-        <#list filterFieldsValues as field, values>
-        <#if values?has_content >
-            <h5>Top values for <i>${field}</i></h5>
-        <table class="data">
-            <thead>
-            <tr>
-                <th>Ranking</th>
-                <th>Value</th>
-                <th>#Usages</th>
-            </tr>
-            </thead>
-            <tbody>
-            <#list values as value, count>
-            <tr>
-                <td>${value?counter}</td>
-                <td>${value}</td>
-                <td>${count}</td>
-            </tr>
-            </#list>
-            </tbody>
-        </table>
-        </#if>
-        </#list>
-
+            Hint: <span class="important">${countOfUnusedFilterFields} are not in use.</span>
         </p>
+        <h3>Values</h3>
+        <div class="tabs">
+            <ul class="tab-header small">
+            <#list filterFieldsValues as field, values>
+                <#if values?has_content >
+                    <li><a href="#filter-${field}">${field}</a></li>
+                </#if>
+            </#list>
+            </ul>
+        <#list filterFieldsValues as field, values>
+            <#if values?has_content >
+                <div id="filter-${field}">
+                    <table class="data">
+                        <thead>
+                        <tr>
+                            <th>Ranking</th>
+                            <th>Value</th>
+                            <th>#Usages</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            <#list values as value, count>
+                            <tr>
+                                <td>${value?counter}</td>
+                                <td>${value}</td>
+                                <td>${count}</td>
+                            </tr>
+                            </#list>
+                        </tbody>
+                    </table>
+                </div>
+            </#if>
+        </#list>
+        </div>
     </div>
-    <div class="section">
-        <h2>Fulltext</h2>
+    <div id="fulltext" class="section">
         <h3>Top Fulltext Queries</h3>
         <p>${totalTopQueries} queries with ${topQueries?size} distinct search terms.</p>
         <table class="data">
@@ -411,9 +516,9 @@
             </#list>
             </tbody>
         </table>
-        <#if configuration.reportWriterConfiguration.queryFilters?has_content>
+        <#if configuration.reportWriterConfiguration.queryFilter?has_content>
         <h3>Top Filtered Fulltext Queries</h3>
-        <p>Filter: without <#list configuration.reportWriterConfiguration.queryFilters as filter>${filter}  </#list></p>
+        <p>Filter: without ${configuration.reportWriterConfiguration.queryFilter}</p>
         <table class="data">
             <thead>
             <tr>
