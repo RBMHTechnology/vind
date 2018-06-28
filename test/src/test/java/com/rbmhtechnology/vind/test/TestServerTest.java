@@ -27,6 +27,7 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrInputDocument;
+import org.apache.solr.common.util.NamedList;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -185,7 +186,7 @@ public class TestServerTest {
 
         QueryResponse response = client.query(query);
 
-        assertEquals(1, ((HashMap) response.getResponse().get("suggestions")).get("suggestion_count"));
+        assertEquals(1, ((NamedList) response.getResponse().get("suggestions")).get("suggestion_count"));
     }
 
     @Test

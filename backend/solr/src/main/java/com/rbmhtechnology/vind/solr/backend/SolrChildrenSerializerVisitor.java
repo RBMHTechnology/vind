@@ -378,8 +378,8 @@ public  class SolrChildrenSerializerVisitor implements SerializerVisitor {
 
     private boolean isHierarchical(String fieldName) {
         if(Objects.nonNull(this.childFactory)){
-            FieldDescriptor parentDescriptor = this.parentFactory.getField(fieldName);
-            FieldDescriptor childDescriptor = this.childFactory.getField(fieldName);
+            final FieldDescriptor parentDescriptor = this.parentFactory.getField(fieldName);
+            final FieldDescriptor childDescriptor = this.childFactory.getField(fieldName);
             if(Objects.nonNull(parentDescriptor) && Objects.isNull(childDescriptor)){
                 return true;
             }

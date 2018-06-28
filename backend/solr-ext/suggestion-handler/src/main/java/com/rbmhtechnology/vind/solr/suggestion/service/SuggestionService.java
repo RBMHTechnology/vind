@@ -216,13 +216,14 @@ public class SuggestionService {
         final ModifiableSolrParams params = new ModifiableSolrParams();
 
         //add original params
-        //params.add(original_params);
+        params.add(original_params);
 
         //add other params
         final SolrQueryRequest req = new LocalSolrQueryRequest( solrCore, params );
         params.set(CommonParams.Q, "*:*");
         params.set(CommonParams.DF, df);
-        params.set("q.op", "AND");
+        //Commented to allow to set the default operator by configuration or parameters
+        //params.set("q.op", "AND");
         params.set(FacetParams.FACET, "true");
 
         //clean param lists
@@ -325,7 +326,7 @@ public class SuggestionService {
         } catch (SolrException e) {
             log.error("Solr server exception while handling suggestion request (code {}): {}",e.code(), e.getMessage(),e);
             throw e;
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             //Do not wrap interrupted exceptions!
             log.error("The process has been interrupted: {}", e.getMessage(), e);
             throw e;

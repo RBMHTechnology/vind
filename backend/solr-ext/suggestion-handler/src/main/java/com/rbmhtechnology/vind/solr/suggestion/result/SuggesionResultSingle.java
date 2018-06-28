@@ -19,12 +19,7 @@ public class SuggesionResultSingle implements SuggestionResult {
     private SuggestionRequestHandler.LimitType limitType;
     private HashMap<String,List<Facet>> fields = new HashMap<>();
 
-    private static final Comparator<Facet> COUNT_SORTER = new Comparator<Facet>() {
-        @Override
-        public int compare(Facet facet, Facet facet2) {
-            return facet.compareTo(facet2);
-        }
-    };
+    private static final Comparator<Facet> COUNT_SORTER = Comparator.naturalOrder();
 
     public SuggesionResultSingle(int limit, SuggestionRequestHandler.LimitType limitType) {
         this.limit = limit;
@@ -32,9 +27,9 @@ public class SuggesionResultSingle implements SuggestionResult {
     }
 
     public Object write() {
-        Map<String,Object> suggestions = new HashMap<String, Object>();
+        NamedList<Object> suggestions = new NamedList<>();
 
-        HashMap<String,Object> suggestion_facets = new HashMap<String, Object>();
+        NamedList<Object> suggestion_facets = new NamedList<>();
 
         //sort results
         for(String field : fields.keySet()) {
@@ -55,10 +50,14 @@ public class SuggesionResultSingle implements SuggestionResult {
                 count++;
             }
 
-            suggestion_facets.put(field,facets);
+            suggestion_facets.add(field,facets);
         }
-        suggestions.put(SuggestionResultParams.SUGGESTION_COUNT, count);
-        if(count>0) suggestions.put(SuggestionResultParams.SUGGESTION_FACETS, suggestion_facets);
+
+        suggestions.add(SuggestionResultParams.SUGGESTION_COUNT, count);
+
+        if(count>0) {
+            suggestions.add(SuggestionResultParams.SUGGESTION_FACETS, suggestion_facets);
+        }
 
         return suggestions;
     }

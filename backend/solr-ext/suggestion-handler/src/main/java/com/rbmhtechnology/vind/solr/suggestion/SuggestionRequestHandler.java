@@ -135,7 +135,7 @@ public class SuggestionRequestHandler extends SearchHandler implements SolrCoreA
     @Override
     public void handleRequestBody(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
 
-        SolrParams params = req.getParams();
+        final SolrParams params = req.getParams();
 
         if(params.getBool(SuggestionRequestParams.SUGGESTION,SUGGESTION)) {
 
@@ -172,11 +172,11 @@ public class SuggestionRequestHandler extends SearchHandler implements SolrCoreA
                 return;
             }
 
-            Strategy strategy = Strategy.parse(params.get(SuggestionRequestParams.SUGGESTION_STRATEGY, null), STRATEGY);
+            final Strategy strategy = Strategy.parse(params.get(SuggestionRequestParams.SUGGESTION_STRATEGY, null), STRATEGY);
 
-            LimitType limitType = LimitType.parse(params.get(SuggestionRequestParams.SUGGESTION_LIMIT_TYPE, null), LIMIT_TYPE);
+            final LimitType limitType = LimitType.parse(params.get(SuggestionRequestParams.SUGGESTION_LIMIT_TYPE, null), LIMIT_TYPE);
 
-            String[] fqs = params.getParams(CommonParams.FQ) != null ? params.getParams(CommonParams.FQ) : FQS;
+            final String[] fqs = params.getParams(CommonParams.FQ) != null ? params.getParams(CommonParams.FQ) : FQS;
 
             Type type;
 
@@ -219,8 +219,8 @@ public class SuggestionRequestHandler extends SearchHandler implements SolrCoreA
                     final String label = ranges[i];
                     final Map<String,Object> rangeConfigurations = new HashMap<>();
 
-                    String rangeStartParam = String.format(SuggestionRequestParams.SUGGESTION_INTERVAL_RANGE_START, label);
-                    Object startValue = params.get(rangeStartParam);
+                    final String rangeStartParam = String.format(SuggestionRequestParams.SUGGESTION_INTERVAL_RANGE_START, label);
+                    final Object startValue = params.get(rangeStartParam);
                     if(startValue == null){
                         rsp.add("error",error(400,
                                 "SuggestionRequest needs to have a '"+String.format(SuggestionRequestParams.SUGGESTION_INTERVAL_RANGE_START, label)+"' parameter to create an interval"));
@@ -228,11 +228,11 @@ public class SuggestionRequestHandler extends SearchHandler implements SolrCoreA
                     }
                     rangeConfigurations.put("start",startValue);
 
-                    String rangeEndParam = String.format(SuggestionRequestParams.SUGGESTION_INTERVAL_RANGE_END, label);
-                    Object endValue = params.get(rangeEndParam, DEFAULT_END_VALUE);
+                    final String rangeEndParam = String.format(SuggestionRequestParams.SUGGESTION_INTERVAL_RANGE_END, label);
+                    final Object endValue = params.get(rangeEndParam, DEFAULT_END_VALUE);
                     rangeConfigurations.put("end",endValue);
 
-                    String rangeScoreParam = String.format(SuggestionRequestParams.SUGGESTION_INTERVAL_RANGE_SCORE, label);
+                    final String rangeScoreParam = String.format(SuggestionRequestParams.SUGGESTION_INTERVAL_RANGE_SCORE, label);
                     double scoreValue = params.getDouble(rangeScoreParam, DEFAULT_SCORE_VALUE);
                     rangeConfigurations.put("score",scoreValue);
 
@@ -251,7 +251,7 @@ public class SuggestionRequestHandler extends SearchHandler implements SolrCoreA
     }
 
     private HashMap<String,Object> error(int code,String msg) {
-        HashMap<String,Object> error = new HashMap<String,Object>();
+        final HashMap<String,Object> error = new HashMap<String,Object>();
         error.put("msg",msg);
         error.put("code",code);
         return error;
