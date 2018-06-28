@@ -307,7 +307,7 @@ public class ElasticSearchClient {
                     final String errorIds = result.getFailedItems().stream()
                                 .map( fi -> fi.id)
                                 .collect(Collectors.joining(", "));
-                    log.error("Error executing bulk update: {} items where no updated [].", result.getFailedItems().size(), errorIds);
+                    log.error("Error executing bulk update: {} items where no updated [{}].", result.getFailedItems().size(), errorIds);
 
                 }
             } catch (IOException e) {
