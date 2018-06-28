@@ -79,19 +79,6 @@ public class ElasticSearchClient {
         return true;
     }
 
-    public void destroy() throws IOException {
-        if (elasticClient != null) {
-            try {
-                elasticClient.close();
-            } catch (IOException e) {
-                log.error("Error closing ElasticSearch client: {}", e.getMessage(), e);
-                throw e;
-            }
-            elasticClient = null;
-            log.info("Destroyed ElasticSearch client");
-        }
-    }
-
     private synchronized JestClient getElasticSearchClient() {
         if (elasticClient == null) {
             elasticClient =  ElasticSearchClientBuilder.build(elasticHost, elasticPort);
