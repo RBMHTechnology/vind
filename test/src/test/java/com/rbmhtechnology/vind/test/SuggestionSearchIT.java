@@ -11,6 +11,7 @@ import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
 import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
+import com.rbmhtechnology.vind.solr.backend.SolrSearchServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -36,7 +37,7 @@ public class SuggestionSearchIT {
     public void before() {
 
         server = testSearchServer.getSearchServer();
-        //server = SolrSearchServer.getInstance("com.rbmhtechnology.searchlib.solr.RemoteSolrServerProvider", "http://localhost:8983/solr", "searchlib");
+        //server = SolrSearchServer.getInstance("com.rbmhtechnology.searchlib.solr.RemoteSolrServerProvider", "http://localhost:8983/solr", "colorVindTest");
 
         server.clearIndex();
         server.commit();
@@ -72,20 +73,19 @@ public class SuggestionSearchIT {
 
         /**
          * Testset
-         *  Parent P1       (p:red,             s:yellow)
+         *  Parent P1       (p:black,             s:yellow)
          *  Parent P2       (p:blue             s:purple)
          *      Child C1    (       c:red       s:red)
          *      Child C2    (       c:blue      s:yellow)
          *  Parent P3       (p:red              s:red)
          *      Child C3    (       c:blue      s:black)
-         *  Parent P4       (p:orange              s:red)
+         *  Parent P4       (p:orange              s:black)
          *      Child C4    (       c:green      s:black)
          */
 
         server.clearIndex();
         server.index(
-                parent.createDoc("P1").setValue(parent_value, "black")
-                        .setValue(shared_value, "yellow"),
+                parent.createDoc("P1").setValue(parent_value, "black").setValue(shared_value, "yellow"),
                 parent.createDoc("P2").setValue(parent_value, "blue").setValue(shared_value, "purple").addChild(
                         child.createDoc("C1").setValue(child_value, "red").setValue(shared_value, "red"),
                         child.createDoc("C2").setValue(child_value, "blue").setValue(shared_value, "yellow")),
@@ -134,6 +134,13 @@ public class SuggestionSearchIT {
                 .filter(Filter.eq(parent_value,"orange")), parent, child);
         assertEquals(1, suggestionSearch.get(shared_value).getValues().size());
         assertEquals("black", suggestionSearch.get(shared_value).getValues().get(0).getValue());
-        assertEquals(2, suggestionSearch.get(shared_value).getValues().get(0).getCount());
+        assertEquals(1, suggestionSearch.get(shared_value).getValues().get(0).getCount());
+
+        suggestionSearch = server.execute(Search.suggest("bl")
+                .fields(shared_value,parent_value,child_value)
+                .filter(Filter.eq(shared_value,"yellow")), parent, child);
+        assertEquals(1, suggestionSearch.get(parent_value).getValues().size());
+        assertEquals(1, suggestionSearch.get(child_value).getValues().size());
+        assertEquals("blue", suggestionSearch.get(child_value).getValues().get(0).getValue());
     }
 }
