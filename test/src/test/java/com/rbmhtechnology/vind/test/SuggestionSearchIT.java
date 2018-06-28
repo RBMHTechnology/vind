@@ -37,7 +37,8 @@ public class SuggestionSearchIT {
     public void before() {
 
         server = testSearchServer.getSearchServer();
-        //server = SolrSearchServer.getInstance("com.rbmhtechnology.searchlib.solr.RemoteSolrServerProvider", "http://localhost:8983/solr", "colorVindTest");
+        //
+        // server = SolrSearchServer.getInstance("com.rbmhtechnology.vind.solr.backend.RemoteSolrServerProvider", "http://localhost:8983/solr", "colorsTest");
 
         server.clearIndex();
         server.commit();
@@ -134,7 +135,15 @@ public class SuggestionSearchIT {
                 .filter(Filter.eq(parent_value,"orange")), parent, child);
         assertEquals(1, suggestionSearch.get(shared_value).getValues().size());
         assertEquals("black", suggestionSearch.get(shared_value).getValues().get(0).getValue());
-        assertEquals(1, suggestionSearch.get(shared_value).getValues().get(0).getCount());
+        assertEquals(2, suggestionSearch.get(shared_value).getValues().get(0).getCount());
+
+        suggestionSearch = server.execute(Search.suggest("bl")
+                .fields(shared_value,parent_value,child_value)
+                .filter(Filter.eq(child_value,"blue")), parent, child);
+        assertEquals(1, suggestionSearch.get(parent_value).getValues().size());
+        assertEquals(1, suggestionSearch.get(child_value).getValues().size());
+        assertEquals("blue", suggestionSearch.get(child_value).getValues().get(0).getValue());
+        assertEquals(1, suggestionSearch.get(shared_value).getValues().size());
 
         suggestionSearch = server.execute(Search.suggest("bl")
                 .fields(shared_value,parent_value,child_value)
@@ -142,5 +151,6 @@ public class SuggestionSearchIT {
         assertEquals(1, suggestionSearch.get(parent_value).getValues().size());
         assertEquals(1, suggestionSearch.get(child_value).getValues().size());
         assertEquals("blue", suggestionSearch.get(child_value).getValues().get(0).getValue());
+        assertEquals(null, suggestionSearch.get(shared_value));
     }
 }
