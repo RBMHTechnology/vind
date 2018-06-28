@@ -329,7 +329,7 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
 
     @Override
     public void close() throws Exception {
-        
+        elasticClient.destroy();
     }
 
     private List<JsonObject> getDescriptorFilters(List<String> fields, String scope) {

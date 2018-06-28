@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -50,14 +51,6 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         this.from = from.toInstant().toEpochMilli();
         this.to = to.toInstant().toEpochMilli();
 
-        elasticClient.init(
-                configuration.getConnectionConfiguration().getEsHost(),
-                configuration.getConnectionConfiguration().getEsPort(),
-                configuration.getConnectionConfiguration().getEsIndex(),
-                configuration.getEsEntryType(),
-                ResourceLoaderUtils.getResourceAsPath("processMapping.json")
-        );
-
         this.configuration = configuration;
     }
 
@@ -73,9 +66,27 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         return this.sessionIds;
     }
 
+    @Override
+    void afterPreprocessing() {
+        try {
+            elasticClient.destroy();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        super.afterPreprocessing();
+    }
+
     //Gets the list of sessions to preprocess and figures out the
     // general filters which apply to all queries.
     void beforePreprocessing() {
+        elasticClient.init(
+                configuration.getConnectionConfiguration().getEsHost(),
+                configuration.getConnectionConfiguration().getEsPort(),
+                configuration.getConnectionConfiguration().getEsIndex(),
+                configuration.getEsEntryType(),
+                ResourceLoaderUtils.getResourceAsPath("processMapping.json")
+        );
+
         log.info("Getting sessions and common filter for the period [{} - {}]",from, to);
        final String skipPreprocessed =
                 ",\n\"must_not\":{\"exists\":{\"field\":\"%sprocess\"}}";

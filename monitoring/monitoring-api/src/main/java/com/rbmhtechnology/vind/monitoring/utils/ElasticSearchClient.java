@@ -79,11 +79,24 @@ public class ElasticSearchClient {
         return true;
     }
 
-    private synchronized JestClient getElasticSearchClient() {
+    private synchronized JestClient getElasticSearchClient(boolean forceRebuild) {
+        if(forceRebuild) {
+            try {
+                this.elasticClient.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            this.elasticClient = null;
+        }
+
         if (elasticClient == null) {
             elasticClient =  ElasticSearchClientBuilder.build(elasticHost, elasticPort);
         }
         return elasticClient;
+    }
+
+    private synchronized JestClient getElasticSearchClient() {
+        return this.getElasticSearchClient(false);
     }
 
     public synchronized SearchResult  getQuery(String query) {
@@ -94,7 +107,6 @@ public class ElasticSearchClient {
                     .addIndex(elasticIndex);
 
             if (StringUtils.isNotEmpty(this.logType)) {
-                searchBuilder.addType(this.logType);
                 searchBuilder.addType(this.logType);
             }
 
@@ -124,6 +136,20 @@ public class ElasticSearchClient {
         return null;
     }
 
+    public void destroy() throws IOException {
+        if (elasticClient != null) {
+            try {
+                elasticClient.close();
+            } catch (IOException e) {
+                log.error("Error closing ElasticSearch client: {}", e.getMessage(), e);
+                throw e;
+            }
+            elasticClient = null;
+            log.info("Destroyed ElasticSearch client");
+        }
+    }
+
+
     public synchronized JestResult scrollResults(String scrollId) {
         final JestClient client = getElasticSearchClient();
         try {
@@ -145,7 +171,10 @@ public class ElasticSearchClient {
                 log.warn("Error in scroll request query: {}", e.getMessage(), e);
                 if(retry > ES_MAX_TRIES) {
                     log.error("Error in scroll request: reached maximum number of scroll tries [{}].", retry);
-                    throw new RuntimeException("Error in scroll request query: " + e.getMessage(), e);
+                    //throw new RuntimeException("Error in scroll request query: " + e.getMessage(), e);
+                    this.elasticClient = getElasticSearchClient(true);
+                    return scrollResults(scrollId, 0, client);
+
                 } else {
                     Thread.sleep(ES_WAIT_TIME);
                     return scrollResults(scrollId, retry + 1, client);
