@@ -951,7 +951,7 @@ public class SolrUtils {
             return facets;
         }
 
-        private static TermFacetResult<?> getTypeFacetResults(QueryResponse response) {
+        private static TermFacetResult<String> getTypeFacetResults(QueryResponse response) {
             final TermFacetResult typeFacetResults = new TermFacetResult();
             //term facets
             if (Objects.nonNull(response.getResponse())) {
@@ -977,7 +977,7 @@ public class SolrUtils {
             final HashMap<FieldDescriptor, TermFacetResult<?>> facets =
                     getTermFacetResults(response, factory, childFactory, facetsQuery, searchContext);
 
-            final TermFacetResult typeFacetResults = getTypeFacetResults(response);
+            final TermFacetResult<String> typeFacetResults = getTypeFacetResults(response);
 
             HashMap<String, QueryFacetResult<?>> queryFacetResults = new HashMap<>();
             if(response.getFacetQuery()!=null) {
@@ -1324,11 +1324,36 @@ public class SolrUtils {
             final NamedList<Object> responseObject = response.getResponse();
 
             if (responseObject != null && responseObject.get("suggestions") != null) {
-                final LinkedHashMap<? , ?> suggestionsResponse = (LinkedHashMap<? , ?>)responseObject.get("suggestions");
+                Class suggestionResponseClass = responseObject.get("suggestions").getClass();
+                final LinkedHashMap<String , Object> suggestionsResponse;
+                if(LinkedHashMap.class.isAssignableFrom(suggestionResponseClass)) {
+                    //Backwards compatibility
+                    suggestionsResponse = (LinkedHashMap<String , Object>)responseObject.get("suggestions");
+                }else if(NamedList.class.isAssignableFrom(suggestionResponseClass)) {
+                    suggestionsResponse = new LinkedHashMap<>();
+                    ((NamedList<?>)responseObject.get("suggestions")).forEach( e ->suggestionsResponse.put(e.getKey(),e.getValue()));
+                } else {
+                    log.error("Error parsing Solr suggestion response: unknown response type");
+                    throw new RuntimeException("Error parsing Solr suggestion response: unknown response type");
+                }
                 final Integer suggestionCount = (Integer)suggestionsResponse.get("suggestion_count");
                 if(suggestionCount > 0) {
-                    final LinkedHashMap<String, NamedList<Integer>> suggestion_facets =
-                            (LinkedHashMap<String, NamedList<Integer>>) suggestionsResponse.get("suggestion_facets");
+
+                    final LinkedHashMap<String, NamedList<Integer>> suggestion_facets;
+
+                    if(LinkedHashMap.class.isAssignableFrom(suggestionsResponse.get("suggestion_facets").getClass())) {
+                        //Backwards compatibility
+                        suggestion_facets = (LinkedHashMap<String, NamedList<Integer>>) suggestionsResponse.get("suggestion_facets");
+                    }else if(NamedList.class.isAssignableFrom(suggestionsResponse.get("suggestion_facets").getClass())) {
+                        suggestion_facets = new LinkedHashMap<>();
+                        ((NamedList<NamedList<Integer>>)suggestionsResponse.get("suggestion_facets"))
+                                .forEach( e ->suggestion_facets.put(e.getKey(),e.getValue()));
+                    } else {
+                        log.error("Error parsing Solr suggestion response: unknown response type");
+                        throw new RuntimeException("Error parsing Solr suggestion response: unknown response type");
+                    }
+
+
                     suggestion_facets.keySet().forEach(field -> {
 
                         final Matcher internalFacetFieldMatcher = Pattern.compile(INTERNAL_SUGGEST_FIELD_PREFIX).matcher(field);

@@ -325,7 +325,7 @@ public class SuggestionService {
         } catch (SolrException e) {
             log.error("Solr server exception while handling suggestion request (code {}): {}",e.code(), e.getMessage(),e);
             throw e;
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             //Do not wrap interrupted exceptions!
             log.error("The process has been interrupted: {}", e.getMessage(), e);
             throw e;
