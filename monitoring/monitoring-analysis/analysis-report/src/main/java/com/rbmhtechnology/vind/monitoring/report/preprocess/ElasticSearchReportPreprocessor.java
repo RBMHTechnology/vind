@@ -75,8 +75,11 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
     //Gets the list of sessions to preprocess and figures out the
     // general filters which apply to all queries.
     void beforePreprocessing() {
+
         log.info("Getting sessions and common filter for the period [{} - {}]",from, to);
-       final String skipPreprocessed =
+
+        //Filter to skip out previous processed entries.
+        final String skipPreprocessed =
                 ",\n\"must_not\":{\"exists\":{\"field\":\"%sprocess\"}}";
 
         final String query = elasticClient.loadQueryFromFile("prepare",
@@ -91,7 +94,6 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                 this.to);
 
         final Set<String> sessions =  new HashSet<>();
-        final ArrayList<JsonElement> commonFilters = new ArrayList<>();
 
         String scrollId = null;
         Long start = 0L;
@@ -131,34 +133,19 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                             .get("sessionId").getAsString())
                     .collect(Collectors.toList()));
 
-            //Find out filters common to all queries
-            if(start ==0 && vindEntries.size() > 0){
-                //Find out filters common to all queries
-                final JsonElement initialFilters = vindEntries.get(0)
-                        .getAsJsonObject("request")
-                        .get("filter");
 
-                commonFilters.addAll(Lists.newArrayList(extractFilterFields(initialFilters).iterator()));
-            }
-
-            vindEntries.stream()
-                    .map(vindEntry ->
-                            extractFilterFields(vindEntry.getAsJsonObject("request").get("filter")))
-                    .forEach( hfs ->
-                            commonFilters.retainAll(Lists.newArrayList(hfs.iterator()))
-                    );
 
             start += scrollSpan;
         }
 
         sessionIds.addAll(sessions);
         log.info("{} different session IDs found on the period [{} - {}]", sessionIds.size(), from, to);
-        environmentFilters.addAll(commonFilters);
-        log.debug("{} different environment filter found for the period [{} - {}]", environmentFilters.size(), from, to);
+
     }
 
     public Boolean preprocessSession(String sessionId) {
 
+        //Filter to skip out previous processed entries.
         final String skipPreprocessed =
                 ",\n\"must_not\":{\"exists\":{\"field\":\"%sprocess\"}}";
 
@@ -173,6 +160,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                 sessionId,
                 configuration.isForcePreprocessing()? "" : String.format(skipPreprocessed, this.configuration.getMessageWrapper()));
 
+        final ArrayList<JsonElement> commonFilters = new ArrayList<>();
         final Set<JsonObject> requests =  new HashSet<>();
 
         String scrollId = null;
@@ -210,6 +198,27 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                     })
                     .collect(Collectors.toList());
 
+            //Find out filters common to all queries
+            final List<JsonObject> findFulltextEntry = vindEntries.stream()
+                    .filter(vindEntry ->vindEntry.get("type").getAsString().equals("fulltext"))
+                    .collect(Collectors.toList());
+
+            if(start ==0 && findFulltextEntry.size() > 0){
+                //Find out filters common to all queries
+                final JsonElement initialFilters = findFulltextEntry.get(0)
+                        .getAsJsonObject("request")
+                        .get("filter");
+
+                commonFilters.addAll(Lists.newArrayList(extractFilterFields(initialFilters).iterator()));
+            }
+
+            findFulltextEntry.stream()
+                    .map(fulltextVindEntry ->
+                            extractFilterFields(fulltextVindEntry.getAsJsonObject("request").get("filter")))
+                    .forEach( hfs ->
+                            commonFilters.retainAll(Lists.newArrayList(hfs.iterator()))
+                    );
+
             requests.addAll( vindEntries.stream()
                     .map( e ->{
                         e.remove("application");
@@ -223,6 +232,9 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
             start += scrollSpan;
 
         }
+
+        environmentFilters.addAll(commonFilters);
+        log.debug("{} different environment filter found for the session [{}]", environmentFilters.size(), sessionId);
 
         //Sort entries by timeStamp
         final List<JsonObject> sortedRequest = requests.stream()
@@ -240,6 +252,8 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
 
         log.debug("A total of {} vind monitoring entries for session [{}],",sortedRequest.size() ,sessionId);
         processSession(sortedRequest);
+
+        environmentFilters.removeAll(commonFilters);
 
         return bulkUpdate(requests);
     }
