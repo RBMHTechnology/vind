@@ -34,7 +34,7 @@ public class ElasticSearchClient {
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchClient.class);
     public static final String SCROLL_TIME_SESSION = "30m";
     public static final int ES_MAX_TRIES = 3;
-    public static final int ES_WAIT_TIME = 600;
+    public static final int ES_WAIT_TIME = 3000;
 
     private String elasticPort;
     private String elasticHost;
@@ -171,12 +171,10 @@ public class ElasticSearchClient {
                 log.warn("Error in scroll request query: {}", e.getMessage(), e);
                 if(retry > ES_MAX_TRIES) {
                     log.error("Error in scroll request: reached maximum number of scroll tries [{}].", retry);
-                    //throw new RuntimeException("Error in scroll request query: " + e.getMessage(), e);
-                    this.elasticClient = getElasticSearchClient(true);
-                    return scrollResults(scrollId, 0, client);
+                    throw new RuntimeException("Error in scroll request query: " + e.getMessage(), e);
 
                 } else {
-                    Thread.sleep(ES_WAIT_TIME);
+                    Thread.sleep((retry + 1) * ES_WAIT_TIME);
                     return scrollResults(scrollId, retry + 1, client);
                 }
             }
@@ -214,7 +212,7 @@ public class ElasticSearchClient {
                     log.error("Error in query scroll request: reached maximum number of scroll tries [{}].", retry);
                     throw new RuntimeException("Error in query scroll request query: " + e.getMessage(), e);
                 } else {
-                    Thread.sleep(ES_WAIT_TIME);
+                    Thread.sleep((retry + 1) * ES_WAIT_TIME);
                     return getScrollQuery(query, retry + 1, client);
                 }
             }
@@ -332,7 +330,7 @@ public class ElasticSearchClient {
                     log.error("Error executing bulk update: reached maximum number of retries [{}].", retries);
                     throw new RuntimeException("Error executing bulk update: " + e.getMessage(), e);
                 } else {
-                    Thread.sleep(ES_WAIT_TIME);
+                    Thread.sleep((retries + 1) * ES_WAIT_TIME);
                     bulkUpdate(bulkProcessor, retries + 1, client);
                 }
             }

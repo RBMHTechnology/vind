@@ -23,12 +23,8 @@ public class ElasticSearchClientBuilder {
         log.info("Creating ElasticSearch REST Client over {}..,", conn);
         final JestClientFactory factory = new JestClientFactory();
         factory.setHttpClientConfig(new HttpClientConfig.Builder(conn)
-                .multiThreaded(true)
-                .discoveryEnabled(true)
-                .discoveryFrequency(100l, TimeUnit.MILLISECONDS)
-                .maxConnectionIdleTime(1500L, TimeUnit.MILLISECONDS)
-                .maxTotalConnection(75)
-                .defaultMaxTotalConnectionPerRoute(75)
+                .maxTotalConnection(10)
+                .maxConnectionIdleTime(20, TimeUnit.SECONDS)
                 .build());
         return factory.getObject();
     }
