@@ -24,8 +24,10 @@ public class ElasticSearchClientBuilder {
         final JestClientFactory factory = new JestClientFactory();
         factory.setHttpClientConfig(new HttpClientConfig.Builder(conn)
                 .maxTotalConnection(10)
+                .readTimeout(30000)
                 .maxConnectionIdleTime(20, TimeUnit.SECONDS)
                 .build());
+
         return factory.getObject();
     }
 
