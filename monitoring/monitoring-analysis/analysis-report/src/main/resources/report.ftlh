@@ -18,13 +18,13 @@
                 $('.tabs').tabs();
                 $('#actions').append(
                         $('<button>').text('Show flat report').click(function(){
-                            window.location.href = url.origin + url.pathname + '?flat';
+                            window.location.href = window.location.protocol + "/" + window.location.host + "/" + window.location.pathname + '?flat';
                         })
                 )
             } else {
                 $('#actions').append(
                         $('<button>').text('Show compact report').click(function(){
-                            window.location.href = url.origin + url.pathname;
+                            window.location.href = window.location.protocol + "/" + window.location.host + "/" + window.location.pathname;
                         })
                 );
 
