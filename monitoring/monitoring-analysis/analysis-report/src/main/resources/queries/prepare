@@ -1,0 +1,22 @@
+{
+    "size":%d,
+    "query":{
+        "bool":{
+            "must":[%s
+                {"term":{"%sapplication.id.raw":"%s"}},
+                {"term":{"%stype.raw":"fulltext"}}
+            ]%s,
+            "filter": [
+                {
+                    "range":{
+                        "%stimeStamp":{
+                            "gte":%d,
+                            "lte":%d,
+                            "format":"epoch_millis"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}

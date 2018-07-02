@@ -37,9 +37,9 @@ public class SuggestionResultFactory {
 
         //for each word
         String[] qps = query.split("( |\\+)");
-        LinkedList< List<Facet>> list_of_facet_lists = new LinkedList< List<Facet >>();
+        LinkedList< List<Facet>> list_of_facet_lists = new LinkedList<>();
         for(int i=0; i<qps.length; i++) {
-            LinkedList<Facet> l = new LinkedList<Facet>();
+            LinkedList<Facet> l = new LinkedList<>();
             list_of_facet_lists.addLast(l);
             for(String field : fields) {
                 Iterator<Map.Entry> iter = ((NamedList)facets.get(field)).iterator();

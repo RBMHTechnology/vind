@@ -4,15 +4,19 @@
 package com.rbmhtechnology.vind.monitoring.report.writer;
 
 import com.rbmhtechnology.vind.monitoring.report.Report;
+import freemarker.cache.ClassTemplateLoader;
+import freemarker.cache.StringTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
+import io.redlink.utils.ResourceLoaderUtils;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -21,8 +25,8 @@ import java.nio.file.Paths;
  */
 public class HtmlReportWriter implements ReportWriter{
 
-    public static final String DEFAULT_HTML_TEMPLATE = "report.ftlh";
-    public static final String DEFAULT_ENCODING = "UTF-8";
+    private static final String DEFAULT_HTML_TEMPLATE = "report.ftlh";
+    private static final String DEFAULT_ENCODING = "UTF-8";
     final private Configuration cfg;
     final private Template reportTemplate;
 
@@ -34,7 +38,7 @@ public class HtmlReportWriter implements ReportWriter{
         this.cfg.setTemplateExceptionHandler(TemplateExceptionHandler.HTML_DEBUG_HANDLER/*RETHROW_HANDLER*/);//TODO: update when finished
         this.cfg.setLogTemplateExceptions(false);
 
-        this.reportTemplate = this.loadTemplate(this.getClass().getClassLoader().getResource(DEFAULT_HTML_TEMPLATE).getPath());
+        this.reportTemplate = this.loadTemplate(DEFAULT_HTML_TEMPLATE);
     }
 
     @Override
@@ -63,27 +67,21 @@ public class HtmlReportWriter implements ReportWriter{
         return this.write(report, reportFile, customTemplate);
     }
 
-    private Template loadTemplate(String freeMarkerTemplate) {
-
-        final Path templatePath = Paths.get(freeMarkerTemplate);
-        final String templateFolder = templatePath.getParent().toString();
-
+    private Template loadTemplate(String name) {
+        final Path path = ResourceLoaderUtils.getResourceAsPath(name);
         try {
-            this.cfg.setDirectoryForTemplateLoading(new File(templateFolder));
-        } catch (IOException e) {
-            throw
-                    new RuntimeException("Error accessing template folder'"+ templateFolder +"': " + e.getMessage(), e);
-        }
+            final byte[] encoded = Files.readAllBytes(path);
 
-        final Template template;
-        try {
-            template = this.cfg.getTemplate(templatePath.getFileName().toString());
-        } catch (IOException e) {
-            throw
-                    new RuntimeException("Error loading report HTML template '"+ templatePath.toString() +"': " + e.getMessage(), e);
-        }
+            final String tempId = "REPORT";
 
-        return template;
+            StringTemplateLoader stringTemplateLoader = new StringTemplateLoader();
+            stringTemplateLoader.putTemplate(tempId, new String(encoded, "UTF-8"));
+            this.cfg.setTemplateLoader(stringTemplateLoader);
+
+            return this.cfg.getTemplate(tempId);
+        } catch (IOException e) {
+            throw new RuntimeException("Error loading report HTML template '"+ name +"': " + e.getMessage(), e);
+        }
     }
 
     private boolean write(Report report, String reportFile, Template freeMarkerTemplate) {

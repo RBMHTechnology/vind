@@ -9,6 +9,8 @@ import io.searchbox.client.config.HttpClientConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Created on 01.03.18.
  */
@@ -20,7 +22,12 @@ public class ElasticSearchClientBuilder {
         final String conn = String.format("http://%s:%s", host, port);
         log.info("Creating ElasticSearch REST Client over {}..,", conn);
         final JestClientFactory factory = new JestClientFactory();
-        factory.setHttpClientConfig(new HttpClientConfig.Builder(conn).multiThreaded(true).build());
+        factory.setHttpClientConfig(new HttpClientConfig.Builder(conn)
+                .maxTotalConnection(10)
+                .readTimeout(30000)
+                .maxConnectionIdleTime(20, TimeUnit.SECONDS)
+                .build());
+
         return factory.getObject();
     }
 

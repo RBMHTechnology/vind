@@ -71,7 +71,7 @@ public  class SolrFilterSerializerVisitor implements SerializerVisitor {
     }
 
     public String visit(Filter.NotFilter filter) {
-        final String NOT_FILTER = "NOT(%s)";
+        final String NOT_FILTER = "(*:* AND NOT(%s))";
         final String serializedFilter = this.visit(filter.getDelegate());
         return  String.format(NOT_FILTER, serializedFilter);
     }

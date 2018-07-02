@@ -1,0 +1,11 @@
+{
+    "size":%d,
+    "query":{
+        "bool":{
+            "must":[%s
+                {"term":{"%sapplication.id.raw":"%s"}},
+                {"term":{"%ssession.sessionId.raw":"%s"}}
+            ]%s
+        }
+    }
+}

@@ -3,13 +3,18 @@
     "query":{
         "bool":{
             "must":[
-                {"term":{"type.keyword":"fulltext"}},
-                {"term":{"application.id.keyword":"%s"}}
+                %s
+                {"term":{"%stype":"fulltext"}},
+                {"term":{"%sapplication.id.raw":"%s"}},
+                {"match":{"%sprocess.final":"true"}}
             ],
+            "must_not":{
+                "match":{"%sprocess.skip":"true"}
+            },
             "filter": [
                 {
                     "range":{
-                        "timeStamp":{
+                        "%stimeStamp":{
                             "gte":%d,
                             "lte":%d,
                             "format":"epoch_millis"

@@ -4,7 +4,9 @@
 package com.rbmhtechnology.vind.monitoring.report.writer;
 
 
+import com.google.gson.JsonObject;
 import com.rbmhtechnology.vind.monitoring.report.Report;
+import com.rbmhtechnology.vind.monitoring.report.configuration.ReportConfiguration;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,10 +26,16 @@ public class HtmlReportWriterTest {
     @Before
     public void setUp() {
 
-        final LinkedHashMap<String, Long> fieldsMap = new LinkedHashMap<>();
-        fieldsMap.put("field1", 34000l);
-        fieldsMap.put("field2", 10453l);
-        fieldsMap.put("field3", 3957l);
+        final LinkedHashMap<String, JsonObject> fieldsMap = new LinkedHashMap<>();
+        JsonObject result = new JsonObject();
+        result.addProperty("total",34000l );
+        result.addProperty("first",1000l );
+        result.addProperty("second",4000l );
+        result.addProperty("third",60l );
+        result.addProperty("fourth",70l );
+        fieldsMap.put("field1", result);
+        fieldsMap.put("field2", result);
+        fieldsMap.put("field3", result);
 
         final LinkedHashMap<Object, Long> valuesMap = new LinkedHashMap<>();
         valuesMap.put("value1", 3400l);
@@ -52,9 +60,9 @@ public class HtmlReportWriterTest {
         topUsers.put("User 1", 204l);
         topUsers.put("User 2", 22l);
 
+        ReportConfiguration config = new ReportConfiguration().setApplicationId("Test HTML report application");
 
-        this.report = new Report()
-                .setApplicationName("Test HTML report application")
+        this.report = new Report(config)
                 .setFrom(ZonedDateTime.now().minusDays(1))
                 .setTo(ZonedDateTime.now().plusDays(1))
                 .setRequests(10000)
@@ -70,7 +78,7 @@ public class HtmlReportWriterTest {
         fieldExtension.put("field2", "1");
         fieldExtension.put("field3", "2");
 
-        report.getConfiguration()
+        report.getConfiguration().getReportWriterConfiguration()
                 .addGeneralFilter("Module","Assets")
                 .addFacetFieldExtension("Position", fieldExtension)
                 .addFacetFieldExtension("extra column", null)

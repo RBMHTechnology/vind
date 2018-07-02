@@ -1,26 +1,27 @@
 /*
  * Copyright (c) 2018 Redlink GmbH.
  */
-package com.rbmhtechnology.vind.monitoring.report;
+package com.rbmhtechnology.vind.monitoring.report.configuration;
 
 import java.util.*;
 
 /**
  * Created on 08.03.18.
  */
-public class ReportConfiguration {
+public class ReportWriterConfiguration {
 
     private Map<String, String> generalFilters = new HashMap<>();
     private Map<String, HashMap<String,String>> facetFieldsExtension = new HashMap<>();
     private Map<String, HashMap<String,String>> suggestionFieldsExtension = new HashMap<>();
+    private Map<String, HashMap<String,String>> filterFieldsExtension = new HashMap<>();
     private Map<String, HashMap<String,String>> fulltextQueryExtension = new HashMap<>();
-    private List<String> queryFilters = new ArrayList<>();
+    private String queryFilter;
 
     public Map<String, String> getGeneralFilters() {
         return generalFilters;
     }
 
-    public ReportConfiguration addGeneralFilter(String fieldName, String filterValue) {
+    public ReportWriterConfiguration addGeneralFilter(String fieldName, String filterValue) {
         if (Objects.nonNull(filterValue) & Objects.nonNull(fieldName)) {
             this.generalFilters.put(fieldName,filterValue);
         }
@@ -32,7 +33,7 @@ public class ReportConfiguration {
     }
 
 
-    public ReportConfiguration addFacetFieldExtension(String extensionName, HashMap<String, String> facetFieldsExtension) {
+    public ReportWriterConfiguration addFacetFieldExtension(String extensionName, HashMap<String, String> facetFieldsExtension) {
         if (Objects.nonNull(extensionName) ) {
             if (Objects.isNull(facetFieldsExtension)) {
                 facetFieldsExtension = new HashMap<>();
@@ -46,7 +47,7 @@ public class ReportConfiguration {
         return suggestionFieldsExtension;
     }
 
-    public ReportConfiguration addSuggestionFieldExtension(String extensionName, HashMap<String, String> suggestionFieldsExtension) {
+    public ReportWriterConfiguration addSuggestionFieldExtension(String extensionName, HashMap<String, String> suggestionFieldsExtension) {
         if (Objects.nonNull(extensionName) ) {
             if (Objects.isNull(suggestionFieldsExtension)) {
                 suggestionFieldsExtension = new HashMap<>();
@@ -56,11 +57,25 @@ public class ReportConfiguration {
         return this;
     }
 
+    public Map<String, HashMap<String, String>> getFilterFieldsExtension() {
+        return filterFieldsExtension;
+    }
+
+    public ReportWriterConfiguration addFilterFieldExtension(String extensionName, HashMap<String, String> filterFieldsExtension) {
+        if (Objects.nonNull(extensionName) ) {
+            if (Objects.isNull(filterFieldsExtension)) {
+                filterFieldsExtension = new HashMap<>();
+            }
+            this.filterFieldsExtension.put(extensionName, filterFieldsExtension);
+        }
+        return this;
+    }
+
     public Map<String, HashMap<String, String>> getFulltextQueryExtension() {
         return fulltextQueryExtension;
     }
 
-    public ReportConfiguration addFulltextQueryExtension(String extensionName, HashMap<String, String> fulltextQueryExtension) {
+    public ReportWriterConfiguration addFulltextQueryExtension(String extensionName, HashMap<String, String> fulltextQueryExtension) {
         if (Objects.nonNull(extensionName) ) {
             if (Objects.isNull(fulltextQueryExtension)) {
                 fulltextQueryExtension = new HashMap<>();
@@ -70,26 +85,12 @@ public class ReportConfiguration {
         return this;
     }
 
-    public List<String> getQueryFilters() {
-        return queryFilters;
+    public String getQueryFilter() {
+        return queryFilter;
     }
 
-    public ReportConfiguration setQueryFilters(List<String> queryFilters) {
-        this.queryFilters = queryFilters;
-        return this;
-    }
-
-    public ReportConfiguration setQueryFilters(String... queryFilters) {
-        if (Objects.nonNull(queryFilters)) {
-            this.queryFilters = Arrays.asList(queryFilters);
-        }
-        return this;
-    }
-
-    public ReportConfiguration addQueryFilters(String... queryFilters) {
-        if (Objects.nonNull(queryFilters)) {
-            this.queryFilters.addAll(Arrays.asList(queryFilters));
-        }
+    public ReportWriterConfiguration setQueryFilter(String queryFilter) {
+        this.queryFilter = queryFilter;
         return this;
     }
 }

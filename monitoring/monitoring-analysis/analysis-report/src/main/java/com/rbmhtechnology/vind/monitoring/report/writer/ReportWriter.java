@@ -11,7 +11,6 @@ import com.rbmhtechnology.vind.monitoring.report.Report;
  */
 public interface ReportWriter {
 
-    public String write(Report report);
-
-    public boolean write(Report report, String reportFile);
+    String write(Report report);
+    boolean write(Report report, String reportFile);
 }

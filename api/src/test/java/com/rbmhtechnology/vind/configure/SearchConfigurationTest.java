@@ -1,12 +1,14 @@
 package com.rbmhtechnology.vind.configure;
 
 import com.google.common.io.Resources;
+import com.rbmhtechnology.vind.api.query.Search;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.EnvironmentVariables;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.URISyntaxException;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -16,6 +18,10 @@ import static org.junit.Assert.assertNull;
  * @since 30.06.16.
  */
 public class SearchConfigurationTest {
+
+    @Rule
+    public final EnvironmentVariables environmentVariables
+            = new EnvironmentVariables();
 
     @Test
     public void testConfiguration() throws URISyntaxException, IOException {
@@ -56,4 +62,45 @@ public class SearchConfigurationTest {
         SearchConfiguration.init();
     }
 
+    @Test
+    public void testEnvironmentVars() {
+        environmentVariables.set("VIND_SERVER_SOLR_CLOUD", "true");
+        environmentVariables.set("VIND_SERVER_HOST", "myhost:80");
+
+        //test property key formatter
+        assertEquals("server.solr.cloud", SearchConfiguration.getPropertyNameFromEnvVar("VIND_SERVER_SOLR_CLOUD"));
+
+        //test property map creator
+        Map<String,String> props = SearchConfiguration.loadEnvVarProperties();
+        assertEquals(2, props.size());
+        assertEquals("true", props.get(SearchConfiguration.SERVER_SOLR_CLOUD));
+        assertEquals("myhost:80", props.get(SearchConfiguration.SERVER_HOST));
+
+        //test properties
+        environmentVariables.set("VIND_SEARCH_RESULT_PAGESIZE", "17");
+
+        SearchConfiguration.init();
+
+        assertEquals("true", SearchConfiguration.get(SearchConfiguration.SERVER_SOLR_CLOUD));
+        assertEquals("myhost:80", SearchConfiguration.get(SearchConfiguration.SERVER_HOST));
+        assertEquals("17", SearchConfiguration.get(SearchConfiguration.SEARCH_RESULT_PAGESIZE));
+    }
+
+    @Test
+    public void testEnvironmentVarsOverwrite() throws URISyntaxException, FileNotFoundException, UnsupportedEncodingException {
+        environmentVariables.set("VIND_SERVER_SOLR_CLOUD", "true");
+        environmentVariables.set("VIND_SEARCH_RESULT_PAGESIZE", "17");
+
+        File customConfigFile = new File(Resources.getResource("vind.properties").toURI());
+        PrintWriter writer = new PrintWriter(customConfigFile, "UTF-8");
+        writer.println("search.result.pagesize=20");
+        writer.close();
+
+        SearchConfiguration.init();
+
+        PrintWriter cleaner = new PrintWriter(customConfigFile, "UTF-8");
+        cleaner.close();
+
+        assertEquals("20", SearchConfiguration.get(SearchConfiguration.SEARCH_RESULT_PAGESIZE));
+    }
 }

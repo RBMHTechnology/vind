@@ -4,6 +4,7 @@
 package com.rbmhtechnology.vind.monitoring.report.writer;
 
 import com.rbmhtechnology.vind.monitoring.report.Report;
+import com.rbmhtechnology.vind.monitoring.report.configuration.ReportConfiguration;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,9 +31,9 @@ public class JsonReportWriterTest {
         final LinkedHashMap<String, LinkedHashMap<Object, Long>> suggestionFieldsValues = new LinkedHashMap<>();
         suggestionFieldsValues.put("field1", fieldsValues);
 
+        ReportConfiguration config = new ReportConfiguration().setApplicationId("Test HTML report application");
 
-
-        this.report = new Report()
+        this.report = new Report(config)
                 .setFrom(ZonedDateTime.now().minusDays(1))
                 .setTo(ZonedDateTime.now().plusDays(1))
                 .setRequests(10000)

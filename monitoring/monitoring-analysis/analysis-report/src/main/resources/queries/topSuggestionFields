@@ -3,13 +3,14 @@
     "query":{
         "bool":{
             "must":[
-                {"term":{"type.keyword":"suggestion"}},
-                {"term":{"application.id.keyword":"%s"}}
+                %s
+                {"term":{"%stype.raw":"suggestion"}},
+                {"term":{"%sapplication.id.raw":"%s"}}
             ],
             "filter": [
                 {
                     "range":{
-                        "timeStamp":{
+                        "%stimeStamp":{
                             "gte":%d,
                             "lte":%d,
                             "format":"epoch_millis"
@@ -22,7 +23,7 @@
     "aggs":{
         "suggestionFields":{
             "terms":{
-                "field":"request.suggestionFields.keyword",
+                "field":"%srequest.suggestionFields.raw",
                 "size":100,
                 "order":{
                     "_count":"desc"

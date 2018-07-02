@@ -1,0 +1,29 @@
+{
+    "size":%d,
+    "query":{
+        "bool":{
+            "must":[
+                %s
+                {"term":{"%stype.raw":"fulltext"}},
+                {"term":{"%sapplication.id.raw":"%s"}},
+                {"terms":{"%sprocess.filters.scope.raw":["%s"]}},
+                {"terms":{"%sprocess.filters.field.raw":[%s]}},
+                {"match":{"%sprocess.final":"true"}}
+            ],
+            "must_not":{
+                "match":{"%sprocess.skip":"true"}
+             },
+            "filter": [
+                {
+                    "range":{
+                        "%stimeStamp":{
+                            "gte":%d,
+                            "lte":%d,
+                            "format":"epoch_millis"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}

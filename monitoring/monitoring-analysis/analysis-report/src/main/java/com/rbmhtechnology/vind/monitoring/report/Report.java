@@ -3,6 +3,9 @@
  */
 package com.rbmhtechnology.vind.monitoring.report;
 
+import com.google.gson.JsonObject;
+import com.rbmhtechnology.vind.monitoring.report.configuration.ReportConfiguration;
+
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -16,26 +19,32 @@ import java.util.Map;
  */
 public class Report {
 
-    private String dateFormat = "dd/MM/yyyy VV";
-    private String longDateFormat = "EEEE, MMMM dd, yyyy hh:mm a - VV";
-    private ZoneId zoneId = ZoneOffset.UTC;
+    private ReportConfiguration configuration;
 
-    private final ReportConfiguration configuration = new ReportConfiguration();
+    private String dateFormat = "dd/MM/yyyy VV";
+    private String longDateFormat = "EEEE, MMMM dd, yyyy hh:mm a";
+    private ZoneId zoneId = ZoneOffset.UTC;
+    private String imageUrl = null;
 
     private ZonedDateTime today = ZonedDateTime.now();
-    private String applicationName;
     private ZonedDateTime from;
     private ZonedDateTime to;
     private long requests;
-    private  LinkedHashMap<ZonedDateTime, Long> topDays = new LinkedHashMap<>();
-    private  LinkedHashMap<String, Long> topUsers = new LinkedHashMap<>();
-    private  LinkedHashMap<String, Long> topFacetFields = new LinkedHashMap<>();
-    private  LinkedHashMap<String, LinkedHashMap<Object,Long>> facetFieldsValues = new LinkedHashMap<>();
-    private  LinkedHashMap<String, Long> topSuggestionFields = new LinkedHashMap<>();
-    private  LinkedHashMap<String, LinkedHashMap<Object,Long>> suggestionFieldsValues = new LinkedHashMap<>();
-    private  LinkedHashMap<String, Long> topQueries = new LinkedHashMap<>();
-    private  LinkedHashMap<String, Long> topFilteredQueries = new LinkedHashMap<>();
+    private LinkedHashMap<ZonedDateTime, Long> topDays = new LinkedHashMap<>();
+    private LinkedHashMap<String, Long> topUsers = new LinkedHashMap<>();
+    private LinkedHashMap<String, JsonObject> topFacetFields = new LinkedHashMap<>();
+    private LinkedHashMap<String, LinkedHashMap<Object,Long>> facetFieldsValues = new LinkedHashMap<>();
+    private LinkedHashMap<String, JsonObject> topSuggestionFields = new LinkedHashMap<>();
+    private LinkedHashMap<String, LinkedHashMap<Object,Long>> suggestionFieldsValues = new LinkedHashMap<>();
+    private LinkedHashMap<String, JsonObject> topFilterFields = new LinkedHashMap<>();
+    private LinkedHashMap<String, LinkedHashMap<Object,Long>> filterFieldsValues = new LinkedHashMap<>();
+    private LinkedHashMap<String, Long> topQueries = new LinkedHashMap<>();
+    private LinkedHashMap<String, Long> topFilteredQueries = new LinkedHashMap<>();
 
+
+    public Report(ReportConfiguration configuration) {
+        this.configuration = configuration;
+    }
 
     public ZonedDateTime getToday() {
         return today;
@@ -43,16 +52,19 @@ public class Report {
 
     public String getPrettyToday() {
         return DateTimeFormatter.ofPattern(longDateFormat).format(today.withZoneSameInstant(zoneId));
+    }
 
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public Report setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+        return this;
     }
 
     public String getApplicationName() {
-        return applicationName;
-    }
-
-    public Report setApplicationName(String applicationName) {
-        this.applicationName = applicationName;
-        return this;
+        return configuration.getApplicationId();
     }
 
     public ZonedDateTime getFrom() {
@@ -97,7 +109,7 @@ public class Report {
     public LinkedHashMap<String, Long> getFormattedTopDays() {
         final LinkedHashMap<String, Long> formattedTopDays = new LinkedHashMap<>();
         topDays.entrySet().stream()
-                .sorted(Comparator.comparingLong(Map.Entry::getValue))
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                 .forEach( entry -> formattedTopDays.put(DateTimeFormatter.ofPattern(this.dateFormat).format(entry.getKey().withZoneSameInstant(zoneId)),entry.getValue()));
         return formattedTopDays;
     }
@@ -116,13 +128,17 @@ public class Report {
         return this;
     }
 
-    public LinkedHashMap<String, Long> getTopFacetFields() {
+    public LinkedHashMap<String, JsonObject> getTopFacetFields() {
         return topFacetFields;
     }
 
-    public Report setTopFacetFields(LinkedHashMap<String, Long> topFaceFields) {
+    public Report setTopFacetFields(LinkedHashMap<String, JsonObject> topFaceFields) {
         this.topFacetFields = topFaceFields;
         return this;
+    }
+
+    public long getCountOfUnusedFacetFields() {
+        return topFacetFields.keySet().stream().filter(k -> {return topFacetFields.get(k).get("total").getAsLong() == 0;}).count();
     }
 
     public LinkedHashMap<String, LinkedHashMap<Object,Long>> getFacetFieldsValues() {
@@ -134,13 +150,17 @@ public class Report {
         return this;
     }
 
-    public LinkedHashMap<String, Long> getTopSuggestionFields() {
+    public LinkedHashMap<String, JsonObject> getTopSuggestionFields() {
         return topSuggestionFields;
     }
 
-    public Report setTopSuggestionFields(LinkedHashMap<String, Long> topSuggestionFields) {
+    public Report setTopSuggestionFields(LinkedHashMap<String, JsonObject> topSuggestionFields) {
         this.topSuggestionFields = topSuggestionFields;
         return this;
+    }
+
+    public long getCountOfUnusedSuggestionFields() {
+        return topSuggestionFields.keySet().stream().filter(k -> {return topSuggestionFields.get(k).get("total").getAsLong() == 0;}).count();
     }
 
     public LinkedHashMap<String, LinkedHashMap<Object,Long>> getSuggestionFieldsValues() {
@@ -149,6 +169,28 @@ public class Report {
 
     public Report setSuggestionFieldsValues(LinkedHashMap<String, LinkedHashMap<Object,Long>> suggestionFieldsValues) {
         this.suggestionFieldsValues = suggestionFieldsValues;
+        return this;
+    }
+
+    public LinkedHashMap<String, JsonObject> getTopFilterFields() {
+        return topFilterFields;
+    }
+
+    public Report setTopFilterFields(LinkedHashMap<String, JsonObject> topFilterFields) {
+        this.topFilterFields = topFilterFields;
+        return this;
+    }
+
+    public long getCountOfUnusedFilterFields() {
+        return topFilterFields.keySet().stream().filter(k -> {return topFilterFields.get(k).get("total").getAsLong() == 0;}).count();
+    }
+
+    public LinkedHashMap<String, LinkedHashMap<Object, Long>> getFilterFieldsValues() {
+        return filterFieldsValues;
+    }
+
+    public Report setFilterFieldsValues(LinkedHashMap<String, LinkedHashMap<Object, Long>> filterFieldsValues) {
+        this.filterFieldsValues = filterFieldsValues;
         return this;
     }
 
