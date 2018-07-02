@@ -65,5 +65,10 @@ default scope due to a null FieldDescriptor.
 * SuggestionHandler code cleaning and improvements in logging and Exception handling.
 * Bugfix: Fixed issue when adding and filters.
 
-## 1.1.5
+## 1.2.0
+* General improvements on reporting analyzer module and monitoring.
+* Updated suggestion handler result to NamedList in order to be more homogeneous with Solr result types.
+* Added support to Vind configuration via environmental variables.
 * Bugfix: Added to NOT filter Solr serialization a base '\*:\*' to ensure the subtraction has a positive base operator.
+* Bugfix: solved issue with wrong parsing of children doc filters for suggestions on fields members of both, parent and nested doc.
+* Bugfix: Removed hard coded logical operator on suggestion handler, allowing to override it by parameter or configuration.

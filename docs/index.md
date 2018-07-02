@@ -12,16 +12,16 @@ Table of Contents
 </div>
 
 {% include_relative introduction.md %}
-{% include_relative step1.md %}
-{% include_relative step2.md %}
-{% include_relative step3.md %}
-{% include_relative step4.md %}
-{% include_relative step5.md %}
-{% include_relative step6.md %}
-{% include_relative step7.md %}
-{% include_relative step8.md %}
-{% include_relative step9.md %}
-{% include_relative step10.md %}
-{% include_relative step11.md %}
-{% include_relative step12.md %}
-{% include_relative step13.md %}
+{% include_relative a_simple_pojo_search.md %}
+{% include_relative fulltext_facets_and_score.md %}
+{% include_relative dynamic_fields.md %}
+{% include_relative special_sorting_filters_and_facets.md %}
+{% include_relative an_overall_example.md %}
+{% include_relative use_solr_remote_backend.md %}
+{% include_relative completable_search_server.md %}
+{% include_relative search_monitoring.md %}
+{% include_relative partial_updates.md %}
+{% include_relative nested_documents.md %}
+{% include_relative complex_fields.md %}
+{% include_relative contextualized_fields.md %}
+{% include_relative search_modifiers.md %}
