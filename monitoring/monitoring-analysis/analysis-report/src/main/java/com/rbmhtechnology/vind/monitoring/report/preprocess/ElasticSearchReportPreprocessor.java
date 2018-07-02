@@ -161,7 +161,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
         final String skipPreprocessed =
                 ",\n\"must_not\":{\"exists\":{\"field\":\"%sprocess\"}}";
 
-        log.info("Starting pre-processing of vind monitoring entries for session [{}],",sessionId);
+        log.debug("Starting pre-processing of vind monitoring entries for session [{}],",sessionId);
         //fetch all the entries for the session
         final String query = elasticClient.loadQueryFromFile("session",
                 this.scrollSpan,
