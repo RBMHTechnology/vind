@@ -8,7 +8,9 @@ import com.rbmhtechnology.vind.monitoring.report.configuration.ElasticSearchConn
 import com.rbmhtechnology.vind.monitoring.report.configuration.ElasticSearchReportConfiguration;
 import com.rbmhtechnology.vind.monitoring.report.preprocess.ElasticSearchReportPreprocessor;
 import com.rbmhtechnology.vind.monitoring.report.service.ElasticSearchReportService;
+import com.rbmhtechnology.vind.monitoring.report.service.ReportService;
 import com.rbmhtechnology.vind.monitoring.report.writer.HtmlReportWriter;
+import org.joda.time.Days;
 import org.junit.*;
 
 import java.io.File;
@@ -101,6 +103,36 @@ public class createReportIT {
         Assert.assertTrue(reportWriter.write(this.report,reportFile.getAbsolutePath()));
 
         System.out.println("Report has been written to " + reportFile.getAbsolutePath());
+
+    }
+
+    @Test
+    @Ignore //only used for documentation
+    public void testReportAPI() {
+
+        //configure at least appId and connection (in this case elastic search)
+
+        final ElasticSearchReportConfiguration config = new ElasticSearchReportConfiguration()
+                .setApplicationId("myApp")
+                .setConnectionConfiguration(new ElasticSearchConnectionConfiguration(
+                        "1.1.1.1",
+                        "1920",
+                        "logstash-2018.*"
+                ));
+
+        //create service with config and timerange
+
+        ZonedDateTime to = ZonedDateTime.now();
+        ZonedDateTime from = to.minus(1, ChronoUnit.WEEKS);
+
+        ReportService service = new ElasticSearchReportService(config, from, to);
+
+        //create report and serialize as HTML
+
+        Report report = service.generateReport();
+
+        new HtmlReportWriter().write(report, "/tmp/myreport.html");
+
 
     }
 

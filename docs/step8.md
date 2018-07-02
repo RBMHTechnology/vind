@@ -210,3 +210,40 @@ A sample of a monitoring entry serialized as Json is displayed below:
   }
 }
 ```
+
+### 9.4 Reporting
+Vind gives you a simple to use API for creating reports based on monitoring. The reports include:
+
+* Usage overal
+* Usage of searchs strings
+* Usage of scoped filters (e.g. facets etc.)
+
+The reports can be created on certain timerange:
+
+```java
+ //configure at least appId and connection (in this case elastic search)
+
+final ElasticSearchReportConfiguration config = new ElasticSearchReportConfiguration()
+        .setApplicationId("myApp")
+        .setConnectionConfiguration(new ElasticSearchConnectionConfiguration(
+                "1.1.1.1",
+                "1920",
+                "logstash-2018.*"
+        ));
+
+//create service with config and timerange
+
+ZonedDateTime to = ZonedDateTime.now();
+ZonedDateTime from = to.minus(1, ChronoUnit.WEEKS);
+
+ReportService service = new ElasticSearchReportService(config, from, to);
+
+//create report and serialize as HTML
+
+Report report = service.generateReport();
+
+new HtmlReportWriter().write(report, "/tmp/myreport.html");
+
+```
+
+TODO: extend this description in a later release
