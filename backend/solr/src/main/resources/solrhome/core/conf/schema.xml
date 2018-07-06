@@ -59,8 +59,16 @@
     </analyzer>
   </fieldType>
 
+  <fieldType name="string_suggest" class="solr.TextField" positionIncrementGap="100">
+    <analyzer>
+      <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-FoldToASCII.txt"/>
+      <tokenizer class="solr.KeywordTokenizerFactory"/>
+    </analyzer>
+  </fieldType>
+
   <fieldType name="text_suggest" class="solr.TextField" positionIncrementGap="100">
     <analyzer>
+      <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-FoldToASCII.txt"/>
       <tokenizer class="solr.ClassicTokenizerFactory"/>
       <filter class="solr.LowerCaseFilterFactory"/>
       <filter class="solr.SynonymFilterFactory" expand="false" ignoreCase="true" synonyms="synonyms.txt"/>
@@ -79,13 +87,13 @@
   <dynamicField name="dynamic_multi_stored_suggest_location_*" type="location" multiValued="true" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_filter_location_*" type="location" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_facet_location_*" type="location" multiValued="false" indexed="true" stored="true"/>
-  <dynamicField name="dynamic_single_stored_suggest_string_*" type="string" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_suggest_string_*" type="string_suggest" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="dynamic_multi_stored_suggest_boolean_*" type="boolean" multiValued="true" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_filter_boolean_*" type="boolean" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="dynamic_multi_stored_filter_location_*" type="location" multiValued="true" indexed="true" stored="false"/>
   <dynamicField name="dynamic_single_stored_facet_boolean_*" type="boolean" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_suggest_float_*" type="float" docValues="true" multiValued="false" indexed="true" stored="true"/>
-  <dynamicField name="dynamic_multi_stored_suggest_string_*" type="string" docValues="true" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_suggest_string_*" type="string_suggest" multiValued="true" indexed="true" stored="true"/>
   <dynamicField name="dynamic_multi_stored_facet_location_*" type="location" multiValued="true" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_sort_location_*" type="location" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_filter_string_*" type="string" docValues="true" multiValued="false" indexed="true" stored="true"/>
@@ -134,14 +142,14 @@
   <dynamicField name="dynamic_single_stored_sort_int_*" type="int" docValues="true" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_filter_location_*" type="location" multiValued="false" indexed="true" stored="false"/>
   <dynamicField name="dynamic_single_facet_location_*" type="location" multiValued="false" indexed="true" stored="false"/>
-  <dynamicField name="dynamic_single_suggest_string_*" type="string" docValues="true" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_suggest_string_*" type="string_suggest" multiValued="false" indexed="true" stored="false"/>
   <dynamicField name="dynamic_multi_suggest_boolean_*" type="boolean" multiValued="true" indexed="true" stored="false"/>
   <dynamicField name="dynamic_single_filter_boolean_*" type="boolean" multiValued="false" indexed="true" stored="false"/>
   <dynamicField name="dynamic_multi_filter_location_*" type="location" multiValued="true" indexed="true" stored="false"/>
   <dynamicField name="dynamic_single_facet_boolean_*" type="boolean" multiValued="false" indexed="true" stored="false"/>
   <dynamicField name="dynamic_multi_facet_location_*" type="location" multiValued="true" indexed="true" stored="false"/>
   <dynamicField name="dynamic_single_suggest_float_*" type="float" docValues="true" multiValued="false" indexed="true" stored="false"/>
-  <dynamicField name="dynamic_multi_suggest_string_*" type="string" docValues="true" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_suggest_string_*" type="string_suggest" multiValued="true" indexed="true" stored="false"/>
   <dynamicField name="dynamic_single_sort_location_*" type="location" multiValued="false" indexed="true" stored="false"/>
   <dynamicField name="dynamic_single_filter_string_*" type="string" docValues="true" multiValued="false" indexed="true" stored="false"/>
   <dynamicField name="dynamic_multi_filter_boolean_*" type="boolean" multiValued="true" indexed="true" stored="false"/>
