@@ -61,14 +61,14 @@
 
   <fieldType name="string_suggest" class="solr.TextField" positionIncrementGap="100">
     <analyzer>
-      <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-FoldToASCII.txt"/>
+      <charFilter class="solr.MappingCharFilterFactory" mapping="suggestion-mapping-CustomFoldToASCII.txt"/>
       <tokenizer class="solr.KeywordTokenizerFactory"/>
     </analyzer>
   </fieldType>
 
   <fieldType name="text_suggest" class="solr.TextField" positionIncrementGap="100">
     <analyzer>
-      <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-FoldToASCII.txt"/>
+      <charFilter class="solr.MappingCharFilterFactory" mapping="suggestion-mapping-CustomFoldToASCII.txt"/>
       <tokenizer class="solr.ClassicTokenizerFactory"/>
       <filter class="solr.LowerCaseFilterFactory"/>
       <filter class="solr.SynonymFilterFactory" expand="false" ignoreCase="true" synonyms="synonyms.txt"/>
