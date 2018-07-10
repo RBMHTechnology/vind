@@ -150,6 +150,10 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
             start += scrollSpan;
         }
 
+        if(Objects.nonNull(scrollId)) {
+            elasticClient.closeScroll(scrollId);
+        }
+
         sessionIds.addAll(sessions);
         log.info("{} different session IDs found on the period [{} - {}]", sessionIds.size(), from, to);
 
@@ -243,6 +247,11 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
 
             start += scrollSpan;
 
+        }
+
+        //close scroll
+        if(Objects.nonNull(scrollId)) {
+            elasticClient.closeScroll(scrollId);
         }
 
         environmentFilters.addAll(commonFilters);
