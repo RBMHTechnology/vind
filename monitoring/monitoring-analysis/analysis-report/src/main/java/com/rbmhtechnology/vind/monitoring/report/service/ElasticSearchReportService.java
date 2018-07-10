@@ -386,6 +386,10 @@ public class ElasticSearchReportService extends ReportService implements AutoClo
             start += scrollSpan;
         }
 
+        if(Objects.nonNull(scrollId)) {
+            elasticClient.closeScroll(scrollId);
+        }
+
         return results.stream()
                 .map( r -> {
                     final JsonObject steps = r.getAsJsonObject("steps");

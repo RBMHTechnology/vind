@@ -339,4 +339,14 @@ public class ElasticSearchClient {
             throw new RuntimeException("Error in bulk update request: ES client has not been initialized, client is null.");
         }
     }
+
+    public void closeScroll(String scrollId) {
+        final ClearScroll clearScroll = new ClearScroll.Builder().addScrollId(scrollId).build();
+        try {
+            final JestResult result = getElasticSearchClient().execute(clearScroll);
+            log.debug("Closed scroll query {}. Succeeded: {}", scrollId, result.isSucceeded());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
