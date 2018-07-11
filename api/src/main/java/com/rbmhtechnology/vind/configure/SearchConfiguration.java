@@ -51,9 +51,6 @@ public class SearchConfiguration {
 
             PROPERTIES = new Properties(defaultProps);
 
-            //Try to load from EnvironmentVariables
-            loadEnvVarProperties().forEach((key, value) -> PROPERTIES.setProperty(key, value));
-
             log.info("Trying to load configurations file from System properties var '{}':...", VIND_FILE_SYSTEM_PROPERTY);
             final String propertyFilePath = System.getProperty(VIND_FILE_SYSTEM_PROPERTY);
             if (propertyFilePath != null) {
@@ -79,6 +76,9 @@ public class SearchConfiguration {
             } else {
                 log.info("Not found configurations file path in System properties, using default values");
             }
+
+            //Try to load from EnvironmentVariables
+            loadEnvVarProperties().forEach((key, value) -> PROPERTIES.setProperty(key, value));
 
         } catch (IOException e) {
             log.error("Cannot load configuration from path {}", System.getProperty(VIND_FILE_SYSTEM_PROPERTY), e);
