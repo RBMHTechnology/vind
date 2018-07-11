@@ -72,3 +72,8 @@ default scope due to a null FieldDescriptor.
 * Bugfix: Added to NOT filter Solr serialization a base '\*:\*' to ensure the subtraction has a positive base operator.
 * Bugfix: solved issue with wrong parsing of children doc filters for suggestions on fields members of both, parent and nested doc.
 * Bugfix: Removed hard coded logical operator on suggestion handler, allowing to override it by parameter or configuration.
+
+## 1.2.1
+* Changed configuration properties preference order (from most relevant to less): Environment properties > provided config file > default config file.
+* BugFix: suggestion handler maps every different type of single quote to the same (the same goes for double quotes and other special characters).
+* BugFix: Solved issue with connection timeout when creating reports.
