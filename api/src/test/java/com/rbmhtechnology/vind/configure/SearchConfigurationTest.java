@@ -101,6 +101,6 @@ public class SearchConfigurationTest {
         PrintWriter cleaner = new PrintWriter(customConfigFile, "UTF-8");
         cleaner.close();
 
-        assertEquals("20", SearchConfiguration.get(SearchConfiguration.SEARCH_RESULT_PAGESIZE));
+        assertEquals("17", SearchConfiguration.get(SearchConfiguration.SEARCH_RESULT_PAGESIZE));
     }
 }
