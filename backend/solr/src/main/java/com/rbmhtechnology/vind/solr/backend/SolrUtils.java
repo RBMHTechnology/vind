@@ -47,6 +47,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.rbmhtechnology.vind.api.query.facet.Facet.*;
+import static com.rbmhtechnology.vind.api.query.filter.Filter.*;
 import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.UseCase.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -371,6 +372,14 @@ public class SolrUtils {
         public static <T extends Facet> String buildSolrPivotSubFacetName(String name, String... fields){
 
             return StringUtils.join("{!query='", name,"' stats='", name,"' range='", name,"' ","ex=dt key='", name, "'}", StringUtils.join(fields,','));
+        }
+
+        public static String buildSolrTermsQuery(List<String> values, FieldDescriptor field, Scope scope) {
+            final String prefixQuery =
+                    "{!terms f=" + Fieldname.getFieldname(field,UseCase.valueOf(scope.name()), null) + "}";
+            final String  query = values.stream()
+                    .collect(Collectors.joining(","));
+            return  prefixQuery + query;
         }
 
         public static String buildSolrStatsQuery(String solrfieldName, StatsFacet stats){
