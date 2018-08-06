@@ -374,10 +374,11 @@ public class SolrUtils {
             return StringUtils.join("{!query='", name,"' stats='", name,"' range='", name,"' ","ex=dt key='", name, "'}", StringUtils.join(fields,','));
         }
 
-        public static String buildSolrTermsQuery(List<String> values, FieldDescriptor field, Scope scope) {
+        public static String buildSolrTermsQuery(List<?> values, FieldDescriptor field, Scope scope, String context) {
             final String prefixQuery =
-                    "{!terms f=" + Fieldname.getFieldname(field,UseCase.valueOf(scope.name()), null) + "}";
+                    "{!terms f=" + Fieldname.getFieldname(field,UseCase.valueOf(scope.name()), context) + "}";
             final String  query = values.stream()
+                    .map(Object::toString)
                     .collect(Collectors.joining(","));
             return  prefixQuery + query;
         }

@@ -40,6 +40,7 @@ public  class SolrFilterSerializerVisitor implements SerializerVisitor {
         if(filter instanceof Filter.OrFilter) return visit((Filter.OrFilter) filter);
         if(filter instanceof Filter.NotFilter) return visit((Filter.NotFilter) filter);
         if(filter instanceof Filter.TermFilter) return visit((Filter.TermFilter) filter);
+        if(filter instanceof Filter.TermsQueryFilter) return visit((Filter.TermsQueryFilter) filter);
         if(filter instanceof Filter.PrefixFilter) return visit((Filter.PrefixFilter) filter);
         if(filter instanceof Filter.DescriptorFilter) return visit((Filter.DescriptorFilter) filter);
         if(filter instanceof Filter.BeforeFilter) return visit((Filter.BeforeFilter) filter);
@@ -93,6 +94,22 @@ public  class SolrFilterSerializerVisitor implements SerializerVisitor {
             final String solrFieldName = this.getFieldName(filter.getField(), this.searchContext, useCase, this.parentFactory);
             return String.format(TERM_FILTER, solrFieldName, filter.getTerm());
         }
+    }
+
+    public String visit(Filter.TermsQueryFilter filter) {
+
+        if (this.isHierarchical(filter.getField()) && !strict) {
+            final String serializedFilter = SolrUtils.Query.buildSolrTermsQuery(filter.getTerm(),filter.getDescriptor(),filter.getFilterScope(),this.searchContext);;
+            return  String.format(CHILD_QUERY_TEMPLATE,
+                    SolrUtils.Fieldname.TYPE,
+                    this.parentFactory.getType(),
+                    String.format("%s:%s",SolrUtils.Fieldname.TYPE, this.childFactory.getType()),
+                    serializedFilter);
+        } else {
+            final SolrUtils.Fieldname.UseCase useCase = SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(), this.parentFactory).toString());
+            return SolrUtils.Query.buildSolrTermsQuery(filter.getTerm(),filter.getDescriptor(),filter.getFilterScope(),this.searchContext);
+        }
+
     }
 
     public String visit(Filter.PrefixFilter filter){

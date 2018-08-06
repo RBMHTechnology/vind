@@ -2,6 +2,7 @@ package com.rbmhtechnology.vind.api.query.filter;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
@@ -158,6 +159,32 @@ public abstract class Filter {
      */
     public static <T> Filter eq(FieldDescriptor<T> descriptor, T term, Scope scope) {
         return new DescriptorFilter(descriptor, term, scope);
+    }
+
+    /**
+     * Static method to instantiate a {@link TermsQueryFilter} object based on a given field descriptor
+     * and a list of values.
+     * @param field
+     * @param values
+     * @param <T>
+     * @return
+     */
+    public static <T> Filter terms(FieldDescriptor<T> field, T... values) {
+        return new TermsQueryFilter(field, values,null);
+    }
+
+    /**
+     * Static method to instantiate a {@link TermsQueryFilter} object based on a given field descriptor
+     * and a list of values.
+     * @param field
+     * @param values
+     * @param scope
+     * @param <T>
+     * @return
+     */
+    public static <T> Filter terms(FieldDescriptor<T> field, Scope scope, T... values) {
+
+        return new TermsQueryFilter(field, values, scope);
     }
 
     /**
@@ -1506,6 +1533,72 @@ public abstract class Filter {
         }
     }
 
+    public static class TermsQueryFilter<T> extends Filter {
+
+        private final T[] terms;
+        private final FieldDescriptor descriptor;
+        private final String field;
+
+        /**
+         * Creates a {@link TermsQueryFilter} object based on a given field descriptor parameter
+         * and a list of values.
+         * @param descriptor {@link FieldDescriptor} of the field to build the filter over.
+         * @param terms T Value of the field to build the filter over.
+         * @param scope Enum describing the scope to perform the filter on.
+         */
+        public TermsQueryFilter(FieldDescriptor<T> descriptor, T[] terms, Scope scope) {
+            Objects.requireNonNull(descriptor);
+            Objects.requireNonNull(terms);
+            this.descriptor = descriptor;
+            this.terms = terms;
+            super.filterScope = scope;
+            this.field = descriptor.getName();
+        }
+
+        @Override
+        public Scope getFilterScope() {
+            return this.getFilterScope(this.descriptor);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s='%s'",
+                    descriptor.getName(),
+                    Arrays.asList(terms).stream().map(Object::toString).collect(Collectors.joining(", ")));
+        }
+
+        /**
+         * Get the filtered field name
+         * @return FieldDescriptor {@link TermsQueryFilter#descriptor} with the field description.
+         */
+        public FieldDescriptor getDescriptor() {
+            return descriptor;
+        }
+
+        /**
+         * Get the filtered value for the field.
+         * @return T {@link TermsQueryFilter#terms} with the value to filter by.
+         */
+        public List<T> getTerm() {
+            return Arrays.asList(terms);
+        }
+
+        /**
+         * Get the name of the field.
+         * @return  {@link String} with the value to field descriptor name.
+         */
+        public String getField() {
+            return field;
+        }
+
+        @Override
+        public Filter clone() {
+            final TermsQueryFilter<T> copy =
+                    new TermsQueryFilter<T>(this.descriptor,this.terms, super.filterScope);
+            return copy;
+        }
+
+    }
     private static class OrCollector extends FilterCollector {
         @Override
         public Function<ImmutableSet.Builder<Filter>, Filter> finisher() {
