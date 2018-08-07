@@ -363,7 +363,7 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                         //Initialize process result json object
                         process.addProperty(SEARCH_INTERACTION_SELECT, 0);
                         process.add(SEARCH_STEPS, new JsonObject());
-                        process.addProperty(SEARCH_FINAL_QUERY, false);
+                        process.addProperty(SEARCH_FINAL_QUERY, true);
 
 
                         //Calculate flattened list of filters
@@ -377,6 +377,8 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                         stepFilters.addAll(flattenedFilters);
                         if (Objects.nonNull(lastQuery)) {
                             if (isRefinedQuery(actual, lastQuery)) {
+                                //set previous as not final
+                                lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).addProperty(SEARCH_FINAL_QUERY, false);
                                 //Copy previous steps info into this query
                                 final JsonObject previousSteps = lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).get(SEARCH_STEPS).getAsJsonObject();
                                 final JsonObject copy = deepCopy(previousSteps);
@@ -391,7 +393,6 @@ public class ElasticSearchReportPreprocessor extends ReportPreprocessor {
                                 lastQuery = actual;
                             } else {
                                 searchStep = 1;
-                                lastQuery.getAsJsonObject(SEARCH_PRE_PROCESS_RESULT).addProperty(SEARCH_FINAL_QUERY, true);
                                 lastQuery = actual;
                             }
                         } else {
