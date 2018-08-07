@@ -39,6 +39,17 @@ public abstract class MultiValueFieldDescriptor<T> extends FieldDescriptor<T> {
         protected NumericFieldDescriptor(String fieldName, Class<T> type) {
             super(fieldName, type);
         }
+
+        /**
+         * Instantiates a new {@link Filter} which filters in all the documents matching at least one
+         * of the given terms.
+         * @param terms Number to check against.
+         * @return A configured filter for the field.
+         */
+        public Filter terms(Number... terms) {
+            return Filter.terms((FieldDescriptor) this, terms);
+        }
+
         /**
          * Instantiates a new {@link Filter} to checking if the field value is between two numbers.
          * @param start Lower number on the filter range check.
@@ -78,6 +89,16 @@ public abstract class MultiValueFieldDescriptor<T> extends FieldDescriptor<T> {
 
         protected DateFieldDescriptor(String fieldName, Class<T> type) {
             super(fieldName, type);
+        }
+
+        /**
+         * Instantiates a new {@link Filter} which filters in all the documents matching at least one
+         * of the given terms.
+         * @param terms date to check against.
+         * @return A configured filter for the field.
+         */
+        public Filter terms(ZonedDateTime... terms) {
+            return Filter.terms((FieldDescriptor) this, terms);
         }
 
         /**
@@ -175,6 +196,17 @@ public abstract class MultiValueFieldDescriptor<T> extends FieldDescriptor<T> {
         protected UtilDateFieldDescriptor(String fieldName, Class<T> type) {
             super(fieldName, type);
         }
+
+        /**
+         * Instantiates a new {@link Filter} which filters in all the documents matching at least one
+         * of the given terms.
+         * @param terms date to check against.
+         * @return A configured filter for the field.
+         */
+        public Filter terms(ZonedDateTime... terms) {
+            return Filter.terms((FieldDescriptor) this, terms);
+        }
+
         /**
          * Instantiates a new {@link Filter} to checking if the field value is between two dates.
          * @param start Earliest date on the filter range check.
@@ -288,6 +320,16 @@ public abstract class MultiValueFieldDescriptor<T> extends FieldDescriptor<T> {
          */
         public Filter prefix(String prefix) {
             return Filter.prefix(this.getName(), prefix);
+        }
+
+        /**
+         * Instantiates a new {@link Filter} which filters in all the documents matching at least one
+         * of the given terms.
+         * @param terms text to check against.
+         * @return A configured filter for the field.
+         */
+        public Filter terms(String... terms) {
+            return Filter.terms((FieldDescriptor) this, terms);
         }
     }
 

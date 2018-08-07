@@ -49,9 +49,30 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         }
 
         /**
+         * Instantiates a new {@link Filter} which filters in all the documents matching at least one
+         * of the given terms.
+         * @param terms text to check against.
+         * @return A configured filter for the field.
+         */
+        public Filter terms(String... terms) {
+            return Filter.terms(this, terms);
+        }
+
+        /**
+         * Instantiates a new {@link Filter} which filters in all the documents matching at least one
+         * of the given terms.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
+         * @param terms text to check against.
+         * @return A configured filter for the field.
+         */
+        public Filter terms(Scope scope, String... terms) {
+            return Filter.terms(this, scope, terms);
+        }
+
+        /**
          * Instantiates a new {@link Filter} to checking if the field value is equals to a text.
          * @param text text to check against.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter equals(String text, Scope scope) {
@@ -79,7 +100,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         /**
          * Instantiates a new {@link Filter} to checking if the field value has as prefix a text.
          * @param prefix text to check against.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter prefix(String prefix, Scope scope) {
@@ -107,6 +128,27 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         }
 
         /**
+         * Instantiates a new {@link Filter} which filters in all the documents matching at least one
+         * of the given terms.
+         * @param terms number to check against.
+         * @return A configured filter for the field.
+         */
+        public Filter terms(Number... terms) {
+            return Filter.terms(this, terms);
+        }
+
+        /**
+         * Instantiates a new {@link Filter} which filters in all the documents matching at least one
+         * of the given terms.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
+         * @param terms number to check against.
+         * @return A configured filter for the field.
+         */
+        public Filter terms(Scope scope, Number... terms) {
+            return Filter.terms(this, scope, terms);
+        }
+
+        /**
          * Instantiates a new {@link Filter} to checking if the field value is between two numbers.
          * @param start Lower number on the filter range check.
          * @param end Greater number in the filter range check.
@@ -120,7 +162,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
          * Instantiates a new {@link Filter} to checking if the field value is between two numbers.
          * @param start Lower number on the filter range check.
          * @param end Greater number in the filter range check.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter between(Number start, Number end, Scope scope) {
@@ -139,7 +181,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         /**
          * Instantiates a new {@link Filter} to checking if the field value is greater than a numbers.
          * @param number Number to check against.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter greaterThan(Number number, Scope scope) {
@@ -158,7 +200,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         /**
          * Instantiates a new {@link Filter} to checking if the field value is lower than a numbers.
          * @param number Number to check against.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter lesserThan(Number number, Scope scope) {
@@ -185,6 +227,26 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
             super(fieldName, type, facet, store);
         }
 
+        /**
+         * Instantiates a new {@link Filter} which filters in all the documents matching at least one
+         * of the given terms.
+         * @param terms date to check against.
+         * @return A configured filter for the field.
+         */
+        public Filter terms(ZonedDateTime... terms) {
+            return Filter.terms(this, terms);
+        }
+
+        /**
+         * Instantiates a new {@link Filter} which filters in all the documents matching at least one
+         * of the given terms.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
+         * @param terms date to check against.
+         * @return A configured filter for the field.
+         */
+        public Filter terms(Scope scope, ZonedDateTime... terms) {
+            return Filter.terms(this, scope, terms);
+        }
 
         /**
          * Instantiates a new {@link Filter} to checking if the field value is between two dates.
@@ -200,7 +262,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
          * Instantiates a new {@link Filter} to checking if the field value is between two dates.
          * @param start Earliest date on the filter range check.
          * @param end Latest date in the filter range check.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter between(ZonedDateTime start, ZonedDateTime end, Scope scope) {
@@ -221,7 +283,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
          * Instantiates a new {@link Filter} to checking if the field value is between two points in time.
          * @param start Earliest {@link DateMathExpression} on the filter range check.
          * @param end Latest {@link DateMathExpression} in the filter range check.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter between(DateMathExpression start, DateMathExpression end, Scope scope) {
@@ -242,7 +304,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
          * Instantiates a new {@link Filter} to checking if the field value is between two dates.
          * @param start Earliest date on the filter range check.
          * @param end Latest date in the filter range check.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter between(Date start, Date end, Scope scope) {
@@ -261,7 +323,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         /**
          * Instantiates a new {@link Filter} to checking if the field value is before a date.
          * @param date {@link DateMathExpression} to check against.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter before(DateMathExpression date, Scope scope) {
@@ -280,7 +342,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         /**
          * Instantiates a new {@link Filter} to checking if the field value is before a date.
          * @param date Date to check against.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter before(ZonedDateTime date, Scope scope) {
@@ -299,7 +361,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         /**
          * Instantiates a new {@link Filter} to checking if the field value is before a date.
          * @param date Date to check against.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter before(Date date, Scope scope) {
@@ -318,7 +380,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         /**
          * Instantiates a new {@link Filter} to checking if the field value is after a date.
          * @param date Date to check against.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter after(ZonedDateTime date, Scope scope) {
@@ -337,7 +399,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         /**
          * Instantiates a new {@link Filter} to checking if the field value is after a date.
          * @param date {@link DateMathExpression} to check against.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter after(DateMathExpression date, Scope scope) {
@@ -356,7 +418,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         /**
          * Instantiates a new {@link Filter} to checking if the field value is after a date.
          * @param date Date to check against.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter after(Date date, Scope scope) {
@@ -385,6 +447,27 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         }
 
         /**
+         * Instantiates a new {@link Filter} which filters in all the documents matching at least one
+         * of the given terms.
+         * @param terms date to check against.
+         * @return A configured filter for the field.
+         */
+        public Filter terms(ZonedDateTime... terms) {
+            return Filter.terms(this, terms);
+        }
+
+        /**
+         * Instantiates a new {@link Filter} which filters in all the documents matching at least one
+         * of the given terms.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
+         * @param terms date to check against.
+         * @return A configured filter for the field.
+         */
+        public Filter terms(Scope scope, ZonedDateTime... terms) {
+            return Filter.terms(this, scope, terms);
+        }
+
+        /**
          * Instantiates a new {@link Filter} to checking if the field value is between two dates.
          * @param start Earliest date on the filter range check.
          * @param end Latest date in the filter range check.
@@ -398,7 +481,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
          * Instantiates a new {@link Filter} to checking if the field value is between two dates.
          * @param start Earliest date on the filter range check.
          * @param end Latest date in the filter range check.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter between(ZonedDateTime start, ZonedDateTime end, Scope scope) {
@@ -419,7 +502,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
          * Instantiates a new {@link Filter} to checking if the field value is between two points in time.
          * @param start Earliest {@link DateMathExpression} on the filter range check.
          * @param end Latest {@link DateMathExpression} in the filter range check.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter between(DateMathExpression start, DateMathExpression end, Scope scope) {
@@ -440,7 +523,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
          * Instantiates a new {@link Filter} to checking if the field value is between two dates.
          * @param start Earliest date on the filter range check.
          * @param end Latest date in the filter range check.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter between(Date start, Date end, Scope scope) {
@@ -459,7 +542,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         /**
          * Instantiates a new {@link Filter} to checking if the field value is before a date.
          * @param date {@link DateMathExpression} to check against.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter before(DateMathExpression date, Scope scope) {
@@ -478,7 +561,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         /**
          * Instantiates a new {@link Filter} to checking if the field value is before a date.
          * @param date Date to check against.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter before(ZonedDateTime date, Scope scope) {
@@ -497,7 +580,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         /**
          * Instantiates a new {@link Filter} to checking if the field value is before a date.
          * @param date Date to check against.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter before(Date date, Scope scope) {
@@ -516,7 +599,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         /**
          * Instantiates a new {@link Filter} to checking if the field value is after a date.
          * @param date Date to check against.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter after(ZonedDateTime date, Scope scope) {
@@ -535,7 +618,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         /**
          * Instantiates a new {@link Filter} to checking if the field value is after a date.
          * @param date {@link DateMathExpression} to check against.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter after(DateMathExpression date, Scope scope) {
@@ -554,7 +637,7 @@ public abstract class MultiValuedComplexField<T,F,S> extends ComplexFieldDescrip
         /**
          * Instantiates a new {@link Filter} to checking if the field value is after a date.
          * @param date Date to check against.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          * @return A configured filter for the field.
          */
         public Filter after(Date date, Scope scope) {

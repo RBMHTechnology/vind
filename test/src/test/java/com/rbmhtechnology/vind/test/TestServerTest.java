@@ -2313,7 +2313,7 @@ public class TestServerTest {
     @Test
     public void test10001TermsTermQueryFilter() throws IOException, URISyntaxException {
 
-        final FieldDescriptor<String> title = new FieldDescriptorBuilder()
+        final SingleValueFieldDescriptor.TextFieldDescriptor title = new FieldDescriptorBuilder()
                 .setFullText(true)
                 .setFacet(true)
                 .buildTextField("title");
@@ -2339,7 +2339,7 @@ public class TestServerTest {
         final List<String> stringList = Files.readAllLines(filePath, charset);
 
         final FulltextSearch search = Search.fulltext()
-                .filter(Filter.terms(title,stringList.toArray(new String[]{})));
+                .filter(title.terms(stringList.toArray(new String[]{})));
 
         PageResult result = (PageResult)server.execute(search,assets);
 
