@@ -34,8 +34,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -2240,6 +2246,104 @@ public class TestServerTest {
         assertEquals(4,result.getNumOfResults());
     }
 
+    @Test
+    public void testTermQueryFilter() {
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
 
+        FieldDescriptor<String> title = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("title");
+
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+        SingleValueFieldDescriptor.UtilDateFieldDescriptor<Date> modified = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildUtilDateField("modified");
+
+        NumericFieldDescriptor<Long> category = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildMultivaluedNumericField("category", Long.class);
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(title)
+                .addField(created)
+                .addField(category)
+                .addField(modified)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(title, "Hello World")
+                .setValue(created, yesterday)
+                .setValue(modified, new Date())
+                .setValues(category, Arrays.asList(1L, 2L));
+
+        Document d2 = assets.createDoc("2")
+                .setValue(title, "Hello Friends")
+                .setValue(created, now)
+                .setValue(modified, new Date())
+                .addValue(category, 4L);
+
+        SearchServer server = testSearchServer.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.commit();
+
+        FulltextSearch search = Search.fulltext()
+                .filter(Filter.terms(category,1L, 4L))
+                .sort(desc(created));
+
+        PageResult result = (PageResult)server.execute(search,assets);
+
+        assertEquals(2, result.getNumOfResults());
+
+        search = Search.fulltext()
+                .filter(Filter.terms(created,yesterday))
+                .sort(desc(created));
+
+        result = (PageResult)server.execute(search,assets);
+
+        assertEquals(1, result.getNumOfResults());
+    }
+
+    @Test
+    public void test10001TermsTermQueryFilter() throws IOException, URISyntaxException {
+
+        final FieldDescriptor<String> title = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("title");
+
+        final DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(title)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(title, "Hello World");
+
+        Document d2 = assets.createDoc("2")
+                .setValue(title, "Hello Friends");
+
+        SearchServer server = testSearchServer.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.commit();
+
+        final Path filePath = Paths.get(this.getClass().getClassLoader().getResource("3000ids.test").toURI());
+        final Charset charset = Charset.defaultCharset();
+        final List<String> stringList = Files.readAllLines(filePath, charset);
+
+        final FulltextSearch search = Search.fulltext()
+                .filter(Filter.terms(title,stringList.toArray(new String[]{})));
+
+        PageResult result = (PageResult)server.execute(search,assets);
+
+        assertEquals(1, result.getNumOfResults());
+    }
 
 }

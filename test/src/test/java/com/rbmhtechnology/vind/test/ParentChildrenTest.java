@@ -4,6 +4,7 @@ import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
+import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.model.*;
@@ -125,7 +126,8 @@ public class ParentChildrenTest {
 
         assertEquals(1, server.execute(search2,parent).getNumOfResults());
 
-        FulltextSearch search3 = Search.fulltext("blue").orChildrenSearch(child);
+        FulltextSearch search3 = Search.fulltext("blue")
+                .orChildrenSearch(child);
 
         assertEquals(2, server.execute(search3,parent).getNumOfResults());
 
@@ -135,6 +137,7 @@ public class ParentChildrenTest {
         FulltextSearch search4 = Search
                 .fulltext("blue")
                 .filter(eq(parent_value, "red"))
+                .filter(Filter.terms(parent_value,"red"))
                 .orChildrenSearch(
                         Search.fulltext("blue"),
                         child
@@ -154,7 +157,11 @@ public class ParentChildrenTest {
 
     @Test
     public void testFilterOnlyWithChildrenValue() {
-        FulltextSearch search = Search.fulltext().setStrict(false).filter(eq(child_value, "red")).orChildrenSearch(child);
+        FulltextSearch search = Search.fulltext()
+                .setStrict(false)
+                .filter(eq(child_value, "red"))
+                .filter(Filter.terms(child_value,"red"))
+                .orChildrenSearch(child);
         SearchResult result = server.execute(search, parent);
         assertEquals(1, result.getNumOfResults());
         assertEquals(Integer.valueOf(1),result.getResults().get(0).getChildCount());
@@ -162,7 +169,11 @@ public class ParentChildrenTest {
 
     @Test
     public void testFilterOnlyWithParentValue() {
-        FulltextSearch search = Search.fulltext().setStrict(false).filter(eq(parent_value, "blue")).orChildrenSearch(child);
+        FulltextSearch search = Search.fulltext()
+                .setStrict(false)
+                .filter(eq(parent_value, "blue"))
+                .filter(Filter.terms(parent_value,"blue"))
+                .orChildrenSearch(child);
         SearchResult result = server.execute(search, parent);
         assertEquals(1, result.getNumOfResults());
         assertEquals(Integer.valueOf(2),result.getResults().get(0).getChildCount());
@@ -257,7 +268,7 @@ public class ParentChildrenTest {
     public void testFilterRandomOrderFailure() {
         FulltextSearch search = Search.fulltext()
                 .setStrict(false)
-                .filter(and(eq(child_value, "blue"), eq(shared_value, "red")))
+                .filter(and(eq(child_value, "blue"), Filter.terms(shared_value,"red")))
                 .orChildrenSearch(child);
         SearchResult result = server.execute(search, parent);
         assertEquals(2, result.getNumOfResults());

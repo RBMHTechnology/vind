@@ -35,7 +35,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
+import java.text.DateFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -374,11 +376,11 @@ public class SolrUtils {
             return StringUtils.join("{!query='", name,"' stats='", name,"' range='", name,"' ","ex=dt key='", name, "'}", StringUtils.join(fields,','));
         }
 
-        public static String buildSolrTermsQuery(List<?> values, FieldDescriptor field, Scope scope, String context) {
+        public static <T> String buildSolrTermsQuery(List<T> values, FieldDescriptor<T> field, Scope scope, String context) {
             final String prefixQuery =
                     "{!terms f=" + Fieldname.getFieldname(field,UseCase.valueOf(scope.name()), context) + "}";
             final String  query = values.stream()
-                    .map(Object::toString)
+                    .map( v -> FieldValue.getStringFieldValue(v, field))
                     .collect(Collectors.joining(","));
             return  prefixQuery + query;
         }
@@ -595,6 +597,17 @@ public class SolrUtils {
                     return value;
                 }
             }
+        }
+        public static String getStringFieldValue(Object value, FieldDescriptor<?> field) {
+            if (value instanceof ZonedDateTime) {
+             return DateTimeFormatter.ISO_INSTANT.format((ZonedDateTime) value);
+            }
+            if (value instanceof Date) {
+                final DateFormat df = new SimpleDateFormat("YYYY-MM-DDThh:mm:ssZ");
+                return df.format((Date) value);
+            }
+            return value.toString();
+
         }
     }
 
