@@ -52,10 +52,10 @@ public class ChildrenFilterSerializer {
         else if (OrFilter.class.isAssignableFrom(normalizedFilter.getClass()))
             return serialize((OrFilter)normalizedFilter);
         else if (isHierarchicalFilter(normalizedFilter)) {
-             final String parentFilter =  "(" + new SolrFilterSerializer(parentFactory, strict).serialize(normalizedFilter,searchContext) +")";
+             final String parentFilter =  new SolrFilterSerializer(parentFactory, strict).serialize(normalizedFilter,searchContext);
              return parentFilter;
         } else {
-            final String childFilter = "(" + new SolrFilterSerializer(childFactory, strict).serialize(normalizedFilter,searchContext) +")";
+            final String childFilter = new SolrFilterSerializer(childFactory, strict).serialize(normalizedFilter,searchContext);
             return  String.format(CHILD_QUERY_TEMPLATE,
                     TYPE,
                     parentFactory.getType(),
