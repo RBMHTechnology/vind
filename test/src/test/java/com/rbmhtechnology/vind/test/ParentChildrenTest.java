@@ -162,10 +162,11 @@ public class ParentChildrenTest {
 
     @Test
     public void testFilterOnlyWithParentValue() {
-        FulltextSearch search = Search.fulltext().setStrict(false).filter(eq(parent_value, "blue")).orChildrenSearch(child);
-        SearchResult result = server.execute(search, parent);
-        assertEquals(1, result.getNumOfResults());
-        assertEquals(Integer.valueOf(2),result.getResults().get(0).getChildCount());
+        final FulltextSearch search = Search.fulltext().setStrict(false)
+                .filter(or(eq(shared_value, "blue"),or(eq(child_value, "red"),eq(child_value,"green")))).orChildrenSearch(child);
+        final SearchResult result = server.execute(search, parent);
+        assertEquals(2, result.getNumOfResults());
+        assertEquals(Integer.valueOf(1),result.getResults().get(0).getChildCount());
     }
 
     //MBDN-579
@@ -260,7 +261,7 @@ public class ParentChildrenTest {
                 .filter(and(eq(child_value, "blue"), eq(shared_value, "red")))
                 .orChildrenSearch(child);
         SearchResult result = server.execute(search, parent);
-        assertEquals(2, result.getNumOfResults());
+        assertEquals(1, result.getNumOfResults());
         assertEquals(Integer.valueOf(0),result.getResults().get(0).getChildCount());//0 because none of the assets have the shared_value:red
     }
 
