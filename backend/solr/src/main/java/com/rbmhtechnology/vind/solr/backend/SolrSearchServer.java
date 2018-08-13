@@ -421,8 +421,9 @@ public class SolrSearchServer extends SearchServer {
 
                 //TODO clean up!
                 final String parentFilterQuery =  "(" + String.join(" AND ", query.getFilterQueries()) + ")";
-                final String childrenFilterQuery = search.getChildrenSearchString()
-                        .getFilter().accept(new SolrChildrenSerializerVisitor(factory,search.getChildrenFactory(),searchContext, search.getStrict()));
+                final String childrenFilterQuery =
+                        new ChildrenFilterSerializer(factory,search.getChildrenFactory(),searchContext, search.getStrict(), true)
+                                .serialize(search.getChildrenSearchString().getFilter());
 
                 query.set(CommonParams.FQ,
                         String.join(" ",
@@ -911,8 +912,10 @@ public class SolrSearchServer extends SearchServer {
 
                 //TODO clean up!
                 final String parentFilterQuery =  "(" + String.join(" AND ", query.getFilterQueries()) + ")";
-                final String childrenFilterQuery = search.getFilter()
-                        .accept(new SolrChildrenSerializerVisitor(assets,childFactory,searchContext, false));
+                final String childrenFilterQuery =
+                        new ChildrenFilterSerializer(assets, childFactory, searchContext, false, true)
+                                .serialize(search.getFilter());
+
                 final String childrenBJQ = "{!child of=\"_type_:"+assets.getType()+"\" v="+"$childrenFilterQuery"+"}";
                 query.set("childrenFilterQuery", childrenFilterQuery);
                 query.set(CommonParams.FQ, String.join(" OR ", parentFilterQuery, childrenBJQ));
