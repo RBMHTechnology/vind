@@ -4,6 +4,7 @@
 package com.rbmhtechnology.vind.solr.backend;
 
 import com.google.common.collect.Sets;
+import com.rbmhtechnology.vind.api.query.filter.FieldBasedFilter;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
@@ -218,21 +219,8 @@ public class ChildrenFilterSerializer {
 
     private boolean isHierarchicalFilter(Filter filter) {
 
+        if(filter instanceof FieldBasedFilter) return isHierarchicalField(((FieldBasedFilter) filter).getField());
         if(filter instanceof Filter.NotFilter) return isHierarchicalFilter((((NotFilter) filter).getDelegate()));
-        if(filter instanceof Filter.TermFilter) return isHierarchicalField(((Filter.TermFilter) filter).getField());
-        if(filter instanceof Filter.PrefixFilter) return isHierarchicalField(((Filter.PrefixFilter) filter).getField());
-        if(filter instanceof Filter.DescriptorFilter) return isHierarchicalField(((Filter.DescriptorFilter) filter).getField());
-        if(filter instanceof Filter.BeforeFilter) return isHierarchicalField(((Filter.BeforeFilter) filter).getField());
-        if(filter instanceof Filter.AfterFilter) return isHierarchicalField(((Filter.AfterFilter) filter).getField());
-        if(filter instanceof Filter.GreaterThanFilter) return isHierarchicalField(((Filter.GreaterThanFilter) filter).getField());
-        if(filter instanceof Filter.LowerThanFilter) return isHierarchicalField(((Filter.LowerThanFilter) filter).getField());
-        if(filter instanceof Filter.BetweenDatesFilter) return isHierarchicalField(((Filter.BetweenDatesFilter) filter).getField());
-        if(filter instanceof Filter.BetweenNumericFilter) return isHierarchicalField(((Filter.BetweenNumericFilter) filter).getField());
-        if(filter instanceof Filter.WithinBBoxFilter) return isHierarchicalField(((Filter.WithinBBoxFilter) filter).getField());
-        if(filter instanceof Filter.WithinCircleFilter) return isHierarchicalField(((Filter.WithinCircleFilter) filter).getField());
-        if(filter instanceof Filter.NotEmptyTextFilter) return isHierarchicalField(((Filter.NotEmptyTextFilter) filter).getField());
-        if(filter instanceof Filter.NotEmptyFilter) return isHierarchicalField(((Filter.NotEmptyFilter) filter).getField());
-        if(filter instanceof Filter.NotEmptyLocationFilter) return isHierarchicalField(((Filter.NotEmptyLocationFilter) filter).getField());
         if(filter instanceof Filter.ChildrenDocumentFilter) return true;
 
         throw new RuntimeException("Error parsing filter: Filter '" + filter.getClass() + "' not supported!");
@@ -242,17 +230,21 @@ public class ChildrenFilterSerializer {
         if(Objects.nonNull(this.childFactory)){
             final FieldDescriptor parentDescriptor = this.parentFactory.getField(fieldName);
             final FieldDescriptor childDescriptor = this.childFactory.getField(fieldName);
+
+            //Check if the field descriptor belongs to the parent and not to the children in a children search
             if(Objects.nonNull(parentDescriptor) && Objects.isNull(childDescriptor) && childrenSearch){
+                log.debug("The field [{}] is a parent property", fieldName);
                 return true;
             }
-
-            if(Objects.nonNull(parentDescriptor) && !childrenSearch){
+            //Check if the field belongs to the parent in a parent search
+            if(Objects.nonNull(parentDescriptor) && !childrenSearch) {
+                log.debug("The field [{}] is a parent property", fieldName);
                 return true;
             }
 
             return false;
         }
-
+        log.debug("There is no Children factory define therefore field [{}] is a parent property", fieldName);
         return true;
     }
 }

@@ -42,7 +42,7 @@ public abstract class Filter {
 
     public static final Scope DEFAULT_SCOPE = Scope.Facet;
 
-    private Scope filterScope;
+    protected Scope filterScope;
 
     public String getType() {
         return this.getClass().getSimpleName();
@@ -415,9 +415,6 @@ public abstract class Filter {
         return new ChildrenDocumentFilter(docFactory);
     }
 
-    public String accept(SerializerVisitor visitor){
-        return visitor.visit(this);
-    }
     /**
      * Filter Class implementing the query AND logic operation.
      */
@@ -629,7 +626,7 @@ public abstract class Filter {
      * Filter Class implementing a filter by field value. A query performed with this filter should return all the
      * documents with  this {@link TermFilter#field} and this value {@link TermFilter#term}.
      */
-    public static class TermFilter extends Filter { //TODO should we allow this?
+    public static class TermFilter extends FieldBasedFilter { //TODO should we allow this?
         private final String field;
         private final String term;
 
@@ -656,6 +653,7 @@ public abstract class Filter {
          * Get the filtered field name
          * @return String {@link TermFilter#field} with the field name.
          */
+        @Override
         public String getField() {
             return field;
         }
@@ -680,7 +678,7 @@ public abstract class Filter {
      * documents with  this {@link PrefixFilter#field} and starting
      * by this value {@link PrefixFilter#term}.
      */
-    public static class PrefixFilter extends Filter { //TODO should we allow this?
+    public static class PrefixFilter extends FieldBasedFilter { //TODO should we allow this?
         private final String field;
         private final String term;
 
@@ -714,6 +712,7 @@ public abstract class Filter {
          * Get the filtered field name
          * @return String {@link PrefixFilter#field} with the field name.
          */
+        @Override
         public String getField() {
             return field;
         }
@@ -732,7 +731,7 @@ public abstract class Filter {
      * documents with  this {@link DescriptorFilter#descriptor} and this value {@link DescriptorFilter#term}.
      * @param <T> The type of the field content to be filtered by.
      */
-    public static class DescriptorFilter<T> extends Filter { //TODO should we allow this?
+    public static class DescriptorFilter<T> extends FieldBasedFilter { //TODO should we allow this?
 
         private final T term;
         private final FieldDescriptor descriptor;
@@ -783,6 +782,7 @@ public abstract class Filter {
          * Get the name of the field.
          * @return  {@link String} with the value to field descriptor name.
          */
+        @Override
         public String getField() {
             return field;
         }
@@ -799,7 +799,7 @@ public abstract class Filter {
      * documents with  this {@link BetweenDatesFilter#field} and value between
      * {@link BetweenDatesFilter#start} and {@link BetweenDatesFilter#end}.
      */
-    public static class BetweenDatesFilter extends Filter {
+    public static class BetweenDatesFilter extends FieldBasedFilter {
         private final String field;
         private final DateMathExpression start;
         private final DateMathExpression end;
@@ -853,6 +853,7 @@ public abstract class Filter {
          * Get the filtered field name
          * @return String {@link BetweenDatesFilter#field} with the field name.
          */
+        @Override
         public String getField() {
             return field;
         }
@@ -878,7 +879,7 @@ public abstract class Filter {
      * Filter Class implementing a filter by field value. A query performed with this filter should return all the
      * documents with  this {@link BeforeFilter#field} and value before {@link BeforeFilter#date}.
      */
-    public static class BeforeFilter extends Filter {
+    public static class BeforeFilter extends FieldBasedFilter {
         private final String field;
         private final DateMathExpression date;
 
@@ -912,6 +913,7 @@ public abstract class Filter {
          * Get the filtered field name
          * @return String {@link BeforeFilter#field} with the field name.
          */
+        @Override
         public String getField() {
             return field;
         }
@@ -928,7 +930,7 @@ public abstract class Filter {
      * Filter Class implementing a filter by field value. A query performed with this filter should return all the
      * documents with  this {@link AfterFilter#field} and value after {@link AfterFilter#date}.
      */
-    public static class AfterFilter extends Filter {
+    public static class AfterFilter extends FieldBasedFilter {
         private final String field;
         private final DateMathExpression date;
 
@@ -962,6 +964,7 @@ public abstract class Filter {
          * Get the filtered field name
          * @return String {@link AfterFilter#field} with the field name.
          */
+        @Override
         public String getField() {
             return field;
         }
@@ -978,7 +981,7 @@ public abstract class Filter {
      * documents with this {@link BetweenNumericFilter#field} and value between
      * {@link BetweenNumericFilter#start} and {@link BetweenNumericFilter#end}.
      */
-    public static class BetweenNumericFilter extends Filter {
+    public static class BetweenNumericFilter extends FieldBasedFilter {
         private final String field;
         private final Number start;
         private final Number end;
@@ -1015,6 +1018,7 @@ public abstract class Filter {
          * Get the filtered field name
          * @return String {@link BetweenNumericFilter#field} with the field name.
          */
+        @Override
         public String getField() {
             return field;
         }
@@ -1038,7 +1042,7 @@ public abstract class Filter {
      * documents with  this {@link GreaterThanFilter#field} and value bigger than
      * {@link GreaterThanFilter#number}.
      */
-    public static class GreaterThanFilter extends Filter {
+    public static class GreaterThanFilter extends FieldBasedFilter {
         private final String field;
         private final Number number;
         /**
@@ -1070,6 +1074,7 @@ public abstract class Filter {
          * Get the filtered field name
          * @return String {@link GreaterThanFilter#field} with the field name.
          */
+        @Override
         public String getField() {
             return field;
         }
@@ -1086,7 +1091,7 @@ public abstract class Filter {
      * documents with  this {@link LowerThanFilter#field} and value lower than
      * {@link LowerThanFilter#number}.
      */
-    public static class LowerThanFilter extends Filter {
+    public static class LowerThanFilter extends FieldBasedFilter {
         private final String field;
         private final Number number;
         /**
@@ -1119,6 +1124,7 @@ public abstract class Filter {
          * Get the filtered field name
          * @return String {@link LowerThanFilter#field} with the field name.
          */
+        @Override
         public String getField() {
             return field;
         }
@@ -1138,7 +1144,7 @@ public abstract class Filter {
      * is within a bounding box (defined by {@link WithinBBoxFilter#upperLeft}
      * and {@link WithinBBoxFilter#lowerRight})
      */
-    public static class WithinBBoxFilter extends Filter {
+    public static class WithinBBoxFilter extends FieldBasedFilter {
         private final String field;
         private final LatLng upperLeft, lowerRight;
         /**
@@ -1193,6 +1199,7 @@ public abstract class Filter {
          * Get the filtered field name
          * @return String {@link WithinBBoxFilter#field} with the field name.
          */
+        @Override
         public String getField() {
             return field;
         }
@@ -1219,7 +1226,7 @@ public abstract class Filter {
      * documents with the value of this {@link WithinBBoxFilter#field}
      * is within a circle (defined by {@link WithinBBoxFilter#field}
      */
-    public static class WithinCircleFilter extends Filter {
+    public static class WithinCircleFilter extends FieldBasedFilter {
         private final String field;
         private final LatLng center;
         private final double distance;
@@ -1275,6 +1282,7 @@ public abstract class Filter {
          * Get the filtered field name
          * @return String {@link WithinBBoxFilter#field} with the field name.
          */
+        @Override
         public String getField() {
             return field;
         }
@@ -1301,7 +1309,7 @@ public abstract class Filter {
      * documents with have the {@link NotEmptyTextFilter#field}
      * with a value.
      */
-    public static class NotEmptyTextFilter extends Filter {
+    public static class NotEmptyTextFilter extends FieldBasedFilter {
 
         private final String field;
 
@@ -1333,6 +1341,7 @@ public abstract class Filter {
          * Get the filtered field name
          * @return String {@link NotEmptyTextFilter#field} with the field name.
          */
+        @Override
         public String getField() {
             return field;
         }
@@ -1343,7 +1352,7 @@ public abstract class Filter {
      * documents with have the {@link NotEmptyFilter#field}
      * with a value.
      */
-    public static class NotEmptyFilter extends Filter {
+    public static class NotEmptyFilter extends FieldBasedFilter {
 
         private final String field;
 
@@ -1375,6 +1384,7 @@ public abstract class Filter {
          * Get the filtered field name
          * @return String {@link NotEmptyFilter#field} with the field name.
          */
+        @Override
         public String getField() {
             return field;
         }
@@ -1385,7 +1395,7 @@ public abstract class Filter {
      * documents with have the {@link NotEmptyLocationFilter#field}
      * with a value.
      */
-    public static class NotEmptyLocationFilter extends Filter {
+    public static class NotEmptyLocationFilter extends FieldBasedFilter {
 
         private final String field;
 
@@ -1417,6 +1427,7 @@ public abstract class Filter {
          * Get the filtered field name
          * @return String {@link NotEmptyLocationFilter#field} with the field name.
          */
+        @Override
         public String getField() {
             return field;
         }
