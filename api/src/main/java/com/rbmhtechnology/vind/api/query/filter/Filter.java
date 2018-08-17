@@ -11,6 +11,7 @@ import com.rbmhtechnology.vind.utils.SerializerVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -234,6 +235,28 @@ public abstract class Filter {
     /**
      * Static method to instantiate a {@link BetweenDatesFilter} object based on a given field name, a start date
      * and an end date.
+     * @param field {@link String} name of the field to build the filter over.
+     * @param start {@link Date} object indicating the lower limit of a range.
+     * @param end {@link Date} object indicating the greater limit of a range.
+     * @return {@link BetweenDatesFilter} query object on the parameters provided.
+     */
+    public static Filter between(String field, Date start, Date end) { return new BetweenDatesFilter(field, new DateMathExpression(ZonedDateTime.ofInstant(start.toInstant(), ZoneOffset.UTC)),  new DateMathExpression(ZonedDateTime.ofInstant(end.toInstant(), ZoneOffset.UTC)), Scope.Facet);}
+
+    /**
+     * Static method to instantiate a {@link BetweenDatesFilter} object based on a given field name, a start date
+     * and an end date.
+     * @param field {@link String} name of the field to build the filter over.
+     * @param start {@link Date} object indicating the lower limit of a range.
+     * @param end {@link Date} object indicating the greater limit of a range.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
+     * @return {@link BetweenDatesFilter} query object on the parameters provided.
+     */
+    public static Filter between(String field, Date start, Date end, Scope scope) { return new BetweenDatesFilter(field, new DateMathExpression(ZonedDateTime.ofInstant(start.toInstant(), ZoneOffset.UTC)),  new DateMathExpression(ZonedDateTime.ofInstant(end.toInstant(), ZoneOffset.UTC)), scope);}
+
+
+    /**
+     * Static method to instantiate a {@link BetweenDatesFilter} object based on a given field name, a start date
+     * and an end date.
      * @param field String name of the field to build the filter over.
      * @param start DateMathExpression object indicating the lower limit of a range.
      * @param end DateMathExpression object indicating the greater limit of a range.
@@ -292,6 +315,24 @@ public abstract class Filter {
     public static Filter before(String field, ZonedDateTime date, Scope scope) { return new BeforeFilter(field, new DateMathExpression(date), scope);}
 
     /**
+     * Static method to instantiate a {@link BeforeFilter} object based on a given field name and a date.
+     * @param field {@link String} name of the field to build the filter over.
+     * @param date {@link Date} object setting the point in time where all field values later than it are filtered.
+     * @return {@link BeforeFilter} query object on the parameters provided.
+     */
+    public static Filter before(String field, Date date) { return new BeforeFilter(field, new DateMathExpression(ZonedDateTime.ofInstant(date.toInstant(), ZoneOffset.UTC)), Scope.Facet);}
+
+    /**
+     * Static method to instantiate a {@link BeforeFilter} object based on a given field name and a date.
+     * @param field {@link String} name of the field to build the filter over.
+     * @param date {@link Date} object setting the point in time where all field values later than it are filtered.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
+     * @return {@link BeforeFilter} query object on the parameters provided.
+     */
+    public static Filter before(String field, Date date, Scope scope) { return new BeforeFilter(field, new DateMathExpression(ZonedDateTime.ofInstant(date.toInstant(), ZoneOffset.UTC)), scope);}
+
+
+    /**
      * Static method to instantiate a {@link BeforeFilter} object based on a given field name and a date math expression.
      * @param field String name of the field to build the filter over.
      * @param date {@link DateMathExpression} object setting the point in time where all field values later than it are filtered.
@@ -343,6 +384,22 @@ public abstract class Filter {
      */
     public static Filter after(String field, ZonedDateTime date, Scope scope) { return new AfterFilter(field, new DateMathExpression(date), scope);}
 
+    /**
+     * Static method to instantiate a {@link AfterFilter} object based on a given field name and a date.
+     * @param field String name of the field to build the filter over.
+     * @param date ZoneDateTime object setting the point in time where all field values earlier than it are filtered.
+     * @return {@link AfterFilter} query object on the parameters provided.
+     */
+    public static Filter after(String field, Date date) { return new AfterFilter(field, new DateMathExpression(ZonedDateTime.ofInstant(date.toInstant(), ZoneOffset.UTC)), Scope.Facet);}
+
+    /**
+     * Static method to instantiate a {@link AfterFilter} object based on a given field name and a date.
+     * @param field String name of the field to build the filter over.
+     * @param date ZoneDateTime object setting the point in time where all field values earlier than it are filtered.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
+     * @return {@link AfterFilter} query object on the parameters provided.
+     */
+    public static Filter after(String field, Date date, Scope scope) { return new AfterFilter(field, new DateMathExpression(ZonedDateTime.ofInstant(date.toInstant(), ZoneOffset.UTC)), scope);}
 
     /**
      * Static method to instantiate a {@link AfterFilter} object based on a given field name and a point in time.
