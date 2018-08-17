@@ -69,6 +69,9 @@ public class IssueExampleTest extends SolrTestCaseJ4 {
                 "_type_","Asset",
                 "dynamic_single_stored_suggest_path_hierarchy1", "this/is a/vettel",
                 "dynamic_single_stored_suggest_path_hierarchy2", "vetter/test"));
+        assertU(adoc("_id_", "9",
+                "_type_","Asset",
+                "dynamic_multi_stored_suggest_string_source", "The Real Dingo"));
         assertU(commit());
     }
 
@@ -325,6 +328,24 @@ public class IssueExampleTest extends SolrTestCaseJ4 {
         assertQ("suggester - test path hierarchy", req,
                 "//response/lst[@name='suggestions']/int[@name='suggestion_count'][.='0']");
 
+    }
+
+    @Test
+    public void test_PSD_3756() {
+
+        ModifiableSolrParams params = new ModifiableSolrParams();
+
+        params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
+        params.add(CommonParams.Q,"The Real Dingo");
+        params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_suggest_string_source");
+        params.add(SuggestionRequestParams.SUGGESTION_DF,"suggestions");
+
+        SolrQueryRequest req = new LocalSolrQueryRequest( core, params );
+
+        assertQ("suggester - test path hierarchy", req,
+                "//response/lst[@name='suggestions']/int[@name='suggestion_count'][.='1']",
+                "//response/lst[@name='suggestions']/lst[@name='suggestion_facets']/lst[@name='dynamic_multi_stored_suggest_string_source']/int[@name='The Real Dingo'][.='1']");
 
     }
 

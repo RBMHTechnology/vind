@@ -127,9 +127,9 @@ public class SolrFilterSerializer {
     }
     public String serialize(Filter.ChildrenDocumentFilter filter, String searchContext) {
         if(StringUtils.isNotEmpty(filter.getNestedDocType())) {
-            return String.format("{!parent which=\"%s:%s\"} (%s:* AND %s:%s)", SolrUtils.Fieldname.TYPE, filter.getParentDocType(), SolrUtils.Fieldname.ID, SolrUtils.Fieldname.TYPE, filter.getNestedDocType());
+            return String.format("{!parent which=\"%s:%s\" v='%s:* AND %s:%s'}", SolrUtils.Fieldname.TYPE, filter.getParentDocType(), SolrUtils.Fieldname.ID, SolrUtils.Fieldname.TYPE, filter.getNestedDocType());
         } else {
-            return String.format("{!parent which=\"%s:%s\"} (%s:* AND -%s:%s)", SolrUtils.Fieldname.TYPE, filter.getParentDocType(), SolrUtils.Fieldname.ID, SolrUtils.Fieldname.TYPE, filter.getParentDocType());
+            return String.format("{!parent which=\"%s:%s\"  v='%s:* AND -%s:%s'}", SolrUtils.Fieldname.TYPE, filter.getParentDocType(), SolrUtils.Fieldname.ID, SolrUtils.Fieldname.TYPE, filter.getParentDocType());
         }
     }
 

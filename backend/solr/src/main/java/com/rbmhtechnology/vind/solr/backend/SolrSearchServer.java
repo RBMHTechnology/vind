@@ -421,8 +421,9 @@ public class SolrSearchServer extends SearchServer {
 
                 //TODO clean up!
                 final String parentFilterQuery =  "(" + String.join(" AND ", query.getFilterQueries()) + ")";
-                final String childrenFilterQuery = search.getChildrenSearchString()
-                        .getFilter().accept(new SolrChildrenSerializerVisitor(factory,search.getChildrenFactory(),searchContext, search.getStrict()));
+                final String childrenFilterQuery =
+                        new ChildrenFilterSerializer(factory,search.getChildrenFactory(),searchContext, search.getStrict(), true)
+                                .serialize(search.getChildrenSearchString().getFilter());
 
                 query.set(CommonParams.FQ,
                         String.join(" ",
@@ -618,35 +619,10 @@ public class SolrSearchServer extends SearchServer {
         final boolean isUpdatable = factory.isUpdatable() && factory.getFields().values().stream()
                                         .allMatch( descriptor -> descriptor.isUpdate());
         if (isUpdatable) {
-            final SolrInputDocument sdoc = new SolrInputDocument();
-            sdoc.addField(ID, update.getId());
-            sdoc.addField(TYPE, factory.getType());
 
-            HashMap<FieldDescriptor<?>, HashMap<String, SortedSet<UpdateOperation>>> updateOptions = update.getOptions();
-            updateOptions.keySet()
-                    .forEach(fieldDescriptor ->
-                        Stream.of(UseCase.values()).forEach(useCase ->
-                            updateOptions.get(fieldDescriptor).keySet()
-                                .stream().forEach(context -> {
-                                    //NOTE: Backwards compatibility
-                                    final String updateContext = Objects.isNull(context)? update.getUpdateContext() : context;
-                                    final String fieldName = getFieldname(fieldDescriptor, useCase, updateContext);
-                                    if (fieldName != null) {
-                                        final Map<String, Object> fieldModifiers = new HashMap<>();
-                                        updateOptions.get(fieldDescriptor).get(context).stream().forEach(entry -> {
-                                            UpdateOperations opType = entry.getType();
-                                            if(fieldName.startsWith("dynamic_single_") && useCase.equals(UseCase.Sort) && opType.equals(UpdateOperations.add)) {
-                                                opType = set;
-                                            }
-                                            fieldModifiers.put(opType.name(),
-                                                    toSolrJType(SolrUtils.FieldValue.getFieldCaseValue(entry.getValue(), fieldDescriptor, useCase)));
+            //Creates an atomic update solr document
+            final SolrInputDocument sdoc = getSolrUpdateDocument(update, factory.getType());
 
-                                        });
-                                        sdoc.addField(fieldName, fieldModifiers);
-                                    }
-                            })
-                        )
-                    );
             try {
 
                 if (solrClientLogger.isTraceEnabled()) {
@@ -658,6 +634,7 @@ public class SolrSearchServer extends SearchServer {
                 SolrInputDocument finalDoc = sdoc;
 
                 //Get the original document
+                log.debug("Atomic Update - Get version of original document [{}].",update.getId());
                 final SolrDocument updatedDoc = solrClient.getById(update.getId());
 
                 //Setting the document version for optimistic concurrency
@@ -665,20 +642,21 @@ public class SolrSearchServer extends SearchServer {
                 if (Objects.nonNull(version)) {
                     finalDoc.setField("_version_", version);
                 } else {
-                    log.warn("Error updating document '{}': " +
+                    log.warn("Error updating document [{}]: " +
                             "Atomic updates in nested documents are not supported by Solr", updatedDoc.get(ID));
 
                     return false;
                 }
 
                 //Get the nested docs of the document if existing
+                log.debug("Atomic Update - Get nested documents of [{}].",update.getId());
                 final NamedList<Object> paramList = new NamedList<>();
                 paramList.add(CommonParams.Q, "!( _id_:"+ update.getId()+")&(_root_:"+ update.getId()+")");
                 final QueryResponse query = solrClient.query(SolrParams.toSolrParams(paramList), SolrRequest.METHOD.POST);
 
                 //if the document has nested docs solr does not support atomic updates
                 if (CollectionUtils.isNotEmpty(query.getResults())) {
-                    log.info("Update document `{}`: doc has {} nested documents, changing from partial update to full index.",
+                    log.debug("Update document [{}]: doc has {} nested documents, changing from partial update to full index.",
                             finalDoc.getFieldValue(SolrUtils.Fieldname.ID), query.getResults().size());
                     //Get the list of nested documents
                     final List<SolrInputDocument> childDocs = query.getResults().stream()
@@ -689,11 +667,12 @@ public class SolrSearchServer extends SearchServer {
                 }
 
                 try {
-                    log.info("Updating document `{}`: current version `{}`", finalDoc.getFieldValue(SolrUtils.Fieldname.ID), version);
-                    solrClient.add(finalDoc);
+                    log.debug("Atomic Update - Updating document [{}]: current version [{}]", finalDoc.getFieldValue(SolrUtils.Fieldname.ID), version);
+                    final UpdateResponse response = solrClient.add(finalDoc);
+                    log.debug("Atomic Update - Solr update time: query time [{}] - elapsed time [{}]", response.getQTime(), response.getQTime());
                     return true;
                 } catch (HttpSolrClient.RemoteSolrException e) {
-                    log.warn("Error updating document {}: {}", finalDoc.getFieldValue(ID),e.getMessage(), e);
+                    log.warn("Error updating document [{}]: [{}]", finalDoc.getFieldValue(ID),e.getMessage(), e);
                     return false;
                 }
 
@@ -708,11 +687,52 @@ public class SolrSearchServer extends SearchServer {
         }
     }
 
+    private SolrInputDocument getSolrUpdateDocument(Update update, String type) {
+
+        final SolrInputDocument sdoc = new SolrInputDocument();
+        sdoc.addField(ID, update.getId());
+        sdoc.addField(TYPE, type);
+
+        log.debug("Atomic Update - Mapping the Vind update operations to a solr document with ID [{}].", update.getId());
+        final HashMap<FieldDescriptor<?>, HashMap<String, SortedSet<UpdateOperation>>> updateOptions = update.getOptions();
+
+        log.debug("Atomic Update - Updating {} fields.", updateOptions.keySet().size());
+        updateOptions.keySet()
+                .forEach(fieldDescriptor -> {
+                    log.debug("Atomic Update - Updating {} different contexts for field [{}].", updateOptions.get(fieldDescriptor).keySet().size(), fieldDescriptor);
+                    updateOptions.get(fieldDescriptor).keySet()
+                        .stream().forEach(context ->
+                            Stream.of(UseCase.values()).forEach(useCase -> {
+                                //NOTE: Backwards compatibility
+                                final String updateContext = Objects.isNull(context)? update.getUpdateContext() : context;
+                                final String fieldName = getFieldname(fieldDescriptor, useCase, updateContext);
+                                if (fieldName != null) {
+                                    final Map<String, Object> fieldModifiers = new HashMap<>();
+                                    updateOptions.get(fieldDescriptor).get(context).stream().forEach(entry -> {
+                                        UpdateOperations opType = entry.getType();
+                                        if(fieldName.startsWith("dynamic_single_") && useCase.equals(UseCase.Sort) && opType.equals(UpdateOperations.add)) {
+                                            opType = set;
+                                        }
+                                        fieldModifiers.put(opType.name(),
+                                                toSolrJType(SolrUtils.FieldValue.getFieldCaseValue(entry.getValue(), fieldDescriptor, useCase)));
+
+                                    });
+                                    sdoc.addField(fieldName, fieldModifiers);
+                                }
+                        })
+                    );
+                    }
+                );
+        return sdoc;
+    }
+
     private SolrInputDocument getUpdatedSolrDocument(SolrInputDocument sdoc, SolrDocument updatedDoc, List<SolrInputDocument> nestedDocs) {
 
         //TODO:find a better way - non deprecated way
         //Create an input document from the original doc to be updated
         final SolrInputDocument inputDoc = ClientUtils.toSolrInputDocument(updatedDoc);
+
+        log.debug("Atomic Update - Manually update Document [{}].", sdoc.getField(ID).getValue());
 
         //Add nested documents to the doc
         inputDoc.addChildDocuments(nestedDocs);
@@ -911,8 +931,10 @@ public class SolrSearchServer extends SearchServer {
 
                 //TODO clean up!
                 final String parentFilterQuery =  "(" + String.join(" AND ", query.getFilterQueries()) + ")";
-                final String childrenFilterQuery = search.getFilter()
-                        .accept(new SolrChildrenSerializerVisitor(assets,childFactory,searchContext, false));
+                final String childrenFilterQuery =
+                        new ChildrenFilterSerializer(assets, childFactory, searchContext, false, true)
+                                .serialize(search.getFilter());
+
                 final String childrenBJQ = "{!child of=\"_type_:"+assets.getType()+"\" v="+"$childrenFilterQuery"+"}";
                 query.set("childrenFilterQuery", childrenFilterQuery);
                 query.set(CommonParams.FQ, String.join(" OR ", parentFilterQuery, childrenBJQ));

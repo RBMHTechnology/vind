@@ -168,7 +168,7 @@ public class SolrUtils {
 
         public static String buildFilterString(Filter filter, DocumentFactory factory,DocumentFactory childFactory,String searchContext, boolean strict) {
 
-            final String serializedFilters = filter.accept(new SolrFilterSerializerVisitor(factory,childFactory,searchContext, strict));
+            final String serializedFilters = new ChildrenFilterSerializer(factory,childFactory,searchContext, strict, false).serialize(filter);
             final String typeFilterString = "+_type_:" + factory.getType();
             if(StringUtils.isNotBlank(serializedFilters)) {
                 return String.join(" +", typeFilterString, serializedFilters);
@@ -182,7 +182,7 @@ public class SolrUtils {
         }
         public static void buildFilterString(Filter filter, DocumentFactory factory,DocumentFactory childFactory,SolrQuery query,String searchContext, boolean strict) {
            // query.add(CommonParams.FQ,"_type_:"+factory.getType());
-            final String serialize = filter.accept(new SolrFilterSerializerVisitor(factory,childFactory,searchContext, strict));
+            final String serialize = new ChildrenFilterSerializer(factory,childFactory,searchContext, strict, false).serialize(filter);
             if(StringUtils.isNotBlank(serialize)) {
                 query.add(CommonParams.FQ, serialize);
             }
