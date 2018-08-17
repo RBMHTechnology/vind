@@ -2,6 +2,7 @@ package com.rbmhtechnology.vind.api.query.filter;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
@@ -118,7 +119,7 @@ public abstract class Filter {
      * Static method to instantiate a {@link TermFilter} object based on a given field name parameter and a value.
      * @param field String name of the field to build the filter over.
      * @param term String Value of the field to build the filter over.
-     * @param scope Enum describing the scope to perform the filter on.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
      * @return {@link TermFilter} query object on the parameters provided.
      */
     public static Filter eq(String field, String term, Scope scope) {
@@ -152,12 +153,38 @@ public abstract class Filter {
      * parameter and a value.
      * @param descriptor {@link FieldDescriptor} indicating which field should be filterd by.
      * @param term Value of the field of type T.
-     * @param scope Enum describing the scope to perform the filter on.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
      * @param <T> Type of content the field can store.
      * @return {@link DescriptorFilter} query object on the parameters provided.
      */
     public static <T> Filter eq(FieldDescriptor<T> descriptor, T term, Scope scope) {
         return new DescriptorFilter(descriptor, term, scope);
+    }
+
+    /**
+     * Static method to instantiate a {@link TermsQueryFilter} object based on a given field descriptor
+     * and a list of values.
+     * @param field
+     * @param values
+     * @param <T>
+     * @return
+     */
+    public static <T> Filter terms(FieldDescriptor<T> field, T... values) {
+        return new TermsQueryFilter(field, values,null);
+    }
+
+    /**
+     * Static method to instantiate a {@link TermsQueryFilter} object based on a given field descriptor
+     * and a list of values.
+     * @param field
+     * @param values
+     * @param scope
+     * @param <T>
+     * @return
+     */
+    public static <T> Filter terms(FieldDescriptor<T> field, Scope scope, T... values) {
+
+        return new TermsQueryFilter(field, values, scope);
     }
 
     /**
@@ -176,7 +203,7 @@ public abstract class Filter {
      * prefix.
      * @param field String name of the field to build the filter over.
      * @param prefix String prefix to filter by the documents.
-     * @param scope Enum describing the scope to perform the filter on.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
      * @return {@link PrefixFilter} query object on the parameters provided.
      */
     public static Filter prefix(String field, String prefix, Scope scope) {
@@ -199,7 +226,7 @@ public abstract class Filter {
      * @param field String name of the field to build the filter over.
      * @param start ZoneDateTime object indicating the lower limit of a range.
      * @param end ZoneDateTime object indicating the greater limit of a range.
-     * @param scope Enum describing the scope to perform the filter on.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
      * @return {@link BetweenDatesFilter} query object on the parameters provided.
      */
     public static Filter between(String field, ZonedDateTime start, ZonedDateTime end, Scope scope) { return new BetweenDatesFilter(field, new DateMathExpression(start), new DateMathExpression(end), scope);}
@@ -220,7 +247,7 @@ public abstract class Filter {
      * @param field String name of the field to build the filter over.
      * @param start DateMathExpression object indicating the lower limit of a range.
      * @param end DateMathExpression object indicating the greater limit of a range.
-     * @param scope Enum describing the scope to perform the filter on.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
      * @return {@link BetweenDatesFilter} query object on the parameters provided.
      */
     public static Filter between(String field, DateMathExpression start, DateMathExpression end, Scope scope) { return new BetweenDatesFilter(field, start,  end, scope);}
@@ -242,7 +269,7 @@ public abstract class Filter {
      * @param field String name of the field to build the filter over.
      * @param start Number object indicating the lower limit of a range.
      * @param end Number object indicating the greater limit of a range.
-     * @param scope Enum describing the scope to perform the filter on.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
      * @return {@link BetweenNumericFilter} query object on the parameters provided.
      */
     public static Filter between(String field, Number start, Number end, Scope scope) { return new BetweenNumericFilter(field, start,  end, scope);}
@@ -259,7 +286,7 @@ public abstract class Filter {
      * Static method to instantiate a {@link BeforeFilter} object based on a given field name and a date.
      * @param field String name of the field to build the filter over.
      * @param date ZoneDateTime object setting the point in time where all field values later than it are filtered.
-     * @param scope Enum describing the scope to perform the filter on.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
      * @return {@link BeforeFilter} query object on the parameters provided.
      */
     public static Filter before(String field, ZonedDateTime date, Scope scope) { return new BeforeFilter(field, new DateMathExpression(date), scope);}
@@ -276,7 +303,7 @@ public abstract class Filter {
      * Static method to instantiate a {@link BeforeFilter} object based on a given field name and a date math expression.
      * @param field String name of the field to build the filter over.
      * @param date {@link DateMathExpression} object setting the point in time where all field values later than it are filtered.
-     * @param scope Enum describing the scope to perform the filter on.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
      * @return {@link BeforeFilter} query object on the parameters provided.
      */
     public static Filter before(String field, DateMathExpression date,Scope scope) { return new BeforeFilter(field, date, scope);}
@@ -294,7 +321,7 @@ public abstract class Filter {
      * Static method to instantiate a {@link GreaterThanFilter} object based on a given field name and a number.
      * @param field String name of the field to build the filter over.
      * @param number Number object setting the value where all field values smaller than it are filtered.
-     * @param scope Enum describing the scope to perform the filter on.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
      * @return {@link GreaterThanFilter} query object on the parameters provided.
      */
     public static Filter greaterThan(String field, Number number, Scope scope) { return new GreaterThanFilter(field, number, scope);}
@@ -311,7 +338,7 @@ public abstract class Filter {
      * Static method to instantiate a {@link AfterFilter} object based on a given field name and a date.
      * @param field String name of the field to build the filter over.
      * @param date ZoneDateTime object setting the point in time where all field values earlier than it are filtered.
-     * @param scope Enum describing the scope to perform the filter on.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
      * @return {@link AfterFilter} query object on the parameters provided.
      */
     public static Filter after(String field, ZonedDateTime date, Scope scope) { return new AfterFilter(field, new DateMathExpression(date), scope);}
@@ -329,7 +356,7 @@ public abstract class Filter {
      * Static method to instantiate a {@link AfterFilter} object based on a given field name and a point in time.
      * @param field String name of the field to build the filter over.
      * @param date {@link DateMathExpression} object setting the point in time where all field values earlier than it are filtered.
-     * @param scope Enum describing the scope to perform the filter on.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
      * @return {@link AfterFilter} query object on the parameters provided.
      */
     public static Filter after(String field, DateMathExpression date, Scope scope) { return new AfterFilter(field, date, scope);}
@@ -346,7 +373,7 @@ public abstract class Filter {
      * Static method to instantiate a {@link LowerThanFilter} object based on a given field name and a number.
      * @param field String name of the field to build the filter over.
      * @param number Number object setting the value where all field values greater than it are filtered.
-     * @param scope Enum describing the scope to perform the filter on.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
      * @return {@link LowerThanFilter} query object on the parameters provided.
      */
     public static Filter lesserThan(String field, Number number, Scope scope) { return new LowerThanFilter(field, number, scope);}
@@ -367,7 +394,7 @@ public abstract class Filter {
      * @param field String name of the field to build the filter over.
      * @param upperLeft the upper left corner of the bounding box
      * @param lowerRight the lower right corner of the bounding box
-     * @param scope Enum describing the scope to perform the filter on.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
      * @return {@link WithinBBoxFilter} query object on the parameters provided.
      */
     public static Filter withinBBox(String field, LatLng upperLeft, LatLng lowerRight, Scope scope) {
@@ -390,7 +417,7 @@ public abstract class Filter {
      * @param field String name of the field to build the filter over.
      * @param center the center of the circle
      * @param distance the radius of the circle in kilometers
-     * @param scope Enum describing the scope to perform the filter on.
+     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
      * @return {@link WithinCircleFilter} query object on the parameters provided.
      */
     public static Filter withinCircle(String field, LatLng center, double distance, Scope scope) {
@@ -634,7 +661,7 @@ public abstract class Filter {
          * Creates a {@link TermFilter} object based on a given field name parameter and a value.
          * @param field String name of the field to build the filter over.
          * @param term String Value of the field to build the filter over.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          */
         public TermFilter(String field, String term, Scope scope) {
             Objects.requireNonNull(field);
@@ -687,7 +714,7 @@ public abstract class Filter {
          * field name parameter and a value.
          * @param field String name of the field to build the filter over.
          * @param term String Value of the field to build the filter over.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          */
         public PrefixFilter(String field, String term, Scope scope) {
             Objects.requireNonNull(field);
@@ -741,7 +768,7 @@ public abstract class Filter {
          * Creates a {@link DescriptorFilter} object based on a given field descriptor parameter and a value.
          * @param descriptor {@link FieldDescriptor} of the field to build the filter over.
          * @param term T Value of the field to build the filter over.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          */
         public DescriptorFilter(FieldDescriptor descriptor, T term, Scope scope) {
             Objects.requireNonNull(descriptor);
@@ -810,7 +837,7 @@ public abstract class Filter {
          * @param field String name of the field to build the filter over.
          * @param start {@link DateMathExpression} setting the starting time point of the period to be filtered by.
          * @param end {@link DateMathExpression} setting the ending time point of the period to be filtered by.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          */
          public BetweenDatesFilter(String field, DateMathExpression start, DateMathExpression end, Scope scope) {
             Objects.requireNonNull(field);
@@ -887,7 +914,7 @@ public abstract class Filter {
          * Creates a {@link BeforeFilter} object based on a given field name parameter and a date.
          * @param field String name of the field to build the filter over.
          * @param date ZoneDateTime date setting the time point before which all documents are filtered by.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          */
         public BeforeFilter(String field, DateMathExpression date, Scope scope) {
             Objects.requireNonNull(field);
@@ -938,7 +965,7 @@ public abstract class Filter {
          * Creates a {@link AfterFilter} object based on a given field name parameter and a date.
          * @param field String name of the field to build the filter over.
          * @param date {@link DateMathExpression} setting the time point after which all documents are filtered by.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          */
         public AfterFilter(String field, DateMathExpression date, Scope scope) {
             Objects.requireNonNull(field);
@@ -991,7 +1018,7 @@ public abstract class Filter {
          * @param field String name of the field to build the filter over.
          * @param start Number date setting the starting point of the period to be filtered by.
          * @param end Number date setting the ending point of the period to be filtered by.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          */
         public BetweenNumericFilter(String field, Number start, Number end, Scope scope) {
             Objects.requireNonNull(field);
@@ -1049,7 +1076,7 @@ public abstract class Filter {
          * Creates a {@link GreaterThanFilter} object based on a given field name parameter and a number.
          * @param field String name of the field to build the filter over.
          * @param number Number setting the point which all documents with a lower value are filtered by.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          */
         public GreaterThanFilter(String field, Number number, Scope scope) {
             Objects.requireNonNull(field);
@@ -1098,7 +1125,7 @@ public abstract class Filter {
          * Creates a {@link LowerThanFilter} object based on a given field name parameter and a number.
          * @param field String name of the field to build the filter over.
          * @param number Number setting the point which all documents with a greater value are filtered by.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          */
         public LowerThanFilter(String field, Number number, Scope scope) {
             Objects.requireNonNull(field);
@@ -1171,7 +1198,7 @@ public abstract class Filter {
          * @param field String name of the field to build the filter over.
          * @param upperLeft The upper left corner of the bounding box
          * @param lowerRight The lower right corner of the bounding box
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          */
         public WithinBBoxFilter(String field, LatLng upperLeft, LatLng lowerRight, Scope scope) {
             Objects.requireNonNull(field);
@@ -1254,7 +1281,7 @@ public abstract class Filter {
          * @param field String name of the field to build the filter over.
          * @param center The center of the circle
          * @param distance The radius of the circle
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          */
         public WithinCircleFilter(String field, LatLng center, double distance, Scope scope) {
             Objects.requireNonNull(field);
@@ -1317,7 +1344,7 @@ public abstract class Filter {
          * Creates a {@link NotEmptyTextFilter} object based on a given
          * field name parameter.
          * @param field String name of the field to build the filter over.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          */
         public NotEmptyTextFilter(String field, Scope scope) {
             Objects.requireNonNull(field);
@@ -1360,7 +1387,7 @@ public abstract class Filter {
          * Creates a {@link NotEmptyFilter} object based on a given
          * field name parameter.
          * @param field String name of the field to build the filter over.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          */
         public NotEmptyFilter(String field, Scope scope) {
             Objects.requireNonNull(field);
@@ -1403,7 +1430,7 @@ public abstract class Filter {
          * Creates a {@link NotEmptyLocationFilter} object based on a given
          * field name parameter.
          * @param field String name of the field to build the filter over.
-         * @param scope Enum describing the scope to perform the filter on.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
          */
         public NotEmptyLocationFilter(String field, Scope scope) {
             Objects.requireNonNull(field);
@@ -1517,6 +1544,73 @@ public abstract class Filter {
         }
     }
 
+    public static class TermsQueryFilter<T> extends FieldBasedFilter {
+
+        private final T[] terms;
+        private final FieldDescriptor descriptor;
+        private final String field;
+
+        /**
+         * Creates a {@link TermsQueryFilter} object based on a given field descriptor parameter
+         * and a list of values.
+         * @param descriptor {@link FieldDescriptor} of the field to build the filter over.
+         * @param terms T Value of the field to build the filter over.
+         * @param scope Enum {@link Scope} describing the scope to perform the filter on.
+         */
+        public TermsQueryFilter(FieldDescriptor<T> descriptor, T[] terms, Scope scope) {
+            Objects.requireNonNull(descriptor);
+            Objects.requireNonNull(terms);
+            this.descriptor = descriptor;
+            this.terms = terms;
+            super.filterScope = scope;
+            this.field = descriptor.getName();
+        }
+
+        @Override
+        public Scope getFilterScope() {
+            return this.getFilterScope(this.descriptor);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s='%s'",
+                    descriptor.getName(),
+                    Arrays.asList(terms).stream().map(Object::toString).collect(Collectors.joining(", ")));
+        }
+
+        /**
+         * Get the filtered field name
+         * @return FieldDescriptor {@link TermsQueryFilter#descriptor} with the field description.
+         */
+        public FieldDescriptor getDescriptor() {
+            return descriptor;
+        }
+
+        /**
+         * Get the filtered value for the field.
+         * @return T {@link TermsQueryFilter#terms} with the value to filter by.
+         */
+        public List<T> getTerm() {
+            return Arrays.asList(terms);
+        }
+
+        /**
+         * Get the name of the field.
+         * @return  {@link String} with the value to field descriptor name.
+         */
+        @Override
+        public String getField() {
+            return field;
+        }
+
+        @Override
+        public Filter clone() {
+            final TermsQueryFilter<T> copy =
+                    new TermsQueryFilter<T>(this.descriptor,this.terms, super.filterScope);
+            return copy;
+        }
+
+    }
     private static class OrCollector extends FilterCollector {
         @Override
         public Function<ImmutableSet.Builder<Filter>, Filter> finisher() {

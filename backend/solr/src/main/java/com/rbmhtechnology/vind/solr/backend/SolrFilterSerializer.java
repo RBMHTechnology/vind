@@ -39,6 +39,7 @@ public class SolrFilterSerializer {
         if(filter instanceof Filter.OrFilter) return serialize((Filter.OrFilter)filter, searchContext);
         if(filter instanceof Filter.NotFilter) return serialize((Filter.NotFilter)filter, searchContext);
         if(filter instanceof Filter.TermFilter) return serialize((Filter.TermFilter)filter, searchContext);
+        if(filter instanceof Filter.TermsQueryFilter) return serialize((Filter.TermsQueryFilter)filter, searchContext);
         if(filter instanceof Filter.PrefixFilter) return serialize((Filter.PrefixFilter)filter, searchContext);
         if(filter instanceof Filter.DescriptorFilter) return serialize((Filter.DescriptorFilter)filter, searchContext);
         if(filter instanceof Filter.BeforeFilter) return serialize((Filter.BeforeFilter)filter, searchContext);
@@ -73,6 +74,10 @@ public class SolrFilterSerializer {
 
     public String serialize(Filter.TermFilter filter, String searchContext) {
         return getFieldName(filter.getField(), searchContext, SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())) + ":\"" + filter.getTerm() + "\"";
+    }
+
+    public String serialize(Filter.TermsQueryFilter filter, String searchContext) {
+        return SolrUtils.Query.buildSolrTermsQuery(filter.getTerm(), filter.getDescriptor(), filter.getFilterScope(), searchContext);
     }
 
     public String serialize(Filter.PrefixFilter filter, String searchContext) {
@@ -135,6 +140,7 @@ public class SolrFilterSerializer {
         if(filter instanceof Filter.OrFilter) return coolNamedMethod((Filter.OrFilter) filter);
         if(filter instanceof Filter.NotFilter) return coolNamedMethod((Filter.NotFilter) filter);
         if(filter instanceof Filter.TermFilter) return coolNamedMethod((Filter.TermFilter) filter);
+        if(filter instanceof Filter.TermsQueryFilter) return coolNamedMethod((Filter.TermsQueryFilter)filter);
         if(filter instanceof Filter.PrefixFilter) return coolNamedMethod((Filter.PrefixFilter) filter);
         if(filter instanceof Filter.DescriptorFilter) return coolNamedMethod((Filter.DescriptorFilter) filter);
         if(filter instanceof Filter.BeforeFilter) return coolNamedMethod((Filter.BeforeFilter) filter);
@@ -186,6 +192,15 @@ public class SolrFilterSerializer {
         }
     }
     public Filter coolNamedMethod(Filter.TermFilter filter) {
+        final FieldDescriptor descriptor = factory.getField(filter.getField());
+        if(Objects.isNull(descriptor)){
+            return null;
+        } else {
+            return filter;
+        }
+    }
+
+    public Filter coolNamedMethod(Filter.TermsQueryFilter filter) {
         final FieldDescriptor descriptor = factory.getField(filter.getField());
         if(Objects.isNull(descriptor)){
             return null;

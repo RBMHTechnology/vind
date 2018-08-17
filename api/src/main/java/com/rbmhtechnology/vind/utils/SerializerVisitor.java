@@ -13,6 +13,7 @@ public interface SerializerVisitor {
     String visit(OrFilter filter) ;
     String visit(NotFilter filter) ;
     String visit(TermFilter filter) ;
+    String visit(TermsQueryFilter filter) ;
     String visit(PrefixFilter filter) ;
     String visit(DescriptorFilter filter) ;
     String visit(BeforeFilter filter) ;
