@@ -4,10 +4,11 @@
         <artifactId>monitoring-analysis</artifactId>
         <groupId>com.rbmhtechnology.vind</groupId>
         <version>1.2.2-SNAPSHOT</version>
+        <relativePath>../../../</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>analysis-report</artifactId>
+    <artifactId>Vind - Analysis-report</artifactId>
 
     <dependencies>
         <!--HTML templating-->
@@ -25,9 +26,15 @@
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
+        <!-- Vind module dependencies-->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>monitoring-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>monitoring-utils</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!-- Runnable Client -->
