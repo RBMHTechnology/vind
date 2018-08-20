@@ -13,12 +13,18 @@
     <name>Vind - Monitoring ElasticSearch Writer</name>
 
     <dependencies>
+        <!-- Vind module dependencies-->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>monitoring-api</artifactId>
             <version>${project.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>monitoring-utils</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- Test dependencies -->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>vind-testsuite</artifactId>

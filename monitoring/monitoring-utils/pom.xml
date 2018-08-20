@@ -9,16 +9,11 @@
         <relativePath>../../</relativePath>
     </parent>
 
-    <artifactId>monitoring-api</artifactId>
-    <name>Vind - Monitoring API</name>
+    <artifactId>monitoring-utils</artifactId>
+    <name>Vind - Monitoring Utils</name>
 
     <dependencies>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>vind-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
+        <!--JSON marshalling utils -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -26,6 +21,29 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
+        <!-- resource loader -->
+        <dependency>
+            <groupId>io.redlink.utils</groupId>
+            <artifactId>utils</artifactId>
+        </dependency>
+
+        <!-- Elasticsearch client-->
+        <dependency>
+            <groupId>io.searchbox</groupId>
+            <artifactId>jest</artifactId>
+            <version>5.3.3</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!--Test-->
