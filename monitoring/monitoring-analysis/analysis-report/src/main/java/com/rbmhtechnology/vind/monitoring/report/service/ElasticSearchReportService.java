@@ -12,7 +12,6 @@ import com.rbmhtechnology.vind.monitoring.report.configuration.ElasticSearchRepo
 import com.rbmhtechnology.vind.monitoring.report.preprocess.ElasticSearchReportPreprocessor;
 import com.rbmhtechnology.vind.monitoring.report.preprocess.ReportPreprocessor;
 import com.rbmhtechnology.vind.monitoring.utils.ElasticSearchClient;
-import com.rbmhtechnology.vind.monitoring.utils.ElasticSearchClientBuilder;
 import io.searchbox.client.JestResult;
 import io.searchbox.core.SearchResult;
 import io.searchbox.core.search.aggregation.DateHistogramAggregation;
@@ -31,7 +30,7 @@ import java.util.stream.Collectors;
  */
 public class ElasticSearchReportService extends ReportService implements AutoCloseable {
 
-    private static final Logger log = LoggerFactory.getLogger(ElasticSearchClientBuilder.class);
+    private static final Logger log = LoggerFactory.getLogger(ElasticSearchReportService.class);
     private final ElasticSearchReportPreprocessor preprocessor;
     private ElasticSearchClient elasticClient = new ElasticSearchClient();
     private final ElasticSearchReportConfiguration configuration;
