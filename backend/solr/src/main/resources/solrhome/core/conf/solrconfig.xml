@@ -372,6 +372,8 @@
 
   </requestDispatcher>
 
+  <!-- Solr analysis handlers-->
+  <requestHandler name="/analysis/field" class="solr.FieldAnalysisRequestHandler" />
 
   <requestHandler name="/get" class="solr.RealTimeGetHandler">
     <lst name="defaults">

@@ -77,3 +77,11 @@ default scope due to a null FieldDescriptor.
 * Changed configuration properties preference order (from most relevant to less): Environment properties > provided config file > default config file.
 * BugFix: suggestion handler maps every different type of single quote to the same (the same goes for double quotes and other special characters).
 * BugFix: Solved issue with connection timeout when creating reports.
+
+## 1.2.2
+* Bugfix #46: fixed issue in children filter serialization normalizing the filters to logical DNF and grouping them afterwards by hierarchical scope.
+* Improvement #51: removed ElasticSearch Jest client dependency from _monitoring-api_ module by extracting it to a new _monitoring-utils_ module.
+* Improvement #50: added helper methods to create _before_, _after_ and _between_ filters from java util Date.
+* Feature #45: added a new filter _TermsQueryFilter_ which enables the possibility to do huge comma separated term filters by the means of the _TermsQuery_ parser in Solr.
+* Bugfix #43: fixed preprocessing from analysis report to add _final_ flag to fulltext queries which the last entry of a session and have no following closing action (like selection of a document or restarting of the search).
+* Feature #53: Added field analysis handler.

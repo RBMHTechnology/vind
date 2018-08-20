@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.rbmhtechnology.vind</groupId>
         <artifactId>vind</artifactId>
-        <version>1.2.1</version>
+        <version>1.2.2</version>
     </parent>
 
     <artifactId>vind-monitoring</artifactId>
@@ -14,6 +14,7 @@
 
     <modules>
         <module>monitoring-api</module>
+        <module>monitoring-utils</module>
         <module>monitoring-writers</module>
         <module>monitoring-analysis</module>
     </modules>
