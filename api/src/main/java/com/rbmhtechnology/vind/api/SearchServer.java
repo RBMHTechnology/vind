@@ -10,6 +10,7 @@ import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.*;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
+import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -170,6 +171,9 @@ public abstract class SearchServer implements Closeable {
      */
     public abstract Object getBackend(); //TODO
 
+    public StatusResult getBackendStatus() {
+        throw new NotImplementedException("Get Backend Status is not implemened for " + this.getClass().getName());
+    }
 
     /**
      * Adds a {@link Document} or {@link Document}s to the search server index. {@link SearchServer#commit()} should be executed afterwards for
