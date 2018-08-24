@@ -37,7 +37,7 @@ public class FulltextSearch {
     private ResultSubset resultSet;
     private boolean childrenSearch = false;
     private Operators childrenSearchOperator = Operators.OR;
-    private FulltextSearch childrenSearchString = null;
+    private List<FulltextSearch> childrenSearchString = new ArrayList<>();
     private DocumentFactory childrenFactory = null;
     private String timeZone = null;
     private Distance geoDistance = null;
@@ -101,7 +101,7 @@ public class FulltextSearch {
     public FulltextSearch orChildrenSearch(DocumentFactory childrenFactory){
         this.childrenSearch = true;
         this.childrenSearchOperator = Operators.OR;
-        this.childrenSearchString = this.copy();
+        this.childrenSearchString.add(this.copy());
         this.childrenFactory = childrenFactory;
         return this;
     }
@@ -114,7 +114,7 @@ public class FulltextSearch {
     public FulltextSearch orChildrenSearch(FulltextSearch childrenSearch, DocumentFactory childrenFactory){
         this.childrenSearch = true;
         this.childrenSearchOperator = Operators.OR;
-        this.childrenSearchString = childrenSearch;
+        this.childrenSearchString.add(childrenSearch);
         this.childrenFactory = childrenFactory;
         return this;
     }
@@ -127,7 +127,7 @@ public class FulltextSearch {
     public FulltextSearch andChildrenSearch(DocumentFactory childrenFactory){
         this.childrenSearch = true;
         this.childrenSearchOperator = Operators.AND;
-        this.childrenSearchString = this.copy();
+        this.childrenSearchString.add(this.copy());
         this.childrenFactory = childrenFactory;
         return this;
     }
@@ -140,7 +140,7 @@ public class FulltextSearch {
     public FulltextSearch andChildrenSearch(FulltextSearch childrenSearch, DocumentFactory childrenFactory){
         this.childrenSearch = true;
         this.childrenSearchOperator = Operators.AND;
-        this.childrenSearchString = childrenSearch;
+        this.childrenSearchString.add(childrenSearch);
         this.childrenFactory = childrenFactory;
         return this;
     }
@@ -453,11 +453,19 @@ public class FulltextSearch {
     }
 
     /**
-     * Gets the text of the children search query.
-     * @return String containing the children search configuration
-     * .
+     * Gets the first children search query.
+     * @return {@link FulltextSearch} containing the first children search configuration.
      */
+    @Deprecated
     public FulltextSearch getChildrenSearchString() {
+        return childrenSearchString.get(0);
+    }
+
+    /**
+     * Gets the children search defined for this FulltextSearch.
+     * @return {@link List<FulltextSearch>} containing the children searches.
+     */
+    public List<FulltextSearch> getChildrenSearches() {
         return childrenSearchString;
     }
 
@@ -579,7 +587,7 @@ public class FulltextSearch {
                 this.childrenSearch,
                 this.childrenSearchOperator,
                 this.childrenFactory,
-                this.childrenSearchString,
+                "[" + this.childrenSearchString.stream().map(FulltextSearch::toString).collect(Collectors.joining(",")) + "]",
                 this.hasFacet(),
                 this.facetMinCount,
                 this.facetLimit,

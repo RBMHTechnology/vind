@@ -432,27 +432,37 @@ public class SolrSearchServer extends SearchServer {
             //TODO: move to SolrUtils
             final String parentSearchQuery = "((" + query.get(CommonParams.Q) + ") AND " + TYPE + ":" + factory.getType() + ")";
 
-            final String childrenSearchQuery = "_query_:\"{!parent which="+ TYPE+":"+factory.getType()+"}(" + TYPE+":"+search.getChildrenFactory().getType()+" AND ("+search.getChildrenSearchString().getEscapedSearchString()+"))\"";
+            final String childrenSearchQuery =
+                    search.getChildrenSearches().stream()
+                    .map( childrenSearch ->
+                            "_query_:\"{!parent which="+ TYPE+":"+factory.getType()+"}(" + TYPE+":"+search.getChildrenFactory().getType()+" AND (" + childrenSearch.getEscapedSearchString()+"))\"")
+                    .collect(Collectors.joining( " " + search.getChildrenSearchOperator().name() + " "));
 
             query.set(CommonParams.Q, String.join(" ",
                     parentSearchQuery,
                     search.getChildrenSearchOperator().name(),
                     childrenSearchQuery));
 
-            if(search.getChildrenSearchString().hasFilter()){
+            search.getChildrenSearches().forEach( childrenSearch -> {
 
-                //TODO clean up!
-                final String parentFilterQuery =  "(" + String.join(" AND ", query.getFilterQueries()) + ")";
-                final String childrenFilterQuery =
-                        new ChildrenFilterSerializer(factory,search.getChildrenFactory(),searchContext, search.getStrict(), true)
-                                .serialize(search.getChildrenSearchString().getFilter());
+                if(childrenSearch.hasFilter()){
 
-                query.set(CommonParams.FQ,
-                        String.join(" ",
-                                parentFilterQuery,
-                                search.getChildrenSearchOperator().name(),
-                                "(" + childrenFilterQuery + ")"));
-            }
+                    //TODO clean up!
+                    final String parentFilterQuery =  "(" + String.join(" AND ", query.getFilterQueries()) + ")";
+                    final String childrenFilterQuery =
+                            new ChildrenFilterSerializer(factory,search.getChildrenFactory(),searchContext, search.getStrict(), true)
+                                    .serialize(childrenSearch.getFilter());
+
+                    query.set(CommonParams.FQ,
+                            String.join(" ",
+                                    parentFilterQuery,
+                                    search.getChildrenSearchOperator().name(),
+                                    "(" + childrenFilterQuery + ")"));
+                }
+
+                    }
+            );
+
 
         }
 
