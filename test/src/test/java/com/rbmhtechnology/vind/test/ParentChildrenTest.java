@@ -331,8 +331,7 @@ public class ParentChildrenTest {
                 .filter(eq(child_value, "blue"));
         search = Search.fulltext()
                 .setStrict(false)
-                .andChildrenSearch(childSearch1,child)
-                .andChildrenSearch(childSearch2,child);
+                .andChildrenSearch(child, childSearch1,childSearch2);
 
         result = server.execute(search, parent);
         assertEquals(1, result.getNumOfResults());
@@ -344,8 +343,7 @@ public class ParentChildrenTest {
                 .filter(eq(child_value, "purple"));
         search = Search.fulltext()
                 .setStrict(false)
-                .andChildrenSearch(childSearch1,child)
-                .andChildrenSearch(childSearch2,child);
+                .andChildrenSearch(child, childSearch1, childSearch2);
 
         result = server.execute(search, parent);
         assertEquals(0, result.getNumOfResults());
@@ -358,8 +356,7 @@ public class ParentChildrenTest {
         search = Search.fulltext()
                 .setStrict(false)
                 .filter(eq(parent_value, "red"))
-                .orChildrenSearch(childSearch1,child)
-                .orChildrenSearch(childSearch2,child);
+                .orChildrenSearch(child, childSearch1,childSearch2);
 
         result = server.execute(search, parent);
         assertEquals(4, result.getNumOfResults());
