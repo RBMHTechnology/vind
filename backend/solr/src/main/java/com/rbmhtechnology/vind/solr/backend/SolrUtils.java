@@ -442,12 +442,16 @@ public class SolrUtils {
                     .map(facet -> {
                         final String type = facet.getFacetName();
                         String filter;
-                        final String childrenFilterSerialized;
-                        if(Objects.nonNull(search.getChildrenSearchString().hasFilter())){
-                            childrenFilterSerialized = serializeFacetFilter(search.getChildrenSearchString().getFilter(), search.getChildrenFactory(), searchContext, search.getStrict()).replaceAll("\"", "\\\\\"");;
-                            filter = childrenFilterSerialized + " AND " + StringEscapeUtils.escapeJson(search.getSearchString());
-                        } else {
-                            childrenFilterSerialized ="";
+                        //final String childrenFilterSerialized;
+                        filter = search.getChildrenSearches().stream()
+                                .filter(FulltextSearch::hasFilter)
+                                .map( childrenSearch -> {
+                                    final String childrenFilterSerialized = serializeFacetFilter(childrenSearch.getFilter(), search.getChildrenFactory(), searchContext, search.getStrict()).replaceAll("\"", "\\\\\"");;
+                                    return "(" +childrenFilterSerialized + " AND " + StringEscapeUtils.escapeJson(search.getSearchString()) +")";
+                                })
+                                .collect(Collectors.joining(" OR "));
+
+                        if(StringUtils.isBlank(filter)) {
                             filter = StringEscapeUtils.escapeJson(search.getSearchString());
                         }
 
