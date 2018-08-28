@@ -22,7 +22,8 @@ public class TestSearchServer extends ExternalResource {
         SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.solr.backend.EmbeddedSolrServerProvider");
 
         //SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.solr.backend.RemoteSolrServerProvider");
-        //SearchConfiguration.set(SearchConfiguration.SERVER_HOST, "http://localhost:8983/solr/core");
+        //SearchConfiguration.set(SearchConfiguration.SERVER_HOST, "http://localhost:8983/solr");
+        //SearchConfiguration.set(SearchConfiguration.SERVER_COLLECTION, "dam_assets");
 
         System.setProperty("runtimeLib", "false");
         searchServer = SearchServer.getInstance();

@@ -713,6 +713,7 @@ public class TestServerTest {
 
         SearchServer server = testSearchServer.getSearchServer();
 
+        server.clearIndex();
         server.index(d1);
         server.index(d2);
         server.commit();
@@ -1039,10 +1040,10 @@ public class TestServerTest {
 
         SearchServer server = testSearchServer.getSearchServer();
 
+        server.clearIndex();
         server.index(d1);
         server.index(d2);
         server.commit();
-
 
         FulltextSearch search = Search.fulltext();
 
@@ -1161,7 +1162,7 @@ public class TestServerTest {
         assertEquals("No of StatsFacets", 3, searchResult.getFacetResults().getStatsFacets().size());
         assertEquals("Stats Min: ", (Integer) 1, searchResult.getFacetResults().getStatsFacet("facetStats", Integer.class).getMin());
         assertEquals("Stats Max: ", (Integer) 2, searchResult.getFacetResults().getStatsFacet("facetStats", Integer.class).getMax());
-        assertEquals("Stats Sum: ", (Integer) 3, searchResult.getFacetResults().getStatsFacet("facetStats", Integer.class).getSum());
+        assertEquals("Stats Sum: ",  (Double) 3.0, searchResult.getFacetResults().getStatsFacet("facetStats", Integer.class).getSum());
 
         final SuggestionResult suggestSearch = server.execute(Search.suggest("la").fields(numericComplexField, textComplexField),assets);
         assertEquals(3, suggestSearch.size());
@@ -1204,6 +1205,7 @@ public class TestServerTest {
 
         SearchServer server = testSearchServer.getSearchServer();
 
+        server.clearIndex();
         server.index(d1);
         server.index(d2);
         server.commit();
@@ -1325,6 +1327,7 @@ public class TestServerTest {
 
         final SearchServer server = testSearchServer.getSearchServer();
 
+        server.clearIndex();
         server.index(d1);
         server.index(d2);
         server.commit();
@@ -1413,6 +1416,7 @@ public class TestServerTest {
 
         final SearchServer server = testSearchServer.getSearchServer();
 
+        server.clearIndex();
         server.index(doc1);
         server.index(doc2);
         server.index(doc3);

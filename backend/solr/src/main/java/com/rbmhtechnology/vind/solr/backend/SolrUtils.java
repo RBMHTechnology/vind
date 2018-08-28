@@ -24,8 +24,8 @@ import org.apache.solr.client.solrj.response.*;
 import org.apache.solr.client.solrj.response.IntervalFacet;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
+import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.CommonParams;
-import org.apache.solr.common.util.DateUtil;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.SimpleOrderedMap;
 import org.slf4j.Logger;
@@ -38,6 +38,7 @@ import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -329,7 +330,7 @@ public class SolrUtils {
                     return ((ZonedDateTime)o).format(DateTimeFormatter.ISO_INSTANT);
                 }
                 if(Date.class.isAssignableFrom(o.getClass())) {
-                    return DateUtil.getThreadLocalDateFormat().format((Date)o);
+                    return DateTimeFormatter.ISO_INSTANT.format(((Date)o).toInstant());
                 }
                 if(DateMathExpression.class.isAssignableFrom(o.getClass())) {
                     //TODO: Do not delegate on the toString DateMath, a solr specific parse would be better
@@ -866,15 +867,7 @@ public class SolrUtils {
                                         if (ZonedDateTime.class.isAssignableFrom(type)) {
                                             ((Collection<?>) o).forEach(ob -> solrValues.add(ZonedDateTime.ofInstant(((Date) ob).toInstant(), ZoneId.of("UTC"))));
                                         } else if (Date.class.isAssignableFrom(type)) {
-                                            ((Collection<?>) o).forEach(ob -> {
-                                                try {
-                                                    solrValues.add(DateUtil.parseDate(ob.toString()));
-                                                } catch (ParseException e) {
-                                                    log.error("Unable to parse solr result field '{}' value '{}' to field descriptor type [{}]",
-                                                            fname, o.toString(), type);
-                                                    throw new RuntimeException(e);
-                                                }
-                                            });
+                                            ((Collection<?>) o).forEach(ob -> solrValues.add(DateTimeFormatter.ISO_INSTANT.format(((Date) ob).toInstant())));
                                         } else if (LatLng.class.isAssignableFrom(type)) {
                                             ((Collection<?>) o).forEach(ob -> {
                                                 try {
@@ -909,13 +902,7 @@ public class SolrUtils {
                                         if (ZonedDateTime.class.isAssignableFrom(type)) {
                                             solrValue = ZonedDateTime.ofInstant(((Date) o).toInstant(), ZoneId.of("UTC"));
                                         } else if (Date.class.isAssignableFrom(type)) {
-                                            try {
-                                                solrValue = (DateUtil.parseDate(o.toString()));
-                                            } catch (ParseException e) {
-                                                log.error("Unable to parse solr result field '{}' value '{}' to field descriptor type [{}]",
-                                                        fname, o.toString(), type);
-                                                throw new RuntimeException(e);
-                                            }
+                                            solrValue = (Date) o;
                                         } else if (LatLng.class.isAssignableFrom(type)) {
                                             solrValue = LatLng.parseLatLng(o.toString());
                                         } else {
@@ -1074,7 +1061,7 @@ public class SolrUtils {
                                 new StatsFacetResult(field,
                                                     castForDescriptor(statsInfo.getMin(),field, useCase),
                                                     castForDescriptor(statsInfo.getMax(),field, useCase),
-                                                    castForDescriptor(statsInfo.getSum(),field, useCase),
+                                                    (Double) statsInfo.getSum(),
                                                     statsInfo.getCount(),
                                                     statsInfo.getMissing(),
                                                     statsInfo.getSumOfSquares(),
@@ -1249,12 +1236,7 @@ public class SolrUtils {
                 return ZonedDateTime.parse(s);
             }
             if(Date.class.isAssignableFrom(type)) {
-                try {
-                    return DateUtil.parseDate(s);
-                } catch (ParseException e) {
-                    log.error("Unable to parse value '{}' to valid Date", s);
-                    throw new RuntimeException(e);
-                }
+                return DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(Long.valueOf(s)));
             }
             if(ByteBuffer.class.isAssignableFrom(type)) {
                 return ByteBuffer.wrap(s.getBytes(UTF_8));
@@ -1447,5 +1429,23 @@ public class SolrUtils {
             return contextualizedName.replace(contextPrefix, "");
         }
 
+    }
+
+    // https://stackoverflow.com/questions/38266684/substitute-of-org-apache-solr-client-solrj-util-clientutils-tosolrinputdocument
+    public static SolrInputDocument toSolrInputDocument(SolrDocument solrDocument) {
+        SolrInputDocument solrInputDocument = new SolrInputDocument();
+
+        for (String name : solrDocument.getFieldNames()) {
+            solrInputDocument.addField(name, solrDocument.getFieldValue(name));
+        }
+
+        //Don't forget children documents
+        if(solrDocument.getChildDocuments() != null) {
+            for(SolrDocument childDocument : solrDocument.getChildDocuments()) {
+                //You can add paranoic check against infinite loop childDocument == solrDocument
+                solrInputDocument.addChildDocument(toSolrInputDocument(childDocument));
+            }
+        }
+        return solrInputDocument;
     }
 }

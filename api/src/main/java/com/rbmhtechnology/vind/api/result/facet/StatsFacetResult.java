@@ -16,7 +16,7 @@ public class StatsFacetResult<T> implements FacetResult<T> {
     private FieldDescriptor field;
     private T min;
     private T max;
-    private T sum;
+    private Double sum;
     private Long count;
     private Long missing;
     private Double sumOfSquares;
@@ -46,7 +46,7 @@ public class StatsFacetResult<T> implements FacetResult<T> {
     public StatsFacetResult(FieldDescriptor<T> field,
                             T min,
                             T max,
-                            T sum,
+                            Double sum,
                             Long count,
                             Long missing,
                             Double sumOfSquares,
@@ -96,7 +96,7 @@ public class StatsFacetResult<T> implements FacetResult<T> {
      * Gets the Summation value of the field.
      * @return Summation value of the field.
      */
-    public T getSum() {
+    public Double getSum() {
         return sum;
     }
     /**

@@ -6,14 +6,15 @@ import com.rbmhtechnology.vind.api.query.facet.Facets;
 import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.model.*;
-import org.apache.solr.util.DateFormatUtil;
 import org.apache.solr.util.DateMathParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -118,19 +119,14 @@ public class FacetMapper {
             } catch (ParseException e) {
                 return false;
             }
-            try {
-                String startDate = dateMatcher.group("dateStart");
-                if (startDate != null) {
-                    DateFormatUtil.parseDate(startDate);
-                }
+            String startDate = dateMatcher.group("dateStart");
+            if (startDate != null) {
+                DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(Long.valueOf(startDate)));
+            }
 
-                String endDate = dateMatcher.group("dateEnd");
-                if (endDate != null) {
-                    DateFormatUtil.parseDate(endDate);
-                }
-
-            } catch (ParseException e) {
-                return false;
+            String endDate = dateMatcher.group("dateEnd");
+            if (endDate != null) {
+                DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(Long.valueOf(endDate)));
             }
             return true;
         } else {
@@ -154,7 +150,7 @@ public class FacetMapper {
 
                     String startDate = dateMatcher.group("dateStart");
                     if (startDate != null) {
-                        final Date date = DateFormatUtil.parseDate(startDate);
+                        final Date date = Date.from(Instant.ofEpochMilli(Long.valueOf(startDate)));
 
                         startDateMath = new DateMathExpression(ZonedDateTime.ofInstant(date.toInstant(),
                                 ZoneId.systemDefault()));
@@ -200,7 +196,7 @@ public class FacetMapper {
                     }
                     String endDate = dateMatcher.group("dateEnd");
                     if (endDate != null) {
-                        final Date date = DateFormatUtil.parseDate(endDate);
+                        final Date date = Date.from(Instant.ofEpochMilli(Long.valueOf(endDate)));
                         endDateMath = new DateMathExpression(ZonedDateTime.ofInstant(date.toInstant(),
                                 ZoneId.systemDefault()));
                     } else {

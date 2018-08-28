@@ -79,18 +79,15 @@ public class CollectionManagementService {
         this(repositories);
         this.zkHost = zkHost;
 
-        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
+        try (CloudSolrClient client = new CloudSolrClient.Builder(Arrays.asList(zkHost)).build()) {
             NamedList result = client.request(new CollectionAdminRequest.ClusterStatus());
 
             if (((NamedList) ((NamedList) result.get("cluster")).get("collections")).get(".system") == null) {
                 logger.warn("Blob store '.system' for runtime libs is not yet created. Will create one");
 
                 try {
-                    Create create = new CollectionAdminRequest.Create();
-                    create.setCollectionName(".system");
-                    create.setConfigName(null);
-                    create.setNumShards(BLOB_STORE_SHARDS);
-                    create.setReplicationFactor(BLOB_STORE_REPLICAS);
+                    Create create = CollectionAdminRequest
+                            .createCollection(".system", BLOB_STORE_SHARDS, BLOB_STORE_REPLICAS);
                     create.process(client);
                     logger.info("Blob store has been created successfully");
                 } catch (SolrServerException e1) {
@@ -128,12 +125,9 @@ public class CollectionManagementService {
     public void createCollection(String collectionName, String configName, int numOfShards, int numOfReplicas) throws IOException {
         checkAndInstallConfiguration(configName);
 
-        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
-            Create create = new CollectionAdminRequest.Create();
-            create.setCollectionName(collectionName);
-            create.setConfigName(configName);
-            create.setNumShards(numOfShards);
-            create.setReplicationFactor(numOfReplicas);
+        try (CloudSolrClient client = createCloudSolrClient()) {
+            Create create = CollectionAdminRequest.
+                    createCollection(collectionName, configName, numOfShards, numOfReplicas);
             create.process(client);
         } catch (IOException | SolrServerException e) {
             throw new IOException("Cannot create collection", e);
@@ -151,7 +145,7 @@ public class CollectionManagementService {
      * @throws {@link IOException} is thrown when a problem with the solr request occurs.
      */
     public boolean collectionExists(String collectionName) throws IOException {
-        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
+        try (CloudSolrClient client = createCloudSolrClient()) {
             final NamedList<Object> request = client.request(new CollectionAdminRequest.List());
             return ((List) request.get("collections")).contains(collectionName);
         } catch (SolrServerException | IOException e) {
@@ -173,16 +167,16 @@ public class CollectionManagementService {
     public void updateCollection(String collectionName, String configName) throws IOException {
 
         final String origConfigName ;
-        //final String origMaxShards ;
-        //final String origReplicationFactor ;
+        final String origMaxShards ;
+        final String origReplicationFactor ;
 
-        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
+        try (CloudSolrClient client = createCloudSolrClient()) {
             final CollectionAdminResponse status = new CollectionAdminRequest.ClusterStatus()
                     .setCollectionName(collectionName).process(client);
             if(status.getStatus() == 0) {
                 origConfigName = (String)((Map) ((SimpleOrderedMap) ((NamedList) status.getResponse().get("cluster")).get("collections")).get(collectionName)).get("configName");
-                //origMaxShards = (String)((Map) ((SimpleOrderedMap) ((NamedList) status.getResponse().get("cluster")).get("collections")).get(collectionName)).get("maxShardsPerNode");
-                //origReplicationFactor = (String)((Map) ((SimpleOrderedMap) ((NamedList) status.getResponse().get("cluster")).get("collections")).get(collectionName)).get("replicationFactor");
+                origMaxShards = (String)((Map) ((SimpleOrderedMap) ((NamedList) status.getResponse().get("cluster")).get("collections")).get(collectionName)).get("maxShardsPerNode");
+                origReplicationFactor = (String)((Map) ((SimpleOrderedMap) ((NamedList) status.getResponse().get("cluster")).get("collections")).get(collectionName)).get("replicationFactor");
             } else {
                 throw new IOException("Unable to get current status of collection [" + collectionName + "]");
             }
@@ -199,35 +193,23 @@ public class CollectionManagementService {
 
             //Change config set of the collection to the new one
             try (final SolrZkClient zkClient = new SolrZkClient(zkHost, 4000);
-                 CloudSolrClient client = new CloudSolrClient(zkHost)) {
+                 CloudSolrClient client = createCloudSolrClient()) {
                 //TODO: The following call to the collections API is working from solr >= 6
-                /*final SolrQuery modifyCollectionQuery = new SolrQuery();
+                final SolrQuery modifyCollectionQuery = new SolrQuery();
                 modifyCollectionQuery.setRequestHandler("/admin/collections");
                 modifyCollectionQuery.set("action", "MODIFYCOLLECTION");
                 modifyCollectionQuery.set("collection", collectionName);
                 modifyCollectionQuery.set("collection.configName", configName);
-                modifyCollectionQuery.set("rule", new String[0]);
-                modifyCollectionQuery.set("snitch", new String[0]);
                 modifyCollectionQuery.set("maxShardsPerNode", origMaxShards);
                 modifyCollectionQuery.set("replicationFactor", origReplicationFactor);
                 client.query(modifyCollectionQuery);
-
-                or probably
-
-                final CollectionAdminResponse modifyCollection = new CollectionAdminRequest.ModifyCollection()
-                        .setCollectionName(collectionName)
-                        create.setConfigName(configName);
-                        create.setNumShards(numOfShards);
-                        create.setReplicationFactor(numOfReplicas);
-                        .process(client);
-                */
 
                 // Update link to config set
                 ZkController.linkConfSet(zkClient, collectionName, configName);
 
                 //Reload collection
-                final CollectionAdminResponse reload = new CollectionAdminRequest.Reload()
-                        .setCollectionName(collectionName)
+                final CollectionAdminResponse reload = CollectionAdminRequest
+                        .reloadCollection(collectionName)
                         .process(client);
 
                 if (!reload.isSuccess()) {
@@ -241,7 +223,6 @@ public class CollectionManagementService {
             }
         }
 
-
         final Map<String,Long> updatedRuntimeDependencies = checkAndInstallRuntimeDependencies(collectionName);
         this.addOrUpdateRuntimeDependencies(updatedRuntimeDependencies, collectionName);
     }
@@ -254,14 +235,14 @@ public class CollectionManagementService {
     protected void addOrUpdateRuntimeDependencies(Map<String, Long> runtimeDependencies, String collectionName) {
         for(String blobName : runtimeDependencies.keySet()) {
             RuntimeLibRequest request = new RuntimeLibRequest(RuntimeLibRequestType.add, blobName, runtimeDependencies.get(blobName));
-            try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
+            try (CloudSolrClient client = createCloudSolrClient()) {
                 client.request(request, collectionName);
             } catch (SolrServerException | IOException e) {
                 logger.warn("Cannot add runtime dependency {} (v{}) to collection {}", blobName, runtimeDependencies.get(blobName), collectionName); //TODO (minor) parse result
                 logger.info("Try to update dependency");
                 request.setType(RuntimeLibRequestType.update);
 
-                try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
+                try (CloudSolrClient client = createCloudSolrClient()) {
                     client.request(request, collectionName);
                 } catch (SolrServerException | IOException e1) {
                     logger.warn("Cannot update runtime dependency {} (v{}) to collection {}", blobName, runtimeDependencies.get(blobName), collectionName); //TODO (minor) parse result
@@ -298,7 +279,7 @@ public class CollectionManagementService {
         request.setPath("/admin/file");
         request.setResponseParser(new InputStreamResponseParser("json"));
 
-        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
+        try (CloudSolrClient client = createCloudSolrClient()) {
             final NamedList o = client.request(request, collectionName);
 
             final LineIterator it = IOUtils.lineIterator((InputStream) o.get("stream"), "utf-8");
@@ -316,7 +297,7 @@ public class CollectionManagementService {
 
     public Long getVersionAndInstallIfNecessary(String dependency) {
 
-        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
+        try (CloudSolrClient client = createCloudSolrClient()) {
             SolrQuery query = new SolrQuery("blobName:"+Utils.toBlobName(dependency));
             query.setSort("version", SolrQuery.ORDER.desc);
             QueryResponse response = client.query(".system",query);
@@ -342,7 +323,7 @@ public class CollectionManagementService {
 
         JarUploadRequest request = new JarUploadRequest(jarFile, "/blob/" + Utils.toBlobName(dependency));
 
-        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
+        try (CloudSolrClient client = createCloudSolrClient()) {
             client.request(request, ".system");
             return 1L;
         } catch (SolrServerException | IOException e) {
@@ -365,11 +346,9 @@ public class CollectionManagementService {
     private void installConfiguration(String configName) throws IOException {
         Path folder = downloadConfiguration(configName);
 
-        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
-            client.uploadConfig(folder, configName);
-        } catch (IOException e) {
-            throw new IOException("Cannot upload config set " + configName, e);
-        }
+        ConfigSetAdminRequest.Create createConfig = new ConfigSetAdminRequest.Create();
+        createConfig.setBaseConfigSetName(configName);
+        createConfig.setPath(folder.toAbsolutePath().toString());
 
         try {
             Utils.deleteRecursively(folder);
@@ -380,7 +359,7 @@ public class CollectionManagementService {
 
     protected boolean configurationIsDeployed(String configName) throws IOException {
         ConfigSetAdminRequest.List list = new ConfigSetAdminRequest.List();
-        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
+        try (CloudSolrClient client = createCloudSolrClient()) {
             final ConfigSetAdminResponse.List configList = list.process(client);
             final List<String> configSets = configList.getConfigSets();
             return configSets.contains(configName);
@@ -409,8 +388,7 @@ public class CollectionManagementService {
     }
 
     protected void removeCollection(String collectionName) throws IOException {
-        final CollectionAdminRequest.Delete delete = new CollectionAdminRequest.Delete();
-        delete.setCollectionName(collectionName);
+        final CollectionAdminRequest.Delete delete = CollectionAdminRequest.deleteCollection(collectionName);
 
         try (CloudSolrClient client = createCloudSolrClient()) {
             delete.process(client);
@@ -420,13 +398,13 @@ public class CollectionManagementService {
     }
 
     private CloudSolrClient createCloudSolrClient() {
-        return new CloudSolrClient(zkHost);
+        return new CloudSolrClient.Builder(Arrays.asList(zkHost)).build();
     }
 
     protected void removeConfigSet(String configSetName) throws IOException {
         final ConfigSetAdminRequest.Delete delete =new ConfigSetAdminRequest.Delete();
 
-        try (CloudSolrClient client = new CloudSolrClient(zkHost)) {
+        try (CloudSolrClient client = createCloudSolrClient()) {
             delete.setConfigSetName(configSetName).process(client);
         } catch (SolrServerException |IOException e) {
             throw new IOException("Error during solr request: Cannot delete configSet " + configSetName, e);

@@ -44,7 +44,6 @@ public class VindCollectionConfigurationTest {
     }
 
     @Test
-    @Ignore
     public void testApostrophes() {
         server.index(doc.createDoc("1").setValue(value, "Neymar Jr's five one"));
         server.index(doc.createDoc("2").setValue(value, "Neymar Jr’s five two"));

@@ -152,7 +152,7 @@ public class ParentChildrenTest {
         FulltextSearch search = Search.fulltext().orChildrenSearch(child);
         SearchResult result = server.execute(search, parent);
         assertEquals(4, result.getNumOfResults());
-        assertEquals(Integer.valueOf(2),result.getResults().get(2).getChildCount());
+        assertEquals(Integer.valueOf(2),result.getResults().get(3).getChildCount());
     }
 
     @Test
@@ -256,7 +256,7 @@ public class ParentChildrenTest {
                 .orChildrenSearch(child);
         SearchResult result = server.execute(search, parent);
         assertEquals(3, result.getNumOfResults());
-        assertEquals(Integer.valueOf(2),result.getResults().get(1).getChildCount());
+        assertEquals(Integer.valueOf(1),result.getResults().get(1).getChildCount());
     }
 
     @Test

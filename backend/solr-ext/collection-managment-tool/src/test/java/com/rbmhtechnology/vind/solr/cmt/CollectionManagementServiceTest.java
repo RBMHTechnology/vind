@@ -39,18 +39,13 @@ public class CollectionManagementServiceTest extends SolrCloudTestCase {
                 .configure();
 
         //add a collection with the set
-        Create create = new CollectionAdminRequest.Create();
-        create.setCollectionName("my-collection");
-        create.setConfigName("com.rbmhtechnology.solr.test:test-config:1.0");
-        create.setNumShards(1);
-        create.setReplicationFactor(1);
+        Create create = CollectionAdminRequest
+                .createCollection("my-collection", "com.rbmhtechnology.solr.test:test-config:1.0",1, 1);
         create.process(cluster.getSolrClient());
 
         //add blob collection
-        Create create2 = new CollectionAdminRequest.Create();
-        create2.setCollectionName(".system");
-        create2.setNumShards(1);
-        create2.setReplicationFactor(1);
+        Create create2 = CollectionAdminRequest
+                .createCollection(".system", 1, 1);
         create2.process(cluster.getSolrClient());
 
         service = new CollectionManagementService(cluster.getZkServer().getZkAddress());

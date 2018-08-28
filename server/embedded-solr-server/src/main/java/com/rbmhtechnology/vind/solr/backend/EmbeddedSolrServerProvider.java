@@ -49,7 +49,7 @@ public class EmbeddedSolrServerProvider implements SolrServerProvider {
             iS.close();
             properties.setProperty("runtimeLib", "false");
 
-            final FileOutputStream oS = new FileOutputStream(tmpSolrHome.toAbsolutePath().toString()+ "/core/" + CORE_PROPERTIES_FILE);
+            final FileOutputStream oS = new FileOutputStream(tmpSolrHome.toAbsolutePath().toString()+ CORE_NAME + CORE_PROPERTIES_FILE);
             properties.store(oS, null);
             oS.close();
 

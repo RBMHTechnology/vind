@@ -6,7 +6,7 @@ import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.SimpleOrderedMap;
 import org.apache.solr.core.SolrCore;
 import org.apache.solr.response.SolrQueryResponse;
-import org.apache.solr.util.DateFormatUtil;
+import org.apache.solr.util.DateMathParser;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -130,10 +130,10 @@ public class SuggestionResultFactory {
         if(intervals!=null && !intervals.isEmpty()) {
             SuggesionResultInterval intervalResult = new SuggesionResultInterval(limit, limitType);
             for (String intervalName : intervals.keySet()) {
-                final Date start = DateFormatUtil.parseMath(new Date(), (String) intervals.get(intervalName).get("start"));
+                final Date start = DateMathParser.parseMath(new Date(), (String) intervals.get(intervalName).get("start"));
                 final LocalDateTime dateTimeStart = start.toInstant().atZone(ZoneId.of("UTC")).toLocalDateTime();
 
-                final Date end = DateFormatUtil.parseMath(new Date(),(String) intervals.get(intervalName).get("end"));
+                final Date end = DateMathParser.parseMath(new Date(),(String) intervals.get(intervalName).get("end"));
                 final LocalDateTime dateTimeEnd = end.toInstant().atZone(ZoneId.of("UTC")).toLocalDateTime();
 
                 intervalResult.addInterval(intervalName,dateTimeStart,dateTimeEnd);

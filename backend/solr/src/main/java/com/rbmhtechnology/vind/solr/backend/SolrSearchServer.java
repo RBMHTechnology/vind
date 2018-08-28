@@ -44,7 +44,6 @@ import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.*;
-import org.apache.solr.common.util.DateUtil;
 import org.apache.solr.common.util.NamedList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +55,7 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -218,9 +218,9 @@ public class SolrSearchServer extends SearchServer {
     private void removeNonParentDocument(Document doc) throws SolrServerException, IOException {
         if(CollectionUtils.isNotEmpty(doc.getChildren())) {
             //Get the nested docs of the document if existing
-            final NamedList<Object> paramList = new NamedList<>();
-            paramList.add(CommonParams.Q, "!( _id_:"+ doc.getId()+")&(_root_:"+ doc.getId()+")");
-            final QueryResponse query = solrClient.query(SolrParams.toSolrParams(paramList), SolrRequest.METHOD.POST);
+            final SolrQuery q = new SolrQuery("!( _id_:"+ doc.getId()+")AND(_root_:"+ doc.getId()+")");
+            final QueryResponse query = solrClient.query(q, SolrRequest.METHOD.POST);
+
             if (CollectionUtils.isEmpty(query.getResults()))
                 log.info("Deleting document `{}`: document is becoming parent.",doc.getId());
                 this.solrClient.deleteById(doc.getId());
@@ -617,17 +617,17 @@ public class SolrSearchServer extends SearchServer {
 
         if (dateRangeFacet instanceof Facet.DateRangeFacet.UtilDateRangeFacet){
             final Instant startInstant = ((Date) startDate).toInstant();
-            startString =  DateUtil.getThreadLocalDateFormat().format(Date.from(startInstant));
+            startString = DateTimeFormatter.ISO_INSTANT.format(startInstant);
 
             final Instant endInstant = ((Date) endDate).toInstant();
-            endString = DateUtil.getThreadLocalDateFormat().format(Date.from(endInstant));
+            endString = DateTimeFormatter.ISO_INSTANT.format(endInstant);
 
         } else if (dateRangeFacet instanceof Facet.DateRangeFacet.ZoneDateRangeFacet){
             final Instant startInstant = ((ZonedDateTime) startDate).toInstant();
-            startString =  DateUtil.getThreadLocalDateFormat().format(Date.from(startInstant));
+            startString =  DateTimeFormatter.ISO_INSTANT.format(startInstant);
 
             final Instant  endInstant = ((ZonedDateTime) endDate).toInstant();
-            endString = DateUtil.getThreadLocalDateFormat().format(Date.from(endInstant));
+            endString = DateTimeFormatter.ISO_INSTANT.format(endInstant);
         } else {
             startString =  dateRangeFacet.getStart().toString();
             endString = dateRangeFacet.getEnd().toString();
@@ -684,7 +684,7 @@ public class SolrSearchServer extends SearchServer {
                 log.debug("Atomic Update - Get nested documents of [{}].",update.getId());
                 final NamedList<Object> paramList = new NamedList<>();
                 paramList.add(CommonParams.Q, "!( _id_:"+ update.getId()+")&(_root_:"+ update.getId()+")");
-                final QueryResponse query = solrClient.query(SolrParams.toSolrParams(paramList), SolrRequest.METHOD.POST);
+                final QueryResponse query = solrClient.query(paramList.toSolrParams(), SolrRequest.METHOD.POST);
 
                 //if the document has nested docs solr does not support atomic updates
                 if (CollectionUtils.isNotEmpty(query.getResults())) {
@@ -692,7 +692,7 @@ public class SolrSearchServer extends SearchServer {
                             finalDoc.getFieldValue(SolrUtils.Fieldname.ID), query.getResults().size());
                     //Get the list of nested documents
                     final List<SolrInputDocument> childDocs = query.getResults().stream()
-                            .map(nestedDoc -> ClientUtils.toSolrInputDocument(nestedDoc))
+                            .map(nestedDoc -> SolrUtils.toSolrInputDocument(nestedDoc))
                             .collect(Collectors.toList());
 
                     finalDoc = this.getUpdatedSolrDocument(sdoc, updatedDoc, childDocs);
@@ -762,7 +762,7 @@ public class SolrSearchServer extends SearchServer {
 
         //TODO:find a better way - non deprecated way
         //Create an input document from the original doc to be updated
-        final SolrInputDocument inputDoc = ClientUtils.toSolrInputDocument(updatedDoc);
+        final SolrInputDocument inputDoc = SolrUtils.toSolrInputDocument(updatedDoc);
 
         log.debug("Atomic Update - Manually update Document [{}].", sdoc.getField(ID).getValue());
 

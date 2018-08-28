@@ -9,6 +9,8 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+
 /**
  * @author Thomas Kurz (tkurz@apache.org)
  * @since 21.06.16.
@@ -46,7 +48,7 @@ public class RemoteSolrServerProvider implements SolrServerProvider {
             log.info("Instantiating solr cloud client: {}", host);
 
             if(collection != null) {
-                CloudSolrClient client = new CloudSolrClient(host);
+                CloudSolrClient client = new CloudSolrClient.Builder(Arrays.asList(host)).build();
                 client.setDefaultCollection(collection);
 
                 if(StringUtils.isNotEmpty(connectionTimeout)) {
@@ -69,7 +71,7 @@ public class RemoteSolrServerProvider implements SolrServerProvider {
                 host = String.join("/",host,collection);
             }
             log.info("Instantiating solr http client: {}", host);
-            return new HttpSolrClient(host);
+            return new HttpSolrClient.Builder(host).build();
 
         }
 
