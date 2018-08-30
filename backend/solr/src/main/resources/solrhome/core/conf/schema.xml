@@ -87,13 +87,15 @@
   <dynamicField name="dynamic_multi_stored_suggest_location_*" type="location" multiValued="true" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_filter_location_*" type="location" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_facet_location_*" type="location" multiValued="false" indexed="true" stored="true"/>
-  <dynamicField name="dynamic_single_stored_suggest_string_*" type="string_suggest" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_suggest_string_*" type="string" multiValued="false" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_single_stored_suggest_analyzed_*" type="string_suggest" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="dynamic_multi_stored_suggest_boolean_*" type="boolean" multiValued="true" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_filter_boolean_*" type="boolean" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="dynamic_multi_stored_filter_location_*" type="location" multiValued="true" indexed="true" stored="false"/>
   <dynamicField name="dynamic_single_stored_facet_boolean_*" type="boolean" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_suggest_float_*" type="float" docValues="true" multiValued="false" indexed="true" stored="true"/>
-  <dynamicField name="dynamic_multi_stored_suggest_string_*" type="string_suggest" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_suggest_string_*" type="string" multiValued="true" indexed="true" stored="true"/>
+  <dynamicField name="dynamic_multi_stored_suggest_analyzed_*" type="string_suggest" multiValued="true" indexed="true" stored="true"/>
   <dynamicField name="dynamic_multi_stored_facet_location_*" type="location" multiValued="true" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_sort_location_*" type="location" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_stored_filter_string_*" type="string" docValues="true" multiValued="false" indexed="true" stored="true"/>
@@ -142,14 +144,16 @@
   <dynamicField name="dynamic_single_stored_sort_int_*" type="int" docValues="true" multiValued="false" indexed="true" stored="true"/>
   <dynamicField name="dynamic_single_filter_location_*" type="location" multiValued="false" indexed="true" stored="false"/>
   <dynamicField name="dynamic_single_facet_location_*" type="location" multiValued="false" indexed="true" stored="false"/>
-  <dynamicField name="dynamic_single_suggest_string_*" type="string_suggest" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_suggest_string_*" type="string" multiValued="false" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_single_suggest_analyzed_*" type="string_suggest" multiValued="false" indexed="true" stored="false"/>
   <dynamicField name="dynamic_multi_suggest_boolean_*" type="boolean" multiValued="true" indexed="true" stored="false"/>
   <dynamicField name="dynamic_single_filter_boolean_*" type="boolean" multiValued="false" indexed="true" stored="false"/>
   <dynamicField name="dynamic_multi_filter_location_*" type="location" multiValued="true" indexed="true" stored="false"/>
   <dynamicField name="dynamic_single_facet_boolean_*" type="boolean" multiValued="false" indexed="true" stored="false"/>
   <dynamicField name="dynamic_multi_facet_location_*" type="location" multiValued="true" indexed="true" stored="false"/>
   <dynamicField name="dynamic_single_suggest_float_*" type="float" docValues="true" multiValued="false" indexed="true" stored="false"/>
-  <dynamicField name="dynamic_multi_suggest_string_*" type="string_suggest" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_suggest_string_*" type="string" multiValued="true" indexed="true" stored="false"/>
+  <dynamicField name="dynamic_multi_suggest_analyzed_*" type="string_suggest" multiValued="true" indexed="true" stored="false"/>
   <dynamicField name="dynamic_single_sort_location_*" type="location" multiValued="false" indexed="true" stored="false"/>
   <dynamicField name="dynamic_single_filter_string_*" type="string" docValues="true" multiValued="false" indexed="true" stored="false"/>
   <dynamicField name="dynamic_multi_filter_boolean_*" type="boolean" multiValued="true" indexed="true" stored="false"/>
@@ -225,13 +229,56 @@
   <dynamicField name="dynamic_multi_de_*" type="text_de" multiValued="true" indexed="true" stored="false"/>
   <dynamicField name="dynamic_multi_es_*" type="text_es" multiValued="true" indexed="true" stored="false"/>
   <dynamicField name="*_coordinate" type="double" indexed="true" stored="false" useDocValuesAsStored="false"/>
+
+  <!--Fulltext copy fields-->
   <copyField source="dynamic_*" dest="text"/>
+
+  <!--Facet copy fields-->
   <copyField source="dynamic_multi_facet_*" dest="facets"/>
   <copyField source="dynamic_multi_stored_facet_*" dest="facets"/>
   <copyField source="dynamic_single_facet_*" dest="facets"/>
   <copyField source="dynamic_single_stored_facet_*" dest="facets"/>
-  <copyField source="dynamic_multi_suggest_*" dest="suggestions"/>
-  <copyField source="dynamic_multi_stored_suggest_*" dest="suggestions"/>
-  <copyField source="dynamic_single_suggest_*" dest="suggestions"/>
-  <copyField source="dynamic_single_stored_suggest_*" dest="suggestions"/>
+
+  <!--Suggestion copy fields-->
+  <copyField source="dynamic_multi_suggest_string_*" dest="dynamic_multi_suggest_analyzed_*"/>
+  <copyField source="dynamic_multi_stored_suggest_string_*" dest="dynamic_multi_stored_suggest_analyzed_*"/>
+  <copyField source="dynamic_single_suggest_string_*" dest="dynamic_single_suggest_analyzed_*"/>
+  <copyField source="dynamic_single_stored_suggest_string_*" dest="dynamic_single_stored_suggest_analyzed_*"/>
+
+  <copyField source="dynamic_multi_suggest_location_*" dest="suggestions"/>
+  <copyField source="dynamic_multi_suggest_boolean_*" dest="suggestions"/>
+  <copyField source="dynamic_multi_suggest_analyzed_*" dest="suggestions"/>
+  <copyField source="dynamic_multi_suggest_date_*" dest="suggestions"/>
+  <copyField source="dynamic_multi_suggest_long_*" dest="suggestions"/>
+  <copyField source="dynamic_multi_suggest_path_*" dest="suggestions"/>
+  <copyField source="dynamic_multi_suggest_float_*" dest="suggestions"/>
+  <copyField source="dynamic_multi_suggest_int_*" dest="suggestions"/>
+
+  <copyField source="dynamic_multi_stored_suggest_location_*" dest="suggestions"/>
+  <copyField source="dynamic_multi_stored_suggest_boolean_*" dest="suggestions"/>
+  <copyField source="dynamic_multi_stored_suggest_analyzed_*" dest="suggestions"/>
+  <copyField source="dynamic_multi_stored_suggest_date_*" dest="suggestions"/>
+  <copyField source="dynamic_multi_stored_suggest_long_*" dest="suggestions"/>
+  <copyField source="dynamic_multi_stored_suggest_path_*" dest="suggestions"/>
+  <copyField source="dynamic_multi_stored_suggest_float_*" dest="suggestions"/>
+  <copyField source="dynamic_multi_stored_suggest_int_*" dest="suggestions"/>
+
+  <copyField source="dynamic_single_suggest_location_*" dest="suggestions"/>
+  <copyField source="dynamic_single_suggest_boolean_*" dest="suggestions"/>
+  <copyField source="dynamic_single_suggest_analyzed_*" dest="suggestions"/>
+  <copyField source="dynamic_single_suggest_date_*" dest="suggestions"/>
+  <copyField source="dynamic_single_suggest_long_*" dest="suggestions"/>
+  <copyField source="dynamic_single_suggest_path_*" dest="suggestions"/>
+  <copyField source="dynamic_single_suggest_float_*" dest="suggestions"/>
+  <copyField source="dynamic_single_suggest_int_*" dest="suggestions"/>
+
+  <copyField source="dynamic_single_stored_suggest_location_*" dest="suggestions"/>
+  <copyField source="dynamic_single_stored_suggest_boolean_*" dest="suggestions"/>
+  <copyField source="dynamic_single_stored_suggest_analyzed_*" dest="suggestions"/>
+  <copyField source="dynamic_single_stored_suggest_date_*" dest="suggestions"/>
+  <copyField source="dynamic_single_stored_suggest_long_*" dest="suggestions"/>
+  <copyField source="dynamic_single_stored_suggest_path_*" dest="suggestions"/>
+  <copyField source="dynamic_single_stored_suggest_float_*" dest="suggestions"/>
+  <copyField source="dynamic_single_stored_suggest_int_*" dest="suggestions"/>
+
 </schema>

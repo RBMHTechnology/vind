@@ -54,7 +54,7 @@ public class CollectionManagementServiceUtilsTest {
 
     @Test
     public void testDownloadConfiguration() throws IOException {
-        Path configDir = service.downloadConfiguration("com.rbmhtechnology.vind:backend-solr:1.1.2");
+        Path configDir = service.downloadConfiguration("com.rbmhtechnology.vind:backend-solr:1.2.2");
         assertTrue(configDir.toString().endsWith("/unzipped/solrhome/core/conf"));
     }
 }
