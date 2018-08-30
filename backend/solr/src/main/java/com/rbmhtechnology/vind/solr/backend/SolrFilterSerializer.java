@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * @author Thomas Kurz (tkurz@apache.org)
  * @since 27.06.16.
  */
-//TODO: Check the possibility to implement with a visitor programing pattern
+
 public class SolrFilterSerializer {
 
     private static Logger log = LoggerFactory.getLogger(SolrFilterSerializer.class);
