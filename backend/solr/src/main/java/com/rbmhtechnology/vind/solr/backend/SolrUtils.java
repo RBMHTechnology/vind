@@ -87,14 +87,14 @@ public class SolrUtils {
             Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(),Fieldname.Type.NUMBER.getName(),
             Fieldname.Type.STRING.getName(),Fieldname.Type.LOCATION.getName());
 
-    private static final String INTERNAL_SUGGEST_FIELD_PREFIX = String.format("%s(%s|%s)(%s)?%s(%s|%s|%s|%s|%s|%s|%s)",
+    private static final String INTERNAL_SUGGEST_FIELD_PREFIX = String.format("%s(%s|%s)(%s)?%s(%s|%s|%s|%s|%s|%s|%s|%s)",
             Fieldname._DYNAMIC,
             Fieldname._MULTI,Fieldname._SINGLE,
             Fieldname._STORED,
             Fieldname._SUGGEST,
             Fieldname.Type.BOOLEAN.getName(), Fieldname.Type.DATE.getName(),
             Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(),Fieldname.Type.NUMBER.getName(),
-            Fieldname.Type.STRING.getName(),Fieldname.Type.LOCATION.getName());
+            Fieldname.Type.STRING.getName(),Fieldname.Type.LOCATION.getName(), Fieldname.Type.ANALYZED.getName());
 
     private static final String INTERNAL_CONTEXT_PREFIX = "(%s_)?";
 
@@ -637,7 +637,8 @@ public class SolrUtils {
             NUMBER("float_"),
             LOCATION("location_"),
             BOOLEAN("boolean_"),
-            BINARY("binary_");
+            BINARY("binary_"),
+            ANALYZED("analyzed_");
 
             private String name;
 
@@ -763,10 +764,10 @@ public class SolrUtils {
                     if(descriptor.isSuggest()) {
                         Type type;
                         if (isComplexField) {
-                            type = Type.getFromClass(String.class);
-                            return fieldName.replace(_SINGLE,_MULTI) + _SUGGEST + type.getName() + contextPrefix + descriptor.getName();
+                            return fieldName.replace(_SINGLE,_MULTI) + _SUGGEST + Type.ANALYZED.getName() + contextPrefix + descriptor.getName();
                         } else {
                             type = Type.getFromClass(descriptor.getType());
+                            type = type.getName().equals(Type.STRING.getName()) ? Type.ANALYZED : type;
                             return fieldName + _SUGGEST + type.getName() + contextPrefix + descriptor.getName();
                         }
                     } else {
