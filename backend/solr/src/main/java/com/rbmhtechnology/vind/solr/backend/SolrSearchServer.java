@@ -34,6 +34,7 @@ import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.request.CoreAdminRequest;
+import org.apache.solr.client.solrj.request.GenericSolrRequest;
 import org.apache.solr.client.solrj.request.schema.SchemaRequest;
 import org.apache.solr.client.solrj.response.CoreAdminResponse;
 import org.apache.solr.client.solrj.response.QueryResponse;
@@ -74,6 +75,8 @@ public class SolrSearchServer extends SearchServer {
     public static final String SOLR_WILDCARD = "*";
     public static final String SUGGESTION_DF_FIELD = "suggestions";
 
+    public static SolrRequest.METHOD REQUEST_METHOD;
+
     private ServiceProvider serviceProviderClass;
     private final SolrClient solrClient;
 
@@ -81,6 +84,14 @@ public class SolrSearchServer extends SearchServer {
         // this is mainly used with the ServiceLoader infrastructure
         this(getSolrServerProvider() != null ? getSolrServerProvider().getInstance() : null);
         serviceProviderClass = getSolrServerProvider();
+        final String clientClass = serviceProviderClass.getClass().getSimpleName();
+        switch (clientClass) {
+            case "EmbeddedSolrServerProvider":
+                REQUEST_METHOD = SolrRequest.METHOD.GET;
+                break;
+            default: REQUEST_METHOD = SolrRequest.METHOD.POST;
+
+        }
 
     }
 
@@ -142,6 +153,7 @@ public class SolrSearchServer extends SearchServer {
     public StatusResult getBackendStatus() {
         CoreAdminRequest request = new CoreAdminRequest();
         request.setAction(CoreAdminParams.CoreAdminAction.STATUS);
+
         try {
             CoreAdminResponse response = request.process(this.solrClient);
             int statusCode = response.getStatus();
@@ -219,7 +231,7 @@ public class SolrSearchServer extends SearchServer {
         if(CollectionUtils.isNotEmpty(doc.getChildren())) {
             //Get the nested docs of the document if existing
             final SolrQuery q = new SolrQuery("!( _id_:"+ doc.getId()+")AND(_root_:"+ doc.getId()+")");
-            final QueryResponse query = solrClient.query(q, SolrRequest.METHOD.POST);
+            final QueryResponse query = solrClient.query(q, REQUEST_METHOD);
 
             if (CollectionUtils.isEmpty(query.getResults()))
                 log.info("Deleting document `{}`: document is becoming parent.",doc.getId());
@@ -342,7 +354,7 @@ public class SolrSearchServer extends SearchServer {
         //query
         try {
             solrClientLogger.debug(">>> query({})", query.toString());
-            final QueryResponse response = solrClient.query(query, SolrRequest.METHOD.POST);
+            final QueryResponse response = solrClient.query(query, REQUEST_METHOD);
             if(response!=null){
 
                 final Map<String,Integer> childCounts = SolrUtils.getChildCounts(response);
@@ -684,7 +696,7 @@ public class SolrSearchServer extends SearchServer {
                 log.debug("Atomic Update - Get nested documents of [{}].",update.getId());
                 final NamedList<Object> paramList = new NamedList<>();
                 paramList.add(CommonParams.Q, "!( _id_:"+ update.getId()+")&(_root_:"+ update.getId()+")");
-                final QueryResponse query = solrClient.query(paramList.toSolrParams(), SolrRequest.METHOD.POST);
+                final QueryResponse query = solrClient.query(paramList.toSolrParams(), REQUEST_METHOD);
 
                 //if the document has nested docs solr does not support atomic updates
                 if (CollectionUtils.isNotEmpty(query.getResults())) {
@@ -827,7 +839,7 @@ public class SolrSearchServer extends SearchServer {
             final SolrQuery solrQuery = new SolrQuery();
             solrQuery.setParam(CommonParams.Q, "*:*");
             solrQuery.setParam(CommonParams.FQ,query.trim().replaceAll("^\\+","").split("\\+"));
-            final QueryResponse response = solrClient.query(solrQuery, SolrRequest.METHOD.POST);
+            final QueryResponse response = solrClient.query(solrQuery, REQUEST_METHOD);
             long qTime = 0;
             long elapsedTime = 0;
             if(Objects.nonNull(response) && CollectionUtils.isNotEmpty(response.getResults())){
@@ -866,7 +878,7 @@ public class SolrSearchServer extends SearchServer {
 
         try {
             log.debug(">>> query({})", query.toString());
-            QueryResponse response = solrClient.query(query, SolrRequest.METHOD.POST);
+            QueryResponse response = solrClient.query(query, REQUEST_METHOD);
             if(response!=null){
                 return SolrUtils.Result.buildSuggestionResult(response, assets, childFactory, search.getSearchContext());
             }else {
@@ -989,7 +1001,7 @@ public class SolrSearchServer extends SearchServer {
 
         try {
             log.debug(">>> query({})", query.toString());
-            QueryResponse response = solrClient.query(query, SolrRequest.METHOD.POST);
+            QueryResponse response = solrClient.query(query, REQUEST_METHOD);
             if(response!=null){
                 return SolrUtils.Result.buildRealTimeGetResult(response, search, assets);
             }else {
