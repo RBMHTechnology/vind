@@ -85,3 +85,9 @@ default scope due to a null FieldDescriptor.
 * Feature #45: added a new filter _TermsQueryFilter_ which enables the possibility to do huge comma separated term filters by the means of the _TermsQuery_ parser in Solr.
 * Bugfix #43: fixed preprocessing from analysis report to add _final_ flag to fulltext queries which the last entry of a session and have no following closing action (like selection of a document or restarting of the search).
 * Feature #53: Added field analysis handler.
+
+## 1.2.3
+* Updated Solr dependencies to 5.5.5.
+* Improvement #60: Added health check functionality.
+* Feature #57: Added the possibility to define more than one _and_ or _or_ children searches.
+* Bugfix #62: Fixed issue which enforced collections created with Vind release <= 1.2.0 to be completely deleted and re-indexed in order to don't throw an exception on suggestions.
