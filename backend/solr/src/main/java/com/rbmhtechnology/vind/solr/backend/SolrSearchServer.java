@@ -6,7 +6,7 @@ import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.ServiceProvider;
-import com.rbmhtechnology.vind.api.query.*;
+import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.division.Page;
 import com.rbmhtechnology.vind.api.query.division.Slice;
@@ -33,7 +33,9 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.client.solrj.request.CoreAdminRequest;
 import org.apache.solr.client.solrj.request.schema.SchemaRequest;
+import org.apache.solr.client.solrj.response.CoreAdminResponse;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SolrPingResponse;
 import org.apache.solr.client.solrj.response.UpdateResponse;
@@ -134,6 +136,26 @@ public class SolrSearchServer extends SearchServer {
     @Override
     public Object getBackend() {
         return solrClient;
+    }
+
+    @Override
+    public StatusResult getBackendStatus() {
+        CoreAdminRequest request = new CoreAdminRequest();
+        request.setAction(CoreAdminParams.CoreAdminAction.STATUS);
+        try {
+            CoreAdminResponse response = request.process(this.solrClient);
+            int statusCode = response.getStatus();
+
+            if(statusCode != 0) {
+                return StatusResult.down().setDetail("status", statusCode);
+            } else {
+                return StatusResult.up().setDetail("status", statusCode);
+            }
+
+        } catch (SolrServerException | IOException e) {
+            log.error("Cannot ping server");
+            throw new SearchServerException("Cannot ping server", e);
+        }
     }
 
     @Override
@@ -410,27 +432,37 @@ public class SolrSearchServer extends SearchServer {
             //TODO: move to SolrUtils
             final String parentSearchQuery = "((" + query.get(CommonParams.Q) + ") AND " + TYPE + ":" + factory.getType() + ")";
 
-            final String childrenSearchQuery = "_query_:\"{!parent which="+ TYPE+":"+factory.getType()+"}(" + TYPE+":"+search.getChildrenFactory().getType()+" AND ("+search.getChildrenSearchString().getEscapedSearchString()+"))\"";
+            final String childrenSearchQuery =
+                    search.getChildrenSearches().stream()
+                    .map( childrenSearch ->
+                            "_query_:\"{!parent which="+ TYPE+":"+factory.getType()+"}(" + TYPE+":"+search.getChildrenFactory().getType()+" AND (" + childrenSearch.getEscapedSearchString()+"))\"")
+                    .collect(Collectors.joining( " " + search.getChildrenSearchOperator().name() + " "));
 
             query.set(CommonParams.Q, String.join(" ",
                     parentSearchQuery,
                     search.getChildrenSearchOperator().name(),
                     childrenSearchQuery));
 
-            if(search.getChildrenSearchString().hasFilter()){
+            search.getChildrenSearches().forEach( childrenSearch -> {
 
-                //TODO clean up!
-                final String parentFilterQuery =  "(" + String.join(" AND ", query.getFilterQueries()) + ")";
-                final String childrenFilterQuery =
-                        new ChildrenFilterSerializer(factory,search.getChildrenFactory(),searchContext, search.getStrict(), true)
-                                .serialize(search.getChildrenSearchString().getFilter());
+                if(childrenSearch.hasFilter()){
 
-                query.set(CommonParams.FQ,
-                        String.join(" ",
-                                parentFilterQuery,
-                                search.getChildrenSearchOperator().name(),
-                                "(" + childrenFilterQuery + ")"));
-            }
+                    //TODO clean up!
+                    final String parentFilterQuery =  "(" + String.join(" AND ", query.getFilterQueries()) + ")";
+                    final String childrenFilterQuery =
+                            new ChildrenFilterSerializer(factory,search.getChildrenFactory(),searchContext, search.getStrict(), true)
+                                    .serialize(childrenSearch.getFilter());
+
+                    query.set(CommonParams.FQ,
+                            String.join(" ",
+                                    parentFilterQuery,
+                                    search.getChildrenSearchOperator().name(),
+                                    "(" + childrenFilterQuery + ")"));
+                }
+
+                    }
+            );
+
 
         }
 

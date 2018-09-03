@@ -213,6 +213,11 @@ public class CompletableSearchServer extends SearchServer {
     }
 
     @Override
+    public StatusResult getBackendStatus() {
+        return backend.getBackendStatus();
+    }
+
+    @Override
     public IndexResult index(Document ... docs) {
         return backend.index(docs);
     }

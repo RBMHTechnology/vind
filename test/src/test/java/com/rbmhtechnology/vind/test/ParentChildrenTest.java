@@ -176,7 +176,6 @@ public class ParentChildrenTest {
         assertEquals(Integer.valueOf(1),result.getResults().get(0).getChildCount());
     }
 
-    //MBDN-579
     @Test
     public void testParentDuplicationOnAtomicUpdate() {
 
@@ -260,7 +259,6 @@ public class ParentChildrenTest {
         assertEquals(Integer.valueOf(2),result.getResults().get(1).getChildCount());
     }
 
-    //MBDN-599
     @Test
     public void testFilterRandomOrderFailure() {
         FulltextSearch search = Search.fulltext()
@@ -272,7 +270,6 @@ public class ParentChildrenTest {
         assertEquals(Integer.valueOf(0),result.getResults().get(0).getChildCount());//0 because none of the assets have the shared_value:red
     }
 
-    //MBDN-599
     @Test
     public void testSubdocumentFacetCountsFailure() {
         FulltextSearch search = Search.fulltext()
@@ -312,5 +309,56 @@ public class ParentChildrenTest {
         search = Search.fulltext("S003 (").setStrict(false).orChildrenSearch(child);
         result = server.execute(search, parent);
         assertEquals(1, result.getNumOfResults());
+    }
+
+    //Vind #57
+    @Test
+    public void testMultipleChildrenSearches(){
+        FulltextSearch childSearch1 = Search.fulltext()
+                .filter(eq(child_value, "red"))
+                .filter(eq(child_value, "blue"));
+
+        FulltextSearch search = Search.fulltext()
+                .setStrict(false)
+                .andChildrenSearch(childSearch1,child);
+
+        SearchResult result = server.execute(search, parent);
+        assertEquals(0, result.getNumOfResults());
+
+        childSearch1 = Search.fulltext()
+                .filter(eq(child_value, "red"));
+        FulltextSearch childSearch2 = Search.fulltext()
+                .filter(eq(child_value, "blue"));
+        search = Search.fulltext()
+                .setStrict(false)
+                .andChildrenSearch(child, childSearch1,childSearch2);
+
+        result = server.execute(search, parent);
+        assertEquals(1, result.getNumOfResults());
+        assertEquals(Integer.valueOf(2),result.getResults().get(0).getChildCount());
+
+        childSearch1 = Search.fulltext()
+                .filter(eq(child_value, "red"));
+        childSearch2 = Search.fulltext()
+                .filter(eq(child_value, "purple"));
+        search = Search.fulltext()
+                .setStrict(false)
+                .andChildrenSearch(child, childSearch1, childSearch2);
+
+        result = server.execute(search, parent);
+        assertEquals(0, result.getNumOfResults());
+
+        childSearch1 = Search.fulltext()
+                .filter(eq(child_value, "red"))
+                .filter(eq(shared_value, "red"));
+        childSearch2 = Search.fulltext()
+                .filter(eq(child_value, "green"));
+        search = Search.fulltext()
+                .setStrict(false)
+                .filter(eq(parent_value, "red"))
+                .orChildrenSearch(child, childSearch1,childSearch2);
+
+        result = server.execute(search, parent);
+        assertEquals(4, result.getNumOfResults());
     }
 }

@@ -37,7 +37,7 @@ public class FulltextSearch {
     private ResultSubset resultSet;
     private boolean childrenSearch = false;
     private Operators childrenSearchOperator = Operators.OR;
-    private FulltextSearch childrenSearchString = null;
+    private List<FulltextSearch> childrenSearchString = new ArrayList<>();
     private DocumentFactory childrenFactory = null;
     private String timeZone = null;
     private Distance geoDistance = null;
@@ -101,7 +101,8 @@ public class FulltextSearch {
     public FulltextSearch orChildrenSearch(DocumentFactory childrenFactory){
         this.childrenSearch = true;
         this.childrenSearchOperator = Operators.OR;
-        this.childrenSearchString = this.copy();
+        this.childrenSearchString.clear();
+        this.childrenSearchString.add(this.copy());
         this.childrenFactory = childrenFactory;
         return this;
     }
@@ -111,10 +112,28 @@ public class FulltextSearch {
      * containing a children which matches the children search search. Even if the parent does not mach the original search.
      * @return This {@link FulltextSearch} instance with the the deepSearch enabled.
      */
+    @Deprecated
     public FulltextSearch orChildrenSearch(FulltextSearch childrenSearch, DocumentFactory childrenFactory){
         this.childrenSearch = true;
         this.childrenSearchOperator = Operators.OR;
-        this.childrenSearchString = childrenSearch;
+        this.childrenSearchString.clear();
+        this.childrenSearchString.add(childrenSearch);
+        this.childrenFactory = childrenFactory;
+        return this;
+    }
+
+    /**
+     * Sets the full text search to use the an specific text search in the nested documents, returning also the parents
+     * containing a children which matches the children search search. Even if the parent does not mach the original search.
+     * @param childrenFactory {@link DocumentFactory} defining the type of the children documents to search by.
+     * @param childrenSearch {@link FulltextSearch} searches defining the filters and text to search by.
+     * @return This {@link FulltextSearch} instance with the the deepSearch enabled.
+     */
+    public FulltextSearch orChildrenSearch(DocumentFactory childrenFactory, FulltextSearch... childrenSearch){
+        this.childrenSearch = true;
+        this.childrenSearchOperator = Operators.OR;
+        this.childrenSearchString.clear();
+        this.childrenSearchString.addAll(Arrays.asList(childrenSearch));
         this.childrenFactory = childrenFactory;
         return this;
     }
@@ -127,7 +146,8 @@ public class FulltextSearch {
     public FulltextSearch andChildrenSearch(DocumentFactory childrenFactory){
         this.childrenSearch = true;
         this.childrenSearchOperator = Operators.AND;
-        this.childrenSearchString = this.copy();
+        this.childrenSearchString.clear();
+        this.childrenSearchString.add(this.copy());
         this.childrenFactory = childrenFactory;
         return this;
     }
@@ -137,10 +157,28 @@ public class FulltextSearch {
      * matching the parent search containing children which matches the children search.
      * @return This {@link FulltextSearch} instance with the the deepSearch enabled.
      */
+    @Deprecated
     public FulltextSearch andChildrenSearch(FulltextSearch childrenSearch, DocumentFactory childrenFactory){
         this.childrenSearch = true;
         this.childrenSearchOperator = Operators.AND;
-        this.childrenSearchString = childrenSearch;
+        this.childrenSearchString.clear();
+        this.childrenSearchString.add(childrenSearch);
+        this.childrenFactory = childrenFactory;
+        return this;
+    }
+
+    /**
+     * Sets the full text search to use the an specific text search in the nested documents, returning just the parents
+     * matching the parent search containing children which matches the children search.
+     * @param childrenFactory {@link DocumentFactory} defining the type of the children documents to search by.
+     * @param childrenSearch {@link FulltextSearch} searches defining the filters and text to search by.
+     * @return This {@link FulltextSearch} instance with the the deepSearch enabled.
+     */
+    public FulltextSearch andChildrenSearch(DocumentFactory childrenFactory, FulltextSearch... childrenSearch){
+        this.childrenSearch = true;
+        this.childrenSearchOperator = Operators.AND;
+        this.childrenSearchString.clear();
+        this.childrenSearchString.addAll(Arrays.asList(childrenSearch));
         this.childrenFactory = childrenFactory;
         return this;
     }
@@ -453,11 +491,19 @@ public class FulltextSearch {
     }
 
     /**
-     * Gets the text of the children search query.
-     * @return String containing the children search configuration
-     * .
+     * Gets the first children search query.
+     * @return {@link FulltextSearch} containing the first children search configuration.
      */
+    @Deprecated
     public FulltextSearch getChildrenSearchString() {
+        return childrenSearchString.get(0);
+    }
+
+    /**
+     * Gets the children search defined for this FulltextSearch.
+     * @return {@link List<FulltextSearch>} containing the children searches.
+     */
+    public List<FulltextSearch> getChildrenSearches() {
         return childrenSearchString;
     }
 
@@ -579,7 +625,7 @@ public class FulltextSearch {
                 this.childrenSearch,
                 this.childrenSearchOperator,
                 this.childrenFactory,
-                this.childrenSearchString,
+                "[" + this.childrenSearchString.stream().map(FulltextSearch::toString).collect(Collectors.joining(",")) + "]",
                 this.hasFacet(),
                 this.facetMinCount,
                 this.facetLimit,

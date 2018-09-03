@@ -36,7 +36,7 @@ public class SuggestionTest {
         SolrQuery query = server.buildSolrQuery(search,factory,null);
 
         assertEquals("abc", query.get("q"));
-        assertEquals("dynamic_single_suggest_string_null", query.get("suggestion.field"));
+        assertEquals("dynamic_single_suggest_analyzed_null", query.get("suggestion.field"));
         assertEquals(SolrSearchServer.SUGGESTION_DF_FIELD, query.get("suggestion.df"));
         assertEquals("10", query.get("suggestion.limit"));
 

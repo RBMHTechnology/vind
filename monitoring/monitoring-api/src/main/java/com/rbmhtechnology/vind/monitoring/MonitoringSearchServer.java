@@ -92,6 +92,11 @@ public class MonitoringSearchServer extends SearchServer {
     }
 
     @Override
+    public StatusResult getBackendStatus() {
+        return server.getBackendStatus();
+    }
+
+    @Override
     public IndexResult index(Document... docs) {
        return this.index(Arrays.asList(docs));
     }
