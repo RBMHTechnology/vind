@@ -13,10 +13,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import javax.annotation.processing.Filer;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.rbmhtechnology.vind.api.query.filter.Filter.*;
@@ -155,10 +153,31 @@ public class ChildrenFilterSerializer {
 
         final Set<Filter> orChildren = normalizedFilters.stream().
                 filter(f -> f.getType().equals("OrFilter"))
-                .map( of ->((OrFilter)of).getChildren())
-                .flatMap(Collection::stream)
-                .map( f -> AndFilter.fromSet(Sets.union( normalizedChildren, Sets.newHashSet(f))))
+                .map( of -> normalize((OrFilter) of))
                 .collect(Collectors.toSet());
+
+
+        final Filter orFilterPivot = orChildren.stream()
+                .findFirst()
+                .orElse(null);
+
+        if(Objects.nonNull(orFilterPivot)) {
+            orChildren.remove(orFilterPivot);
+
+            final Set<Filter> andResultFilters= ((OrFilter) orFilterPivot).getChildren().stream()
+                .map( f-> AndFilter.fromSet(Sets.union( normalizedChildren, Sets.newHashSet(f))))
+                .map( af -> AndFilter.fromSet(Sets.union( orChildren, Sets.newHashSet(af))))
+                .collect(Collectors.toSet());
+
+            final Set<Filter> andResultNormalizedFilters = andResultFilters.stream()
+            .map(f -> normalize(f))
+            .collect(Collectors.toSet());
+
+            if(CollectionUtils.isNotEmpty(andResultNormalizedFilters)) {
+                return  OrFilter.fromSet(andResultNormalizedFilters);
+            }
+        }
+
 
         if(CollectionUtils.isNotEmpty(orChildren)) {
             return  OrFilter.fromSet(orChildren);
