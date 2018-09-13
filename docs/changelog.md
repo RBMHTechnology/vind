@@ -1,4 +1,4 @@
----
+mas---
 layout: rbmht-layout
 ---
 
@@ -91,3 +91,9 @@ default scope due to a null FieldDescriptor.
 * Improvement #60: Added health check functionality.
 * Feature #57: Added the possibility to define more than one _and_ or _or_ children searches.
 * Bugfix #62: Fixed issue which enforced collections created with Vind release <= 1.2.0 to be completely deleted and re-indexed in order to don't throw an exception on suggestions.
+
+## 1.2.4
+* Fix #64: removed suggestion string field copy rule to suggestion analyzed field from schema.
+
+## 1.2.5
+* Fix #66: Fixed normalization of AND filters containing just OR children filters.
