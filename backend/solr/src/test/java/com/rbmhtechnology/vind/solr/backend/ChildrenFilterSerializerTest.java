@@ -129,6 +129,122 @@ public class ChildrenFilterSerializerTest {
         assertEquals(2,((OrFilter)normalizedFilter).getChildren().size());
     }
 
+    //Vind #66
+    @Test
+    public void testNormalization() {
+
+        final ChildrenFilterSerializer serializer = new ChildrenFilterSerializer(parent, child, null, false, false);
+
+        Filter parentValueFilter = new OrFilter(eq(parent_value,"value1"), eq(parent_value,"value2"));
+        Filter sharedValueFilter = new OrFilter(new OrFilter(eq(shared_value,"shared1"), eq(shared_value,"shared2")), eq(shared_value,"shared3"));
+
+        Filter mainFilter = new AndFilter(parentValueFilter, sharedValueFilter);
+
+        // Original
+        //
+        //                  AND
+        //                 /   \
+        //                OR    OR
+        //              / | \   / \
+        //            s1 s2 s3 v1 v2
+        //============================
+        // DNF
+        //
+        //                         OR
+        //             /   /     |     |    \     \
+        //          AND   AND   AND   AND   AND   AND
+        //          / \   / \   / \   / \   / \   / \
+        //         s1 v1 s1 v2 s2 v1 s2 v2 s3 v1 s3 v2
+
+        Filter normalizedFilter = serializer.normalize(mainFilter);
+
+        assertEquals("OrFilter",normalizedFilter.getType());
+        assertEquals(6,((OrFilter)normalizedFilter).getChildren().size());
+
+        // Original
+        //
+        //                      AND
+        //                 /     |    \
+        //                OR    AND   OR
+        //              / | \   / \   / \
+        //            s1 s2 s3 s4 c1 v1 v2
+        //
+        //
+        //============================
+        // DNF
+        //
+        //                                             OR
+        //              /            /           |           |          \          \
+        //             AND          AND         AND         AND         AND         AND
+        //          / /  \ \    /  /  \ \    /  / \ \    /  / \ \    /  / \  \   /  / \  \
+        //        s1  s4 c1 v1 s1 s4  c1 v2 s2 s4 c1 v1 s2 s4 c1 v2 s3 s4 c1 v1 s3 s4 c1 v2
+
+        Filter parentChildrenValueFilter = new AndFilter(eq(shared_value,"shared4"), eq(child_value,"child1"));
+
+        mainFilter = new AndFilter(new AndFilter(parentValueFilter, sharedValueFilter), parentChildrenValueFilter);
+        normalizedFilter = serializer.normalize(mainFilter);
+
+        assertEquals("OrFilter",normalizedFilter.getType());
+        assertEquals(6,((OrFilter)normalizedFilter).getChildren().size());
+
+
+        // Original
+        //
+        //                  AND
+        //                 /   \
+        //                OR    OR
+        //              / | \   / \
+        //            AND s2 s3 v1 v2
+        //            / \
+        //          s1  c1
+        //============================
+        // DNF
+        //
+        //                               OR
+        //             /      /       |     |    \     \
+        //           AND     AND     AND   AND   AND   AND
+        //          / | \   / | \    / \   / \   / \   / \
+        //        s1 c1 v1 s1 c1 v2 s2 v1 s2 v2 s3 v1 s3 v2
+
+
+        parentChildrenValueFilter = new AndFilter(eq(shared_value,"shared1"), eq(child_value,"child1"));
+
+        sharedValueFilter = new OrFilter(new OrFilter(parentChildrenValueFilter, eq(shared_value,"shared2")), eq(shared_value,"shared3"));
+
+        mainFilter = new AndFilter(parentValueFilter, sharedValueFilter);
+        normalizedFilter = serializer.normalize(mainFilter);
+
+        assertEquals("OrFilter",normalizedFilter.getType());
+        assertEquals(6,((OrFilter)normalizedFilter).getChildren().size());
+
+        // Original
+        //
+        //                  OR
+        //                 /   \
+        //                OR    AND
+        //              / | \   / \
+        //            AND s2 s3 v1 v2
+        //            / \
+        //          s1  c1
+        //============================
+        // DNF
+        //
+        //                   OR
+        //              /   /  \   \
+        //            AND  s2  s3  AND
+        //            / \          / \
+        //           s1 c1        v1 v2
+
+        parentChildrenValueFilter = new AndFilter(eq(shared_value,"shared1"), eq(child_value,"child1"));
+
+        sharedValueFilter = new OrFilter(new OrFilter(parentChildrenValueFilter, eq(shared_value,"shared2")), eq(shared_value,"shared3"));
+
+        mainFilter = new OrFilter(new AndFilter(eq(parent_value,"value1"), eq(parent_value,"value2")), sharedValueFilter);
+        normalizedFilter = serializer.normalize(mainFilter);
+
+        assertEquals("OrFilter",normalizedFilter.getType());
+        assertEquals(4,((OrFilter)normalizedFilter).getChildren().size());
+    }
 
 
 }
