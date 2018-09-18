@@ -32,9 +32,9 @@ The search lib is modular and currently implements the following layers:
 
 Each Vind released is labeled in the repository with a tag fitting the following schema: _vind-va.b.c_ where 
 **vind-v** just points out that this belongs to a Vind version and **a.b.c** represents the release number, also used 
-for the artifact version. Prior to **vind-v1.3.0** there was not a clear policy on versioning therefor, there was also not 
-an explanation about it. 
-From __1.3.0__ on the releases will strictly stick to the following diagram:
+for the artifact version. Prior to **vind-v1.3.0** there was not a clear policy on versioning.
+
+From __1.3.0__ the releases will strictly stick to the following diagram:
 
 ![Versioning policy](./docs/images/versioning_policy.png)
 
@@ -45,7 +45,7 @@ I.e., _vind-v1.3.0-RC1_ would be the first release candidate for version 1.2.6 w
 staging environment, will be released again after fixing as __vind-v1.3.0-RC2__. After approval, the artifact will be released   
 **vind-v1.3.0**.
 
-From **vind-v1.3.0** on, all the hot fixes would be handle in a release specific maintenance branch, menaing this that development 
+From **vind-v1.3.0**, all the hot fixes would be handle in a release specific maintenance branch, menaing this that development 
 branch would always be in an _a.b.0-SNAPSHOT_ **Vind** version.
 
 ## Roadmap
