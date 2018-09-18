@@ -39,7 +39,7 @@ From __1.3.0__ the releases will strictly stick to the following diagram:
 ![Versioning policy](./docs/images/versioning_policy.png)
 
 Regarding the release process, prior to every non _hot fix_ release, a **release candidate** would be published to be tested 
-on an staging environment as closest as possible to production. These releases will apply the previous described name schema 
+on an staging environment as close as possible to production. These releases will apply the previous described name schema 
 followed by _RCa_ suffix, being **a** the release candidate iteration number. 
 I.e., _vind-v1.3.0-RC1_ would be the first release candidate for version 1.2.6 which, if rejected due to bugs found in 
 staging environment, will be released again after fixing as __vind-v1.3.0-RC2__. After approval, the artifact will be released   
