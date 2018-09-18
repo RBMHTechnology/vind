@@ -30,11 +30,11 @@ The search lib is modular and currently implements the following layers:
 
 ## Versioning & release policy
 
-Each Vind released is labeled in the repository with a tag fitting the following schema: _vind-va.b.c_ where 
+Each Vind release is labeled in the repository with a tag fitting the following schema: _vind-va.b.c_ where 
 **vind-v** just points out that this belongs to a Vind version and **a.b.c** represents the release number, also used 
 for the artifact version. Prior to **vind-v1.3.0** there was not a clear policy on versioning.
 
-From __1.3.0__ the releases will strictly stick to the following diagram:
+From __1.3.0__ on releases will strictly stick to the following diagram:
 
 ![Versioning policy](./docs/images/versioning_policy.png)
 
