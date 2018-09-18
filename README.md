@@ -42,8 +42,8 @@ Regarding the release process, prior to every non _hot fix_ release, a **release
 on an staging environment as close as possible to production. These releases will apply the previous described name schema 
 followed by _RCa_ suffix, being **a** the release candidate iteration number. 
 I.e., _vind-v1.3.0-RC1_ would be the first release candidate for version 1.2.6 which, if rejected due to bugs found in 
-staging environment, will be released again after fixing as __vind-v1.3.0-RC2__. After approval, the artifact will be released   
-**vind-v1.3.0**.
+staging environment, will be released again after fixing as __vind-v1.3.0-RC2__. After approval, the artifact will be released
+as **vind-v1.3.0**.
 
 From **vind-v1.3.0**, all the hot fixes would be handle in a release specific maintenance branch, menaing this that development 
 branch would always be in an _a.b.0-SNAPSHOT_ **Vind** version.
