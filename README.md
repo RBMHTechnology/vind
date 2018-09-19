@@ -45,8 +45,8 @@ I.e., _vind-v1.3.0-RC1_ would be the first release candidate for version 1.2.6 w
 staging environment, will be released again after fixing as __vind-v1.3.0-RC2__. After approval, the artifact will be released
 as **vind-v1.3.0**.
 
-From **vind-v1.3.0**, all the hot fixes would be handle in a release specific maintenance branch, menaing this that development 
-branch would always be in an _a.b.0-SNAPSHOT_ **Vind** version.
+From **vind-v1.3.0**, all the hot fixes will be handle in a release specific maintenance branch, that means development 
+branch should always be in an _a.b.0-SNAPSHOT_ **Vind** version.
 
 ## Roadmap
 
