@@ -20,9 +20,9 @@ public class Page extends ResultSubset {
      * @param pagesize int setting the nu,mber of documents to be shown by each page.
      */
     public Page(int page, int pagesize) {
-        if(page < 1) {
-            log.error("Page number can not be lower than 1: {}",page);
-            throw new IllegalArgumentException("Page must be a positive, but is: " + page);
+        if(page < 0) {
+            log.error("Page number can not be lower than 0: {}",page);
+            throw new IllegalArgumentException("Page should not be a negative value:" + page);
         }
         this.page = page;
         this.pagesize = pagesize;
