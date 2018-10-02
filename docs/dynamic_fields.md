@@ -47,3 +47,22 @@ public SearchService() {
             .build();
 }
 ```
+
+### 4.2 Indexing dynamic documents
+
+As simple pojos, dynamic documents can be added to the index and made visible by a commit.
+
+````java
+server.index(item);
+server.commit();
+````
+Additionally to that (as hard commit is a quite time consuming operation and not always necessary), we added a 
+function that allows to index a document and guarantee, that is available by search within a certain ammount of milliseconds.
+Note, a hard commit is then not necessary (even if it is neccessary to persist the index to disc, you don't have to take care, it's been done automatically every 60 seconds).
+So, adding a document like this:
+
+````java
+server.index(item, 2000);
+````
+
+guarantees, that the item can be found within 2 seconds.
