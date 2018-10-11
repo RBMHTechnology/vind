@@ -190,6 +190,22 @@ public abstract class SearchServer implements Closeable {
     public abstract IndexResult index(List<Document> doc);
 
     /**
+     * Adds a {@link Document} to the search server index. {@link SearchServer#commit()} should be executed afterwards for
+     * this change to take place on the index.
+     * @param doc comma separated {@link Document}s to be indexed.
+     * @param withinMs documents are visible in search within ms
+     */
+    public abstract IndexResult indexWithin(Document doc, int withinMs);
+
+    /**
+     * Adds a {@link Document} or {@link Document}s to the search server index. {@link SearchServer#commit()} should be executed afterwards for
+     * this change to take place on the  index.
+     * @param doc comma separated {@link Document}s to be indexed.
+     * @param withinMs documents are visible in search within ms
+     */
+    public abstract IndexResult indexWithin(List<Document> doc, int withinMs);
+
+    /**
      * Removes a {@link Document} from the search server index. {@link SearchServer#commit()} should be executed afterwards for
      * this change to take place on the  index.
      * @param doc {@link Document} to be indexed.
@@ -197,6 +213,16 @@ public abstract class SearchServer implements Closeable {
      * @throws SearchServerException if not possible to perform the deletion.
      */
     public abstract DeleteResult delete(Document doc);
+
+    /**
+     * Removes a {@link Document} from the search server index. {@link SearchServer#commit()} should be executed afterwards for
+     * this change to take place on the  index.
+     * @param doc {@link Document} to be indexed.
+     * @param withinMs documents are visible in search within ms
+     * @return {@link DeleteResult} instance containing the deletion execution info.
+     * @throws SearchServerException if not possible to perform the deletion.
+     */
+    public abstract DeleteResult deleteWithin(Document doc, int withinMs);
 
     /**
      *  Changes a document in the index, based on the modifications described by {@link Update}.

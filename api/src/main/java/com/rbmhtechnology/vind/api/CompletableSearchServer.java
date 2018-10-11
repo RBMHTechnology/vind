@@ -228,6 +228,16 @@ public class CompletableSearchServer extends SearchServer {
     }
 
     @Override
+    public IndexResult indexWithin(Document doc, int withinMs) {
+        return backend.indexWithin(doc, withinMs);
+    }
+
+    @Override
+    public IndexResult indexWithin(List<Document> doc, int withinMs) {
+        return backend.indexWithin(doc, withinMs);
+    }
+
+    @Override
     public boolean execute(Update update, DocumentFactory factory) {
         return backend.execute(update, factory);
     }
@@ -240,6 +250,11 @@ public class CompletableSearchServer extends SearchServer {
     @Override
     public DeleteResult delete(Document doc) {
         return backend.delete(doc);
+    }
+
+    @Override
+    public DeleteResult deleteWithin(Document doc, int withinMs) {
+        return backend.deleteWithin(doc, withinMs);
     }
 
     @Override
