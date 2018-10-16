@@ -23,7 +23,7 @@ public class CommitTest {
         Assert.assertEquals(1, testSearchServer.getSearchServer().execute(Search.getById("1"), document).getNumOfResults());
         Assert.assertEquals(0, testSearchServer.getSearchServer().execute(Search.fulltext(), document).getNumOfResults());
 
-        Thread.sleep(1100);
+        Thread.sleep(1500);
 
         Assert.assertEquals(1, testSearchServer.getSearchServer().execute(Search.fulltext(), document).getNumOfResults());
 
@@ -41,7 +41,7 @@ public class CommitTest {
         Assert.assertEquals(1, testSearchServer.getSearchServer().execute(Search.getById("3"), document).getNumOfResults());
         Assert.assertEquals(0, testSearchServer.getSearchServer().execute(Search.fulltext(), document).getNumOfResults());
 
-        Thread.sleep(1100);
+        Thread.sleep(1500);
 
         Assert.assertEquals(2, testSearchServer.getSearchServer().execute(Search.fulltext(), document).getNumOfResults());
 
@@ -60,7 +60,7 @@ public class CommitTest {
         Assert.assertEquals(0, testSearchServer.getSearchServer().execute(Search.getById("4"), document).getNumOfResults());
         Assert.assertEquals(1, testSearchServer.getSearchServer().execute(Search.fulltext(), document).getNumOfResults());
 
-        Thread.sleep(1100);
+        Thread.sleep(1500);
 
         Assert.assertEquals(0, testSearchServer.getSearchServer().execute(Search.fulltext(), document).getNumOfResults());
 
