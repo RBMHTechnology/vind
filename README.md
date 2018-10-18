@@ -28,6 +28,26 @@ The search lib is modular and currently implements the following layers:
 
 ![Search Lib Architecture](./docs/images/layer_cake.png)
 
+## Versioning & release policy
+
+Each Vind release is labeled in the repository with a tag fitting the following schema: _vind-va.b.c_ where 
+**vind-v** just points out that this belongs to a Vind version and **a.b.c** represents the release number, also used 
+for the artifact version. Prior to **vind-v1.3.0** there was not a clear policy on versioning.
+
+From __1.3.0__ on releases will strictly stick to the following diagram:
+
+![Versioning policy](./docs/images/versioning_policy.png)
+
+Regarding the release process, prior to every non _hot fix_ release, a **release candidate** would be published to be tested 
+on an staging environment as close as possible to production. These releases will apply the previous described name schema 
+followed by _RCa_ suffix, being **a** the release candidate iteration number. 
+I.e., _vind-v1.3.0-RC1_ would be the first release candidate for version 1.2.6 which, if rejected due to bugs found in 
+staging environment, will be released again after fixing as __vind-v1.3.0-RC2__. After approval, the artifact will be released
+as **vind-v1.3.0**.
+
+From **vind-v1.3.0**, all the hot fixes will be handle in a release specific maintenance branch, that means development 
+branch should always be in an _a.b.0-SNAPSHOT_ **Vind** version.
+
 ## Roadmap
 
 If you'd like to get a deeper look into the lib or if you are interested in our future goals just [have a look at 
