@@ -28,11 +28,9 @@ import com.rbmhtechnology.vind.utils.FileSystemUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.util.Asserts;
-import org.apache.solr.client.solrj.SolrClient;
-import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrRequest;
-import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.*;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.client.solrj.request.CollectionAdminRequest;
 import org.apache.solr.client.solrj.request.CoreAdminRequest;
 import org.apache.solr.client.solrj.request.GenericSolrRequest;
 import org.apache.solr.client.solrj.request.schema.SchemaRequest;
@@ -151,12 +149,21 @@ public class SolrSearchServer extends SearchServer {
 
     @Override
     public StatusResult getBackendStatus() {
-        CoreAdminRequest request = new CoreAdminRequest();
-        request.setAction(CoreAdminParams.CoreAdminAction.STATUS);
-
+        int statusCode = -1;
         try {
-            CoreAdminResponse response = request.process(this.solrClient);
-            int statusCode = response.getStatus();
+            if(SearchConfiguration.get(SearchConfiguration.SERVER_SOLR_CLOUD, false)) {
+                CollectionAdminRequest request = new CollectionAdminRequest.ClusterStatus();
+
+                SolrResponse response = request.process(this.solrClient);
+                statusCode = Integer.valueOf(((NamedList)response.getResponse().get("responseHeader")).get("status").toString());
+
+            }
+            else {
+                CoreAdminRequest request = new CoreAdminRequest();
+                request.setAction(CoreAdminParams.CoreAdminAction.STATUS);
+                CoreAdminResponse response = request.process(this.solrClient);
+                statusCode = response.getStatus();
+            }
 
             if(statusCode != 0) {
                 return StatusResult.down().setDetail("status", statusCode);
