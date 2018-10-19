@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * @author Thomas Kurz (tkurz@apache.org)
@@ -48,7 +49,7 @@ public class RemoteSolrServerProvider implements SolrServerProvider {
             log.info("Instantiating solr cloud client: {}", host);
 
             if(collection != null) {
-                CloudSolrClient client = new CloudSolrClient.Builder(Arrays.asList(host)).build();
+                CloudSolrClient client = new CloudSolrClient.Builder(Arrays.asList(host), Optional.empty()).build();
                 client.setDefaultCollection(collection);
 
                 if(StringUtils.isNotEmpty(connectionTimeout)) {
