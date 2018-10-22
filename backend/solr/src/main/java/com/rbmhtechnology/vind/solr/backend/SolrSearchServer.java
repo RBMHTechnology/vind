@@ -181,7 +181,7 @@ public class SolrSearchServer extends SearchServer {
     public IndexResult index(Document ... docs) {
         Asserts.notNull(docs,"Document to index should not be null.");
         Asserts.check(docs.length > 0, "Should be at least one document to index.");
-        return indexMultipleDocuments(Arrays.asList(docs));
+        return indexMultipleDocuments(Arrays.asList(docs), -1);
     }
 
     @Override
@@ -189,10 +189,20 @@ public class SolrSearchServer extends SearchServer {
         Asserts.notNull(docs,"Document to index should not be null.");
         Asserts.check(docs.size() > 0, "Should be at least one document to index.");
 
-        return  indexMultipleDocuments(docs);
+        return  indexMultipleDocuments(docs, -1);
     }
 
-    private IndexResult indexSingleDocument(Document doc) {
+    @Override
+    public IndexResult indexWithin(Document doc, int withinMs) {
+        return this.indexSingleDocument(doc, withinMs);
+    }
+
+    @Override
+    public IndexResult indexWithin(List<Document> doc, int withinMs) {
+        return this.indexMultipleDocuments(doc, withinMs);
+    }
+
+    private IndexResult indexSingleDocument(Document doc, int withinMs) {
         final SolrInputDocument document = createInputDocument(doc);
         try {
             if (solrClientLogger.isTraceEnabled()) {
@@ -201,8 +211,8 @@ public class SolrSearchServer extends SearchServer {
                 solrClientLogger.debug(">>> add({})", doc.getId());
             }
 
-            removeNonParentDocument(doc);
-            final UpdateResponse response = this.solrClient.add(document);
+            removeNonParentDocument(doc, withinMs);
+            final UpdateResponse response = withinMs < 0 ? this.solrClient.add(document) : this.solrClient.add(document, withinMs);
             return new IndexResult(Long.valueOf(response.getQTime())).setElapsedTime(response.getElapsedTime());
 
         } catch (SolrServerException | IOException e) {
@@ -211,7 +221,7 @@ public class SolrSearchServer extends SearchServer {
         }
     }
 
-    private IndexResult indexMultipleDocuments(List<Document> docs) {
+    private IndexResult indexMultipleDocuments(List<Document> docs, int withinMs) {
         final List<SolrInputDocument> solrDocs = docs.parallelStream()
                 .map(doc -> createInputDocument(doc))
                 .collect(Collectors.toList());
@@ -222,10 +232,10 @@ public class SolrSearchServer extends SearchServer {
                 solrClientLogger.debug(">>> add({})", solrDocs);
             }
             for(Document doc : docs){
-                removeNonParentDocument(doc);
+                removeNonParentDocument(doc, withinMs);
             }
 
-            final UpdateResponse response = this.solrClient.add(solrDocs);
+            final UpdateResponse response = withinMs < 0 ? this.solrClient.add(solrDocs) : this.solrClient.add(solrDocs, withinMs);
             return new IndexResult(Long.valueOf(response.getQTime())).setElapsedTime(response.getElapsedTime());
 
         } catch (SolrServerException | IOException e) {
@@ -234,7 +244,7 @@ public class SolrSearchServer extends SearchServer {
         }
     }
 
-    private void removeNonParentDocument(Document doc) throws SolrServerException, IOException {
+    private void removeNonParentDocument(Document doc, int withinMs) throws SolrServerException, IOException {
         if(CollectionUtils.isNotEmpty(doc.getChildren())) {
             //Get the nested docs of the document if existing
             final SolrQuery q = new SolrQuery("!( _id_:"+ doc.getId()+")AND(_root_:"+ doc.getId()+")");
@@ -242,7 +252,12 @@ public class SolrSearchServer extends SearchServer {
 
             if (CollectionUtils.isEmpty(query.getResults()))
                 log.info("Deleting document `{}`: document is becoming parent.",doc.getId());
+
+            if(withinMs < 0) {
                 this.solrClient.deleteById(doc.getId());
+            } else {
+                this.solrClient.deleteById(doc.getId(), withinMs);
+            }
         }
     }
 
@@ -336,15 +351,20 @@ public class SolrSearchServer extends SearchServer {
 
     @Override
     public DeleteResult delete(Document doc) {
+        return this.deleteWithin(doc, -1);
+    }
+
+    @Override
+    public DeleteResult deleteWithin(Document doc, int withinMs) {
         try {
             long qTime = 0;
             long elapsedTime = 0;
             solrClientLogger.debug(">>> delete({})", doc.getId());
-            final UpdateResponse deleteResponse = solrClient.deleteById(doc.getId());
+            final UpdateResponse deleteResponse = withinMs < 0 ? solrClient.deleteById(doc.getId()) : solrClient.deleteById(doc.getId(), withinMs);
             qTime = deleteResponse.getQTime();
             elapsedTime = deleteResponse.getElapsedTime();
             //Deleting nested documents
-            final UpdateResponse deleteNestedResponse = solrClient.deleteByQuery("_root_:" + doc.getId());
+            final UpdateResponse deleteNestedResponse = withinMs < 0 ? solrClient.deleteByQuery("_root_:" + doc.getId()) : solrClient.deleteByQuery("_root_:" + doc.getId(), withinMs);
             qTime += deleteNestedResponse.getQTime();
             elapsedTime += deleteNestedResponse.getElapsedTime();
 

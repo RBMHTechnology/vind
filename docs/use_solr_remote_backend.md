@@ -90,3 +90,16 @@ in the main directory of the project. Usage:
 
 * `./solr_remote.sh start` downloads solr (if necessary), configures the server and starts it
 * `./solr_remote.sh stop` stops the running server
+
+** Vind Solr backend with Docker
+
+We created a Docker image *redlinkgmbh/vind-solr-server* which even simplifies the setup of a Solr backend for Vind. The image is hosted on 
+[Dockerhub](https://hub.docker.com/r/redlinkgmbh/vind-solr-server/tags/). There you can find different versions, whereby
+the version number is aligned to the Vind release version. You can easily start a Vind Solr backend like this:
+```
+docker run -p 8983:8983 redlinkgmbh/vind-solr-server:1.3.0
+```
+This will start the server including the vind core. The configuration for the host is:
+```properties
+server.host=http://localhost:8983/solr/vind
+```

@@ -106,6 +106,16 @@ public class MonitoringSearchServer extends SearchServer {
         return index(docs,this.session);
     }
 
+    @Override
+    public IndexResult indexWithin(Document doc, int withinMs) {
+        return server.indexWithin(doc, withinMs);
+    }
+
+    @Override
+    public IndexResult indexWithin(List<Document> doc, int withinMs) {
+        return server.indexWithin(doc, withinMs);
+    }
+
     public IndexResult index(List<Document> docs, Session session) {
         final ZonedDateTime start = ZonedDateTime.now();
         log.debug("Monitoring server is indexing document'{}' at {}:{}:{} - {}.{}.{} ", docs.stream().map(Document::getId).collect(Collectors.toList()),
@@ -173,6 +183,11 @@ public class MonitoringSearchServer extends SearchServer {
     @Override
     public DeleteResult delete(Document doc) {
         return delete(doc,this.session);
+    }
+
+    @Override
+    public DeleteResult deleteWithin(Document doc, int withinMs) {
+        return server.deleteWithin(doc, withinMs);
     }
 
     public DeleteResult delete(Document doc, Session session) {
