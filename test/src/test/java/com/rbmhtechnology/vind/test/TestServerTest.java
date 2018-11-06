@@ -144,7 +144,7 @@ public class TestServerTest {
                 .facet(category)
                 .facet(created)
                 .facet(modified)
-                .facet(new TermFacetOption.TermFacetPrefix("He"), title)
+                .facet(new TermFacetOption().setPrefix("He"), title)
                 .page(1, 25)
                 .sort(desc(created));
 

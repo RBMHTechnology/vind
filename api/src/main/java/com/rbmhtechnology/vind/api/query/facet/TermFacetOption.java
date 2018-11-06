@@ -6,7 +6,7 @@ package com.rbmhtechnology.vind.api.query.facet;
 /**
  * Created on 05.11.18.
  */
-public abstract class TermFacetOption {
+public class TermFacetOption {
 
     private Integer offset = 0;
     private Integer limit;
