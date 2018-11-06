@@ -9,6 +9,7 @@ package com.rbmhtechnology.vind.api.query.facet;
 public abstract class TermFacetOption {
 
     public abstract String getOption();
+    public abstract String getValue();
 
     public static class TermFacetPrefix extends TermFacetOption {
 
@@ -18,7 +19,7 @@ public abstract class TermFacetOption {
             this.prefix = prefix;
         }
 
-        public String getPrefix() {
+        public String getValue() {
             return prefix;
         }
 

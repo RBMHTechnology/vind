@@ -96,7 +96,7 @@ public abstract class Facet {
 
         private FieldDescriptor<T> fieldDescriptor;
         private final String fieldName;
-        private final TermFacetOption.TermFacetPrefix prefix;
+        private final TermFacetOption option;
 
         public TermFacet(FieldDescriptor<T> fieldDescriptor) {
             this.fieldDescriptor = fieldDescriptor;
@@ -104,7 +104,7 @@ public abstract class Facet {
             // Backwards compatibility
             this.name = this.fieldName;
             this.facetName = this.fieldName;
-            this.prefix = null;
+            this.option = null;
         }
 
         public TermFacet(String name) {
@@ -112,7 +112,7 @@ public abstract class Facet {
             // Backwards compatibility
             this.name = name;
             this.facetName = name;
-            this.prefix = null;
+            this.option = null;
 
         }
 
@@ -122,7 +122,7 @@ public abstract class Facet {
             // Backwards compatibility
             this.name = this.fieldName;
             this.facetName = this.fieldName;
-            this.prefix = (TermFacetOption.TermFacetPrefix)option;
+            this.option = option;
         }
 
         public TermFacet(TermFacetOption option, String name) {
@@ -130,7 +130,7 @@ public abstract class Facet {
             // Backwards compatibility
             this.name = name;
             this.facetName = name;
-            this.prefix = (TermFacetOption.TermFacetPrefix)option;
+            this.option = option;
         }
 
         /**
@@ -145,8 +145,8 @@ public abstract class Facet {
             return this.fieldName;
         }
 
-        public TermFacetOption.TermFacetPrefix getPrefix() {
-            return prefix;
+        public TermFacetOption getOption() {
+            return option;
         }
 
         @Override

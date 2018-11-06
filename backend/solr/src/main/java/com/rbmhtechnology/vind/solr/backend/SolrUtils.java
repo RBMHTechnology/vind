@@ -300,8 +300,8 @@ public class SolrUtils {
                         termFacet.put("field", fieldName);
                         termFacet.put("limit", String.valueOf(facetLimit));
 
-                        if (Objects.nonNull(value.getPrefix())) {
-                            termFacet.put(value.getPrefix().getOption(), value.getPrefix().getPrefix());
+                        if (Objects.nonNull(value.getOption())) {
+                            termFacet.put(value.getOption().getOption(), value.getOption().getValue());
                         }
 
                         return termFacet;
