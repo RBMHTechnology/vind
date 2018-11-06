@@ -1,5 +1,7 @@
 package com.rbmhtechnology.vind.solr.backend;
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
@@ -276,19 +278,24 @@ public class SolrUtils {
             return termFacetQuery.stream().toArray(String[]::new);
         }
 
-        public static HashMap<String, Object> buildJsonTermFacet(Map<String, Facet> facets, int facetLimit, DocumentFactory factory, DocumentFactory childFactory, String searchContext) {
-            final List<HashMap<String, String>> termFacetQuery = facets.entrySet().stream()
+        public static ObjectNode buildJsonTermFacet(Map<String, Facet> facets, int facetLimit, DocumentFactory factory, DocumentFactory childFactory, String searchContext) {
+
+            final ObjectNode jsonFacets = JsonNodeFactory.instance.objectNode();
+
+            final List<ObjectNode> termFacetQuery = facets.entrySet().stream()
                     .filter(facet -> facet.getValue() instanceof TermFacet)
                     //.map(facet -> facet.setValue((Facet.TermFacet) facet.getValue()))
                     .map(facet -> {
-                        final HashMap<String, String> termFacet = new HashMap<>();
+                        final ObjectNode termFacet = JsonNodeFactory.instance.objectNode();
                         termFacet.put("type","terms");
                         final TermFacet value = (TermFacet) facet.getValue();
                         FieldDescriptor<?> field = factory.getField(value.getFieldName());
                         if(Objects.isNull(field) && Objects.nonNull(childFactory)) {
                             field = childFactory.getField(value.getFieldName());
-                            termFacet.put("domain",
-                                    "{blockChildren:\"" + Fieldname.TYPE +":" +factory.getType() + "\"}");
+                            final ObjectNode domainObject = JsonNodeFactory.instance.objectNode();
+                            domainObject.set("blockChildren",
+                                    JsonNodeFactory.instance.objectNode().put(Fieldname.TYPE,factory.getType()));
+                            termFacet.set("domain", domainObject);
                         }
 
                         final UseCase useCase = UseCase.valueOf(facet.getValue().getScope().name());
@@ -299,7 +306,7 @@ public class SolrUtils {
                             return null;
                         }
                         termFacet.put("field", fieldName);
-                        termFacet.put("limit", String.valueOf(facetLimit));
+                        termFacet.put("limit", facetLimit);
 
                         if (Objects.nonNull(value.getOption())) {
                             final TermFacetOption option = value.getOption();
@@ -308,7 +315,7 @@ public class SolrUtils {
 
                             }
                             if(Objects.nonNull(option.getLimit())) {
-                                termFacet.put("limit", option.getLimit().toString());
+                                termFacet.put("limit", option.getLimit());
                             }
 
                             if(Objects.nonNull(option.getMethod())) {
@@ -316,19 +323,19 @@ public class SolrUtils {
                             }
 
                             if(Objects.nonNull(option.getMincount())) {
-                                termFacet.put("mincount", String.valueOf(option.getMincount()));
+                                termFacet.put("mincount", option.getMincount());
                             }
 
                             if(Objects.nonNull(option.getOffset())) {
-                                termFacet.put("offset", String.valueOf(option.getOffset()));
+                                termFacet.put("offset", option.getOffset());
                             }
 
                             if(Objects.nonNull(option.getOverrefine())) {
-                                termFacet.put("overrefine", String.valueOf(option.getOverrefine()));
+                                termFacet.put("overrefine", option.getOverrefine());
                             }
 
                             if(Objects.nonNull(option.getOverrequest())) {
-                                termFacet.put("overrequest", String.valueOf(option.getOverrequest()));
+                                termFacet.put("overrequest", option.getOverrequest());
                             }
 
                             if(Objects.nonNull(option.getSort())) {
@@ -336,19 +343,19 @@ public class SolrUtils {
                             }
 
                             if(Objects.nonNull(option.isAllBuckets())) {
-                                termFacet.put("allBuckets", String.valueOf(option.isAllBuckets()));
+                                termFacet.put("allBuckets", option.isAllBuckets());
                             }
 
                             if(Objects.nonNull(option.isMissing())) {
-                                termFacet.put("missing", String.valueOf(option.isMissing()));
+                                termFacet.put("missing", option.isMissing());
                             }
 
                             if(Objects.nonNull(option.isNumBuckets())) {
-                                termFacet.put("numBuckets", String.valueOf(option.isNumBuckets()));
+                                termFacet.put("numBuckets", option.isNumBuckets());
                             }
 
                             if(Objects.nonNull(option.isRefine())) {
-                                termFacet.put("refine", String.valueOf(option.isRefine()));
+                                termFacet.put("refine", option.isRefine());
                             }
                         }
 
@@ -357,13 +364,13 @@ public class SolrUtils {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
-            final List<HashMap<String, String>> typeFacet = facets.values().stream()
+            final List<ObjectNode> typeFacet = facets.values().stream()
                     .filter(facet -> facet instanceof TypeFacet)
                     .map(facet ->{
-                        final HashMap<String, String> termFacet = new HashMap<>();
+                        final ObjectNode termFacet = JsonNodeFactory.instance.objectNode();
                         termFacet.put("type","terms");
                         termFacet.put("field", Fieldname.TYPE);
-                        termFacet.put("limit", String.valueOf(facetLimit));
+                        termFacet.put("limit", facetLimit);
                         return termFacet;
                     })
                     .filter(Objects::nonNull)
@@ -371,8 +378,8 @@ public class SolrUtils {
 
             termFacetQuery.addAll(typeFacet);
 
-            final HashMap<String, Object> jsonFieldFacet = new HashMap<>();
-            termFacetQuery.stream().forEach( facet -> jsonFieldFacet.put(facet.get("field"),facet));
+            final ObjectNode jsonFieldFacet = JsonNodeFactory.instance.objectNode();
+            termFacetQuery.stream().forEach( facet -> jsonFieldFacet.set(facet.get("field").asText(),facet));
             return jsonFieldFacet;
         }
 
@@ -499,49 +506,52 @@ public class SolrUtils {
                         filter = search.getChildrenSearches().stream()
                                 .filter(FulltextSearch::hasFilter)
                                 .map( childrenSearch -> {
-                                    final String childrenFilterSerialized = serializeFacetFilter(childrenSearch.getFilter(), search.getChildrenFactory(), searchContext, search.getStrict()).replaceAll("\"", "\\\\\"");;
-                                    return "(" +childrenFilterSerialized + " AND " + StringEscapeUtils.escapeJson(search.getSearchString()) +")";
+                                    final String childrenFilterSerialized = serializeFacetFilter(childrenSearch.getFilter(), search.getChildrenFactory(), searchContext, search.getStrict());
+                                    return "(" +childrenFilterSerialized + " AND " + search.getSearchString() +")";
                                 })
                                 .collect(Collectors.joining(" OR "));
 
                         if(StringUtils.isBlank(filter)) {
-                            filter = StringEscapeUtils.escapeJson(search.getSearchString());
+                            filter = search.getSearchString();
                         }
 
                         filter = "{!edismax}" + filter;
-                        return String.format(
-                                "{" +//TODO this should be done by an inner component (paging!!)
-                                    "parent_facet:{" +
-                                        "type:terms," +
-                                        "field:%s," +
-                                        "limit:999999999," +
-                                        "mincount:1," +
-                                        "sort:{index:asc}," +
-                                        "domain:{blockParent:\"%s:%s\"}," +
-                                        "facet:{" +
-                                            "children_facet:{" +
-                                                "type:query," +
-                                                "q:\"%s\"," +
-                                                "domain:{blockChildren:\"%s:%s\"}" +
-                                            "}" +
-                                        "}" +
-                                    "}," +
 
-                                    "childrenCount:{" +
-                                        "type:query," +
-                                        "mincount:1," +
-                                        "q:\"%s\"," +
-                                        "domain:{blockChildren:\"%s:%s\"}," +
-                                        "facet:{" +
-                                            "parentFilteredCount:{" +
-                                                "type:terms," +
-                                                "field: _type_," +
-                                                "domain:{blockParent :\"%s:%s\"}" +
-                                            "}" +
-                                        "}" +
-                                    "}" +
+                        final String domainQuery= Fieldname.TYPE + ":" + type;
+                        final ObjectNode childrenFacet = JsonNodeFactory.instance.objectNode()
+                                .put("type", "query")
+                                .put("q", filter);
+                        childrenFacet.set("domain", JsonNodeFactory.instance.objectNode()
+                                .put("blockChildren", domainQuery));
 
-                                "}", Fieldname.ID, Fieldname.TYPE, type, filter, Fieldname.TYPE, type, filter, Fieldname.TYPE, type, Fieldname.TYPE, type);
+                        final ObjectNode parentFacet = JsonNodeFactory.instance.objectNode()
+                                .put("type","terms")
+                                .put("field", Fieldname.ID)
+                                .put("limit",999999999)
+                                .put("mincount",1);
+                        parentFacet.set("sort", JsonNodeFactory.instance.objectNode().put("index","asc"));
+                        parentFacet.set("domain", JsonNodeFactory.instance.objectNode().put("blockParent", domainQuery));
+                        parentFacet.set("facet", JsonNodeFactory.instance.objectNode().set("children_facet", childrenFacet));
+
+                        final ObjectNode parentFilteredObject = JsonNodeFactory.instance.objectNode();
+                        parentFilteredObject.set("parentFilteredCount", JsonNodeFactory.instance.objectNode()
+                                .put("type", "terms")
+                                .put("field", Fieldname.TYPE)
+                                .set("domain", JsonNodeFactory.instance.objectNode().put("blockParent", domainQuery)));
+                        final ObjectNode childrenCount = JsonNodeFactory.instance.objectNode()
+                                .put("type","query")
+                                .put("mincount",1)
+                                .put("q", filter);
+                        childrenCount.set("domain", JsonNodeFactory.instance.objectNode()
+                                .put("blockChildren", domainQuery));
+                        childrenCount.set("facet", parentFilteredObject);
+
+
+                        final ObjectNode subDocumentFacet = JsonNodeFactory.instance.objectNode();
+                        subDocumentFacet.set("parent_facet", parentFacet);
+                        subDocumentFacet.set("childrenCount", childrenCount);
+
+                        return subDocumentFacet.toString();
                     }).findAny();
             return facetOptional.orElse(null);
         }
