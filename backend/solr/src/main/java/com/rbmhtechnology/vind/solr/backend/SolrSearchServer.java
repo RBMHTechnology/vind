@@ -1,5 +1,8 @@
 package com.rbmhtechnology.vind.solr.backend;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.io.Resources;
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.annotations.AnnotationUtil;
@@ -600,9 +603,8 @@ public class SolrSearchServer extends SearchServer {
                     });
 
             //facet fields
-            final HashMap<String, Object> strings = SolrUtils.Query.buildJsonTermFacet(search.getFacets(), search.getFacetLimit(), factory, search.getChildrenFactory(), searchContext);
-
-            query.add("json.facet", strings.toString().replaceAll("=",":"));
+            final ObjectNode jsonFacet = SolrUtils.Query.buildJsonTermFacet(search.getFacets(), search.getFacetLimit(), factory, search.getChildrenFactory(), searchContext);
+            query.add("json.facet", jsonFacet.toString());
             //facet Subdocument count
             final String subdocumentFacetString = SolrUtils.Query.buildSubdocumentFacet(search, factory, searchContext);
             if(Objects.nonNull(subdocumentFacetString)) {

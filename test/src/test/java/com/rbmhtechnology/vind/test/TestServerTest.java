@@ -2404,12 +2404,12 @@ public class TestServerTest {
         FulltextSearch search = Search.fulltext("hello").facet(category)
             .facet(created)
             .facet(modified)
-            .facet(new TermFacetOption().setPrefix("He").setMincount(1).setLimit(2), title)
+            .facet(new TermFacetOption().setPrefix("Hello Fr").setMincount(1).setLimit(2), title)
             .page(1, 25)
             .sort(desc(created));
 
         PageResult result = (PageResult)server.execute(search,assets);
 
-        assertEquals(2, result.getFacetResults().getTermFacet(title).getValues().size());
+        assertEquals(1, result.getFacetResults().getTermFacet(title).getValues().size());
     }
 }
