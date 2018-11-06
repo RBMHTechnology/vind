@@ -2352,4 +2352,64 @@ public class TestServerTest {
         assertEquals(1, result.getNumOfResults());
     }
 
+    @Test
+    public void testTermOptions() {
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
+
+        FieldDescriptor<String> title = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("title");
+
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+        SingleValueFieldDescriptor.UtilDateFieldDescriptor<Date> modified = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildUtilDateField("modified");
+
+        NumericFieldDescriptor<Long> category = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildMultivaluedNumericField("category", Long.class);
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(title)
+                .addField(created)
+                .addField(category)
+                .addField(modified)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(title, "Hello World")
+                .setValue(created, yesterday)
+                .setValue(modified, new Date())
+                .setValues(category, Arrays.asList(1L, 2L));
+
+        Document d2 = assets.createDoc("2")
+                .setValue(title, "Hello Friends")
+                .setValue(created, now)
+                .setValue(modified, new Date())
+                .addValue(category, 4L);
+
+        SearchServer server = testSearchServer.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.commit();
+
+
+        FulltextSearch search = Search.fulltext("hello").facet(category)
+            .facet(created)
+            .facet(modified)
+            .facet(new TermFacetOption().setPrefix("He").setMincount(1).setLimit(2), title)
+            .page(1, 25)
+            .sort(desc(created));
+
+        PageResult result = (PageResult)server.execute(search,assets);
+
+        assertEquals(2, result.getFacetResults().getTermFacet(title).getValues().size());
+    }
 }

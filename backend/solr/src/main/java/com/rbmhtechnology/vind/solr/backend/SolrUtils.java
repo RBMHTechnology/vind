@@ -316,7 +316,7 @@ public class SolrUtils {
                             }
 
                             if(Objects.nonNull(option.getMincount())) {
-                                termFacet.put("minCount", String.valueOf(option.getMincount()));
+                                termFacet.put("mincount", String.valueOf(option.getMincount()));
                             }
 
                             if(Objects.nonNull(option.getOffset())) {
