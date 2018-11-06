@@ -4,6 +4,7 @@ import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
+import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
@@ -301,7 +302,54 @@ public class SolrUtils {
                         termFacet.put("limit", String.valueOf(facetLimit));
 
                         if (Objects.nonNull(value.getOption())) {
-                            termFacet.put(value.getOption().getOption(), value.getOption().getValue());
+                            final TermFacetOption option = value.getOption();
+                            if(Objects.nonNull(option.getPrefix())) {
+                                termFacet.put("prefix", option.getPrefix());
+
+                            }
+                            if(Objects.nonNull(option.getLimit())) {
+                                termFacet.put("limit", option.getLimit().toString());
+                            }
+
+                            if(Objects.nonNull(option.getMethod())) {
+                                termFacet.put("method", String.valueOf(option.getMethod()).toLowerCase());
+                            }
+
+                            if(Objects.nonNull(option.getMincount())) {
+                                termFacet.put("minCount", String.valueOf(option.getMincount()));
+                            }
+
+                            if(Objects.nonNull(option.getOffset())) {
+                                termFacet.put("offset", String.valueOf(option.getOffset()));
+                            }
+
+                            if(Objects.nonNull(option.getOverrefine())) {
+                                termFacet.put("overrefine", String.valueOf(option.getOverrefine()));
+                            }
+
+                            if(Objects.nonNull(option.getOverrequest())) {
+                                termFacet.put("overrequest", String.valueOf(option.getOverrequest()));
+                            }
+
+                            if(Objects.nonNull(option.getSort())) {
+                                termFacet.put("sort", option.getSort());
+                            }
+
+                            if(Objects.nonNull(option.isAllBuckets())) {
+                                termFacet.put("allBuckets", String.valueOf(option.isAllBuckets()));
+                            }
+
+                            if(Objects.nonNull(option.isMissing())) {
+                                termFacet.put("missing", String.valueOf(option.isMissing()));
+                            }
+
+                            if(Objects.nonNull(option.isNumBuckets())) {
+                                termFacet.put("numBuckets", String.valueOf(option.isNumBuckets()));
+                            }
+
+                            if(Objects.nonNull(option.isRefine())) {
+                                termFacet.put("refine", String.valueOf(option.isRefine()));
+                            }
                         }
 
                         return termFacet;
