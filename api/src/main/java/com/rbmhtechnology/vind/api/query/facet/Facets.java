@@ -48,6 +48,22 @@ public class Facets {
     /**
      * Creates a basic facet query object ({@link com.rbmhtechnology.vind.api.query.facet.Facet.TermFacet}) for
      * each {@link FieldDescriptor} provided as parameter.
+     * @param option {@link TermFacetOption} adding specific term facet configurations.
+     * @param descriptors FieldDescriptor[] group of fields to create facets for.
+     * @return {@link HashMap} A map of {@link Facet.TermFacet} which key is the name of the field they apply to.
+     */
+    public static HashMap<String,Facet> term(TermFacetOption option,FieldDescriptor<?>... descriptors) {
+        HashMap<String, Facet> facets = new HashMap<>();
+        for(FieldDescriptor<?> descriptor : descriptors) {
+            Facet facet = new Facet.TermFacet(option, descriptor);
+            facets.put(facet.getName(), facet);
+        }
+        return facets;
+    }
+
+    /**
+     * Creates a basic facet query object ({@link com.rbmhtechnology.vind.api.query.facet.Facet.TermFacet}) for
+     * each {@link FieldDescriptor} provided as parameter.
      * @param scope sets the scope where the facet will be done.
      * @param descriptors FieldDescriptor[] group of fields to create facets for.
      * @return {@link HashMap} A map of {@link Facet.TermFacet} which key is the name of the field they apply to.
@@ -56,6 +72,23 @@ public class Facets {
         HashMap<String, Facet> facets = new HashMap<>();
         for(FieldDescriptor<?> descriptor : descriptors) {
             Facet facet = new Facet.TermFacet(descriptor).setScope(scope);
+            facets.put(facet.getName(), facet);
+        }
+        return facets;
+    }
+
+    /**
+     * Creates a basic facet query object ({@link com.rbmhtechnology.vind.api.query.facet.Facet.TermFacet}) for
+     * each {@link FieldDescriptor} provided as parameter.
+     * @param scope sets the scope where the facet will be done.
+     * @param option {@link TermFacetOption} adding specific term facet configurations.
+     * @param descriptors FieldDescriptor[] group of fields to create facets for.
+     * @return {@link HashMap} A map of {@link Facet.TermFacet} which key is the name of the field they apply to.
+     */
+    public static HashMap<String,Facet> term(Scope scope, TermFacetOption option, FieldDescriptor<?>... descriptors) {
+        HashMap<String, Facet> facets = new HashMap<>();
+        for(FieldDescriptor<?> descriptor : descriptors) {
+            Facet facet = new Facet.TermFacet(option, descriptor).setScope(scope);
             facets.put(facet.getName(), facet);
         }
         return facets;
@@ -79,6 +112,22 @@ public class Facets {
     /**
      * Creates a basic facet query object ({@link com.rbmhtechnology.vind.api.query.facet.Facet.TermFacet}) for
      * each field provided as parameter.
+     * @param option {@link TermFacetOption} adding specific term facet configurations.
+     * @param names String group of name fields to create facets for.
+     * @return {@link HashMap} A map of {@link Facet.TermFacet} which key is the name of the field they apply to.
+     */
+    public static HashMap<String,Facet> term(TermFacetOption option, String ... names) {
+        HashMap<String, Facet> facets = new HashMap<>();
+        for(String name : names) {
+            Facet facet = new Facet.TermFacet(option, name);
+            facets.put(facet.getName(), facet);
+        }
+        return facets;
+    }
+
+    /**
+     * Creates a basic facet query object ({@link com.rbmhtechnology.vind.api.query.facet.Facet.TermFacet}) for
+     * each field provided as parameter.
      * @param scope sets the scope where the facet will be done.
      * @param names String group of name fields to create facets for.
      * @return {@link HashMap} A map of {@link Facet.TermFacet} which key is the name of the field they apply to.
@@ -87,6 +136,23 @@ public class Facets {
         HashMap<String, Facet> facets = new HashMap<>();
         for(String name : names) {
             Facet facet = new Facet.TermFacet(name).setScope(scope);
+            facets.put(facet.getName(), facet);
+        }
+        return facets;
+    }
+
+    /**
+     * Creates a basic facet query object ({@link com.rbmhtechnology.vind.api.query.facet.Facet.TermFacet}) for
+     * each field provided as parameter.
+     * @param scope sets the scope where the facet will be done.
+     * @param option {@link TermFacetOption} adding specific term facet configurations.
+     * @param names String group of name fields to create facets for.
+     * @return {@link HashMap} A map of {@link Facet.TermFacet} which key is the name of the field they apply to.
+     */
+    public static HashMap<String,Facet> term(Scope scope, TermFacetOption option, String ... names) {
+        HashMap<String, Facet> facets = new HashMap<>();
+        for(String name : names) {
+            Facet facet = new Facet.TermFacet(option, name).setScope(scope);
             facets.put(facet.getName(), facet);
         }
         return facets;

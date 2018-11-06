@@ -8,6 +8,7 @@ import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.facet.Interval;
+import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.api.result.GetResult;
@@ -143,6 +144,7 @@ public class TestServerTest {
                 .facet(category)
                 .facet(created)
                 .facet(modified)
+                .facet(new TermFacetOption.TermFacetPrefix("He"), title)
                 .page(1, 25)
                 .sort(desc(created));
 
