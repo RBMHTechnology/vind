@@ -50,6 +50,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 ;
 
@@ -67,19 +68,19 @@ public class CollectionManagementService {
 
     private static final int BLOB_STORE_REPLICAS = 1;
 
-    private String zkHost;
+    private List<String> zkHosts;
 
     private List<String> repositories = new ArrayList<>();
 
-    public CollectionManagementService(String zkHost) throws IOException {
-        this(zkHost, new String[0]);
+    public CollectionManagementService(List<String> zkHosts) throws IOException {
+        this(zkHosts, new String[0]);
     }
 
-    public CollectionManagementService(String zkHost, String ... repositories) throws IOException {
+    public CollectionManagementService(List<String> zkHost, String ... repositories) throws IOException {
         this(repositories);
-        this.zkHost = zkHost;
+        this.zkHosts = zkHost;
 
-        try (CloudSolrClient client = new CloudSolrClient.Builder(Arrays.asList(zkHost)).build()) {
+        try (CloudSolrClient client = new CloudSolrClient.Builder(zkHost, Optional.empty()).build()) {
             NamedList result = client.request(new CollectionAdminRequest.ClusterStatus());
 
             if (((NamedList) ((NamedList) result.get("cluster")).get("collections")).get(".system") == null) {
@@ -192,8 +193,8 @@ public class CollectionManagementService {
         if(!origConfigName.equals(configName)){
 
             //Change config set of the collection to the new one
-            try (final SolrZkClient zkClient = new SolrZkClient(zkHost, 4000);
-                 CloudSolrClient client = createCloudSolrClient()) {
+            try (final SolrZkClient zkClient = new SolrZkClient(zkHosts.get(0), 4000);
+                final CloudSolrClient client = createCloudSolrClient()) {
                 //TODO: The following call to the collections API is working from solr >= 6
                 final SolrQuery modifyCollectionQuery = new SolrQuery();
                 modifyCollectionQuery.setRequestHandler("/admin/collections");
@@ -344,14 +345,17 @@ public class CollectionManagementService {
     }
 
     private void installConfiguration(String configName) throws IOException {
-        Path folder = downloadConfiguration(configName);
+        final Path folder = downloadConfiguration(configName);
 
-        ConfigSetAdminRequest.Create createConfig = new ConfigSetAdminRequest.Create();
-        createConfig.setBaseConfigSetName(configName);
-        createConfig.setPath(folder.toAbsolutePath().toString());
+        try (CloudSolrClient client = createCloudSolrClient()) {
+            final SolrZkClient zkClient = client.getZkStateReader().getZkClient();
+            zkClient.upConfig(folder,configName);
+        } catch ( IOException e) {
+            throw new IOException("Cannot list config sets", e);
+        }
 
         try {
-            Utils.deleteRecursively(folder);
+            Utils.deleteRecursively(folder.getParent());
         } catch (IOException e) {
             logger.warn("Could not delete directory");
         }
@@ -370,7 +374,7 @@ public class CollectionManagementService {
 
     protected Path downloadConfiguration(String configName) throws IOException {
 
-        Path configDirectory;
+        final Path configDirectory;
 
         try {
             configDirectory = Files.createTempDirectory(configName);
@@ -379,11 +383,13 @@ public class CollectionManagementService {
             throw new IOException("Cannot create temp folder for downloading " + configName, e);
         }
 
-        Path jarFile = Utils.downloadToTempDir(configDirectory, repositories, configName);
+        final Path jarFile = Utils.downloadToTempDir(configDirectory, repositories, configName);
 
-        Path unzipped = Utils.unzipJar(configDirectory, jarFile);
+        final Path unzipped = Utils.unzipJar(configDirectory, jarFile);
 
-        return Utils.findParentOfFirstMatch(unzipped,"solrconfig.xml");
+        final Path confFolder = Utils.findParentOfFirstMatch(unzipped,"solrconfig.xml");
+        //Removed zipping process as now we use zookeper to upload the unziped config.
+        return confFolder;
 
     }
 
@@ -398,7 +404,7 @@ public class CollectionManagementService {
     }
 
     private CloudSolrClient createCloudSolrClient() {
-        return new CloudSolrClient.Builder(Arrays.asList(zkHost)).build();
+        return new CloudSolrClient.Builder(zkHosts, Optional.empty()).build();
     }
 
     protected void removeConfigSet(String configSetName) throws IOException {
@@ -467,13 +473,13 @@ public class CollectionManagementService {
                     String filePath = dir + File.separator + entry.getName();
                     if (!entry.isDirectory()) {
                         // if the entry is a file, extracts it
-                        BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath));
-                        byte[] bytesIn = new byte[4096];
-                        int read;
-                        while ((read = zipIn.read(bytesIn)) != -1) {
-                            bos.write(bytesIn, 0, read);
+                        try (final BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath))) {
+                            byte[] bytesIn = new byte[4096];
+                            int read;
+                            while ((read = zipIn.read(bytesIn)) != -1) {
+                                bos.write(bytesIn, 0, read);
+                            }
                         }
-                        bos.close();
                     } else {
                         // if the entry is a directory, make the directory
                         File _dir = new File(filePath);
@@ -595,6 +601,78 @@ public class CollectionManagementService {
 
         public static String toBlobName(String dependency) {
             return dependency.replaceAll(":","_");
+        }
+
+        /**
+         * Zip it
+         * @param zipFile output ZIP file location
+         */
+        public static void zipIt(Path sourceFolder, String zipFile){
+
+            final List<String> fileList = generateFileList(sourceFolder, sourceFolder.toFile());
+
+            if (fileList.size() > 0) {
+                byte[] buffer = new byte[1024];
+
+                try (final FileOutputStream fos = new FileOutputStream(zipFile);
+                     final ZipOutputStream zos = new ZipOutputStream(fos)) {
+
+                    logger.debug("Output to Zip : {}", zipFile);
+
+                    for (String file : fileList) {
+
+                        logger.debug("File Added : {}", file);
+                        ZipEntry ze = new ZipEntry(file);
+                        zos.putNextEntry(ze);
+                        try (final FileInputStream in =
+                                     new FileInputStream(sourceFolder + File.separator + file)) {
+                            int len;
+                            while ((len = in.read(buffer)) > 0) {
+                                zos.write(buffer, 0, len);
+                            }
+                        }
+                    }
+
+                    zos.closeEntry();
+
+                } catch (IOException e) {
+                    logger.error("Error Creating zip file of configuration conf folder");
+                    throw new RuntimeException("Error Creating zip file of configuration conf folder", e);
+                }
+            }
+        }
+
+        /**
+         * Traverse a directory and get all files,
+         * and add the file into fileList
+         * @param node file or directory
+         */
+        private static List<String> generateFileList(Path sourceFolder, File node){
+
+            final List<String> fileList = new ArrayList<>();
+            //add file only
+            if(node.isFile()){
+                fileList.add(generateZipEntry(sourceFolder, node.getAbsoluteFile().toString()));
+            }
+
+            if(node.isDirectory()){
+                String[] subNote = node.list();
+                for(String filename : subNote){
+                    fileList.addAll(generateFileList(sourceFolder, new File(node, filename)));
+                }
+            }
+
+            return fileList;
+
+        }
+
+        /**
+         * Format the file path for zip
+         * @param file file path
+         * @return Formatted file path
+         */
+        private static String generateZipEntry(Path sourceFolder, String file){
+            return file.substring(sourceFolder.toAbsolutePath().toString().length()+1, file.length());
         }
 
     }

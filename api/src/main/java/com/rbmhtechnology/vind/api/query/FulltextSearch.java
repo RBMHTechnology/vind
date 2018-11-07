@@ -6,6 +6,7 @@ import com.rbmhtechnology.vind.api.query.division.ResultSubset;
 import com.rbmhtechnology.vind.api.query.division.Slice;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.facet.Facets;
+import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
@@ -325,6 +326,17 @@ public class FulltextSearch {
 
     /**
      * Add basic {@link com.rbmhtechnology.vind.api.query.facet.Facet.TermFacet} to the fulltext search query.
+     * @param option {@link TermFacetOption} adding specific term facet configurations.
+     * @param descriptor {@link FieldDescriptor} indicating the field to facet on.
+     * @return This {@link FulltextSearch} instance with the new facet added.
+     */
+    public FulltextSearch facet(TermFacetOption option, FieldDescriptor ... descriptor) {
+        this.facets.putAll(Facets.term(option, descriptor));
+        return this;
+    }
+
+    /**
+     * Add basic {@link com.rbmhtechnology.vind.api.query.facet.Facet.TermFacet} to the fulltext search query.
      * @param descriptor {@link FieldDescriptor} indicating the field to facet on.
      * @return This {@link FulltextSearch} instance with the new facet added.
      */
@@ -346,11 +358,34 @@ public class FulltextSearch {
 
     /**
      * Add basic {@link com.rbmhtechnology.vind.api.query.facet.Facet.TermFacet} to the fulltext search query.
+     * @param scope sets the scope where the facet will be done.
+     * @param option {@link TermFacetOption} adding specific term facet configurations.
+     * @param descriptor {@link FieldDescriptor} indicating the field to facet on.
+     * @return This {@link FulltextSearch} instance with the new facet added.
+     */
+    public FulltextSearch facet(Scope scope, TermFacetOption option,FieldDescriptor ... descriptor) {
+        this.facets.putAll(Facets.term(scope, option, descriptor));
+        return this;
+    }
+
+    /**
+     * Add basic {@link com.rbmhtechnology.vind.api.query.facet.Facet.TermFacet} to the fulltext search query.
      * @param name String name of the field to facet on.
      * @return This {@link FulltextSearch} instance with the new facet added.
      */
     public FulltextSearch facet(String ... name) {
         this.facets.putAll(Facets.term(name));
+        return this;
+    }
+
+    /**
+     * Add basic {@link com.rbmhtechnology.vind.api.query.facet.Facet.TermFacet} to the fulltext search query.
+     * @param option {@link TermFacetOption} adding specific term facet configurations.
+     * @param name String name of the field to facet on.
+     * @return This {@link FulltextSearch} instance with the new facet added.
+     */
+    public FulltextSearch facet(TermFacetOption option, String ... name) {
+        this.facets.putAll(Facets.term(option, name));
         return this;
     }
 
@@ -362,6 +397,18 @@ public class FulltextSearch {
      */
     public FulltextSearch facet(Scope scope, String ... name) {
         this.facets.putAll(Facets.term(scope, name));
+        return this;
+    }
+
+    /**
+     * Add basic {@link com.rbmhtechnology.vind.api.query.facet.Facet.TermFacet} to the fulltext search query.
+     * @param scope sets the scope where the facet will be done.
+     * @param option {@link TermFacetOption} adding specific term facet configurations.
+     * @param name String name of the field to facet on.
+     * @return This {@link FulltextSearch} instance with the new facet added.
+     */
+    public FulltextSearch facet(Scope scope, TermFacetOption option, String ... name) {
+        this.facets.putAll(Facets.term(scope, option, name));
         return this;
     }
 

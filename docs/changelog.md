@@ -97,3 +97,13 @@ default scope due to a null FieldDescriptor.
 
 ## 1.2.5
 * Fix #66: Fixed normalization of AND filters containing just OR children filters.
+
+## 1.3.0
+* Improvement #68: Documented and applied new release policy.
+* Changed suggestion handler internal operator from AND to OR as default.
+
+## 2.0.0
+* Upgrade to Solr7.5.
+* Ensure that number of the page is 1 or bigger.
+* Feature #73: Support index Within.
+* Improvement #67: Provide Docker-Image for Solr Backend.

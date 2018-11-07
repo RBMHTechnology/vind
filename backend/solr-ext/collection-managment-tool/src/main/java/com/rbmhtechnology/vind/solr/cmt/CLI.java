@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -50,12 +52,13 @@ public class CLI {
                 throw new ParseException("To create a new collection the configset name should be provided.");
             }
 
-            String zkHost = line.getOptionValue("in");
+            final String zkHost = line.getOptionValue("in");
             if (Strings.isNullOrEmpty(zkHost)) {
                 throw new ParseException("To create a new collection The zookeeper address should be provided.");
             }
 
-            String[] repositories = line.getOptionValues("repositories");
+            final List<String> zkHosts = Arrays.asList(zkHost);
+            final String[] repositories = line.getOptionValues("repositories");
 
 
             if( line.hasOption( "createCollection" ) ) {
@@ -74,7 +77,7 @@ public class CLI {
 
 
                 logger.info("Creating collection {} from configset {} in [{}] with {} shards and replication factor of {}.", collectionName,configSetName,zkHost, collectionShards, collectionReplicas);
-                final CollectionManagementService cmService = new CollectionManagementService(zkHost, repositories);
+                final CollectionManagementService cmService = new CollectionManagementService(zkHosts, repositories);
                 cmService.createCollection(collectionName,configSetName,collectionShards.intValue(),collectionReplicas.intValue());
 
                 logger.info("Created collection {} successfully", collectionName);
@@ -90,7 +93,7 @@ public class CLI {
                 final String collectionName = line.getOptionValue("updateCollection");
 
                 logger.info("Updating collection {} from configSet {} in [{}]", collectionName,configSetName,zkHost);
-                final CollectionManagementService cmService = new CollectionManagementService(zkHost, repositories);
+                final CollectionManagementService cmService = new CollectionManagementService(zkHosts, repositories);
                 cmService.updateCollection(collectionName, configSetName);
 
                 logger.info("Updated collection {} successfully", collectionName);
