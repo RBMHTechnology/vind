@@ -3,6 +3,8 @@ package com.rbmhtechnology.vind.solr.cmt;
 import org.junit.Ignore;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -21,13 +23,13 @@ public class CollectionManagementFullIntegrationTest {
     @Ignore
     public void testAll() throws IOException {
 
-        String zkHost = "localhost:9983";
+        List<String> zkHosts = Arrays.asList( "localhost:9983");
 
         String[] repositories = {
                 "/~/.m2/repository"
         };
 
-        CollectionManagementService service = new CollectionManagementService(zkHost, repositories);
+        CollectionManagementService service = new CollectionManagementService(zkHosts, repositories);
 
         assertFalse(service.collectionExists("test-for-vind"));
 

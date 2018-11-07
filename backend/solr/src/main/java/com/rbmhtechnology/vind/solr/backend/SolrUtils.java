@@ -518,6 +518,8 @@ public class SolrUtils {
                         filter = "{!edismax}" + filter;
 
                         final String domainQuery= Fieldname.TYPE + ":" + type;
+
+                        //Parent Facet
                         final ObjectNode childrenFacet = JsonNodeFactory.instance.objectNode()
                                 .put("type", "query")
                                 .put("q", filter);
@@ -547,12 +549,14 @@ public class SolrUtils {
                         childrenCount.set("facet", parentFilteredObject);
 
 
+                        //Subdocument Count facet
                         final ObjectNode subDocumentFacet = JsonNodeFactory.instance.objectNode();
                         subDocumentFacet.set("parent_facet", parentFacet);
                         subDocumentFacet.set("childrenCount", childrenCount);
 
                         return subDocumentFacet.toString();
-                    }).findAny();
+                    })
+                    .findAny();
             return facetOptional.orElse(null);
         }
     }
