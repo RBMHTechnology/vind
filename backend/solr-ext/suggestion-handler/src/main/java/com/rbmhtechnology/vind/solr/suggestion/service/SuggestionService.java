@@ -42,7 +42,10 @@ public class SuggestionService {
     private static final String IGNORE_CASE_REGEX = "[%s|%s]";
     private static final String PREFIX_REGEX = "/(%s.*)|(.* +%s.*)/";
     private static final String INTERVAL_QUERY = "%s:[%s TO %s]";
-    private static final Collection<String> SOLR_REGEX_ESCAPE_CHARS = Arrays.asList("-",".","*","+");
+    //LUCENE regex list of special characters
+    private static final Collection<String> SOLR_REGEX_ESCAPE_CHARS =
+            Arrays.asList("-", ".", "*", "+", "&&", "||", "!", "(",  ")",
+                          "{", "}", "[", "]", "^" ,"\"", "~", "*", "?", ":", "\\", "/");
 
     private String internalFacetLimit = "50";
 

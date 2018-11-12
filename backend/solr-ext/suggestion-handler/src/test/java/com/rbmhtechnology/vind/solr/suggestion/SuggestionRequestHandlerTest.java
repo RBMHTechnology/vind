@@ -388,4 +388,24 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
                 "//response/lst[@name='suggestions']/lst[@name='suggestion_facets']/lst[1]/int[@name='count'][.='2']");
         */
     }
+
+    @Test
+    public void failSuggestionTest() {
+
+        ModifiableSolrParams params = new ModifiableSolrParams();
+
+        params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
+        params.add(CommonParams.Q,"2015/16, mexico");
+        params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_suggest_analyzed_name");
+        params.add(SuggestionRequestParams.SUGGESTION_DF,"suggestions");
+
+        SolrQueryRequest req = new LocalSolrQueryRequest( core, params );
+
+        assertQ("suggester - spellcheck suggestion for 'sepastian'",req,
+                "//response/lst[@name='suggestions']/int[@name='suggestion_count'][.='1']",
+                "//response/lst[@name='suggestions']/lst[@name='suggestion_facets']/lst[@name='dynamic_multi_stored_suggest_analyzed_name']/int[@name='sebastian vettel'][.='2']",
+                "//response/lst[@name='spellcheck']/lst[@name='collations']/str[@name='collation'][.='sebastian*']");
+
+    }
 }
