@@ -455,13 +455,15 @@ public class SolrSearchServer extends SearchServer {
         if(!fulltext.isEmpty()) {
             query.setParam(DisMaxParams.QF, SolrUtils.Query.buildQueryFieldString(fulltext, searchContext));
             query.setParam("defType","edismax");
-
         } else {
             query.setParam(CommonParams.DF, TEXT);
         }
 
         //filters
         query.add(CommonParams.FQ,"_type_:"+factory.getType());
+
+        //mm
+        query.setParam("mm", search.getMinimumShouldMatch());
 
         if(search.hasFilter()) {
             SolrUtils.Query.buildFilterString(search.getFilter(), factory,search.getChildrenFactory(),query, searchContext, search.getStrict());
