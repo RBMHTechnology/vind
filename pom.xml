@@ -224,10 +224,6 @@
                         <artifactId>log4j-slf4j-impl</artifactId>
                         <groupId>org.apache.logging.log4j</groupId>
                     </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.logging.log4j</groupId>
-                        <artifactId>log4j-core</artifactId>
-                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -277,16 +273,6 @@
                 <artifactId>solr-test-framework</artifactId>
                 <version>${solr.version}</version>
                 <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>log4j-slf4j-impl</artifactId>
-                        <groupId>org.apache.logging.log4j</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.logging.log4j</groupId>
-                        <artifactId>log4j-core</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.github.stefanbirkner</groupId>
