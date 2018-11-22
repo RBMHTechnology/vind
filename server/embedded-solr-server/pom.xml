@@ -13,6 +13,7 @@
     <name>Vind - Embedded Solr Server</name>
 
     <dependencies>
+        <!--Vind internal dependencies-->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>backend-solr</artifactId>
@@ -22,6 +23,18 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>solr-suggestion-handler</artifactId>
             <version>${project.version}</version>
+        </dependency>
+
+        <!--Solr dependencies-->
+        <dependency>
+            <groupId>org.apache.solr</groupId>
+            <artifactId>solr-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>log4j-slf4j-impl</artifactId>
+                    <groupId>org.apache.logging.log4j</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 
