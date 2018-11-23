@@ -390,7 +390,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
     }
 
     @Test
-    public void failSuggestionTest() {
+    public void specialLuceneRegexCharInQueryTest() {
 
         ModifiableSolrParams params = new ModifiableSolrParams();
 
@@ -403,9 +403,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
         SolrQueryRequest req = new LocalSolrQueryRequest( core, params );
 
         assertQ("suggester - spellcheck suggestion for 'sepastian'",req,
-                "//response/lst[@name='suggestions']/int[@name='suggestion_count'][.='1']",
-                "//response/lst[@name='suggestions']/lst[@name='suggestion_facets']/lst[@name='dynamic_multi_stored_suggest_analyzed_name']/int[@name='sebastian vettel'][.='2']",
-                "//response/lst[@name='spellcheck']/lst[@name='collations']/str[@name='collation'][.='sebastian*']");
+                "//response/lst[@name='suggestions']/int[@name='suggestion_count'][.='0']");
 
     }
 }

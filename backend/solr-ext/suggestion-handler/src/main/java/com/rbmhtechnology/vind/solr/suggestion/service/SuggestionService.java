@@ -204,10 +204,13 @@ public class SuggestionService {
                 .map(term -> term.chars()
                         .mapToObj(i -> (char)i)
                         .map(letter -> {
-                            //Escaping regex special characters
-                            final String str = SOLR_REGEX_ESCAPE_CHARS.contains(letter.toString())?
-                                    "\\" + letter.toString(): letter.toString();
-                            return  String.format(IGNORE_CASE_REGEX, letter, StringUtils.upperCase(str));
+                            if(Character.isAlphabetic(letter)) {
+                                return  String.format(IGNORE_CASE_REGEX, letter, StringUtils.upperCase(letter.toString()));
+                            } else {
+                                //Escaping regex special characters
+                                return SOLR_REGEX_ESCAPE_CHARS.contains(letter.toString()) ?
+                                        "\\" + letter.toString() : letter.toString();
+                            }
                         })
                         .collect(Collectors.joining()))
                 .map(prefix -> String.format(PREFIX_REGEX, prefix, prefix))
