@@ -85,6 +85,14 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
                 "_type_","Asset",
                 "dynamic_multi_stored_suggest_analyzed_place", "Havanna kuba",
                 "dynamic_multi_stored_suggest_analyzed_place", "kurdistan"));
+        assertU(adoc("_id_", "7",
+                "_type_","Asset",
+                "dynamic_multi_stored_suggest_analyzed_name", "1/16 blabla",
+                "dynamic_multi_stored_suggest_analyzed_place", "RB"));
+        assertU(adoc("_id_", "8",
+                "_type_","Asset",
+                "dynamic_multi_stored_suggest_analyzed_name", "blabla 1/16",
+                "dynamic_multi_stored_suggest_analyzed_place", "RB"));
         assertU(commit());
     }
 
@@ -205,7 +213,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
         assertQ("suggester - spellcheck suggestion for 'sepastian'",req,
                 "//response/lst[@name='suggestions']/int[@name='suggestion_count'][.='1']",
                 "//response/lst[@name='suggestions']/lst[@name='suggestion_facets']/lst[@name='dynamic_multi_stored_suggest_analyzed_name']/int[@name='sebastian vettel'][.='2']",
-                "//response/lst[@name='spellcheck']/lst[@name='collations']/str[@name='collation'][.='sebastian*']");
+                "//response/lst[@name='spellcheck']/lst[@name='collations']/str[@name='collation'][.='sebastian']");
 
     }
 
@@ -402,7 +410,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
 
         SolrQueryRequest req = new LocalSolrQueryRequest( core, params );
 
-        assertQ("suggester - spellcheck suggestion for 'sepastian'",req,
+        assertQ("suggester - spellcheck suggestion for '2015/16, mexico'",req,
                 "//response/lst[@name='suggestions']/int[@name='suggestion_count'][.='0']");
 
     }
