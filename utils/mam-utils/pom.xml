@@ -13,6 +13,7 @@
     <name>Vind Utils - MAM Utils</name>
 
     <dependencies>
+        <!--Vind internal dependencies-->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>vind-api</artifactId>
@@ -22,6 +23,12 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>backend-solr</artifactId>
             <version>${project.version}</version>
+        </dependency>
+
+        <!--Solr dependencies-->
+        <dependency>
+            <groupId>org.apache.solr</groupId>
+            <artifactId>solr-core</artifactId>
         </dependency>
 
         <dependency>
