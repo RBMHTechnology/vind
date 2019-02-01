@@ -710,10 +710,6 @@ public class SolrSearchServer extends SearchServer {
                 log.debug("Atomic Update - Get version of original document [{}].",update.getId());
                 final SolrDocument updatedDoc = solrClient.getById(update.getId());
 
-                if (updatedDoc == null){
-                    throw new SearchServerException("Can not execute solr partial update for non existing document for update id " + update.getId());
-                }
-
                 //Setting the document version for optimistic concurrency
                 final Object version = updatedDoc.getFieldValue("_version_");
                 if (Objects.nonNull(version)) {
