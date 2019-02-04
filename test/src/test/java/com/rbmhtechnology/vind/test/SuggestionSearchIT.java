@@ -11,12 +11,12 @@ import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
 import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
-import com.rbmhtechnology.vind.solr.backend.SolrSearchServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Created on 20.09.17.
@@ -152,5 +152,19 @@ public class SuggestionSearchIT {
         assertEquals(1, suggestionSearch.get(child_value).getValues().size());
         assertEquals("blue", suggestionSearch.get(child_value).getValues().get(0).getValue());
         assertEquals(null, suggestionSearch.get(shared_value));
+    }
+
+    @Test
+    public void testSpecialCharacters() {
+        server.index(
+               parent.createDoc("P_SPEC_CHAR").setValue(parent_value, "León"));
+        server.commit();
+
+        SuggestionResult result = server.execute(Search.suggest("2015León, Mexico").fields(parent_value),parent);
+        assertNotNull(result);
+        assertEquals(0, result.size());
+
+        server.delete(parent.createDoc("P_SPEC_CHAR"));
+        server.commit();
     }
 }

@@ -73,12 +73,14 @@ public class CLI {
                     collectionReplicas = 1;
                 }
 
+                boolean autoAddReplica = line.hasOption("ar");
+
                 final String collectionName = line.getOptionValue("createCollection");
 
 
                 logger.info("Creating collection {} from configset {} in [{}] with {} shards and replication factor of {}.", collectionName,configSetName,zkHost, collectionShards, collectionReplicas);
                 final CollectionManagementService cmService = new CollectionManagementService(zkHosts, repositories);
-                cmService.createCollection(collectionName,configSetName,collectionShards.intValue(),collectionReplicas.intValue());
+                cmService.createCollection(collectionName,configSetName,collectionShards.intValue(),collectionReplicas.intValue(), autoAddReplica);
 
                 logger.info("Created collection {} successfully", collectionName);
                 System.exit(0);
@@ -90,11 +92,16 @@ public class CLI {
                     throw new ParseException("CLI error: shards/replicas cannot be set when updating a collection.");
                 }
 
+                Boolean autoAddReplica = null;
+                if(line.hasOption("ar")){
+                    autoAddReplica = true;
+                }
+
                 final String collectionName = line.getOptionValue("updateCollection");
 
                 logger.info("Updating collection {} from configSet {} in [{}]", collectionName,configSetName,zkHost);
                 final CollectionManagementService cmService = new CollectionManagementService(zkHosts, repositories);
-                cmService.updateCollection(collectionName, configSetName);
+                cmService.updateCollection(collectionName, configSetName, null, null, autoAddReplica);
 
                 logger.info("Updated collection {} successfully", collectionName);
                 System.exit(0);
@@ -192,6 +199,15 @@ public class CLI {
                 .required(false)
                 .build());
 
+        OptionGroup autoAddReplicaGroup = new OptionGroup();
+        autoAddReplicaGroup.setRequired(false);
+        autoAddReplicaGroup.addOption(Option.builder("ar")
+                .hasArg(false)
+                .longOpt("autoAddReplica")
+                .desc("Sets Solr 7 Auto replication option to true for the collection if present.")
+                .required(false)
+                .build());
+
         OptionGroup repoGroup = new OptionGroup();
         repoGroup.setRequired(false);
         repoGroup.addOption(Option.builder("re")
@@ -208,6 +224,7 @@ public class CLI {
         options.addOptionGroup(zookeeperGroup);
         options.addOptionGroup(shardGroup);
         options.addOptionGroup(replicaGroup);
+        options.addOptionGroup(autoAddReplicaGroup);
         options.addOptionGroup(repoGroup);
 
         return options;

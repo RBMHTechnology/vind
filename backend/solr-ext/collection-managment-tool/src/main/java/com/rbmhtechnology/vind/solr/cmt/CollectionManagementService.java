@@ -113,7 +113,7 @@ public class CollectionManagementService {
     /**
      * 1. Check if config set is already deployed on the solr server, if not: download from repo and upload to zK
      * 2. Create collection
-     * 3. Check if dependencies (runtime-libs) are installed, if not download and install (and name it with group:artefact:version)
+     * 3. Check if dependencies (runtime-libs) are installed, if not download and install (and name it with group:artifact:version)
      * 4. Add/Update collection runtime-libs
      *
      * @param collectionName {@link String} name of the collection to create.
@@ -124,11 +124,32 @@ public class CollectionManagementService {
      * @throws {@link IOException} thrown if is not possible to create the collection.
      */
     public void createCollection(String collectionName, String configName, int numOfShards, int numOfReplicas) throws IOException {
+        createCollection(collectionName,configName,numOfShards,numOfReplicas,null);
+    }
+
+    /**
+     * 1. Check if config set is already deployed on the solr server, if not: download from repo and upload to zK
+     * 2. Create collection
+     * 3. Check if dependencies (runtime-libs) are installed, if not download and install (and name it with group:artifact:version)
+     * 4. Add/Update collection runtime-libs
+     *
+     * @param collectionName {@link String} name of the collection to create.
+     * @param configName should be either the name of an already defined configuration in the solr cloud or the full
+     *                   name of an artifact accessible in one of the default repositories.
+     * @param numOfShards integer number of shards
+     * @param numOfReplicas integer number of replicas
+     * @param autoAddReplicas boolean sets the Solr auto replication functionality on.
+     * @throws {@link IOException} thrown if is not possible to create the collection.
+     */
+    public void createCollection(String collectionName, String configName, int numOfShards, int numOfReplicas, Boolean autoAddReplicas) throws IOException {
         checkAndInstallConfiguration(configName);
 
         try (CloudSolrClient client = createCloudSolrClient()) {
             Create create = CollectionAdminRequest.
                     createCollection(collectionName, configName, numOfShards, numOfReplicas);
+            if(Objects.nonNull(autoAddReplicas)) {
+                create.setAutoAddReplicas(autoAddReplicas);
+            }
             create.process(client);
         } catch (IOException | SolrServerException e) {
             throw new IOException("Cannot create collection", e);
@@ -155,9 +176,9 @@ public class CollectionManagementService {
     }
 
     /**
-     * 1. Check if config set is already deployed on the solr server, if not: download from repo and upload to zK
+     * 1. Check if config set is already deployed on the solr server, if not: download from repo and upload to ZK
      * 2. Switch configuration
-     * 3. Check if dependencies (runtime-libs) are installed, if not download and install (and name it with group:artefact:version)
+     * 3. Check if dependencies (runtime-libs) are installed, if not download and install (and name it with group:artifact:version)
      * 4. Add/Update collection runtime-libs
      *
      * @param collectionName {@link String} name of the collection to update.
@@ -166,10 +187,30 @@ public class CollectionManagementService {
      * @throws {@link IOException} is thrown when a problem with the solr request occurs.
      */
     public void updateCollection(String collectionName, String configName) throws IOException {
+       updateCollection(collectionName,configName,  null, null, null);
+    }
 
-        final String origConfigName ;
-        final String origMaxShards ;
-        final String origReplicationFactor ;
+    /**
+     * 1. Check if config set is already deployed on the solr server, if not: download from repo and upload to ZK
+     * 2. Switch configuration
+     * 3. Check if dependencies (runtime-libs) are installed, if not download and install (and name it with group:artifact:version)
+     * 4. Add/Update collection runtime-libs
+     *
+     * @param collectionName {@link String} name of the collection to update.
+     * @param configName should be either the name of an already defined configuration in the solr cloud or the full
+     *                   name of an artifact accessible in one of the default repositories.
+     * @param numOfShards {@link Integer} number of shards
+     * @param numOfReplicas {@link Integer} number of replicas
+     * @param autoAddReplicas {@link Boolean} sets the Solr auto replication functionality on.
+     * @throws {@link IOException} is thrown when a problem with the solr request occurs.
+     */
+    public void updateCollection(String collectionName, String configName, Integer numOfShards, Integer numOfReplicas, Boolean autoAddReplicas) throws IOException {
+
+        boolean configChange = false;
+        String origConfigName ;
+        String origMaxShards ;
+        String origReplicationFactor ;
+        String origAutAddReplica;
 
         try (CloudSolrClient client = createCloudSolrClient()) {
             final CollectionAdminResponse status = new CollectionAdminRequest.ClusterStatus()
@@ -178,6 +219,8 @@ public class CollectionManagementService {
                 origConfigName = (String)((Map) ((SimpleOrderedMap) ((NamedList) status.getResponse().get("cluster")).get("collections")).get(collectionName)).get("configName");
                 origMaxShards = (String)((Map) ((SimpleOrderedMap) ((NamedList) status.getResponse().get("cluster")).get("collections")).get(collectionName)).get("maxShardsPerNode");
                 origReplicationFactor = (String)((Map) ((SimpleOrderedMap) ((NamedList) status.getResponse().get("cluster")).get("collections")).get(collectionName)).get("replicationFactor");
+                origAutAddReplica = (String)((Map) ((SimpleOrderedMap) ((NamedList) status.getResponse().get("cluster")).get("collections")).get(collectionName)).get("autoAddReplicas");
+
             } else {
                 throw new IOException("Unable to get current status of collection [" + collectionName + "]");
             }
@@ -186,15 +229,30 @@ public class CollectionManagementService {
             throw new IOException("Unable to get current status of collection [" + collectionName + "]",e);
         }
 
+        if(Objects.nonNull(numOfShards) && !String.valueOf(numOfShards).equals(origMaxShards)) {
+            origMaxShards = String.valueOf(numOfShards);
+            configChange = true;
+        }
+
+        if(Objects.nonNull(numOfReplicas) && !String.valueOf(numOfReplicas).equals(origReplicationFactor)) {
+            origReplicationFactor = String.valueOf(numOfReplicas);
+            configChange = true;
+        }
+
+        if(Objects.nonNull(autoAddReplicas) && !String.valueOf(autoAddReplicas).equals(origAutAddReplica)) {
+            origAutAddReplica = String.valueOf(autoAddReplicas);
+            configChange = true;
+        }
+
         //TODO get and remove current runtime libs: Is this really needed?
 
         //Update or install configuration
         this.checkAndInstallConfiguration(configName, true);
-        if(!origConfigName.equals(configName)){
+        if(!origConfigName.equals(configName) || configChange){
 
             //Change config set of the collection to the new one
             try (final SolrZkClient zkClient = new SolrZkClient(zkHosts.get(0), 4000);
-                final CloudSolrClient client = createCloudSolrClient()) {
+                 final CloudSolrClient client = createCloudSolrClient()) {
                 //TODO: The following call to the collections API is working from solr >= 6
                 final SolrQuery modifyCollectionQuery = new SolrQuery();
                 modifyCollectionQuery.setRequestHandler("/admin/collections");
@@ -203,6 +261,7 @@ public class CollectionManagementService {
                 modifyCollectionQuery.set("collection.configName", configName);
                 modifyCollectionQuery.set("maxShardsPerNode", origMaxShards);
                 modifyCollectionQuery.set("replicationFactor", origReplicationFactor);
+                modifyCollectionQuery.set("autoAddReplicas", origAutAddReplica);
                 client.query(modifyCollectionQuery);
 
                 // Update link to config set
