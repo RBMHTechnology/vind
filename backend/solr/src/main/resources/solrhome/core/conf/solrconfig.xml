@@ -400,7 +400,7 @@
           <str name="suggestion">true</str>
           <str name="suggestion.df">suggestions</str>
           <str name="suggestion.term.limit">10</str>
-          <str name="q.op">AND</str>
+          <str name="q.op">OR</str>
       </lst>
       <arr name="first-components">
           <str>spellcheck</str>
