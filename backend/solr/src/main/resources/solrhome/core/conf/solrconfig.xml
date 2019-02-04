@@ -389,6 +389,9 @@
           <str name="df">text</str>
           <str name="q.alt">*</str>
       </lst>
+      <arr name="last-components">
+          <str>spellcheck</str>
+      </arr>
   </requestHandler>
 
   <requestHandler runtimeLib="${runtimeLib:true}" name="/suggester" class="com.rbmhtechnology.vind.solr.suggestion.SuggestionRequestHandler">

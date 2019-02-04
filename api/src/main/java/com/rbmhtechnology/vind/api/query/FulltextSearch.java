@@ -42,6 +42,7 @@ public class FulltextSearch {
     private DocumentFactory childrenFactory = null;
     private String timeZone = null;
     private Distance geoDistance = null;
+    private String minimumShouldMatch = "1";
     private String searchContext = null;
     private boolean strict = true;
 
@@ -69,7 +70,7 @@ public class FulltextSearch {
 
 
         this.getFacets().keySet().stream().forEach(k -> copy.facets.put(k,this.getFacets().get(k).clone()));
-        
+
         return copy;
     }
 
@@ -630,6 +631,15 @@ public class FulltextSearch {
      */
     public FulltextSearch setStrict(boolean strict) {
         this.strict = strict;
+        return this;
+    }
+
+    public String getMinimumShouldMatch() {
+        return minimumShouldMatch;
+    }
+
+    public FulltextSearch setMinimumShouldMatch(String minimumShouldMatch) {
+        this.minimumShouldMatch = minimumShouldMatch;
         return this;
     }
 

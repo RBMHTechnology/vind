@@ -97,6 +97,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
                 "_type_","Asset",
                 "dynamic_multi_stored_suggest_analyzed_name", "analized name",
                 "dynamic_multi_stored_suggest_analyzed_place", "unlugar 1234/5678"));
+
         assertU(commit());
     }
 
@@ -217,7 +218,7 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
         assertQ("suggester - spellcheck suggestion for 'sepastian'",req,
                 "//response/lst[@name='suggestions']/int[@name='suggestion_count'][.='1']",
                 "//response/lst[@name='suggestions']/lst[@name='suggestion_facets']/lst[@name='dynamic_multi_stored_suggest_analyzed_name']/int[@name='sebastian vettel'][.='2']",
-                "//response/lst[@name='spellcheck']/lst[@name='collations']/str[@name='collation'][.='sebastian*']");
+                "//response/lst[@name='spellcheck']/lst[@name='collations']/str[@name='collation'][.='sebastian']");
 
     }
 

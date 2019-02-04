@@ -19,6 +19,7 @@ import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.SimpleOrderedMap;
 import org.apache.solr.core.SolrCore;
 import org.apache.solr.handler.component.SearchHandler;
+import org.apache.solr.parser.QueryParser;
 import org.apache.solr.request.LocalSolrQueryRequest;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.SolrQueryResponse;
@@ -42,7 +43,10 @@ public class SuggestionService {
     private static final String IGNORE_CASE_REGEX = "[%s|%s]";
     private static final String PREFIX_REGEX = "/(%s.*)|(.* +%s.*)/";
     private static final String INTERVAL_QUERY = "%s:[%s TO %s]";
-    private static final Collection<String> SOLR_REGEX_ESCAPE_CHARS = Arrays.asList("-",".","*","+");
+    //LUCENE regex list of special characters
+    private static final Collection<String> SOLR_REGEX_ESCAPE_CHARS =
+            Arrays.asList("-", ".", "*", "+", "&&", "||", "!", "(",  ")",
+                          "{", "}", "[", "]", "^" ,"\"", "~", "*", "?", ":", "\\", "/");
 
     private String internalFacetLimit = "50";
 
@@ -172,10 +176,10 @@ public class SuggestionService {
 
         if(collations != null && collations.size() > 0) {
             String s = (String)collations.get("collation");
-            return s.substring(0,s.length()-1);
+            return s;
         } else {
             final String s = (String)((NamedList)((NamedList)rsp.getValues().get("spellcheck")).get("suggestions")).get("collation");
-            return s != null ? s.substring(0,s.length()-1) : null;
+            return s != null ? s : null;
         }
     }
 
@@ -183,10 +187,14 @@ public class SuggestionService {
 
         final SolrQueryResponse rsp = new SolrQueryResponse();
 
+        //remove lucene escaping character
+        query = unescapeQuery(query);
+
         //remove *
-        if(query.contains("*")) {
-            query = query.replaceAll("\\*", "");
+        if(query.endsWith("*")) {
+            query = query.substring(0, query.length() - 1);
         }
+
 
         //Split the query into terms separated by spaces
         List<String> terms = Arrays.asList(query.trim().split(" |\\+"));
@@ -198,13 +206,15 @@ public class SuggestionService {
 
         //Get the REGEX expression for each term to make them match as prefix in any word of a field.
         final List<String> queryPreffixes = terms.stream()
+                .map(QueryParser::escape)
                 .map(term -> term.chars()
                         .mapToObj(i -> (char)i)
                         .map(letter -> {
-                            //Escaping regex special characters
-                            final String str = SOLR_REGEX_ESCAPE_CHARS.contains(letter.toString())?
-                                    "\\" + letter.toString(): letter.toString();
-                            return  String.format(IGNORE_CASE_REGEX, letter, StringUtils.upperCase(str));
+                            if(Character.isAlphabetic(letter)) {
+                                return  String.format(IGNORE_CASE_REGEX, letter, StringUtils.upperCase(letter.toString()));
+                            } else {
+                                return letter.toString();
+                            }
                         })
                         .collect(Collectors.joining()))
                 .map(prefix -> String.format(PREFIX_REGEX, prefix, prefix))
@@ -297,7 +307,10 @@ public class SuggestionService {
 
         if(spellCheckEnabled) {
             params.add("spellcheck","true");
-            params.add("spellcheck.q",String.join(" ",terms).concat("*") );
+
+            final String spellcheckQuery = String.join(" ", terms);
+                //QueryParser.escape(String.join(" ", terms).concat("*"));
+            params.add("spellcheck.q", spellcheckQuery);
             params.add("spellcheck.collate","true");
             final String accuracy = original_params.get("spellcheck.accuracy");
             if(Objects.nonNull(accuracy)) {
@@ -336,6 +349,28 @@ public class SuggestionService {
         } finally {
             req.close();
         }
+    }
+
+    private String unescapeQuery(String query) {
+        final StringBuilder sb = new StringBuilder();
+
+        int i = 0;
+        while (i < query.length()) {
+            char c = query.charAt(i);
+            if (c == '\\' && i < query.length() - 1) {
+                if (SOLR_REGEX_ESCAPE_CHARS.contains(String.valueOf(query.charAt(i + 1)))) {
+                    sb.append(query.charAt(i + 1));
+                    ++i;
+                } else {
+                    sb.append(c);
+                }
+            } else {
+                sb.append(c);
+            }
+            ++i;
+        }
+
+        return sb.toString();
     }
 
 }
