@@ -85,6 +85,18 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
                 "_type_","Asset",
                 "dynamic_multi_stored_suggest_analyzed_place", "Havanna kuba",
                 "dynamic_multi_stored_suggest_analyzed_place", "kurdistan"));
+        assertU(adoc("_id_", "7",
+                "_type_","Asset",
+                "dynamic_multi_stored_suggest_analyzed_name", "1/16 blabla",
+                "dynamic_multi_stored_suggest_analyzed_place", "RB"));
+        assertU(adoc("_id_", "8",
+                "_type_","Asset",
+                "dynamic_multi_stored_suggest_analyzed_name", "blabla 1/16",
+                "dynamic_multi_stored_suggest_analyzed_place", "RB"));
+        assertU(adoc("_id_", "9",
+                "_type_","Asset",
+                "dynamic_multi_stored_suggest_analyzed_name", "analized name",
+                "dynamic_multi_stored_suggest_analyzed_place", "unlugar 1234/5678"));
         assertU(commit());
     }
 
@@ -387,5 +399,30 @@ public class SuggestionRequestHandlerTest extends SolrTestCaseJ4 {
         assertQ("suggester - test synonym mapping for multi facet",req,
                 "//response/lst[@name='suggestions']/lst[@name='suggestion_facets']/lst[1]/int[@name='count'][.='2']");
         */
+    }
+
+    @Test
+    public void specialLuceneRegexCharInQueryTest() {
+
+        ModifiableSolrParams params = new ModifiableSolrParams();
+
+        params.add(SuggestionRequestParams.SUGGESTION,"true");
+        params.add(CommonParams.QT,"/suggester");
+        params.add(CommonParams.Q,"2015/16, mexico");
+        params.add(SuggestionRequestParams.SUGGESTION_FIELD,"dynamic_multi_stored_suggest_analyzed_name");
+        params.add(SuggestionRequestParams.SUGGESTION_DF,"suggestions");
+
+        SolrQueryRequest req = new LocalSolrQueryRequest( core, params );
+
+        assertQ("suggester - spellcheck suggestion for '2015/16, mexico'",req,
+                "//response/lst[@name='suggestions']/int[@name='suggestion_count'][.='0']");
+
+        params.set(CommonParams.Q,"12345678 kurdistn");
+
+        req = new LocalSolrQueryRequest( core, params );
+
+        assertQ("suggester - spellcheck suggestion for '12345678 kurdistn'",req,
+                "//response/lst[@name='suggestions']/int[@name='suggestion_count'][.='0']");
+
     }
 }
