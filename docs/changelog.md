@@ -107,3 +107,8 @@ default scope due to a null FieldDescriptor.
 * Ensure that number of the page is 1 or bigger.
 * Feature #73: Support index Within.
 * Improvement #67: Provide Docker-Image for Solr Backend.
+
+# 2.1.0
+* Feature #87:Added the possibility to set autoAddReplicas to true for the collection manager tool
+* Bugfix: avoid null pointer exception whe updating a non existing doc.
+* Bugfix: #86: moved missing suggestion handler fix from Vind 1.x.x to 2.x.x
