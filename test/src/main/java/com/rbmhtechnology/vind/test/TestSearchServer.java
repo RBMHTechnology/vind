@@ -19,14 +19,18 @@ public class TestSearchServer extends ExternalResource {
     @Override
     protected void before() throws Throwable {
         super.before();
+
         SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.solr.backend.EmbeddedSolrServerProvider");
-
-        //SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.solr.backend.RemoteSolrServerProvider");
-        //SearchConfiguration.set(SearchConfiguration.SERVER_HOST, "localhost:9983");
-        //SearchConfiguration.set(SearchConfiguration.SERVER_COLLECTION, "dam_assets");
-        //SearchConfiguration.set(SearchConfiguration.SERVER_SOLR_CLOUD, true);
-
         System.setProperty("runtimeLib", "false");
+
+        /*
+        SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.solr.backend.RemoteSolrServerProvider");
+        SearchConfiguration.set(SearchConfiguration.SERVER_HOST, "localhost:9983");
+        SearchConfiguration.set(SearchConfiguration.SERVER_COLLECTION, "vind");
+        SearchConfiguration.set(SearchConfiguration.SERVER_SOLR_CLOUD, true);
+        System.setProperty("runtimeLib", "true");
+        */
+
         searchServer = SearchServer.getInstance();
     }
 
