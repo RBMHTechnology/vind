@@ -47,7 +47,15 @@ public class TestSearchServer extends ExternalResource {
     private enum ServerType {
 
         Embedded("com.rbmhtechnology.vind.solr.backend.EmbeddedSolrServerProvider", null, null, false),
+
+        //setup:
+        // * docker run --name vind-solr-2.1.0 -p 8983:8983 redlinkgmbh/vind-solr-server:2.1.0
         RemoteStandalone("com.rbmhtechnology.vind.solr.backend.RemoteSolrServerProvider", "http://localhost:8983/solr", "vind", false),
+
+        //setup:
+        // * ./bin/solr start c
+        // * download exec jar for collection mgtm tool, e.g. http://central.maven.org/maven2/com/rbmhtechnology/vind/collection-managment-tool/2.1.0/
+        // * java -jar collection-managment-tool-2.1.0-exec.jar -cc vind -from com.rbmhtechnology.vind:backend-solr:2.1.0 --in localhost:9983
         RemoteCloud("com.rbmhtechnology.vind.solr.backend.RemoteSolrServerProvider", "localhost:9983", "vind", true);
 
         private String provider;
