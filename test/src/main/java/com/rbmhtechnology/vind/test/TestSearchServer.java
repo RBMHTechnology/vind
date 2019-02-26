@@ -14,7 +14,7 @@ public class TestSearchServer extends ExternalResource {
 
     private Logger log = LoggerFactory.getLogger(getClass());
 
-    private ServerType serverType = ServerType.RemoteStandalone;
+    private ServerType serverType = ServerType.Embedded;
 
     private SearchServer searchServer;
 
