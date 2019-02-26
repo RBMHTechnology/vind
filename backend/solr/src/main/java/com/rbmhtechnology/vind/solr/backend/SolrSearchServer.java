@@ -152,21 +152,11 @@ public class SolrSearchServer extends SearchServer {
 
     @Override
     public StatusResult getBackendStatus() {
-        int statusCode = -1;
+
         try {
-            if(SearchConfiguration.get(SearchConfiguration.SERVER_SOLR_CLOUD, false)) {
-                CollectionAdminRequest request = new CollectionAdminRequest.ClusterStatus();
+            SolrPingResponse ping = solrClient.ping();
 
-                SolrResponse response = request.process(this.solrClient);
-                statusCode = Integer.valueOf(((NamedList)response.getResponse().get("responseHeader")).get("status").toString());
-
-            }
-            else {
-                CoreAdminRequest request = new CoreAdminRequest();
-                request.setAction(CoreAdminParams.CoreAdminAction.STATUS);
-                CoreAdminResponse response = request.process(this.solrClient);
-                statusCode = response.getStatus();
-            }
+            int statusCode = ping.getStatus();
 
             if(statusCode != 0) {
                 return StatusResult.down().setDetail("status", statusCode);
