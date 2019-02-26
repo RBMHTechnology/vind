@@ -154,9 +154,9 @@ public class SolrSearchServer extends SearchServer {
     public StatusResult getBackendStatus() {
 
         try {
-            SolrPingResponse response = solrClient.ping();
+            SolrPingResponse ping = solrClient.ping();
 
-            int statusCode = (Integer) response.getResponse().findRecursive("responseHeader", "status");
+            int statusCode = ping.getStatus();
 
             if(statusCode != 0) {
                 return StatusResult.down().setDetail("status", statusCode);
