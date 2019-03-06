@@ -100,10 +100,10 @@ public class SuggestionResultFactory {
      * @param limit
      * @return a single suggestion result
      */
-    public static SuggestionResult createSingleValueResult(SolrCore core, SolrQueryResponse rsp, String[] fields, String q, String df, int termLimit, int limit, SuggestionRequestHandler.LimitType limitType, SuggestionRequestHandler.Strategy strategy, String suggestionField, Map<String, Map<String,Object>> intervals) {
-        SuggesionResultSingle result = new SuggesionResultSingle(limit, limitType);
+    public static SuggestionResult createSingleValueResult(SolrCore core, SolrQueryResponse rsp, String[] fields, String q, String op, String df, int termLimit, int limit, SuggestionRequestHandler.LimitType limitType, SuggestionRequestHandler.Strategy strategy, String suggestionField, Map<String, Map<String,Object>> intervals) {
+        final SuggesionResultSingle result = new SuggesionResultSingle(limit, limitType);
 
-        SimpleOrderedMap facets = (SimpleOrderedMap)rsp.getValues().get("facets");
+        final SimpleOrderedMap facets = (SimpleOrderedMap)rsp.getValues().get("facets");
 
         //get results
         Pattern pattern = null;
@@ -111,16 +111,15 @@ public class SuggestionResultFactory {
             case exact:
                 pattern = Pattern.compile("^" + Pattern.quote(q.trim()) + "\\S*|\\s" + Pattern.quote(q.trim()) + "\\S*"); break;
             case permutate:
-                String split[] = q.trim().split(" |\\+");
+                final String split[] = q.trim().split(" |\\+");
                 String w = "^";
 
                 final int maxLength = split.length > termLimit ? termLimit : split.length;
                 for(int i = 0; i < maxLength; i++) {
-                    if(i+1 == maxLength) {
-                        w += "(?=.*\\b"+Pattern.quote(split[i])+"\\S*\\b)";
-                    } else {
-                        w += "(?=.*\\b"+Pattern.quote(split[i])+"\\S*\\b)";
+                    if (i > 0 && op.equals("OR")) {
+                        w += "|";
                     }
+                    w += "(?=.*\\b"+Pattern.quote(split[i])+"\\S*\\b)";
                 }
                 pattern = Pattern.compile(w += ".+", Pattern.CASE_INSENSITIVE);
                 break;
@@ -163,10 +162,10 @@ public class SuggestionResultFactory {
                 final String filterName = fieldName.concat("_filter");
                 final NamedList fieldResults = (NamedList) facets.get(filterName);
                 if ((Integer) fieldResults.get("count") > 0) {
-                    List<NamedList> fieldValues = (List) (((NamedList) fieldResults.get(fieldName)).get("buckets"));
+                    final List<NamedList> fieldValues = (List) (((NamedList) fieldResults.get(fieldName)).get("buckets"));
                     fieldValues.forEach(
                             value -> {
-                                Matcher matcher = word.matcher(FieldAnalyzerService.analyzeString(core, df, value.get("val").toString()));
+                                final Matcher matcher = word.matcher(FieldAnalyzerService.analyzeString(core, df, value.get("val").toString()));
                                 if (matcher.find()) {
                                     result.addFacet(fieldName, value.get("val").toString(), (Integer) value.get("count"), matcher.start());
                                 }

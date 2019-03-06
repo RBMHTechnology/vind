@@ -243,7 +243,7 @@ public class SuggestionRequestHandler extends SearchHandler implements SolrCoreA
 
             logger.debug("Get suggestions for query '{}', type: {}, fqs: {}", q, type, fqs != null ? StringUtils.join(fqs, ",") : "none");
 
-            suggestionService.run(rsp, params, q, df, fields, single_fields, multivalue_fields, fqs,termLimit, limit, limitType, type, strategy,intervalField,rangesMap);
+            suggestionService.run(rsp, params, q, req.getParams().get("q.op"), df, fields, single_fields, multivalue_fields, fqs,termLimit, limit, limitType, type, strategy,intervalField,rangesMap);
 
         } else {
             super.handleRequestBody(req,rsp);

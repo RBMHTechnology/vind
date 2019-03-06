@@ -78,7 +78,7 @@ public class SuggestionService {
         this.searchHandler.inform(solrCore);
     }
 
-    public void run(SolrQueryResponse rsp, SolrParams params, String query, String df, String[] fields, String[] singlevalue_fields, String[] multiValueFields, String[] fqs, int termLimit, int limit, SuggestionRequestHandler.LimitType limitType, SuggestionRequestHandler.Type type, SuggestionRequestHandler.Strategy strategy, String suggestionField, Map<String, Map<String,Object>> intervals) throws Exception {
+    public void run(SolrQueryResponse rsp, SolrParams params, String query, String op, String df, String[] fields, String[] singlevalue_fields, String[] multiValueFields, String[] fqs, int termLimit, int limit, SuggestionRequestHandler.LimitType limitType, SuggestionRequestHandler.Type type, SuggestionRequestHandler.Strategy strategy, String suggestionField, Map<String, Map<String,Object>> intervals) throws Exception {
 
         //analyze query in advance
         final String analyzedQuery = FieldAnalyzerService.analyzeString(solrCore, df, query);
@@ -86,7 +86,7 @@ public class SuggestionService {
 
         //Create the suggestion results
         SuggestionResult[] result;
-        result = this.getSuggestionResults(analyzedQuery, df, singlevalue_fields, multiValueFields, termLimit, limit, limitType, type, strategy, suggestionField, intervals, response);
+        result = this.getSuggestionResults(analyzedQuery, op, df, singlevalue_fields, multiValueFields, termLimit, limit, limitType, type, strategy, suggestionField, intervals, response);
 
         //if no results, try spellchecker (if defined and if spellchecked query differs from original)
         if((Objects.isNull(result) && spellCheckEnabled)) {
@@ -96,7 +96,7 @@ public class SuggestionService {
             //query with checked query
             if(spellCheckedQuery != null && !analyzedQuery.equals(spellCheckedQuery)) {
                 final SolrQueryResponse spellCheckedResponse = query(spellCheckedQuery,params,df,fields,fqs,termLimit,suggestionField,intervals);
-                result = this.getSuggestionResults(spellCheckedQuery, df, singlevalue_fields, multiValueFields, termLimit, limit, limitType, type, strategy, suggestionField, intervals, spellCheckedResponse);
+                result = this.getSuggestionResults(spellCheckedQuery, op, df, singlevalue_fields, multiValueFields, termLimit, limit, limitType, type, strategy, suggestionField, intervals, spellCheckedResponse);
                 //add result of spellchecker component
                 if(spellCheckResult != null && result != null) {
                     //TODO remove * on last position of collation
@@ -113,19 +113,19 @@ public class SuggestionService {
         if(result[1] != null) rsp.add(SuggestionResultParams.MULTI_SUGGESTIONS, result[1].write());
     }
 
-    private SuggestionResult[] getSuggestionResults(String query, String df, String[] singleValueFields, String[] multiValueFields, int termLimit, int limit, SuggestionRequestHandler.LimitType limitType, SuggestionRequestHandler.Type type, SuggestionRequestHandler.Strategy strategy, String suggestionField, Map<String, Map<String, Object>> intervals, SolrQueryResponse response) {
+    private SuggestionResult[] getSuggestionResults(String query, String op, String df, String[] singleValueFields, String[] multiValueFields, int termLimit, int limit, SuggestionRequestHandler.LimitType limitType, SuggestionRequestHandler.Type type, SuggestionRequestHandler.Strategy strategy, String suggestionField, Map<String, Map<String, Object>> intervals, SolrQueryResponse response) {
         final SuggestionResult[] result;
         if(response.getValues().get("facets") instanceof SimpleOrderedMap) {
             final SimpleOrderedMap facets = (SimpleOrderedMap) response.getValues().get("facets");
             if((Integer) facets.get("count") > 0) {
-                result = createResults(response, singleValueFields, multiValueFields, query, df,type,termLimit, limit, limitType, strategy,suggestionField,intervals);
+                result = createResults(response, singleValueFields, multiValueFields, query, op, df,type,termLimit, limit, limitType, strategy,suggestionField,intervals);
             } else {
                 result = null;
             }
         } else {
             final SolrDocumentList facets = (SolrDocumentList) response.getValues().get("facet");
             if(facets.getNumFound() > 0) {
-                result = createResults(response, singleValueFields, multiValueFields, query, df,type,termLimit, limit, limitType, strategy,suggestionField,intervals);
+                result = createResults(response, singleValueFields, multiValueFields, query, op, df,type,termLimit, limit, limitType, strategy,suggestionField,intervals);
             } else {
                 result = null;
             }
@@ -147,17 +147,17 @@ public class SuggestionService {
         return result;
     }
 
-    protected SuggestionResult[] createResults(SolrQueryResponse rsp, String[] singleValueFields, String[] multiValueFields, String query, String df, SuggestionRequestHandler.Type type, int termLimit, int limit, SuggestionRequestHandler.LimitType limitType, SuggestionRequestHandler.Strategy strategy, String sugestionField, Map<String, Map<String,Object>> intervals) {
+    protected SuggestionResult[] createResults(SolrQueryResponse rsp, String[] singleValueFields, String[] multiValueFields, String query, String op, String df, SuggestionRequestHandler.Type type, int termLimit, int limit, SuggestionRequestHandler.LimitType limitType, SuggestionRequestHandler.Strategy strategy, String sugestionField, Map<String, Map<String,Object>> intervals) {
         SuggestionResult[] result = new SuggestionResult[2];
         switch (type) {
             case single:
-                result[0] = SuggestionResultFactory.createSingleValueResult(solrCore, rsp, singleValueFields, query, df, termLimit, limit, limitType, strategy,sugestionField,intervals);
+                result[0] = SuggestionResultFactory.createSingleValueResult(solrCore, rsp, singleValueFields, query, op, df, termLimit, limit, limitType, strategy,sugestionField,intervals);
                 break;
             case multi:
                 result[1] = SuggestionResultFactory.createMultiValueResult(solrCore, rsp, multiValueFields, query, df,termLimit, limit, limitType); //TODO consider strategy
                 break;
             case mixed:
-                result[0] = SuggestionResultFactory.createSingleValueResult(solrCore, rsp, singleValueFields, query, df,termLimit, limit, limitType, strategy,sugestionField,intervals);
+                result[0] = SuggestionResultFactory.createSingleValueResult(solrCore, rsp, singleValueFields, query, op, df,termLimit, limit, limitType, strategy,sugestionField,intervals);
                 result[1] = SuggestionResultFactory.createMultiValueResult(solrCore, rsp, multiValueFields, query, df, termLimit, limit, limitType);
         }
 
