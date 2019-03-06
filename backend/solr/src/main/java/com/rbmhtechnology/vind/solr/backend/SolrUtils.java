@@ -111,8 +111,10 @@ public class SolrUtils {
 
                 log.debug("Parsing subdocument facet result from JSON ");
 
-                final int facetCount = (int) ((SimpleOrderedMap) subDocumentFacetResult).get("count");
-                if (facetCount > 0 && Objects.nonNull(((SimpleOrderedMap) subDocumentFacetResult).get("parent_facet"))) {
+                final Object count = ((SimpleOrderedMap) subDocumentFacetResult).get("count");
+                final Number facetCount = Objects.nonNull(count)? (Number) count : new Integer(0);
+
+                if (Objects.nonNull(((SimpleOrderedMap) subDocumentFacetResult).get("parent_facet")) && facetCount.longValue() > 0) {
                     final List<SimpleOrderedMap> parentDocs = (ArrayList) ((SimpleOrderedMap) ((SimpleOrderedMap) subDocumentFacetResult).get("parent_facet")).get("buckets");
                     childCounts = parentDocs.stream().collect(Collectors.toMap(p -> (String) p.get("val"), p -> ((Integer) ((SimpleOrderedMap) p.get("children_facet")).get("count"))));
                 }
