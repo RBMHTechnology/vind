@@ -112,3 +112,12 @@ default scope due to a null FieldDescriptor.
 * Feature #87:Added the possibility to set autoAddReplicas to true for the collection manager tool
 * Bugfix: avoid null pointer exception whe updating a non existing doc.
 * Bugfix: #86: moved missing suggestion handler fix from Vind 1.x.x to 2.x.x
+
+# 2.1.1
+* Hotfix: fixed issue in suggestion handler when q.op was set to `OR`.
+
+# 2.1.2
+* Hotfix: Fixed issue introduced by solr inconsistent response types.
+
+# 2.1.3
+* Hotfix: Improved previous hotfix.
