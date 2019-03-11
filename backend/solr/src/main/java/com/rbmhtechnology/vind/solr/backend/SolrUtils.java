@@ -21,6 +21,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrResponse;
 import org.apache.solr.client.solrj.response.*;
@@ -111,10 +112,19 @@ public class SolrUtils {
 
                 log.debug("Parsing subdocument facet result from JSON ");
 
-                final int facetCount = (int) ((SimpleOrderedMap) subDocumentFacetResult).get("count");
-                if (facetCount > 0 && Objects.nonNull(((SimpleOrderedMap) subDocumentFacetResult).get("parent_facet"))) {
+                final Object count = ((SimpleOrderedMap) subDocumentFacetResult).get("count");
+                final Number facetCount = Objects.nonNull(count)? NumberUtils.toLong(count.toString(), 0L) : new Integer(0);
+
+                if (Objects.nonNull(((SimpleOrderedMap) subDocumentFacetResult).get("parent_facet")) && facetCount.longValue() > 0) {
                     final List<SimpleOrderedMap> parentDocs = (ArrayList) ((SimpleOrderedMap) ((SimpleOrderedMap) subDocumentFacetResult).get("parent_facet")).get("buckets");
-                    childCounts = parentDocs.stream().collect(Collectors.toMap(p -> (String) p.get("val"), p -> ((Integer) ((SimpleOrderedMap) p.get("children_facet")).get("count"))));
+                    childCounts = parentDocs.stream()
+                            .collect(Collectors.toMap(
+                                    p -> (String) p.get("val"),
+                                    p -> {
+                                        final Object childrenCount = ((SimpleOrderedMap) p.get("children_facet")).get("count");
+                                        return Objects.nonNull(childrenCount)? NumberUtils.toInt(childrenCount.toString(), 0) : new Integer(0);
+                                    })
+                            );
                 }
 
                 return childCounts;
@@ -134,13 +144,14 @@ public class SolrUtils {
 
                 log.debug("Parsing subdocument facet result from JSON ");
 
-                final int facetCount = (int) ((SimpleOrderedMap) subDocumentFacetResult).get("count");
+                final int facetCount = NumberUtils.toInt(((SimpleOrderedMap) subDocumentFacetResult).get("count").toString(),0) ;
                 if (facetCount > 0 && Objects.nonNull(((SimpleOrderedMap) subDocumentFacetResult).get("childrenCount"))) {
                     final SimpleOrderedMap parentDocs = ((SimpleOrderedMap) ((SimpleOrderedMap) subDocumentFacetResult).get("childrenCount"));
-                    final Integer childCount = (Integer) parentDocs.get("count");
+                    final Integer childCount = NumberUtils.toInt(parentDocs.get("count").toString(),0);
                     final Integer parentCount;
                     if(childCount > 0) {
-                        parentCount =(Integer)((SimpleOrderedMap)((List)((SimpleOrderedMap)parentDocs.get("parentFilteredCount")).get("buckets")).get(0)).get("count");
+                        final Object objectCount= ((SimpleOrderedMap) ((List) ((SimpleOrderedMap) parentDocs.get("parentFilteredCount")).get("buckets")).get(0)).get("count");
+                        parentCount =NumberUtils.toInt(objectCount.toString(),0);
                     } else {
                         parentCount = 0;
                     }
@@ -1016,7 +1027,9 @@ public class SolrUtils {
                                 final UseCase useCase = UseCase.valueOf(facetsQuery.get(fieldName).getScope().name());
                                 final TermFacetResult<?> facet = new TermFacetResult(termFacet.stream()
                                         .map(f ->
-                                            new FacetValue<>(castForDescriptor(f.get("val"), descriptor, useCase), ((Integer) f.get("count")).longValue())
+                                            new FacetValue<>(
+                                                    castForDescriptor(f.get("val"), descriptor, useCase),
+                                                    NumberUtils.toLong(f.get("count").toString(),0))
                                         )
                                         .collect(Collectors.toList()));
 
@@ -1044,8 +1057,9 @@ public class SolrUtils {
                                     ((ArrayList<SimpleOrderedMap>) ((SimpleOrderedMap) jsonFacetResult.get(jsonFacetResult.getName(i))).get("buckets"));
 
                             termFacet.stream().forEach(f -> typeFacetResults
-                                    .addFacetValue(new FacetValue<>((String) f.get("val"), ((Integer)f.get("count")).longValue())));
-
+                                    .addFacetValue(new FacetValue<>(
+                                            (String) f.get("val"),
+                                            NumberUtils.toLong(f.get("count").toString(),0))));
                         }
                     }
                 }
@@ -1412,7 +1426,7 @@ public class SolrUtils {
                     log.error("Error parsing Solr suggestion response: unknown response type");
                     throw new RuntimeException("Error parsing Solr suggestion response: unknown response type");
                 }
-                final Integer suggestionCount = (Integer)suggestionsResponse.get("suggestion_count");
+                final Integer suggestionCount = NumberUtils.toInt(suggestionsResponse.get("suggestion_count").toString(),0);
                 if(suggestionCount > 0) {
 
                     final LinkedHashMap<String, NamedList<Integer>> suggestion_facets;
