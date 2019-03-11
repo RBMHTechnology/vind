@@ -232,8 +232,12 @@ public class SuggestionService {
         final SolrQueryRequest req = new LocalSolrQueryRequest( solrCore, params );
         params.set(CommonParams.Q, "*:*");
         params.set(CommonParams.DF, df);
-        //Commented to allow to set the default operator by configuration or parameters
-        //params.set("q.op", "AND");
+
+        //In case of non default operator set default operator by configuration or parameters
+        if (Objects.nonNull(original_params.get("q.op"))) {
+            params.set("q.op", "AND");
+        }
+
         params.set(FacetParams.FACET, "true");
 
         //clean param lists
