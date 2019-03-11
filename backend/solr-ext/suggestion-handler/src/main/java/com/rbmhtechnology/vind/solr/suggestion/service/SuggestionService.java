@@ -41,7 +41,7 @@ public class SuggestionService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private static final String IGNORE_CASE_REGEX = "[%s|%s]";
-    private static final String PREFIX_REGEX = "/(%s.*)|(.* +%s.*)/";
+    private static final String PREFIX_REGEX = "/((.*[^A-Za-z0-9_])?%s.*)/";
     private static final String INTERVAL_QUERY = "%s:[%s TO %s]";
     //LUCENE regex list of special characters
     private static final Collection<String> SOLR_REGEX_ESCAPE_CHARS =
@@ -217,7 +217,7 @@ public class SuggestionService {
                             }
                         })
                         .collect(Collectors.joining()))
-                .map(prefix -> String.format(PREFIX_REGEX, prefix, prefix))
+                .map(prefix -> String.format(PREFIX_REGEX, prefix))
                 .collect(Collectors.toList());
 
         log.debug("original query params: {}", original_params);
