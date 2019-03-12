@@ -78,15 +78,21 @@ public class SuggestionService {
         this.searchHandler.inform(solrCore);
     }
 
-    public void run(SolrQueryResponse rsp, SolrParams params, String query, String op, String df, String[] fields, String[] singlevalue_fields, String[] multiValueFields, String[] fqs, int termLimit, int limit, SuggestionRequestHandler.LimitType limitType, SuggestionRequestHandler.Type type, SuggestionRequestHandler.Strategy strategy, String suggestionField, Map<String, Map<String,Object>> intervals) throws Exception {
+    public void run(SolrQueryResponse rsp, SolrParams params, String query, String df, String[] fields, String[] singlevalue_fields, String[] multiValueFields, String[] fqs, int termLimit, int limit, SuggestionRequestHandler.LimitType limitType, SuggestionRequestHandler.Type type, SuggestionRequestHandler.Strategy strategy, String suggestionField, Map<String, Map<String,Object>> intervals) throws Exception {
 
         //analyze query in advance
         final String analyzedQuery = FieldAnalyzerService.analyzeString(solrCore, df, query);
         final SolrQueryResponse response = query(analyzedQuery,params,df,fields,fqs,termLimit,suggestionField,intervals);
 
+        //In case of non default operator set default operator by configuration or parameters
+        String operator = "AND";
+        if (Objects.nonNull(params.get("q.op"))) {
+            operator = params.get("q.op");
+        }
+
         //Create the suggestion results
         SuggestionResult[] result;
-        result = this.getSuggestionResults(analyzedQuery, op, df, singlevalue_fields, multiValueFields, termLimit, limit, limitType, type, strategy, suggestionField, intervals, response);
+        result = this.getSuggestionResults(analyzedQuery, operator, df, singlevalue_fields, multiValueFields, termLimit, limit, limitType, type, strategy, suggestionField, intervals, response);
 
         //if no results, try spellchecker (if defined and if spellchecked query differs from original)
         if((Objects.isNull(result) && spellCheckEnabled)) {
@@ -96,7 +102,7 @@ public class SuggestionService {
             //query with checked query
             if(spellCheckedQuery != null && !analyzedQuery.equals(spellCheckedQuery)) {
                 final SolrQueryResponse spellCheckedResponse = query(spellCheckedQuery,params,df,fields,fqs,termLimit,suggestionField,intervals);
-                result = this.getSuggestionResults(spellCheckedQuery, op, df, singlevalue_fields, multiValueFields, termLimit, limit, limitType, type, strategy, suggestionField, intervals, spellCheckedResponse);
+                result = this.getSuggestionResults(spellCheckedQuery, operator, df, singlevalue_fields, multiValueFields, termLimit, limit, limitType, type, strategy, suggestionField, intervals, spellCheckedResponse);
                 //add result of spellchecker component
                 if(spellCheckResult != null && result != null) {
                     //TODO remove * on last position of collation
@@ -234,8 +240,9 @@ public class SuggestionService {
         params.set(CommonParams.DF, df);
 
         //In case of non default operator set default operator by configuration or parameters
+        params.set("q.op", "AND");
         if (Objects.nonNull(original_params.get("q.op"))) {
-            params.set("q.op", "AND");
+            params.set("q.op", original_params.get("q.op"));
         }
 
         params.set(FacetParams.FACET, "true");
