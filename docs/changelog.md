@@ -121,3 +121,7 @@ default scope due to a null FieldDescriptor.
 
 # 2.1.3
 * Hotfix: Improved previous hotfix.
+
+# 2.2.0
+* Improvement: Simplified suggestion regex query.
+* Improvement: Added word boundary as prefix for words in suggestion handler instead of blank space.
