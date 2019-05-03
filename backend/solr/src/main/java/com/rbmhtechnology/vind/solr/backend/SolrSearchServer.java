@@ -290,6 +290,7 @@ public class SolrSearchServer extends SearchServer {
 
         document.addField(ID, doc.getId());
         document.addField(TYPE, doc.getType());
+        document.addField(VERSION, doc.getVersion());
 
         return document;
     }

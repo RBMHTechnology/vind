@@ -83,7 +83,33 @@ public class DocumentFactory {
      * @return A {@link Document} with the configured {@link FieldDescriptor}.
      */
     public Document createDoc(String id) {
-        return new DocumentImpl(id, this.type);
+        return createDoc(id, Document.VERSION_DONT_CARE);
+    }
+
+    /**
+     * Creates an instance of a {@link Document} within the schema of the actual configuration of the factory.
+     * If a document with the same {@code id} already exists, indexing this document will fail.
+     * @param id Identification string of the new document.
+     * @return A {@link Document} with the configured {@link FieldDescriptor}.
+     */
+    public Document createNewDoc(String id) {
+        return createDoc(id, Document.VERSION_MUST_NOT_EXIST);
+    }
+
+    /**
+     * Creates an instance of a {@link Document} within the schema of the actual configuration of the factory with
+     * the provided document-version.
+     *
+     * @param id Identification string of the new document.
+     * @param docVersion the document version, or one of the pre-defined constants.
+     * @return A {@link Document} with the configured {@link FieldDescriptor}.
+     *
+     * @see Document#VERSION_DONT_CARE
+     * @see Document#VERSION_MUST_NOT_EXIST
+     * @see Document#VERSION_MUST_EXIST
+     */
+    public Document createDoc(String id, long docVersion) {
+        return new DocumentImpl(id, this.type, docVersion);
     }
 
     /**
@@ -128,14 +154,16 @@ public class DocumentFactory {
         private final Set<Document> children = new HashSet<>();
         private final String id;
         private final String type;
+        private final long version;
         private float score;
         private float distance;
         private Integer childCount;
 
-        private DocumentImpl(String id, String type) {
+        private DocumentImpl(String id, String type, long version) {
             //this.values.put(DocumentFactory.ID, id);
             this.id = id;
             this.type = type;
+            this.version = version;
         }
 
         /**
@@ -658,6 +686,14 @@ public class DocumentFactory {
         @Override
         public String getType() {
             return type;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public long getVersion() {
+            return version;
         }
 
         /**

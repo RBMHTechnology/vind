@@ -756,6 +756,7 @@ public class SolrUtils {
 
         public static final String ID = "_id_";
         public static final String TYPE = "_type_";
+        public static final String VERSION = "_version_";
         public static final String SCORE = "score";
         public static final String DISTANCE = "_distance_";
         public static final String TEXT = "text";
@@ -905,7 +906,9 @@ public class SolrUtils {
 
             return results.stream().map(result -> {
 
-                Document document = factory.createDoc((String) result.getFieldValue(Fieldname.ID));
+                final Document document = factory.createDoc((
+                        String) result.getFieldValue(Fieldname.ID),
+                        (long) result.getFieldValue(Fieldname.VERSION));
 
                 if (childCounts != null) {
                     document.setChildCount(ObjectUtils.defaultIfNull(childCounts.get(document.getId()), 0));
@@ -922,6 +925,7 @@ public class SolrUtils {
                 result.getFieldNames().stream()
                         .filter(name -> !name.equals(Fieldname.ID))
                         .filter(name -> !name.equals(Fieldname.TYPE))
+                        .filter(name -> !name.equals(Fieldname.VERSION))
                         .filter(name -> !name.equals(Fieldname.SCORE))
                         .filter(name -> !name.equals(Fieldname.DISTANCE))
                         .forEach(name -> {

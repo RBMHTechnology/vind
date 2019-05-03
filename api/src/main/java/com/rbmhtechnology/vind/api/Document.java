@@ -13,6 +13,10 @@ import java.util.Set;
  */
 public interface Document {
 
+    long VERSION_MUST_EXIST = 1;
+    long VERSION_DONT_CARE = 0;
+    long VERSION_MUST_NOT_EXIST = -1;
+
     /**
      * Sets a value in a document field. If the field had already a value it is overwritten by the new value.
      * @param field Name of the field to set.
@@ -300,6 +304,12 @@ public interface Document {
      * @return document type.
      */
     String getType();
+
+    /**
+     * Gets the document version. This field is used for optimistic concurrency.
+     * @return document version
+     */
+    long getVersion();
 
     /**
      * Gets the document distance.
