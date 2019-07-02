@@ -51,6 +51,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.text.NumberFormat;
@@ -131,12 +132,13 @@ public class SolrSearchServer extends SearchServer {
         //check schema
         try {
             final SchemaResponse response = new SchemaRequest().process(solrClient);
-            final Path localSchema = FileSystemUtils.toPath(Resources.getResource("solrhome/core/conf/schema.xml"));
+            final InputStream localSchema =
+                    this.getClass().getClassLoader().getResourceAsStream("solrhome/core/conf/schema.xml");
             SolrSchemaChecker.checkSchema(localSchema, response);
         } catch (SolrServerException e) {
             log.error("Cannot get schema for solr client", e);
             throw new RuntimeException(e);
-        } catch (URISyntaxException | IOException e) {
+        } catch (IOException e) {
             log.error("Cannot read schema", e);
             throw new RuntimeException(e);
         } catch (SchemaValidationException e) {

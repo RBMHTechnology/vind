@@ -33,13 +33,20 @@ public class SolrSchemaChecker {
 
     public static void checkSchema(Path solrSchemaPath, SchemaResponse response) throws IOException, SchemaValidationException {
         // read the local schema.xml
+        final InputStream xml = Files.newInputStream(solrSchemaPath, StandardOpenOption.READ);
+        checkSchema(xml, response);
+    }
+
+
+    public static void checkSchema(InputStream solrSchemaPath, SchemaResponse response) throws IOException, SchemaValidationException {
+        // read the local schema.xml
         final Document local;
-        try (InputStream xml = Files.newInputStream(solrSchemaPath, StandardOpenOption.READ)) {
+        try {
             final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
             final DocumentBuilder builder = factory.newDocumentBuilder();
 
-            local = builder.parse(xml);
+            local = builder.parse(solrSchemaPath);
         } catch (ParserConfigurationException | SAXException e) {
             log.error("Error checking schema.xml: {}", e.getMessage(), e);
             throw new IOException(e);
@@ -62,8 +69,7 @@ public class SolrSchemaChecker {
                 throw new SchemaValidationException(String.format("Missing <fieldType name='%s' />", fieldTypeName));
             }
         }
-
-        // TODO: check local -> remote.
+    // TODO: check local -> remote.
 
     }
 
