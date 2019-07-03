@@ -246,7 +246,7 @@ public class SolrSearchServer extends SearchServer {
             final QueryResponse query = solrClient.query(q, REQUEST_METHOD);
 
             if (CollectionUtils.isEmpty(query.getResults()))
-                log.info("Deleting document `{}`: document is becoming parent.",doc.getId());
+                log.debug("Deleting document `{}`: document is becoming parent.",doc.getId());
 
             if(withinMs < 0) {
                 this.solrClient.deleteById(doc.getId());

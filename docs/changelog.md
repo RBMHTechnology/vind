@@ -119,8 +119,11 @@ default scope due to a null FieldDescriptor.
 # 2.1.2
 * Hotfix: Fixed issue introduced by solr inconsistent response types.
 
-# 2.1.3
-* Hotfix: Improved previous hotfix.
+#2.1.3
+*Hotfix: Releated to previous fix, remove cast to integer by NumberUtils toInt method.
+
+#2.1.4
+* Hotfix: Reduced log level from info to debug on document update to avoid spaming the logs.
 
 # 2.2.0
 * Improvement: Simplified suggestion regex query.
