@@ -125,3 +125,4 @@ default scope due to a null FieldDescriptor.
 # 2.2.0
 * Improvement: Simplified suggestion regex query.
 * Improvement: Added word boundary as prefix for words in suggestion handler instead of blank space.
+* Improvement: Instead of reading local solr schema as file to do schema check, now reading it as input stream.
