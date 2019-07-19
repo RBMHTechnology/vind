@@ -366,7 +366,7 @@ public class CollectionManagementService {
 
                 return Long.valueOf(response.getResults().get(0).get("version").toString());
             } else {
-                Path configDirectory = Files.createTempDirectory(dependency);
+                Path configDirectory = Files.createTempDirectory(Utils.normalizeFileName(dependency));
 
                 Path jarFile = Utils.downloadToTempDir(configDirectory, repositories, dependency);
 
@@ -436,7 +436,7 @@ public class CollectionManagementService {
         final Path configDirectory;
 
         try {
-            configDirectory = Files.createTempDirectory(configName);
+            configDirectory = Files.createTempDirectory(Utils.normalizeFileName(configName));
 
         } catch (IOException e) {
             throw new IOException("Cannot create temp folder for downloading " + configName, e);
@@ -568,7 +568,9 @@ public class CollectionManagementService {
             @Override
             public Path handleResponse(HttpResponse response) throws ClientProtocolException, IOException {
                 if(response.getStatusLine().getStatusCode() == 200) {
-                    final Path resultFile = Paths.get(directory.toString(), FilenameUtils.getName(uri.getPath()));
+                    final String filename = Utils.normalizeFileName(FilenameUtils.removeExtension(FilenameUtils.getName(uri.getPath())));
+                    final String extension = FilenameUtils.getExtension(uri.getPath());
+                    final Path resultFile = Paths.get(directory.toString(), filename + "." + extension);
                     Files.copy(response.getEntity().getContent(), resultFile, StandardCopyOption.REPLACE_EXISTING);
                     return resultFile;
                 } else {
@@ -637,7 +639,7 @@ public class CollectionManagementService {
         public static String nameToPath(String name) throws IOException {
             String[] split = name.split(":");
 
-            if(split.length != 3) throw new IOException("Cannot get dowload path for " + name);
+            if(split.length != 3) throw new IOException("Cannot get download path for " + name);
 
             return Paths.get(split[0].replaceAll("\\.","/"),split[1],split[2],split[1]+"-"+split[2]+".jar").toFile().getPath();
         }
@@ -660,6 +662,10 @@ public class CollectionManagementService {
 
         public static String toBlobName(String dependency) {
             return dependency.replaceAll(":","_");
+        }
+
+        public static String normalizeFileName(String rawName) {
+            return rawName.replaceAll("[^a-zA-Z0-9/_-]","_");
         }
 
         /**
