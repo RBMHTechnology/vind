@@ -19,6 +19,6 @@ jobs:
   include:
     - stage: test
     - stage: deploy
-      if: branch = develop AND type IN (push, api)
+      if: branch =~ /^(develop|vind-v\d+\.\d+\.x)$/ AND type IN (push, api)
       jdk: openjdk8
       script: mvn -s .travis/maven-settings.xml deploy -Dquick
