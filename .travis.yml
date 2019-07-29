@@ -17,6 +17,7 @@ before_cache:
 
 jobs:
   include:
+    - stage: test
     - stage: deploy
       if: branch = develop AND type IN (push, api)
       jdk: openjdk8
