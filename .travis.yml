@@ -11,6 +11,8 @@ env:
 
 jdk:
 - openjdk8
+- openjdk10
+- openjdk11
 
 before_cache:
 - rm -rf "$HOME/.m2/repository/com/rbmhtechnology/vind"
