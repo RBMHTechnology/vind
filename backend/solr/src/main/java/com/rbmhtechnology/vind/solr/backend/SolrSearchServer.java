@@ -1,7 +1,5 @@
 package com.rbmhtechnology.vind.solr.backend;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.io.Resources;
 import com.rbmhtechnology.vind.SearchServerException;
@@ -33,11 +31,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.util.Asserts;
 import org.apache.solr.client.solrj.*;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
-import org.apache.solr.client.solrj.request.CollectionAdminRequest;
-import org.apache.solr.client.solrj.request.CoreAdminRequest;
-import org.apache.solr.client.solrj.request.GenericSolrRequest;
 import org.apache.solr.client.solrj.request.schema.SchemaRequest;
-import org.apache.solr.client.solrj.response.CoreAdminResponse;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SolrPingResponse;
 import org.apache.solr.client.solrj.response.UpdateResponse;
@@ -152,21 +146,11 @@ public class SolrSearchServer extends SearchServer {
 
     @Override
     public StatusResult getBackendStatus() {
-        int statusCode = -1;
+
         try {
-            if(SearchConfiguration.get(SearchConfiguration.SERVER_SOLR_CLOUD, false)) {
-                CollectionAdminRequest request = new CollectionAdminRequest.ClusterStatus();
+            SolrPingResponse ping = solrClient.ping();
 
-                SolrResponse response = request.process(this.solrClient);
-                statusCode = Integer.valueOf(((NamedList)response.getResponse().get("responseHeader")).get("status").toString());
-
-            }
-            else {
-                CoreAdminRequest request = new CoreAdminRequest();
-                request.setAction(CoreAdminParams.CoreAdminAction.STATUS);
-                CoreAdminResponse response = request.process(this.solrClient);
-                statusCode = response.getStatus();
-            }
+            int statusCode = ping.getStatus();
 
             if(statusCode != 0) {
                 return StatusResult.down().setDetail("status", statusCode);
