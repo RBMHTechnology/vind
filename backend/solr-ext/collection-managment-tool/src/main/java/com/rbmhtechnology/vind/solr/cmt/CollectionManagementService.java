@@ -52,7 +52,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-;
 
 /**
  * @author Thomas Kurz (thomas.kurz@redlink.co)
@@ -583,7 +582,7 @@ public class CollectionManagementService {
             for(String repository : repositories)
                 try {
                     if (repository.matches("https?://.*")) {
-                        final URI uri = new URI((repository.endsWith("/") ? repository : (repository + "/")) + nameToPath(name));
+                        final URI uri = new URI((repository.endsWith("/") ? repository : (repository + "/")) + nameToUrlPath(name));
                         try {
                             return httpClient.execute(new HttpGet(uri), new DownloadResponseHandler(uri, directory));
                         } catch (IOException e) {
@@ -644,7 +643,17 @@ public class CollectionManagementService {
             return Paths.get(split[0].replaceAll("\\.","/"),split[1],split[2],split[1]+"-"+split[2]+".jar").toFile().getPath();
         }
 
-        public static String nameToMetadataPath(String name) throws IOException {
+        public static String nameToUrlPath(String name) throws IOException {
+            String[] split = name.split(":");
+
+            if (split.length != 3) {
+                throw new IOException("Cannot get download path for " + name);
+            }
+
+            return String.join("/",split[0].replaceAll("\\.","/"),split[1],split[2],split[1]+"-"+split[2]+".jar");
+        }
+
+      public static String nameToMetadataPath(String name) throws IOException {
             String[] split = name.split(":");
 
             if(split.length != 3) throw new IOException("Cannot get dowload path for " + name);
