@@ -133,3 +133,6 @@ default scope due to a null FieldDescriptor.
 * Improvement: Added word boundary as prefix for words in suggestion handler instead of blank space.
 * Improvement: Instead of reading local solr schema as file to do schema check, now reading it as input stream.
 * Improvement: Removed invalid characters from file name and path on collection download
+
+#2.2.1
+* Fix: alignment of language specific fields tokenizer with generic text definition
