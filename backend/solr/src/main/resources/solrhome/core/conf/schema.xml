@@ -20,7 +20,6 @@
     <analyzer>
       <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-FoldToASCII.txt"/>
       <tokenizer class="solr.ClassicTokenizerFactory"/>
-      <filter class="solr.WordDelimiterFilterFactory" catenateNumbers="0" generateNumberParts="1" splitOnCaseChange="1" generateWordParts="1" catenateAll="0" catenateWords="0"/>
       <filter class="solr.StopFilterFactory" words="stopwords_de.txt" ignoreCase="true"/>
       <filter class="solr.SynonymFilterFactory" expand="false" ignoreCase="true" synonyms="synonyms.txt"/>
       <filter class="solr.LowerCaseFilterFactory"/>
@@ -31,7 +30,6 @@
     <analyzer>
       <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-FoldToASCII.txt"/>
       <tokenizer class="solr.ClassicTokenizerFactory"/>
-      <filter class="solr.WordDelimiterFilterFactory" catenateNumbers="0" generateNumberParts="1" splitOnCaseChange="1" generateWordParts="1" catenateAll="0" catenateWords="0"/>
       <filter class="solr.StopFilterFactory" words="stopwords_en.txt" ignoreCase="true"/>
       <filter class="solr.SynonymFilterFactory" expand="false" ignoreCase="true" synonyms="synonyms.txt"/>
       <filter class="solr.LowerCaseFilterFactory"/>
@@ -43,7 +41,6 @@
     <analyzer>
       <charFilter class="solr.MappingCharFilterFactory" mapping="mapping-FoldToASCII.txt"/>
       <tokenizer class="solr.ClassicTokenizerFactory"/>
-      <filter class="solr.WordDelimiterFilterFactory" catenateNumbers="0" generateNumberParts="1" splitOnCaseChange="1" generateWordParts="1" catenateAll="0" catenateWords="0"/>
       <filter class="solr.StopFilterFactory" words="stopwords_es.txt" ignoreCase="true"/>
       <filter class="solr.SynonymFilterFactory" expand="false" ignoreCase="true" synonyms="synonyms.txt"/>
       <filter class="solr.LowerCaseFilterFactory"/>
