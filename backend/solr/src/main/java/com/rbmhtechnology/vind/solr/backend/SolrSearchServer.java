@@ -857,7 +857,11 @@ public class SolrSearchServer extends SearchServer {
         try {
             solrClientLogger.debug(">>> delete query({})", query);
 
-            final UpdateResponse deleteChildrenResponse = solrClient.deleteByQuery(String.format("{!child of=\"_type_:%s\" v='%s'}",factory.getType(), query.trim().replaceAll("^\\+","")));
+            final UpdateResponse deleteChildrenResponse =
+                    solrClient.deleteByQuery(
+                            String.format("{!child of='_type_:%s' v='%s'}",
+                                    factory.getType(),
+                                    query.trim().replaceAll("^\\+","").replaceAll("'","\"")));
             long qTime = deleteChildrenResponse.getQTime();
             long elapsedTime = deleteChildrenResponse.getElapsedTime();
             final UpdateResponse deleteResponse = solrClient.deleteByQuery(query.trim().replaceAll("^\\+",""));
