@@ -856,24 +856,17 @@ public class SolrSearchServer extends SearchServer {
         String query = SolrUtils.Query.buildFilterString(delete.getQuery(), factory, delete.getUpdateContext(),true);
         try {
             solrClientLogger.debug(">>> delete query({})", query);
-            //Finding the ID of the documents to delete
-            final SolrQuery solrQuery = new SolrQuery();
-            solrQuery.setParam(CommonParams.Q, "*:*");
-            solrQuery.setParam(CommonParams.FQ,query.trim().replaceAll("^\\+","").split("\\+"));
-            final QueryResponse response = solrClient.query(solrQuery, REQUEST_METHOD);
-            long qTime = 0;
-            long elapsedTime = 0;
-            if(Objects.nonNull(response) && CollectionUtils.isNotEmpty(response.getResults())){
-                final List<String> idList = response.getResults().stream().map(doc -> (String) doc.get(ID)).collect(Collectors.toList());
-                final UpdateResponse deleteResponse = solrClient.deleteById(idList);
-                qTime = deleteResponse.getQTime();
-                elapsedTime = deleteResponse.getElapsedTime();
-                //Deleting nested documents
-                final UpdateResponse deleteNestedResponse = solrClient.deleteByQuery("_root_:(" + StringUtils.join(idList, " OR ") + ")");
 
-                qTime += deleteNestedResponse.getQTime();
-                elapsedTime += deleteNestedResponse.getElapsedTime();
-            }
+            final UpdateResponse deleteChildrenResponse =
+                    solrClient.deleteByQuery(
+                            String.format("{!child of='_type_:%s' v='%s'}",
+                                    factory.getType(),
+                                    query.trim().replaceAll("^\\+","").replaceAll("'","\"")));
+            long qTime = deleteChildrenResponse.getQTime();
+            long elapsedTime = deleteChildrenResponse.getElapsedTime();
+            final UpdateResponse deleteResponse = solrClient.deleteByQuery(query.trim().replaceAll("^\\+",""));
+            qTime += deleteResponse.getQTime();
+            elapsedTime += deleteResponse.getElapsedTime();
 
             return new DeleteResult(qTime).setElapsedTime(elapsedTime);
         } catch (SolrServerException | IOException e) {
