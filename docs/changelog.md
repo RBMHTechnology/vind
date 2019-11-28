@@ -136,3 +136,7 @@ default scope due to a null FieldDescriptor.
 
 #2.2.1
 * Fix: alignment of language specific fields tokenizer with generic text definition
+
+# 2.3.0
+* Improvement: Delete by query no longer queries for the ids of the documents as it was not performing for long sets of 
+documents matching the delete filters.
