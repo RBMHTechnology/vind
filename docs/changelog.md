@@ -141,5 +141,8 @@ default scope due to a null FieldDescriptor.
 * Improvement: Delete by query no longer queries for the ids of the documents as it was not performing for long sets of 
 documents matching the delete filters.
 
+# 2.3.1
+* Fix: Issue on nested doc deletion when deleting by query.
+
 # 2.4.0
 * Improvement: Builders for StatsFacets now have for each `foo()`-method also a `foo(boolean fooEnabled)` method.
