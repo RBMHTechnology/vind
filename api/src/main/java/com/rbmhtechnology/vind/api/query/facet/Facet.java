@@ -153,8 +153,8 @@ public abstract class Facet {
         public String toString(){
             final String serializeFacet = "" +
                     "\"%s\":{" +
-                        "\"type\":\"TermFacet\"," +
-                        "\"field\":\"%s\"" +
+                    "\"type\":\"TermFacet\"," +
+                    "\"field\":\"%s\"" +
                     "}";
             return String.format(serializeFacet, this.facetName, this.facetName);
         }
@@ -963,7 +963,16 @@ public abstract class Facet {
          * @return {@link StatsFacet} with the min statistics enabled.
          */
         public StatsFacet<T> min() {
-            this.min=true;
+            return min(true);
+        }
+
+        /**
+         * Activate/deactivate the min statistics, which will give as result the minimum value for the specified field
+         * @param minEnabled weather the min stats should be enabled or disabled
+         * @return {@link StatsFacet} with the min statistics enabled/disabled.
+         */
+        public StatsFacet<T> min(boolean minEnabled) {
+            this.min = minEnabled;
             return this;
         }
 
@@ -972,7 +981,16 @@ public abstract class Facet {
          * @return {@link StatsFacet} with the max statistics enabled.
          */
         public StatsFacet<T> max() {
-            this.max=true;
+            return max(true);
+        }
+
+        /**
+         * Activate/deactivate the max statistics, which will give as result the maximum value for the specified field
+         * @param maxEnabled weather the max stats should be enabled or disabled
+         * @return {@link StatsFacet} with the max statistics enabled/disabled.
+         */
+        public StatsFacet<T> max(boolean maxEnabled) {
+            this.max = maxEnabled;
             return this;
         }
 
@@ -981,7 +999,16 @@ public abstract class Facet {
          * @return {@link StatsFacet} with the count statistics enabled.
          */
         public StatsFacet<T> count() {
-            this.count=true;
+            return count(true);
+        }
+
+        /**
+         * Activate/deactivate the count statistics, which will give as result the count of documents with the specified field
+         * @param countEnabled weather the count stats should be enabled or disabled
+         * @return {@link StatsFacet} with the count statistics enabled/disabled.
+         */
+        public StatsFacet<T> count(boolean countEnabled) {
+            this.count = countEnabled;
             return this;
         }
 
@@ -990,7 +1017,16 @@ public abstract class Facet {
          * @return {@link StatsFacet} with the missing statistics enabled.
          */
         public StatsFacet<T> missing() {
-            this.missing=true;
+            return missing(true);
+        }
+
+        /**
+         * Activate/deactivate the missing statistics, which will give as result the number of elements without the specified field
+         * @param enableMissing weather the missing statistics should be enabled
+         * @return {@link StatsFacet} with the missing statistics enabled.
+         */
+        public StatsFacet<T> missing(boolean enableMissing) {
+            this.missing = enableMissing;
             return this;
         }
 
@@ -999,7 +1035,16 @@ public abstract class Facet {
          * @return {@link StatsFacet} with the min statistics enabled.
          */
         public StatsFacet<T> distinctValues() {
-            this.distinctValues=true;
+            return distinctValues(true);
+        }
+
+        /**
+         * Activate the distinctValues statistics, which will give as result the set of distinct values for the specified field
+         * @param distinctValuesEnabled weather the distinctValues statistics should be enabled
+         * @return {@link StatsFacet} with the min statistics enabled.
+         */
+        public StatsFacet<T> distinctValues(boolean distinctValuesEnabled) {
+            this.distinctValues = distinctValuesEnabled;
             return this;
         }
 
@@ -1008,7 +1053,16 @@ public abstract class Facet {
          * @return {@link StatsFacet} with the min statistics enabled.
          */
         public StatsFacet<T> countDistinct() {
-            this.countDistinct=true;
+            return countDistinct(true);
+        }
+
+        /**
+         * Activate/deactivate the countDistinct statistics, which will give as result the count of distinct values for the specified field
+         * @param countDistinctEnabled weather the countDistinct statistics should be enabled
+         * @return {@link StatsFacet} with the min statistics enabled.
+         */
+        public StatsFacet<T> countDistinct(boolean countDistinctEnabled) {
+            this.countDistinct = countDistinctEnabled;
             return this;
         }
 
@@ -1181,42 +1235,87 @@ public abstract class Facet {
 
         @Override
         public StatsNumericFacet<T> min() {
-            this.min=true;
+            return min(true);
+        }
+
+        @Override
+        public StatsNumericFacet<T> min(boolean minEnabled) {
+            this.min = minEnabled;
             return this;
         }
+
         @Override
         public StatsNumericFacet<T> max() {
-            this.max=true;
+            return max(true);
+        }
+
+        @Override
+        public StatsNumericFacet<T> max(boolean maxEnabled) {
+            this.max = maxEnabled;
             return this;
         }
+
         @Override
         public StatsNumericFacet<T> count() {
-            this.count=true;
+            return count(true);
+        }
+
+        @Override
+        public StatsNumericFacet<T> count(boolean countEnabled) {
+            this.count = countEnabled;
             return this;
         }
+
         @Override
         public StatsNumericFacet<T> missing() {
-            this.missing=true;
+            return missing(true);
+        }
+
+        @Override
+        public StatsNumericFacet<T> missing(boolean missingEnabled) {
+            this.missing = missingEnabled;
             return this;
         }
+
         @Override
         public StatsNumericFacet<T> distinctValues() {
-            this.distinctValues=true;
+            return distinctValues(true);
+        }
+
+        @Override
+        public StatsNumericFacet<T> distinctValues(boolean distinctValuesEnabled) {
+            this.distinctValues = distinctValuesEnabled;
             return this;
         }
+
         @Override
         public StatsNumericFacet<T> countDistinct() {
-            this.countDistinct=true;
+            return countDistinct(true);
+        }
+
+        @Override
+        public StatsNumericFacet<T> countDistinct(boolean countDistinctEnabled) {
+            this.countDistinct = countDistinctEnabled;
             return this;
         }
 
         /**
-         * Activate the cardinality statistics, which will give as result an statistical aproximation to the number of
+         * Activate the cardinality statistics, which will give as result an statistical approximation to the number of
          * distinct values int he field.
          * @return {@link StatsFacet} with the cardinality statistics enabled.
          */
         public StatsNumericFacet<T> cardinality() {
-            this.cardinality=true;
+            return cardinality(true);
+        }
+
+        /**
+         * Activate/deactivate the cardinality statistics, which will give as result an statistical approximation to the number of
+         * distinct values int he field.
+         * @param cardinalityEnabled weather the cardinality statistics should be enabled
+         * @return {@link StatsFacet} with the cardinality statistics enabled.
+         */
+        public StatsNumericFacet<T> cardinality(boolean cardinalityEnabled) {
+            this.cardinality = cardinalityEnabled;
             return this;
         }
 
@@ -1225,7 +1324,16 @@ public abstract class Facet {
          * @return {@link StatsFacet} with the sum statistics enabled.
          */
         public StatsNumericFacet<T> sum() {
-            this.sum=true;
+            return sum(true);
+        }
+
+        /**
+         * Activate/deactivate the sum statistics, which will give as result the addition of all values for the specified field
+         * @param sumEnabled weather the sum statistics should be enabled
+         * @return {@link StatsFacet} with the sum statistics enabled.
+         */
+        public StatsNumericFacet<T> sum(boolean sumEnabled) {
+            this.sum = sumEnabled;
             return this;
         }
 
@@ -1235,7 +1343,17 @@ public abstract class Facet {
          * @return {@link StatsFacet} with the sumOfSquares statistics enabled.
          */
         public StatsNumericFacet<T> sumOfSquares() {
-            this.sumOfSquares=true;
+            return sumOfSquares(true);
+        }
+
+        /**
+         * Activate/deactivate the sumOfSquares statistics, which will give as result the addition of all values squared for the
+         * specified field
+         * @param sumOfSquaresEnabled weather the sumOfSquares statistics should be enabled
+         * @return {@link StatsFacet} with the sumOfSquares statistics enabled.
+         */
+        public StatsNumericFacet<T> sumOfSquares(boolean sumOfSquaresEnabled) {
+            this.sumOfSquares = sumOfSquaresEnabled;
             return this;
         }
 
@@ -1244,7 +1362,16 @@ public abstract class Facet {
          * @return {@link StatsFacet} with the mean statistics enabled.
          */
         public StatsNumericFacet<T> mean() {
-            this.mean=true;
+            return mean(true);
+        }
+
+        /**
+         * Activate/deactivate the mean statistics, which will give as result the average value for the specified field
+         * @param meanEnabled weather the mean statistics should be enabled
+         * @return {@link StatsFacet} with the mean statistics enabled.
+         */
+        public StatsNumericFacet<T> mean(boolean meanEnabled) {
+            this.mean = meanEnabled;
             return this;
         }
 
@@ -1253,7 +1380,16 @@ public abstract class Facet {
          * @return {@link StatsFacet} with the stddev statistics enabled.
          */
         public StatsNumericFacet<T> stddev() {
-            this.stddev=true;
+            return stddev(true);
+        }
+
+        /**
+         * Activate/deactivate the stddev statistics, which will give as result the standard deviation for the specified field
+         * @param stddevEnabled weather the stddev statistics should be enabled
+         * @return {@link StatsFacet} with the stddev statistics enabled.
+         */
+        public StatsNumericFacet<T> stddev(boolean stddevEnabled) {
+            this.stddev = stddevEnabled;
             return this;
         }
 
@@ -1310,74 +1446,161 @@ public abstract class Facet {
 
         @Override
         public StatsDateFacet<T> min() {
-            this.min=true;
+            return min(true);
+        }
+
+        @Override
+        public StatsDateFacet<T> min(boolean minEnabled) {
+            this.min = minEnabled;
             return this;
         }
+
         @Override
         public StatsDateFacet<T> max() {
-            this.max=true;
+            return max(true);
+        }
+
+        @Override
+        public StatsDateFacet<T> max(boolean maxEnabled) {
+            this.max = maxEnabled;
             return this;
         }
+
         @Override
         public StatsDateFacet<T> count() {
-            this.count=true;
+            return count(true);
+        }
+
+        @Override
+        public StatsDateFacet<T> count(boolean countEnabled) {
+            this.count = countEnabled;
             return this;
         }
+
         @Override
         public StatsDateFacet<T> missing() {
-            this.missing=true;
+            return missing(true);
+        }
+
+        @Override
+        public StatsDateFacet<T> missing(boolean missingEnabled) {
+            this.missing = missingEnabled;
             return this;
         }
+
         @Override
         public StatsDateFacet<T> distinctValues() {
-            this.distinctValues=true;
+            return distinctValues(true);
+        }
+
+        @Override
+        public StatsDateFacet<T> distinctValues(boolean distinctValuesEnabled) {
+            this.distinctValues = distinctValuesEnabled;
             return this;
         }
+
         @Override
         public StatsDateFacet<T> countDistinct() {
-            this.countDistinct=true;
+            return countDistinct(true);
+        }
+
+        @Override
+        public StatsDateFacet<T> countDistinct(boolean countDistinctEnabled) {
+            this.countDistinct = countDistinctEnabled;
             return this;
         }
+
         /**
          * Activate the cardinality statistics, which will give as result an statistical aproximation to the number of
          * distinct values int he field.
          * @return {@link StatsFacet} with the cardinality statistics enabled.
          */
         public StatsDateFacet<T> cardinality() {
-            this.cardinality=true;
+            return cardinality(true);
+        }
+
+        /**
+         * Activate/deactivate the cardinality statistics, which will give as result an statistical aproximation to the number of
+         * distinct values int he field.
+         * @param cardinalityEnabled weather the cardinality statistics should be enabled
+         * @return {@link StatsFacet} with the cardinality statistics enabled.
+         */
+        public StatsDateFacet<T> cardinality(boolean cardinalityEnabled) {
+            this.cardinality = cardinalityEnabled;
             return this;
         }
+
         /**
          * Activate the sum statistics, which will give as result the addition of all values for the specified field
          * @return {@link StatsFacet} with the sum statistics enabled.
          */
         public StatsDateFacet<T> sum() {
-            this.sum=true;
+            return sum(true);
+        }
+
+        /**
+         * Activate/deactivate the sum statistics, which will give as result the addition of all values for the specified field
+         * @param sumEnabled weather the sum statistics should be enabled
+         * @return {@link StatsFacet} with the sum statistics enabled.
+         */
+        public StatsDateFacet<T> sum(boolean sumEnabled) {
+            this.sum = sumEnabled;
             return this;
         }
+
         /**
          * Activate the sumOfSquares statistics, which will give as result the addition of all values squared for the
          * specified field
          * @return {@link StatsFacet} with the sumOfSquares statistics enabled.
          */
         public StatsDateFacet<T> sumOfSquares() {
-            this.sumOfSquares=true;
+            return sumOfSquares(true);
+        }
+
+        /**
+         * Activate/deactivate the sumOfSquares statistics, which will give as result the addition of all values squared for the
+         * specified field
+         * @param sumOfSquaresEnabled weather the sumOfSquares statistics should be enabled
+         * @return {@link StatsFacet} with the sumOfSquares statistics enabled.
+         */
+        public StatsDateFacet<T> sumOfSquares(boolean sumOfSquaresEnabled) {
+            this.sumOfSquares = sumOfSquaresEnabled;
             return this;
         }
+
         /**
          * Activate the mean statistics, which will give as result the average value for the specified field
          * @return {@link StatsFacet} with the mean statistics enabled.
          */
         public StatsDateFacet<T> mean() {
-            this.mean=true;
+            return mean(true);
+        }
+
+        /**
+         * Activate/deactivate the mean statistics, which will give as result the average value for the specified field
+         * @param meanEnabled weather the mean statistics should be enabled
+         * @return {@link StatsFacet} with the mean statistics enabled.
+         */
+        public StatsDateFacet<T> mean(boolean meanEnabled) {
+            this.mean = meanEnabled;
             return this;
         }
+
         /**
          * Activate the stddev statistics, which will give as result the standard deviation for the specified field
          * @return {@link StatsFacet} with the stddev statistics enabled.
          */
         public StatsDateFacet<T> stddev() {
-            this.stddev=true;
+            return stddev(true);
+        }
+
+        /**
+         * Activate/deactivate the stddev statistics, which will give as result the standard deviation for the specified field
+         * @param stddevEnabled weather the stddev statistics should be enabled
+         * @return {@link StatsFacet} with the stddev statistics enabled.
+         */
+        public StatsDateFacet<T> stddev(boolean stddevEnabled) {
+            this.stddev = stddevEnabled;
             return this;
         }
 
@@ -1422,74 +1645,161 @@ public abstract class Facet {
 
         @Override
         public StatsUtilDateFacet<T> min() {
-            this.min=true;
+            return min(true);
+        }
+
+        @Override
+        public StatsUtilDateFacet<T> min(boolean minEnabled) {
+            this.min = minEnabled;
             return this;
         }
+
         @Override
         public StatsUtilDateFacet<T> max() {
-            this.max=true;
+            return max(true);
+        }
+
+        @Override
+        public StatsUtilDateFacet<T> max(boolean maxEnabled) {
+            this.max = maxEnabled;
             return this;
         }
+
         @Override
         public StatsUtilDateFacet<T> count() {
-            this.count=true;
+            return count(true);
+        }
+
+        @Override
+        public StatsUtilDateFacet<T> count(boolean countEnabled) {
+            this.count = countEnabled;
             return this;
         }
+
         @Override
         public StatsUtilDateFacet<T> missing() {
-            this.missing=true;
+            return missing(true);
+        }
+
+        @Override
+        public StatsUtilDateFacet<T> missing(boolean missingEnabled) {
+            this.missing = missingEnabled;
             return this;
         }
+
         @Override
         public StatsUtilDateFacet<T> distinctValues() {
-            this.distinctValues=true;
+            return distinctValues(true);
+        }
+
+        @Override
+        public StatsUtilDateFacet<T> distinctValues(boolean distinctValuesEnabled) {
+            this.distinctValues = distinctValuesEnabled;
             return this;
         }
+
         @Override
         public StatsUtilDateFacet<T> countDistinct() {
-            this.countDistinct=true;
+            return countDistinct(true);
+        }
+
+        @Override
+        public StatsUtilDateFacet<T> countDistinct(boolean countDistinctEnabled) {
+            this.countDistinct = countDistinctEnabled;
             return this;
         }
+
         /**
          * Activate the cardinality statistics, which will give as result an statistical aproximation to the number of
          * distinct values int he field.
          * @return {@link StatsUtilDateFacet} with the cardinality statistics enabled.
          */
         public StatsUtilDateFacet<T> cardinality() {
-            this.cardinality=true;
+            return cardinality(true);
+        }
+
+        /**
+         * Activate/deactivate the cardinality statistics, which will give as result an statistical aproximation to the number of
+         * distinct values int he field.
+         * @param cardinalityEnabled weather the cardinality statistics should be enabled
+         * @return {@link StatsUtilDateFacet} with the cardinality statistics enabled.
+         */
+        public StatsUtilDateFacet<T> cardinality(boolean cardinalityEnabled) {
+            this.cardinality = cardinalityEnabled;
             return this;
         }
+
         /**
          * Activate the sum statistics, which will give as result the addition of all values for the specified field
          * @return {@link StatsUtilDateFacet} with the sum statistics enabled.
          */
         public StatsUtilDateFacet<T> sum() {
-            this.sum=true;
+            return sum(true);
+        }
+
+        /**
+         * Activate/deactivate the sum statistics, which will give as result the addition of all values for the specified field
+         * @param sumEnabled weather the sum statistics should be enabled
+         * @return {@link StatsUtilDateFacet} with the sum statistics enabled.
+         */
+        public StatsUtilDateFacet<T> sum(boolean sumEnabled) {
+            this.sum = sumEnabled;
             return this;
         }
+
         /**
          * Activate the sumOfSquares statistics, which will give as result the addition of all values squared for the
          * specified field
          * @return {@link StatsUtilDateFacet} with the sumOfSquares statistics enabled.
          */
         public StatsUtilDateFacet<T> sumOfSquares() {
-            this.sumOfSquares=true;
+            return sumOfSquares(true);
+        }
+
+        /**
+         * Activate/deactivate the sumOfSquares statistics, which will give as result the addition of all values squared for the
+         * specified field
+         * @param sumOfSquaresEnabled weather the sumOfSquares statistics should be enabled
+         * @return {@link StatsUtilDateFacet} with the sumOfSquares statistics enabled.
+         */
+        public StatsUtilDateFacet<T> sumOfSquares(boolean sumOfSquaresEnabled) {
+            this.sumOfSquares = sumOfSquaresEnabled;
             return this;
         }
+
         /**
          * Activate the mean statistics, which will give as result the average value for the specified field
          * @return {@link StatsUtilDateFacet} with the mean statistics enabled.
          */
         public StatsUtilDateFacet<T> mean() {
-            this.mean=true;
+            return mean(true);
+        }
+
+        /**
+         * Activate/deactivate the mean statistics, which will give as result the average value for the specified field
+         * @param meanEnabled weather the mean statistics should be enabled
+         * @return {@link StatsUtilDateFacet} with the mean statistics enabled.
+         */
+        public StatsUtilDateFacet<T> mean(boolean meanEnabled) {
+            this.mean = meanEnabled;
             return this;
         }
+
         /**
          * Activate the stddev statistics, which will give as result the standard deviation for the specified field
          * @return {@link StatsUtilDateFacet} with the stddev statistics enabled.
          */
         public StatsUtilDateFacet<T> stddev() {
-            this.stddev=true;
+            return stddev(true);
+        }
+
+        /**
+         * Activate/deactivate the stddev statistics, which will give as result the standard deviation for the specified field
+         * @param stddevEnabled weather the stddev statistics should be enabled
+         * @return {@link StatsUtilDateFacet} with the stddev statistics enabled.
+         */
+        public StatsUtilDateFacet<T> stddev(boolean stddevEnabled) {
+            this.stddev = stddevEnabled;
             return this;
         }
 
