@@ -119,13 +119,13 @@ default scope due to a null FieldDescriptor.
 # 2.1.2
 * Hotfix: Fixed issue introduced by solr inconsistent response types.
 
-#2.1.3
+# 2.1.3
 * Hotfix: Releated to previous fix, remove cast to integer by NumberUtils toInt method.
 
-#2.1.4
+# 2.1.4
 * Hotfix: Reduced log level from info to debug on document update to avoid spaming the logs.
 
-#2.1.5
+# 2.1.5
 * Hotfix: Ping fails against non-cloud solr-backend (#90)
 
 # 2.2.0
@@ -134,9 +134,12 @@ default scope due to a null FieldDescriptor.
 * Improvement: Instead of reading local solr schema as file to do schema check, now reading it as input stream.
 * Improvement: Removed invalid characters from file name and path on collection download
 
-#2.2.1
+# 2.2.1
 * Fix: alignment of language specific fields tokenizer with generic text definition
 
 # 2.3.0
 * Improvement: Delete by query no longer queries for the ids of the documents as it was not performing for long sets of 
 documents matching the delete filters.
+
+# 2.4.0
+* Improvement: Builders for StatsFacets now have for each `foo()`-method also a `foo(boolean fooEnabled)` method.
