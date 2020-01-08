@@ -209,8 +209,8 @@ public class DocumentFactory {
                     this.values.put(field,fieldMap);
                 }
             } else {
-                log.error("There is already a field defined with the same name: {}", field);
-                throw new IllegalArgumentException("There is already a field defined with the same name: {}" + field);
+                log.error("There is no such field name [{}] for this document", field);
+                throw new IllegalArgumentException("There is no such field name [" + field + "] for this document");
             }
 
             //set field as contextualized.
@@ -420,7 +420,7 @@ public class DocumentFactory {
                             Object invalidVal = notValidOptional.get();
                             log.error("Value: '{}' of type [{}] is not assignable to field descriptor '{}' of type [{}]", invalidVal, invalidVal.getClass(), fieldDescriptor.getName(), fieldDescriptor.getType());
                             throw new IllegalArgumentException(MessageFormat.format(
-                                    "Value: '{0}' of type [{1}] is not assignable to field descriptor '{2}' of type [{3}]",
+                                    "Value: ''{0}'' of type [{1}] is not assignable to field descriptor ''{2}'' of type [{3}]",
                                     invalidVal, invalidVal.getClass(), fieldDescriptor.getName(), fieldDescriptor.getType()));
                         }
                     } else {
@@ -436,7 +436,7 @@ public class DocumentFactory {
                             if (storeType != null && !(storeType.isAssignableFrom(val.getClass()) )) {
                                 log.error("Value: '{}' of type [{}] is not assignable to field descriptor '{}' of type [{}]",val, val.getClass(), fieldDescriptor.getName(),storeType);
                                 throw new IllegalArgumentException(MessageFormat.format(
-                                        "Value: '{}' of type [{}] is not assignable to field descriptor '{}' of type [{}]",
+                                  "Value: ''{0}'' of type [{1}] is not assignable to field descriptor ''{2}'' of type [{3}]",
                                         val, val.getClass(), fieldDescriptor.getName(), storeType));
                             }
                         }
@@ -444,7 +444,7 @@ public class DocumentFactory {
                     if (!fieldDescriptor.getType().isAssignableFrom(val.getClass())) {
                         log.error("Value: '{}' of type [{}] is not assignable to field descriptor '{}' of type [{}]",val, val.getClass(), fieldDescriptor.getName(),fieldDescriptor.getType());
                         throw new IllegalArgumentException(MessageFormat.format(
-                                "Value: '{}' of type [{}] is not assignable to field descriptor '{}' of type [{}]",
+                          "Value: ''{0}'' of type [{1}] is not assignable to field descriptor ''{2}'' of type [{3}]",
                                 val, val.getClass(), fieldDescriptor.getName(), fieldDescriptor.getType()));
                     }
                 }
