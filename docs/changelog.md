@@ -146,3 +146,6 @@ documents matching the delete filters.
 
 # 2.4.0
 * Improvement: Builders for StatsFacets now have for each `foo()`-method also a `foo(boolean fooEnabled)` method.
+
+# 2.5.0
+* Fix: Possible IllegalArgumentException in DocumentFactory (#106)
