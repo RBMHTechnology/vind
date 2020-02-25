@@ -564,6 +564,7 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipTTs>true</skipTTs>
+                <maven.javadoc.skip>true</maven.javadoc.skip>
             </properties>
         </profile>
         <profile>
