@@ -150,6 +150,7 @@ public class CollectionManagementService {
                 create.setAutoAddReplicas(autoAddReplicas);
             }
             create.process(client);
+            logger.info("Collection '{}' created", collectionName);
         } catch (IOException | SolrServerException e) {
             throw new IOException("Cannot create collection", e);
         }
@@ -292,10 +293,12 @@ public class CollectionManagementService {
      * @param collectionName {@link String} name of the collection to update.
      */
     protected void addOrUpdateRuntimeDependencies(Map<String, Long> runtimeDependencies, String collectionName) {
+        logger.info("Adding runtime-dependencies for {}", collectionName);
         for(String blobName : runtimeDependencies.keySet()) {
             RuntimeLibRequest request = new RuntimeLibRequest(RuntimeLibRequestType.add, blobName, runtimeDependencies.get(blobName));
             try (CloudSolrClient client = createCloudSolrClient()) {
                 client.request(request, collectionName);
+                logger.debug("Added {} (v{})", request.blobName, request.version);
             } catch (SolrServerException | IOException e) {
                 logger.warn("Cannot add runtime dependency {} (v{}) to collection {}", blobName, runtimeDependencies.get(blobName), collectionName); //TODO (minor) parse result
                 logger.info("Try to update dependency");
@@ -333,6 +336,7 @@ public class CollectionManagementService {
     }
 
     protected List<String> listRuntimeDependencies(String collectionName) throws IOException, SolrServerException {
+        logger.debug("Checking runtime-dependencies for collection {}", collectionName);
         ModifiableSolrParams params = new ModifiableSolrParams().set("file",RUNTIME_LIB_FILE_NAME);
         SolrRequest request = new QueryRequest(params);
         request.setPath("/admin/file");
@@ -368,7 +372,6 @@ public class CollectionManagementService {
                 Path configDirectory = Files.createTempDirectory(Utils.normalizeFileName(dependency));
 
                 Path jarFile = Utils.downloadToTempDir(configDirectory, repositories, dependency);
-
                 return uploadRuntimeLib(dependency, jarFile);
             }
 
@@ -379,6 +382,7 @@ public class CollectionManagementService {
     }
 
     protected Long uploadRuntimeLib(String dependency, Path jarFile) throws IOException {
+        logger.info("Uploading runtime-lib {}", dependency);
 
         JarUploadRequest request = new JarUploadRequest(jarFile, "/blob/" + Utils.toBlobName(dependency));
 
@@ -395,19 +399,19 @@ public class CollectionManagementService {
     }
 
     protected void checkAndInstallConfiguration(String configName, boolean force) throws IOException {
-        if(!configurationIsDeployed(configName)) {
-            this.installConfiguration(configName);
-        } else if (force) {
+        if(force || !configurationIsDeployed(configName)) {
             this.installConfiguration(configName);
         }
     }
 
     private void installConfiguration(String configName) throws IOException {
+        logger.info("Installing config '{}'", configName);
         final Path folder = downloadConfiguration(configName);
 
         try (CloudSolrClient client = createCloudSolrClient()) {
             final SolrZkClient zkClient = client.getZkStateReader().getZkClient();
             zkClient.upConfig(folder,configName);
+            logger.info("Config '{}' installed", configName);
         } catch ( IOException e) {
             throw new IOException("Cannot list config sets", e);
         }
@@ -420,6 +424,7 @@ public class CollectionManagementService {
     }
 
     protected boolean configurationIsDeployed(String configName) throws IOException {
+        logger.debug("Checking if config '{}' is present", configName);
         ConfigSetAdminRequest.List list = new ConfigSetAdminRequest.List();
         try (CloudSolrClient client = createCloudSolrClient()) {
             final ConfigSetAdminResponse.List configList = list.process(client);
@@ -441,6 +446,7 @@ public class CollectionManagementService {
             throw new IOException("Cannot create temp folder for downloading " + configName, e);
         }
 
+        logger.debug("Download {} from {}", configName, repositories);
         final Path jarFile = Utils.downloadToTempDir(configDirectory, repositories, configName);
 
         final Path unzipped = Utils.unzipJar(configDirectory, jarFile);
