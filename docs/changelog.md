@@ -149,3 +149,4 @@ documents matching the delete filters.
 
 # 2.5.0
 * Fix: Possible IllegalArgumentException in DocumentFactory (#106)
+* Fix: Added base Match all clause to NOT filter serialization (#110)
