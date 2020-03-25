@@ -69,7 +69,7 @@ public class SolrFilterSerializer {
     }
 
     public String serialize(Filter.NotFilter filter, String searchContext) {
-        return "NOT(" + serialize(filter.getDelegate(), searchContext) + ")";
+        return "* AND NOT(" + serialize(filter.getDelegate(), searchContext) + ")";
     }
 
     public String serialize(Filter.TermFilter filter, String searchContext) {

@@ -1449,6 +1449,11 @@ public class TestServerTest {
         searchResult = server.execute(searchAll, assets).print();
         assertEquals("Just documents with not or empty multi number fields are returned", 1, searchResult.getNumOfResults());
 
+        //test empty filter in single valued numberfield
+        searchAll = Search.fulltext().filter(Filter.or(textMulti.isNotEmpty(), textSingle.isEmpty()));
+        searchResult = server.execute(searchAll, assets).print();
+        assertEquals("Just documents with not or empty multi text or empty single text fields are returned", 2, searchResult.getNumOfResults());
+
     }
 
     //MBDN-430
