@@ -1,5 +1,4 @@
 {
-  "mappings": {
     "properties": {
       "_id_": {
         "type": "keyword"
@@ -40,8 +39,7 @@
                 "type": "integer"
               },
               "text": {
-                "type": "text",
-                "copy_to": "full_text"
+                "type": "text"
               }
             }
           }
@@ -69,8 +67,7 @@
                 "type": "long"
               },
               "text": {
-                "type": "text",
-                "copy_to": "full_text"
+                "type": "text"
               },
               "en": {
                 "type":     "text",
@@ -110,8 +107,7 @@
                 "type": "float"
               },
               "text": {
-                "type": "text",
-                "copy_to": "full_text"
+                "type": "text"
               },
               "en": {
                 "type":     "text",
@@ -151,8 +147,7 @@
                 "type": "keyword"
               },
               "text": {
-                "type": "text",
-                "copy_to": "full_text"
+                "type": "text"
               },
               "en": {
                 "type":     "text",
@@ -192,8 +187,7 @@
                 "type": "boolean"
               },
               "text": {
-                "type": "text",
-                "copy_to": "full_text"
+                "type": "text"
               },
               "en": {
                 "type":     "text",
@@ -233,8 +227,7 @@
                 "type": "date"
               },
               "text": {
-                "type": "text",
-                "copy_to": "full_text"
+                "type": "text"
               }
             }
           }
@@ -281,4 +274,3 @@
       }
     ]
   }
-}

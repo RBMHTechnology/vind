@@ -15,6 +15,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.common.unit.TimeValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +34,8 @@ public  class ElasticVindClient {
     private final int port;
     private final String host;
     private final String scheme;
-    private long connectionTimeOut;
-    private long clientTimOut;
+    private long connectionTimeOut = 1000;
+    private long clientTimOut = 1000;
     private final String user;
     private final String key;
 
@@ -132,13 +133,17 @@ public  class ElasticVindClient {
     }
 
 
+    public CreateIndexResponse createIndex(String indexName) throws IOException {
 
-    public void close() {
+        return client.indices().create(ElasticRequestUtils.getCreateIndexRequest(indexName), RequestOptions.DEFAULT);
+    }
+
+    public void close() throws IOException {
         try {
             this.client.close();
         } catch (IOException e) {
             log.error("Unable to close Elasticsearch client connection to {}://{}:{}", scheme, host, port,e);
-            throw new RuntimeException(String.format("Unable to ping Elasticsearch client connection to %s://%s:%s", scheme, host, port),e);
+            throw new IOException(String.format("Unable to ping Elasticsearch client connection to %s://%s:%s", scheme, host, port),e);
         }
     }
 
