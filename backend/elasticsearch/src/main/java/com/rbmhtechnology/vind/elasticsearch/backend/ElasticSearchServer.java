@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
+import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.ServiceProvider;
@@ -14,21 +15,32 @@ import com.rbmhtechnology.vind.api.result.DeleteResult;
 import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.IndexResult;
 import com.rbmhtechnology.vind.api.result.SearchResult;
+import com.rbmhtechnology.vind.api.result.StatusResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
+import com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil;
+import com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil;
 import com.rbmhtechnology.vind.model.DocumentFactory;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.apache.http.util.Asserts;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.index.IndexResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.stream.Collectors;
 
 public class ElasticSearchServer extends SearchServer {
 
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchServer.class);
+    private static final Logger elasticClientLogger = LoggerFactory.getLogger(log.getName() + "#elasticSearchClient");
 
     private ServiceProvider serviceProviderClass;
     private final ElasticVindClient elasticSearchClient;
@@ -57,11 +69,16 @@ public class ElasticSearchServer extends SearchServer {
 
         //In order to perform unit tests with mocked solrClient, we do not need to do the schema check.
         if(check && client != null) {
-            if (elasticSearchClient.ping()) {
-                log.debug("Successful ping to Elasticsearch server");
-            } else {
+            try {
+                if (elasticSearchClient.ping()) {
+                    log.debug("Successful ping to Elasticsearch server");
+                } else {
+                    log.error("Cannot connect to Elasticsearch server: ping failed");
+                    throw new SearchServerException("Cannot connect to Elasticsearch server: ping failed");
+                }
+            } catch ( IOException e) {
                 log.error("Cannot connect to Elasticsearch server: ping failed");
-                throw new RuntimeException("Cannot connect to Elasticsearch server: ping failed");
+                throw new SearchServerException("Cannot connect to Elasticsearch server: ping failed", e);
             }
 
             log.info("Connection to solr server successful");
@@ -77,12 +94,29 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public Object getBackend() {
-        return null;
+        return elasticSearchClient;
     }
 
     @Override
-    public IndexResult index(Document... doc) {
-        return null;
+    public StatusResult getBackendStatus() {
+        try {
+            if(elasticSearchClient.ping()) {
+                return StatusResult.up().setDetail("status", 0);
+            } else {
+                return StatusResult.down().setDetail("status", 1);
+            }
+
+        } catch ( IOException e) {
+            log.error("Cannot connect to Elasticsearch server: ping failed");
+            throw new SearchServerException("Cannot connect to Elasticsearch server: ping failed", e);
+        }
+    }
+
+    @Override
+    public IndexResult index(Document... docs) {
+        Asserts.notNull(docs,"Document to index should not be null.");
+        Asserts.check(docs.length > 0, "Should be at least one document to index.");
+        return indexMultipleDocuments(Arrays.asList(docs), -1);
     }
 
     @Override
@@ -237,5 +271,47 @@ public class ElasticSearchServer extends SearchServer {
         }
 
         return serverProvider;
+    }
+
+    private IndexResult indexSingleDocument(Document doc, int withinMs) {
+        final Instant start = Instant.now();
+        final Map<String,Object> document = DocumentUtil.createInputDocument(doc);
+
+        try {
+            if (elasticClientLogger.isTraceEnabled()) {
+                elasticClientLogger.debug(">>> add({})", doc.getId());
+            } else {
+                elasticClientLogger.debug(">>> add({})", doc.getId());
+            }
+
+            //removeNonParentDocument(doc, withinMs);
+            final IndexResponse response = this.elasticSearchClient.add(document);
+            return new IndexResult(Instant.from(start).toEpochMilli());
+
+        } catch (ElasticsearchException | IOException e) {
+            log.error("Cannot index document {}", document.get(FieldUtil.ID) , e);
+            throw new SearchServerException("Cannot index document", e);
+        }
+    }
+
+    private IndexResult indexMultipleDocuments(List<Document> docs, int withinMs) {
+        final Instant start = Instant.now();
+        final List<Map<String,Object>> jsonDocs = docs.parallelStream()
+                .map(DocumentUtil::createInputDocument)
+                .collect(Collectors.toList());
+        try {
+            if (elasticClientLogger.isTraceEnabled()) {
+                elasticClientLogger.debug(">>> add({})", jsonDocs);
+            } else {
+                elasticClientLogger.debug(">>> add({})", jsonDocs);
+            }
+
+            final BulkResponse response =this.elasticSearchClient.add(jsonDocs) ;
+            return new IndexResult(Instant.from(start).toEpochMilli());
+
+        } catch (ElasticsearchException | IOException e) {
+            log.error("Cannot index documents {}", jsonDocs, e);
+            throw new SearchServerException("Cannot index documents", e);
+        }
     }
 }

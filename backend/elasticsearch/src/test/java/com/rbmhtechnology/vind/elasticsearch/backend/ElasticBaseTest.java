@@ -2,17 +2,10 @@ package com.rbmhtechnology.vind.elasticsearch.backend;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Test;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
-import java.net.URI;
-
-import static org.junit.Assert.assertTrue;
-
-public class TestElasticVindClient {
-
-    private static ElasticsearchContainer container;
-    private static ElasticVindClient client;
+public class ElasticBaseTest {
+    protected static ElasticsearchContainer container;
 
     @BeforeClass
     public static void setUp() {
@@ -22,9 +15,6 @@ public class TestElasticVindClient {
         // Start the container. This step might take some time...
         container.start();
 
-        client = new ElasticVindClient.Builder("http://" + container.getHttpHostAddress())
-                .setDefaultIndex("vind-test")
-                .build("elastic", "changeme");
 
 //// Do whatever you want with the rest client ...
 //        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -43,14 +33,10 @@ public class TestElasticVindClient {
 
     }
 
-    @Test
-    public void pingTest() {
-        assertTrue(client.ping());
-    }
-
     @AfterClass
     public static void cleanUp() {
         // Stop the container.
         container.stop();
     }
+
 }

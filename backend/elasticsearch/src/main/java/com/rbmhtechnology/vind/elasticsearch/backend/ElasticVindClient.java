@@ -1,20 +1,28 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
+import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticRequestUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.unit.TimeValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
+import java.util.Map;
 
 public  class ElasticVindClient {
 
@@ -100,15 +108,30 @@ public  class ElasticVindClient {
         return this;
     }
 
-    public boolean ping() {
+    public boolean ping() throws IOException {
         try {
             final RequestOptions authenticatedDefaultRequest = RequestOptions.DEFAULT;
             return this.client.ping(authenticatedDefaultRequest);
         } catch (IOException e) {
             log.error("Unable to ping Elasticsearch server {}://{}:{}", scheme, host, port,e);
-            throw new RuntimeException(String.format("Unable to ping Elasticsearch server %s://%s:%s", scheme, host, port),e);
+            throw new IOException(String.format("Unable to ping Elasticsearch server %s://%s:%s", scheme, host, port),e);
         }
     }
+    public IndexResponse add(Map<String, Object> jsonDoc) throws IOException {
+        final IndexRequest indexRequest = ElasticRequestUtils.getIndexRequest(defaultIndex,jsonDoc);
+        indexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
+
+        return client.index(indexRequest, RequestOptions.DEFAULT);
+    }
+
+    public BulkResponse add(List<Map<String, Object>> jsonDocs) throws IOException {
+        final BulkRequest bulkIndexRequest = new BulkRequest();
+        jsonDocs.forEach( jsonDoc -> bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(defaultIndex,jsonDoc)) );
+        bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
+        return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
+    }
+
+
 
     public void close() {
         try {
