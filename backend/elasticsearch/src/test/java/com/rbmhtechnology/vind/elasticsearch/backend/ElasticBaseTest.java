@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
+import com.rbmhtechnology.vind.api.SearchServer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
@@ -9,6 +10,8 @@ import java.io.IOException;
 public class ElasticBaseTest {
     protected static ElasticsearchContainer container;
     protected static ElasticVindClient client;
+    protected static SearchServer server;
+
 
     @BeforeClass
     public static void setUp() throws IOException {
@@ -24,20 +27,7 @@ public class ElasticBaseTest {
 
         client.createIndex("vind-test");
 
-//// Do whatever you want with the rest client ...
-//        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-//        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials("elastic", "changeme"));
-//        RestClient restClient = RestClient.builder(HttpHost.create(container.getHttpHostAddress()))
-//                .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider))
-//                .build();
-//        Response response = restClient.performRequest(new Request("GET", "/"));
-//
-//// ... or the transport client
-//        TransportAddress transportAddress = new TransportAddress(container.getTcpHost());
-//        Settings settings = Settings.builder().put("cluster.name", "docker-cluster").build();
-//        TransportClient transportClient = new PreBuiltTransportClient(settings)
-//                .addTransportAddress(transportAddress);
-//        ClusterHealthResponse healths = transportClient.admin().cluster().prepareHealth().get();
+        server = new ElasticSearchServer(client);
 
     }
 

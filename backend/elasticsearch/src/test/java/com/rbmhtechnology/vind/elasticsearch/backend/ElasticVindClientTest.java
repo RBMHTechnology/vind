@@ -52,9 +52,4 @@ public class ElasticVindClientTest  extends ElasticBaseTest{
         assertNotNull(indexResult);
         assertFalse(indexResult.hasFailures());
     }
-
-    @After
-    public void clean() throws IOException {
-        client.close();
-    }
 }

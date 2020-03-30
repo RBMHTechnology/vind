@@ -20,13 +20,6 @@ import static org.junit.Assert.assertTrue;
 
 public class ElasticSearchServerTest extends ElasticBaseTest {
 
-    private SearchServer server;
-
-    @Before
-    public void init() throws IOException {
-
-        server = new ElasticSearchServer(client);
-    }
 
     @Test
     public void indexTest(){
