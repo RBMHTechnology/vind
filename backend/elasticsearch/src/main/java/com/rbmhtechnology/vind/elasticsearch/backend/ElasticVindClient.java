@@ -9,6 +9,10 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.get.MultiGetRequest;
+import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -132,9 +136,20 @@ public  class ElasticVindClient {
         return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
     }
 
+    public GetResponse realTimeGet(String id) throws IOException {
+        return client.get(ElasticRequestUtils.getRealTimeGetRequest(defaultIndex,id),RequestOptions.DEFAULT);
+    }
+
+    public MultiGetResponse realTimeGet(List<String> ids) throws IOException {
+        final MultiGetRequest request = ElasticRequestUtils.getRealTimeGetRequest(defaultIndex, ids);
+        return client.mget(request, RequestOptions.DEFAULT);
+    }
+
+    public DeleteResponse deleteById(String id) throws IOException {
+        return client.delete(ElasticRequestUtils.getDeleteRequest(defaultIndex,id),RequestOptions.DEFAULT);
+    }
 
     public CreateIndexResponse createIndex(String indexName) throws IOException {
-
         return client.indices().create(ElasticRequestUtils.getCreateIndexRequest(indexName), RequestOptions.DEFAULT);
     }
 
@@ -146,6 +161,8 @@ public  class ElasticVindClient {
             throw new IOException(String.format("Unable to ping Elasticsearch client connection to %s://%s:%s", scheme, host, port),e);
         }
     }
+
+
 
     public static class Builder {
         private String defaultIndex;

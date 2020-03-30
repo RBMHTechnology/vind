@@ -4,7 +4,6 @@ import com.rbmhtechnology.vind.elasticsearch.backend.ElasticSearchServer;
 import com.rbmhtechnology.vind.model.ComplexFieldDescriptor;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import com.rbmhtechnology.vind.model.value.LatLng;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +32,40 @@ public class FieldUtil {
     private static final String _FILTER = "filter_";
 
     private static final String _SORT = "sort_";
+
+    public static final String INTERNAL_FIELD_PREFIX = String.format("%s(%s|%s|%s|%s|%s|%s|%s|%s)",
+            _DYNAMIC,
+            Fieldname.Type.BOOLEAN.getName(), Fieldname.Type.DATE.getName(),
+            Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(),Fieldname.Type.NUMBER.getName(),
+            Fieldname.Type.STRING.getName(),Fieldname.Type.BINARY.getName(),Fieldname.Type.LOCATION.getName());
+
+    public static final String INTERNAL_FACET_FIELD_PREFIX = String.format("%s(%s)?%s(%s|%s|%s|%s|%s|%s|%s)",
+            _DYNAMIC,
+            _STORED,
+            _FACET,
+            Fieldname.Type.BOOLEAN.getName(), Fieldname.Type.DATE.getName(),
+            Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(),Fieldname.Type.NUMBER.getName(),
+            Fieldname.Type.STRING.getName(),Fieldname.Type.LOCATION.getName());
+
+    public static final String INTERNAL_SCOPE_FACET_FIELD_PREFIX = String.format("%s(%s|%s)(%s)?(%s|%s|%s)(%s|%s|%s|%s|%s|%s|%s)",
+            _DYNAMIC,
+            _MULTI,_SINGLE,
+            _STORED,
+            _FACET,_SUGGEST,_FILTER,
+            Fieldname.Type.BOOLEAN.getName(), Fieldname.Type.DATE.getName(),
+            Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(),Fieldname.Type.NUMBER.getName(),
+            Fieldname.Type.STRING.getName(),Fieldname.Type.LOCATION.getName());
+
+    public static final String INTERNAL_SUGGEST_FIELD_PREFIX = String.format("%s(%s|%s)(%s)?%s(%s|%s|%s|%s|%s|%s|%s|%s)",
+            _DYNAMIC,
+            _MULTI,_SINGLE,
+            _STORED,
+            _SUGGEST,
+            Fieldname.Type.BOOLEAN.getName(), Fieldname.Type.DATE.getName(),
+            Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(),Fieldname.Type.NUMBER.getName(),
+            Fieldname.Type.STRING.getName(),Fieldname.Type.LOCATION.getName(), Fieldname.Type.ANALYZED.getName());
+
+    public static final String INTERNAL_CONTEXT_PREFIX = "(%s_)?";
 
     public static String getFieldName(FieldDescriptor<?> descriptor, String context) {
 

@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
 import com.rbmhtechnology.vind.SearchServerException;
+import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.ServiceProvider;
@@ -20,10 +21,13 @@ import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil;
+import com.rbmhtechnology.vind.elasticsearch.backend.util.ResultUtils;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import org.apache.http.util.Asserts;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -120,28 +125,43 @@ public class ElasticSearchServer extends SearchServer {
     }
 
     @Override
-    public IndexResult index(List<Document> doc) {
-        return null;
+    public IndexResult index(List<Document> docs) {
+        Asserts.notNull(docs,"Document to index should not be null.");
+        Asserts.check(docs.isEmpty(), "Should be at least one document to index.");
+
+        return  indexMultipleDocuments(docs, -1);
     }
 
     @Override
     public IndexResult indexWithin(Document doc, int withinMs) {
-        return null;
+        Asserts.notNull(doc,"Document to index should not be null.");
+        return indexMultipleDocuments(Collections.singletonList(doc), withinMs);
     }
 
     @Override
-    public IndexResult indexWithin(List<Document> doc, int withinMs) {
-        return null;
+    public IndexResult indexWithin(List<Document> docs, int withinMs) {
+        Asserts.notNull(docs,"Document to index should not be null.");
+        Asserts.check(docs.isEmpty(), "Should be at least one document to index.");
+
+        return  indexMultipleDocuments(docs, withinMs);
     }
 
     @Override
     public DeleteResult delete(Document doc) {
-        return null;
+        return deleteWithin(doc, -1);
     }
 
     @Override
     public DeleteResult deleteWithin(Document doc, int withinMs) {
-        return null;
+        try {
+            final Instant start = Instant.now();
+            elasticClientLogger.debug(">>> delete({})", doc.getId());
+            final DeleteResponse deleteResponse = elasticSearchClient.deleteById(doc.getId());
+            return new DeleteResult(Instant.from(start).toEpochMilli());
+        } catch (ElasticsearchException | IOException e) {
+            log.error("Cannot delete document {}", doc.getId() , e);
+            throw new SearchServerException("Cannot delete document", e);
+        }
     }
 
     @Override
@@ -211,12 +231,28 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public <T> BeanGetResult<T> execute(RealTimeGet search, Class<T> c) {
-        return null;
+        final DocumentFactory documentFactory = AnnotationUtil.createDocumentFactory(c);
+        final GetResult result = this.execute(search, documentFactory);
+        return result.toPojoResult(result,c);
     }
 
     @Override
     public GetResult execute(RealTimeGet search, DocumentFactory assets) {
-        return null;
+        try {
+            final Instant start = Instant.now();
+            final MultiGetResponse response = elasticSearchClient.realTimeGet(search.getValues());
+            final Instant elapsedtime = Instant.from(start);
+            if(response!=null){
+                return ResultUtils.buildRealTimeGetResult(response, search, assets, elapsedtime.toEpochMilli());
+            }else {
+                log.error("Null result from SolrClient");
+                throw new SearchServerException("Null result from SolrClient");
+            }
+
+        } catch (SearchServerException | IOException e) {
+            log.error("Cannot execute realTime get query");
+            throw new SearchServerException("Cannot execute realTime get query", e);
+        }
     }
 
     @Override
