@@ -19,17 +19,6 @@ import static org.junit.Assert.assertTrue;
 
 public class ElasticVindClientTest  extends ElasticBaseTest{
 
-    private  ElasticVindClient client;
-
-    @Before
-    public void prepare() throws IOException {
-        client = new ElasticVindClient.Builder("http://" + container.getHttpHostAddress())
-                .setDefaultIndex("vind-test")
-                .build("elastic", "changeme");
-
-        client.createIndex("vind-test");
-    }
-
     @Test
     public void testPing() throws IOException {
         assertTrue(client.ping());

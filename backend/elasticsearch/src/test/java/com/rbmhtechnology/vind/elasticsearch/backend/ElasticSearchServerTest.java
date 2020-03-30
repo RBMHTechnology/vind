@@ -24,11 +24,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
 
     @Before
     public void init() throws IOException {
-        final ElasticVindClient client = new ElasticVindClient.Builder("http://" + container.getHttpHostAddress())
-                .setDefaultIndex("vind-test")
-                .build("elastic", "changeme");
 
-        client.createIndex("vind-test");
         server = new ElasticSearchServer(client);
     }
 
