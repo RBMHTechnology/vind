@@ -23,17 +23,21 @@ import com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ResultUtils;
 import com.rbmhtechnology.vind.model.DocumentFactory;
+import com.rbmhtechnology.vind.model.FieldDescriptor;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.http.util.Asserts;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -57,22 +61,22 @@ public class ElasticSearchServer extends SearchServer {
     }
 
     /**
-     * Creates an instance of SolrSearch server performing ping and the schema validity check.
-     * @param client SolrClient to connect to.
+     * Creates an instance of ElasticSearch server performing ping and the schema validity check.
+     * @param client ElasticClient to connect to.
      */
     public ElasticSearchServer(ElasticVindClient client) {
         this(client, true);
     }
 
     /**
-     * Creates an instance of SolrSearch server allowing to avoid the schema validity check.
-     * @param client SolrClient to connect to.
+     * Creates an instance of ElasticSearch server allowing to avoid the schema validity check.
+     * @param client ElasticClient to connect to.
      * @param check true to perform local schema validity check against remote schema, false otherwise.
      */
     protected ElasticSearchServer(ElasticVindClient client, boolean check) {
         elasticSearchClient = client;
 
-        //In order to perform unit tests with mocked solrClient, we do not need to do the schema check.
+        //In order to perform unit tests with mocked ElasticClient, we do not need to do the schema check.
         if(check && client != null) {
             try {
                 if (elasticSearchClient.ping()) {
@@ -86,14 +90,15 @@ public class ElasticSearchServer extends SearchServer {
                 throw new SearchServerException("Cannot connect to Elasticsearch server: ping failed", e);
             }
 
-            log.info("Connection to solr server successful");
+            log.info("Connection to Elastic server successful");
             checkVersionAndSchema();
         } else {
-            log.warn("Solr ping and schema validity check has been deactivated.");
+            log.warn("Elastic ping and schema validity check has been deactivated.");
         }
     }
 
     private void checkVersionAndSchema() {
+        throw new NotImplementedException();
 
     }
 
@@ -135,6 +140,7 @@ public class ElasticSearchServer extends SearchServer {
     @Override
     public IndexResult indexWithin(Document doc, int withinMs) {
         Asserts.notNull(doc,"Document to index should not be null.");
+        log.warn("Parameter 'within' not in use in elastic search backend");
         return indexMultipleDocuments(Collections.singletonList(doc), withinMs);
     }
 
@@ -142,7 +148,7 @@ public class ElasticSearchServer extends SearchServer {
     public IndexResult indexWithin(List<Document> docs, int withinMs) {
         Asserts.notNull(docs,"Document to index should not be null.");
         Asserts.check(docs.isEmpty(), "Should be at least one document to index.");
-
+        log.warn("Parameter 'within' not in use in elastic search backend");
         return  indexMultipleDocuments(docs, withinMs);
     }
 
@@ -153,11 +159,13 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public DeleteResult deleteWithin(Document doc, int withinMs) {
+        log.warn("Parameter 'within' not in use in elastic search backend");
         try {
-            final Instant start = Instant.now();
+            final StopWatch elapsedTime = StopWatch.createStarted();
             elasticClientLogger.debug(">>> delete({})", doc.getId());
             final DeleteResponse deleteResponse = elasticSearchClient.deleteById(doc.getId());
-            return new DeleteResult(Instant.from(start).toEpochMilli());
+            elapsedTime.stop();
+            return new DeleteResult(elapsedTime.getTime()).setElapsedTime(elapsedTime.getTime());
         } catch (ElasticsearchException | IOException e) {
             log.error("Cannot delete document {}", doc.getId() , e);
             throw new SearchServerException("Cannot delete document", e);
@@ -166,12 +174,12 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public boolean execute(Update update, DocumentFactory factory) {
-        return false;
+        throw new NotImplementedException();
     }
 
     @Override
     public DeleteResult execute(Delete delete, DocumentFactory factory) {
-        return null;
+        throw new NotImplementedException();
     }
 
     @Override
@@ -181,52 +189,52 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
-        return null;
+        throw new NotImplementedException();
     }
 
     @Override
     public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
-        return null;
+        throw new NotImplementedException();
     }
 
     @Override
     public String getRawQuery(FulltextSearch search, DocumentFactory factory) {
-        return null;
+        throw new NotImplementedException();
     }
 
     @Override
     public <T> String getRawQuery(FulltextSearch search, Class<T> c) {
-        return null;
+        throw new NotImplementedException();
     }
 
     @Override
     public <T> SuggestionResult execute(ExecutableSuggestionSearch search, Class<T> c) {
-        return null;
+        throw new NotImplementedException();
     }
 
     @Override
     public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets) {
-        return null;
+        throw new NotImplementedException();
     }
 
     @Override
     public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets, DocumentFactory childFactory) {
-        return null;
+        throw new NotImplementedException();
     }
 
     @Override
     public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
-        return null;
+        throw new NotImplementedException();
     }
 
     @Override
     public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory, DocumentFactory childFactory) {
-        return null;
+        throw new NotImplementedException();
     }
 
     @Override
     public <T> String getRawQuery(ExecutableSuggestionSearch search, Class<T> c) {
-        return null;
+        throw new NotImplementedException();
     }
 
     @Override
@@ -239,17 +247,18 @@ public class ElasticSearchServer extends SearchServer {
     @Override
     public GetResult execute(RealTimeGet search, DocumentFactory assets) {
         try {
-            final Instant start = Instant.now();
+            final StopWatch elapsedTime = StopWatch.createStarted();
             final MultiGetResponse response = elasticSearchClient.realTimeGet(search.getValues());
-            final Instant elapsedtime = Instant.from(start);
+            elapsedTime.stop();
+
             if(response!=null){
-                return ResultUtils.buildRealTimeGetResult(response, search, assets, elapsedtime.toEpochMilli());
+                return ResultUtils.buildRealTimeGetResult(response, search, assets, elapsedTime.getTime()).setElapsedTime(elapsedTime.getTime());
             }else {
-                log.error("Null result from SolrClient");
-                throw new SearchServerException("Null result from SolrClient");
+                log.error("Null result from ElasticClient");
+                throw new SearchServerException("Null result from ElasticClient");
             }
 
-        } catch (SearchServerException | IOException e) {
+        } catch (ElasticsearchException | IOException e) {
             log.error("Cannot execute realTime get query");
             throw new SearchServerException("Cannot execute realTime get query", e);
         }
@@ -257,17 +266,28 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public void clearIndex() {
-
+        try {
+            elasticClientLogger.debug(">>> clear complete index");
+            elasticSearchClient.deleteByQuery(QueryBuilders.matchAllQuery());
+        } catch (ElasticsearchException | IOException e) {
+            log.error("Cannot clear index", e);
+            throw new SearchServerException("Cannot clear index", e);
+        }
     }
 
     @Override
     public void close() {
-
+        if (elasticSearchClient != null) try {
+            elasticSearchClient.close();
+        } catch (IOException e) {
+            log.error("Cannot close search server", e);
+            throw new SearchServerException("Cannot close search server", e);
+        }
     }
 
     @Override
     public Class<ServiceProvider> getServiceProviderClass() {
-        return null;
+        throw new NotImplementedException();
     }
 
     private static ElasticServerProvider getElasticServerProvider() {
@@ -310,7 +330,8 @@ public class ElasticSearchServer extends SearchServer {
     }
 
     private IndexResult indexSingleDocument(Document doc, int withinMs) {
-        final Instant start = Instant.now();
+        log.warn("Parameter 'within' not in use in elastic search backend");
+        final StopWatch elapsedTime = StopWatch.createStarted();
         final Map<String,Object> document = DocumentUtil.createInputDocument(doc);
 
         try {
@@ -320,9 +341,9 @@ public class ElasticSearchServer extends SearchServer {
                 elasticClientLogger.debug(">>> add({})", doc.getId());
             }
 
-            //removeNonParentDocument(doc, withinMs);
             final IndexResponse response = this.elasticSearchClient.add(document);
-            return new IndexResult(Instant.from(start).toEpochMilli());
+            elapsedTime.stop();
+            return new IndexResult(elapsedTime.getTime()).setElapsedTime(elapsedTime.getTime());
 
         } catch (ElasticsearchException | IOException e) {
             log.error("Cannot index document {}", document.get(FieldUtil.ID) , e);
@@ -331,7 +352,8 @@ public class ElasticSearchServer extends SearchServer {
     }
 
     private IndexResult indexMultipleDocuments(List<Document> docs, int withinMs) {
-        final Instant start = Instant.now();
+        log.warn("Parameter 'within' not in use in elastic search backend");
+        final StopWatch elapsedTime = StopWatch.createStarted();
         final List<Map<String,Object>> jsonDocs = docs.parallelStream()
                 .map(DocumentUtil::createInputDocument)
                 .collect(Collectors.toList());
@@ -343,7 +365,8 @@ public class ElasticSearchServer extends SearchServer {
             }
 
             final BulkResponse response =this.elasticSearchClient.add(jsonDocs) ;
-            return new IndexResult(Instant.from(start).toEpochMilli());
+            elapsedTime.stop();
+            return new IndexResult(elapsedTime.getTime()).setElapsedTime(elapsedTime.getTime());
 
         } catch (ElasticsearchException | IOException e) {
             log.error("Cannot index documents {}", jsonDocs, e);

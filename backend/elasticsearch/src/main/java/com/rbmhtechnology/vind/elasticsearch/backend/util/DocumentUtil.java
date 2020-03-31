@@ -1,6 +1,8 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
 import com.rbmhtechnology.vind.api.Document;
+import com.rbmhtechnology.vind.api.query.update.Update;
+import com.rbmhtechnology.vind.api.query.update.UpdateOperation;
 import com.rbmhtechnology.vind.model.ComplexFieldDescriptor;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
@@ -24,10 +26,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static com.rbmhtechnology.vind.api.query.update.Update.UpdateOperations.set;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class DocumentUtil {
@@ -321,5 +326,39 @@ public class DocumentUtil {
             }
         }
         return o;
+    }
+
+    public static Map<String,  Map<String, Object>> getUpdateDocument(Update update, String type) {
+
+        final Map<String, Object> sdoc = new HashMap<>();
+        sdoc.put(FieldUtil.ID, update.getId());
+        sdoc.put(FieldUtil.TYPE, type);
+
+        log.debug("Atomic Update - Mapping the Vind update operations to a map document with ID [{}].", update.getId());
+        final HashMap<FieldDescriptor<?>, HashMap<String, SortedSet<UpdateOperation>>> updateOptions = update.getOptions();
+
+        log.debug("Atomic Update - Updating {} fields.", updateOptions.keySet().size());
+        updateOptions.keySet()
+                .forEach(fieldDescriptor -> {
+                            log.debug("Atomic Update - Updating {} different contexts for field [{}].", updateOptions.get(fieldDescriptor).keySet().size(), fieldDescriptor);
+                            updateOptions.get(fieldDescriptor).keySet()
+                                    .forEach(context -> {
+                                        //NOTE: Backwards compatibility
+                                        final String updateContext = Objects.isNull(context)? update.getUpdateContext() : context;
+                                        final String fieldName = FieldUtil.getFieldName(fieldDescriptor, updateContext);
+                                        if (fieldName != null) {
+                                            final Map<String, Object> fieldModifiers = new HashMap<>();
+                                            updateOptions.get(fieldDescriptor).get(context).forEach(entry -> {
+                                                Update.UpdateOperations opType = entry.getType();
+                                                fieldModifiers.put(opType.name(), toSolrJType(entry.getValue()));
+                                            });
+                                            sdoc.put(fieldName, fieldModifiers);
+                                        }
+                                    }
+                            );
+                        }
+                );
+        return sdoc;
+
     }
 }

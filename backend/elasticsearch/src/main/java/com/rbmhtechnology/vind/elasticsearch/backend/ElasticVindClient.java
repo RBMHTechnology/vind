@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticRequestUtils;
+import com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -15,12 +16,17 @@ import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.reindex.BulkByScrollResponse;
+import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,6 +142,11 @@ public  class ElasticVindClient {
         return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
     }
 
+    public UpdateResponse update(String id, Map<String, Object> docMap) throws IOException {
+        final UpdateRequest request = ElasticRequestUtils.getUpdateRequest(defaultIndex, id, docMap);
+        return client.update(request, RequestOptions.DEFAULT);
+    }
+
     public GetResponse realTimeGet(String id) throws IOException {
         return client.get(ElasticRequestUtils.getRealTimeGetRequest(defaultIndex,id),RequestOptions.DEFAULT);
     }
@@ -153,6 +164,11 @@ public  class ElasticVindClient {
         return client.indices().create(ElasticRequestUtils.getCreateIndexRequest(indexName), RequestOptions.DEFAULT);
     }
 
+    public BulkByScrollResponse deleteByQuery(QueryBuilder query) throws IOException {
+        final DeleteByQueryRequest request = ElasticRequestUtils.getDeleteByQueryRequest(defaultIndex, query);
+        return client.deleteByQuery(request,RequestOptions.DEFAULT);
+    }
+
     public void close() throws IOException {
         try {
             this.client.close();
@@ -161,8 +177,6 @@ public  class ElasticVindClient {
             throw new IOException(String.format("Unable to ping Elasticsearch client connection to %s://%s:%s", scheme, host, port),e);
         }
     }
-
-
 
     public static class Builder {
         private String defaultIndex;
