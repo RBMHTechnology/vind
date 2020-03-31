@@ -15,7 +15,7 @@
     <modules>
         <module>embedded-solr-server</module>
         <module>remote-solr-server</module>
-        <module>remote-elastic-server</module>
+        <module>elastic-server</module>
     </modules>
 
     <build>

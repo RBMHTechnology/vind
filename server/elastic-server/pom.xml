@@ -10,8 +10,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>remote-elastic-server</artifactId>
-    <name>Vind - Remote Elasticsearch Server</name>
+    <artifactId>elastic-server</artifactId>
+    <name>Vind - Elasticsearch Server</name>
 
     <dependencies>
         <dependency>
