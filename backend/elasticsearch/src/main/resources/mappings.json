@@ -1,0 +1,276 @@
+{
+    "properties": {
+      "_id_": {
+        "type": "keyword"
+      },
+      "_type_": {
+        "type": "keyword"
+      },
+      "facets": {
+        "type": "keyword"
+      },
+      "suggestions": {
+        "type": "keyword"
+      },
+      "full_text": {
+        "type": "text"
+      }
+    },
+    "dynamic_templates": [
+      {
+        "int_fields": {
+          "match":   "dynamic_int_*",
+          "mapping": {
+            "type": "integer",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "facet": {
+                "type": "integer"
+              },
+              "suggestion": {
+                "type": "integer"
+              },
+              "filter": {
+                "type": "integer"
+              },
+              "sort": {
+                "type": "integer"
+              },
+              "text": {
+                "type": "text"
+              }
+            }
+          }
+        }
+      },
+      {
+        "long_fields": {
+          "match":   "dynamic_long_*",
+          "mapping": {
+            "type": "long",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "facet": {
+                "type": "long"
+              },
+              "suggestion": {
+                "type": "long"
+              },
+              "filter": {
+                "type": "long"
+              },
+              "sort": {
+                "type": "long"
+              },
+              "text": {
+                "type": "text"
+              },
+              "en": {
+                "type":     "text",
+                "analyzer": "english"
+              },
+              "de": {
+                "type":     "text",
+                "analyzer": "german"
+              },
+              "es": {
+                "type":     "text",
+                "analyzer": "spanish"
+              }
+            }
+          }
+        }
+      },
+      {
+        "float_fields": {
+          "match":   "dynamic_float_*",
+          "mapping": {
+            "type": "float",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "facet": {
+                "type": "float"
+              },
+              "suggestion": {
+                "type": "float"
+              },
+              "filter": {
+                "type": "float"
+              },
+              "sort": {
+                "type": "float"
+              },
+              "text": {
+                "type": "text"
+              },
+              "en": {
+                "type":     "text",
+                "analyzer": "english"
+              },
+              "de": {
+                "type":     "text",
+                "analyzer": "german"
+              },
+              "es": {
+                "type":     "text",
+                "analyzer": "spanish"
+              }
+            }
+          }
+        }
+      },
+      {
+        "string_fields": {
+          "match":   "dynamic_string_*",
+          "mapping": {
+            "type": "keyword",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "facet": {
+                "type": "keyword"
+              },
+              "suggestion": {
+                "type": "keyword"
+              },
+              "filter": {
+                "type": "keyword"
+              },
+              "sort": {
+                "type": "keyword"
+              },
+              "text": {
+                "type": "text"
+              },
+              "en": {
+                "type":     "text",
+                "analyzer": "english"
+              },
+              "de": {
+                "type":     "text",
+                "analyzer": "german"
+              },
+              "es": {
+                "type":     "text",
+                "analyzer": "spanish"
+              }
+            }
+          }
+        }
+      },
+      {
+        "boolean_fields": {
+          "match":   "dynamic_boolean_*",
+          "mapping": {
+            "type": "boolean",
+            "fields": {
+              "raw": {
+                "type": "boolean"
+              },
+              "facet": {
+                "type": "boolean"
+              },
+              "suggestion": {
+                "type": "boolean"
+              },
+              "filter": {
+                "type": "boolean"
+              },
+              "sort": {
+                "type": "boolean"
+              },
+              "text": {
+                "type": "text"
+              },
+              "en": {
+                "type":     "text",
+                "analyzer": "english"
+              },
+              "de": {
+                "type":     "text",
+                "analyzer": "german"
+              },
+              "es": {
+                "type":     "text",
+                "analyzer": "spanish"
+              }
+            }
+          }
+        }
+      },
+      {
+        "date_fields": {
+          "match":   "dynamic_date_*",
+          "mapping": {
+            "type": "date",
+            "fields": {
+              "raw": {
+                "type": "date"
+              },
+              "facet": {
+                "type": "date"
+              },
+              "suggestion": {
+                "type": "date"
+              },
+              "filter": {
+                "type": "date"
+              },
+              "sort": {
+                "type": "date"
+              },
+              "text": {
+                "type": "text"
+              }
+            }
+          }
+        }
+      },
+      {
+        "location_fields": {
+          "match":   "dynamic_location_*",
+          "mapping": {
+            "type": "geo_point",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      },
+      {
+        "binary_fields": {
+          "match":   "dynamic_binary_*",
+          "mapping": {
+            "type": "binary",
+            "fields": {
+              "raw": {
+                "type": "binary"
+              }
+            }
+          }
+        }
+      },
+      {
+        "path_fields": {
+          "match":   "dynamic_path_*",
+          "mapping": {
+            "type": "keyword",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }

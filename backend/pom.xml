@@ -15,6 +15,7 @@
     <modules>
         <module>solr</module>
         <module>solr-ext</module>
+        <module>elasticsearch</module>
     </modules>
 
     <build>

@@ -33,6 +33,8 @@ public class SearchConfiguration {
     public static final String SEARCH_RESULT_SHOW_SCORE = "search.result.showScore";
     public static final String SEARCH_RESULT_FACET_INCLUDE_EMPTY = "search.result.facet.includeEmpty";
     public static final String SEARCH_RESULT_FACET_LENGTH = "search.result.facet.length";
+    public static final String SEARCH_AUTHENTICATION_KEY = "search.authentication.key";
+    public static final String SEARCH_AUTHENTICATION_USER = "search.authentication.user";
 
     private static Logger log = LoggerFactory.getLogger(SearchConfiguration.class);
 
