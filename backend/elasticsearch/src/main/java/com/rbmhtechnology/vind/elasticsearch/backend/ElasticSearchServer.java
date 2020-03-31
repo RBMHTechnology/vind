@@ -98,8 +98,7 @@ public class ElasticSearchServer extends SearchServer {
     }
 
     private void checkVersionAndSchema() {
-        throw new NotImplementedException();
-
+        log.warn("Schema check needs to be implemented");
     }
 
     @Override
