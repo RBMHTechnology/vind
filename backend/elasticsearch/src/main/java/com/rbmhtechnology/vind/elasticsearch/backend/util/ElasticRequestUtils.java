@@ -5,6 +5,7 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.common.settings.Settings;
@@ -14,6 +15,7 @@ import org.elasticsearch.index.query.ScriptQueryBuilder;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.script.Script;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -52,6 +54,13 @@ public class ElasticRequestUtils {
         return new DeleteRequest(index, docId);
     }
 
+    public static SearchRequest getSearchRequest(String index, SearchSourceBuilder searchSource) {
+
+        final SearchRequest searchRequest = new SearchRequest(index);
+        searchRequest.source(searchSource);
+        return searchRequest;
+    }
+
     public static CreateIndexRequest getCreateIndexRequest(String index) {
         final CreateIndexRequest request = new CreateIndexRequest(index);
         request.settings(Settings.builder()
@@ -62,6 +71,7 @@ public class ElasticRequestUtils {
         request.mapping(getDefaultMaping(), XContentType.JSON);
         return request;
     }
+
     public static DeleteByQueryRequest getDeleteByQueryRequest(String index, QueryBuilder query) {
 
         final DeleteByQueryRequest request =

@@ -1,7 +1,6 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticRequestUtils;
-import com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -16,6 +15,8 @@ import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -27,6 +28,7 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -176,6 +178,11 @@ public  class ElasticVindClient {
             log.error("Unable to close Elasticsearch client connection to {}://{}:{}", scheme, host, port,e);
             throw new IOException(String.format("Unable to ping Elasticsearch client connection to %s://%s:%s", scheme, host, port),e);
         }
+    }
+
+    public SearchResponse query(SearchSourceBuilder query) throws IOException {
+        final SearchRequest request = ElasticRequestUtils.getSearchRequest(defaultIndex, query);
+        return client.search(request,RequestOptions.DEFAULT);
     }
 
     public static class Builder {
