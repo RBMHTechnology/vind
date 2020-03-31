@@ -30,9 +30,7 @@ import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static com.rbmhtechnology.vind.api.query.update.Update.UpdateOperations.set;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class DocumentUtil {
@@ -53,7 +51,7 @@ public class DocumentUtil {
                                     Optional.ofNullable(FieldUtil.getFieldName(descriptor, context))
                                             .ifPresent( fieldName -> {
                                                 Optional.ofNullable( doc.getContextualizedValue(descriptor, context))
-                                                        .ifPresent( value -> docMap.put(fieldName, toSolrJType(value)));
+                                                        .ifPresent( value -> docMap.put(fieldName, toElasticType(value)));
                                             });
                                 }
                         )
@@ -66,15 +64,15 @@ public class DocumentUtil {
         return docMap;
     }
 
-    private static Object toSolrJType(Object value) {
+    private static Object toElasticType(Object value) {
         if(value!=null) {
             if(Object[].class.isAssignableFrom(value.getClass())){
-                return toSolrJType(Arrays.asList((Object[])value));
+                return toElasticType(Arrays.asList((Object[])value));
             }
             if(Collection.class.isAssignableFrom(value.getClass())){
                 final Collection<Object> values = (Collection<Object>) value;
                 return values.stream()
-                        .map(DocumentUtil::toSolrJType)
+                        .map(DocumentUtil::toElasticType)
                         .collect(Collectors.toList());
             }
             if(value instanceof ZonedDateTime) {
@@ -128,37 +126,37 @@ public class DocumentUtil {
                     }
                     try {
                         if (o instanceof Collection) {
-                            final Collection<Object> solrValues = new ArrayList<>();
+                            final Collection<Object> elasticValues = new ArrayList<>();
                             if (ZonedDateTime.class.isAssignableFrom(type)) {
-                                ((Collection<?>) o).forEach(ob -> solrValues.add(ZonedDateTime.ofInstant(((Date) ob).toInstant(), ZoneId.of("UTC"))));
+                                ((Collection<?>) o).forEach(ob -> elasticValues.add(ZonedDateTime.ofInstant(((Date) ob).toInstant(), ZoneId.of("UTC"))));
                             } else if (Date.class.isAssignableFrom(type)) {
-                                ((Collection<?>) o).forEach(ob -> solrValues.add(DateTimeFormatter.ISO_INSTANT.format(((Date) ob).toInstant())));
+                                ((Collection<?>) o).forEach(ob -> elasticValues.add(DateTimeFormatter.ISO_INSTANT.format(((Date) ob).toInstant())));
                             } else if (LatLng.class.isAssignableFrom(type)) {
                                 ((Collection<?>) o).forEach(ob -> {
                                     try {
-                                        solrValues.add(LatLng.parseLatLng(ob.toString()));
+                                        elasticValues.add(LatLng.parseLatLng(ob.toString()));
                                     } catch (ParseException e) {
-                                        log.error("Unable to parse solr result field '{}' value '{}' to field descriptor type [{}]",
+                                        log.error("Unable to parse Elastic result field '{}' value '{}' to field descriptor type [{}]",
                                                 fieldRawName, o.toString(), type);
                                         throw new RuntimeException(e);
                                     }
                                 });
                             } else {
-                                solrValues.addAll((Collection<Object>) o);
+                                elasticValues.addAll((Collection<Object>) o);
                             }
 
                             if (ComplexFieldDescriptor.class.isAssignableFrom(field.getClass())) {
                                 if (contextualized) {
-                                    document.setContextualizedValues((MultiValuedComplexField<Object, ?, ?>) field, searchContext, solrValues);
+                                    document.setContextualizedValues((MultiValuedComplexField<Object, ?, ?>) field, searchContext, elasticValues);
                                 } else {
-                                    document.setValues((MultiValuedComplexField<Object, ?, ?>) field, solrValues);
+                                    document.setValues((MultiValuedComplexField<Object, ?, ?>) field, elasticValues);
                                 }
 
                             } else {
                                 if (contextualized) {
-                                    document.setContextualizedValues((MultiValueFieldDescriptor<Object>) field, searchContext, solrValues);
+                                    document.setContextualizedValues((MultiValueFieldDescriptor<Object>) field, searchContext, elasticValues);
                                 } else {
-                                    document.setValues((MultiValueFieldDescriptor<Object>) field, solrValues);
+                                    document.setValues((MultiValueFieldDescriptor<Object>) field, elasticValues);
                                 }
                             }
 
@@ -180,7 +178,7 @@ public class DocumentUtil {
                             }
                         }
                     } catch (Exception e) {
-                        log.error("Unable to parse solr result field '{}' value '{}' to field descriptor type [{}]",
+                        log.error("Unable to parse Elastic result field '{}' value '{}' to field descriptor type [{}]",
                                 fieldRawName, o.toString(), type);
                         throw new RuntimeException(e);
                     }
@@ -326,39 +324,5 @@ public class DocumentUtil {
             }
         }
         return o;
-    }
-
-    public static Map<String,  Map<String, Object>> getUpdateDocument(Update update, String type) {
-
-        final Map<String, Object> sdoc = new HashMap<>();
-        sdoc.put(FieldUtil.ID, update.getId());
-        sdoc.put(FieldUtil.TYPE, type);
-
-        log.debug("Atomic Update - Mapping the Vind update operations to a map document with ID [{}].", update.getId());
-        final HashMap<FieldDescriptor<?>, HashMap<String, SortedSet<UpdateOperation>>> updateOptions = update.getOptions();
-
-        log.debug("Atomic Update - Updating {} fields.", updateOptions.keySet().size());
-        updateOptions.keySet()
-                .forEach(fieldDescriptor -> {
-                            log.debug("Atomic Update - Updating {} different contexts for field [{}].", updateOptions.get(fieldDescriptor).keySet().size(), fieldDescriptor);
-                            updateOptions.get(fieldDescriptor).keySet()
-                                    .forEach(context -> {
-                                        //NOTE: Backwards compatibility
-                                        final String updateContext = Objects.isNull(context)? update.getUpdateContext() : context;
-                                        final String fieldName = FieldUtil.getFieldName(fieldDescriptor, updateContext);
-                                        if (fieldName != null) {
-                                            final Map<String, Object> fieldModifiers = new HashMap<>();
-                                            updateOptions.get(fieldDescriptor).get(context).forEach(entry -> {
-                                                Update.UpdateOperations opType = entry.getType();
-                                                fieldModifiers.put(opType.name(), toSolrJType(entry.getValue()));
-                                            });
-                                            sdoc.put(fieldName, fieldModifiers);
-                                        }
-                                    }
-                            );
-                        }
-                );
-        return sdoc;
-
     }
 }

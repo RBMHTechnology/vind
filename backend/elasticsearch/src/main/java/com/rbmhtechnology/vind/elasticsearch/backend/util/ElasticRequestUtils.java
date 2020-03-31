@@ -80,27 +80,4 @@ public class ElasticRequestUtils {
             throw new RuntimeException();
         }
     }
-    public String parseToScript(String field, Map<String,Object> updateOps) {
-        updateOps.entrySet().stream()
-                .map( entry -> {
-                    switch (entry.getKey()) {
-                        case "add":
-                            return "ctx._source." + field + ".add(\""+ entry.getValue().toString() +"\")";
-                        case "set":
-                            return "ctx._source." + field + " = \""+ entry.getValue().toString() +"\"" ;
-                        case "inc":
-                            return "ctx._source." + field + "+= "+ entry.getValue().toString();
-                        case "remove":
-                            return "ctx._source." + field + ".removeAll(\"" + entry.getValue().toString() + "\")";
-                        case "removeregex":
-                            return "ctx._source." + field + " = "+ entry.getValue().toString() ;
-                        default:
-                            return "";
-                    }
-                })
-        .collect(Collecto);
-
-    }
-
-
 }
