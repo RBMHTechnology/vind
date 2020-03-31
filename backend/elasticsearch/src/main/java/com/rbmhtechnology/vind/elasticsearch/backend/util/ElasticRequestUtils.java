@@ -33,7 +33,7 @@ public class ElasticRequestUtils {
 
     public static UpdateRequest getUpdateRequest(String index, String id, Map<String,Object> partialDocMap) {
         final UpdateRequest request = new UpdateRequest(index, id);
-        request.script(ScriptQueryBuilder.)doc(partialDocMap);
+        //request.script(ScriptQueryBuilder.)doc(partialDocMap);
         return request;
     }
 
