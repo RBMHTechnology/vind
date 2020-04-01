@@ -128,9 +128,9 @@ public class DocumentUtil {
                         if (o instanceof Collection) {
                             final Collection<Object> elasticValues = new ArrayList<>();
                             if (ZonedDateTime.class.isAssignableFrom(type)) {
-                                ((Collection<?>) o).forEach(ob -> elasticValues.add(ZonedDateTime.ofInstant(((Date) ob).toInstant(), ZoneId.of("UTC"))));
+                                ((Collection<?>) o).forEach(ob -> elasticValues.add(ZonedDateTime.parse(ob.toString())));
                             } else if (Date.class.isAssignableFrom(type)) {
-                                ((Collection<?>) o).forEach(ob -> elasticValues.add(DateTimeFormatter.ISO_INSTANT.format(((Date) ob).toInstant())));
+                                ((Collection<?>) o).forEach(ob -> elasticValues.add(Date.from(Instant.parse(ob.toString()))));
                             } else if (LatLng.class.isAssignableFrom(type)) {
                                 ((Collection<?>) o).forEach(ob -> {
                                     try {
@@ -163,9 +163,9 @@ public class DocumentUtil {
                         } else {
                             Object storedValue;
                             if (ZonedDateTime.class.isAssignableFrom(type)) {
-                                storedValue = ZonedDateTime.ofInstant(((Date) o).toInstant(), ZoneId.of("UTC"));
+                                storedValue = ZonedDateTime.parse(o.toString());
                             } else if (Date.class.isAssignableFrom(type)) {
-                                storedValue = (Date) o;
+                                storedValue = Date.from(Instant.parse(o.toString())) ;
                             } else if (LatLng.class.isAssignableFrom(type)) {
                                 storedValue = LatLng.parseLatLng(o.toString());
                             } else {
