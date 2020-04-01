@@ -387,9 +387,9 @@ public class ElasticSearchServer extends SearchServer {
                 elasticClientLogger.debug(">>> add({})", doc.getId());
             }
 
-            final IndexResponse response = this.elasticSearchClient.add(document);
+            final BulkResponse response = this.elasticSearchClient.add(document);
             elapsedTime.stop();
-            return new IndexResult(elapsedTime.getTime()).setElapsedTime(elapsedTime.getTime());
+            return new IndexResult(response.getTook().getMillis()).setElapsedTime(elapsedTime.getTime());
 
         } catch (ElasticsearchException | IOException e) {
             log.error("Cannot index document {}", document.get(FieldUtil.ID) , e);

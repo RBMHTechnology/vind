@@ -13,10 +13,9 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.get.MultiGetResponse;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -132,17 +131,19 @@ public  class ElasticVindClient {
             throw new IOException(String.format("Unable to ping Elasticsearch server %s://%s:%s", scheme, host, port),e);
         }
     }
-    public IndexResponse add(Map<String, Object> jsonDoc) throws IOException {
-        final IndexRequest indexRequest = ElasticRequestUtils.getIndexRequest(defaultIndex,jsonDoc);
-        indexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
-
-        return client.index(indexRequest, RequestOptions.DEFAULT);
+    public BulkResponse add(Map<String, Object> jsonDoc) throws IOException {
+        final BulkRequest bulkIndexRequest = new BulkRequest();
+        bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(defaultIndex,jsonDoc));
+        bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
+        bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
+        return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
     }
 
     public BulkResponse add(List<Map<String, Object>> jsonDocs) throws IOException {
         final BulkRequest bulkIndexRequest = new BulkRequest();
         jsonDocs.forEach( jsonDoc -> bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(defaultIndex,jsonDoc)) );
         bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
+        bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
         return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
     }
 
