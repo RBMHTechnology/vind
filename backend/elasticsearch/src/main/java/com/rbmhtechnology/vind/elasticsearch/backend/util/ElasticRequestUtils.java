@@ -1,19 +1,19 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
-import com.rbmhtechnology.vind.api.query.update.Update;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.client.indices.GetFieldMappingsRequest;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.ScriptQueryBuilder;
-import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
-import org.elasticsearch.script.Script;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ElasticRequestUtils {
 
@@ -52,6 +51,13 @@ public class ElasticRequestUtils {
         return new DeleteRequest(index, docId);
     }
 
+    public static SearchRequest getSearchRequest(String index, SearchSourceBuilder searchSource) {
+
+        final SearchRequest searchRequest = new SearchRequest(index);
+        searchRequest.source(searchSource);
+        return searchRequest;
+    }
+
     public static CreateIndexRequest getCreateIndexRequest(String index) {
         final CreateIndexRequest request = new CreateIndexRequest(index);
         request.settings(Settings.builder()
@@ -59,9 +65,10 @@ public class ElasticRequestUtils {
                 .put("index.number_of_replicas", 1)
         );
 
-        request.mapping(getDefaultMaping(), XContentType.JSON);
+        request.mapping(getDefaultMapping(), XContentType.JSON);
         return request;
     }
+
     public static DeleteByQueryRequest getDeleteByQueryRequest(String index, QueryBuilder query) {
 
         final DeleteByQueryRequest request =
@@ -70,7 +77,7 @@ public class ElasticRequestUtils {
         return request;
     }
 
-    private static String getDefaultMaping() {
+    public static String getDefaultMapping() {
         final Path mappingsFile = Paths.get(ElasticRequestUtils.class
                 .getClassLoader().getResource("mappings.json").getPath());
 
@@ -79,5 +86,15 @@ public class ElasticRequestUtils {
         } catch (IOException e) {
             throw new RuntimeException();
         }
+    }
+
+    public static GetFieldMappingsRequest getFieldMappingsRequest(String index, String... fields) {
+
+        final GetFieldMappingsRequest request = new GetFieldMappingsRequest();
+        request.indices(index);
+        request.fields(fields);
+        return request;
+
+
     }
 }

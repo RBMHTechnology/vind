@@ -1,18 +1,17 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
 import com.rbmhtechnology.vind.api.Document;
-import com.rbmhtechnology.vind.api.SearchServer;
+import com.rbmhtechnology.vind.api.query.FulltextSearch;
+import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.IndexResult;
+import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
-import org.junit.Before;
 import org.junit.Test;
-
-import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -35,6 +34,32 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .setValue(descriptor, "Dawn of humanity: the COVID-19 chronicles");
         final IndexResult indexResult = server.index(doc1,doc2);
         assertNotNull(indexResult);
+    }
+
+    @Test
+    public void fullTextSearchTest(){
+        final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
+
+        final FieldDescriptor descriptor = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setFullText(true)
+                .buildTextField("title");
+        docFactoryBuilder.addField(descriptor);
+        final DocumentFactory documents = docFactoryBuilder.build();
+        final Document doc1 = documents.createDoc("AA-2X3451")
+                .setValue(descriptor, "The last ascent of man");
+
+        final Document doc2 = documents.createDoc("AA-2X6891")
+                .setValue(descriptor, "Dawn of humanity: the COVID-19 chronicles");
+        server.index(doc1,doc2);
+
+        SearchResult searchResult = server.execute(Search.fulltext(), documents);
+        assertNotNull(searchResult);
+        assertEquals(2, searchResult.getNumOfResults());
+
+        searchResult = server.execute(Search.fulltext("dawn"), documents);
+        assertNotNull(searchResult);
+        assertEquals(1, searchResult.getNumOfResults());
     }
 
     @Test

@@ -5,7 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RemoteElasticServerProvider implements ElasticServerProvider {
+public class ElasticsearchServerProvider implements ElasticServerProvider {
     @Override
     public ElasticVindClient getInstance() {
 
@@ -29,7 +29,7 @@ public class RemoteElasticServerProvider implements ElasticServerProvider {
             ElasticVindClient client =
                     new ElasticVindClient.Builder(host)
                             .setDefaultIndex(collection)
-                            .build(SearchConfiguration.SEARCH_AUTHENTICATION_USER, SearchConfiguration.SEARCH_AUTHENTICATION_KEY);
+                            .build(SearchConfiguration.SEARCH_AUTHENTICATION_KEY, SearchConfiguration.SEARCH_AUTHENTICATION_KEY);
 
             if(StringUtils.isNotEmpty(connectionTimeout)) {
                 client.setConnectionTimeOut(Long.parseLong(connectionTimeout));

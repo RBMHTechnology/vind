@@ -13,17 +13,19 @@ import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.BeanGetResult;
 import com.rbmhtechnology.vind.api.result.BeanSearchResult;
 import com.rbmhtechnology.vind.api.result.DeleteResult;
+import com.rbmhtechnology.vind.api.result.FacetResults;
 import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.IndexResult;
+import com.rbmhtechnology.vind.api.result.PageResult;
 import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.api.result.StatusResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil;
+import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticQueryBuilder;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ResultUtils;
 import com.rbmhtechnology.vind.model.DocumentFactory;
-import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.http.util.Asserts;
 import org.elasticsearch.ElasticsearchException;
@@ -31,8 +33,9 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
@@ -89,16 +92,22 @@ public class ElasticSearchServer extends SearchServer {
                 log.error("Cannot connect to Elasticsearch server: ping failed");
                 throw new SearchServerException("Cannot connect to Elasticsearch server: ping failed", e);
             }
-
             log.info("Connection to Elastic server successful");
-            checkVersionAndSchema();
+            try {
+                checkVersionAndSchema();
+            } catch (IOException e) {
+                log.error("Elasticsearch server Schema validation error: {}", e.getMessage(), e);
+                throw new SearchServerException(String.format("Elastic search Schema validation error: %s", e.getMessage()), e);
+            }
+
         } else {
             log.warn("Elastic ping and schema validity check has been deactivated.");
         }
     }
 
-    private void checkVersionAndSchema() {
+    private void checkVersionAndSchema() throws IOException {
         log.warn("Schema check needs to be implemented");
+
     }
 
     @Override
@@ -183,7 +192,7 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public void commit(boolean optimize) {
-
+        log.warn("Commit does not have any effect on elastic search backend");
     }
 
     @Override
@@ -193,7 +202,45 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
-        throw new NotImplementedException();
+        final StopWatch elapsedtime = StopWatch.createStarted();
+        final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory);
+        //query
+        try {
+            elasticClientLogger.debug(">>> query({})", query.toString());
+            final SearchResponse response = elasticSearchClient.query(query);
+            if(response!=null){
+                //TODO: if nested doc search is implemented
+                //final Map<String,Integer> childCounts = SolrUtils.getChildCounts(response);
+
+                final List<Document> documents =Arrays.stream(response.getHits().getHits())
+                        .map(hit -> DocumentUtil.buildVindDoc(hit.getSourceAsMap(), factory, search.getSearchContext()))
+                        .collect(Collectors.toList());
+
+                //TODO: when implementing aggregations
+                final FacetResults facetResults =
+                        new FacetResults(factory, null, null, null, null, null, null, null, null);
+                //final FacetResults facetResults = SolrUtils.Result.buildFacetResult(response, factory, search.getChildrenFactory(), search.getFacets(),search.getSearchContext());
+
+                elapsedtime.stop();
+
+                //TODO: when implementing paging
+                switch(search.getResultSet().getType()) {
+//                    case page:{
+//                        return new PageResult(response.getResults().getNumFound(), response.getTook().getMillis(), documents, search, facetResults, this, factory).setElapsedTime(response.getElapsedTime());
+//                    }
+//                    case slice: {
+//                        return new SliceResult(response.getResults().getNumFound(), response.getTook().getMillis(), documents, search, facetResults, this, factory).setElapsedTime(response.getElapsedTime());
+//                    }
+                    default:
+                        return new PageResult(response.getHits().getTotalHits().value, response.getTook().getMillis(), documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
+                }
+            }else {
+                throw new ElasticsearchException("Null result from ElasticClient");
+            }
+
+        } catch (ElasticsearchException | IOException e) {
+            throw new SearchServerException(String.format("Cannot issue query: %s",e.getMessage()), e);
+        }
     }
 
     @Override
@@ -340,9 +387,9 @@ public class ElasticSearchServer extends SearchServer {
                 elasticClientLogger.debug(">>> add({})", doc.getId());
             }
 
-            final IndexResponse response = this.elasticSearchClient.add(document);
+            final BulkResponse response = this.elasticSearchClient.add(document);
             elapsedTime.stop();
-            return new IndexResult(elapsedTime.getTime()).setElapsedTime(elapsedTime.getTime());
+            return new IndexResult(response.getTook().getMillis()).setElapsedTime(elapsedTime.getTime());
 
         } catch (ElasticsearchException | IOException e) {
             log.error("Cannot index document {}", document.get(FieldUtil.ID) , e);

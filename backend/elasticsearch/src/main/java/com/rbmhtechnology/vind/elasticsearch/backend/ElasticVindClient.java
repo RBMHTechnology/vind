@@ -1,7 +1,6 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticRequestUtils;
-import com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -14,8 +13,9 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.get.MultiGetResponse;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -23,10 +23,13 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexResponse;
+import org.elasticsearch.client.indices.GetFieldMappingsRequest;
+import org.elasticsearch.client.indices.GetFieldMappingsResponse;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,17 +131,19 @@ public  class ElasticVindClient {
             throw new IOException(String.format("Unable to ping Elasticsearch server %s://%s:%s", scheme, host, port),e);
         }
     }
-    public IndexResponse add(Map<String, Object> jsonDoc) throws IOException {
-        final IndexRequest indexRequest = ElasticRequestUtils.getIndexRequest(defaultIndex,jsonDoc);
-        indexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
-
-        return client.index(indexRequest, RequestOptions.DEFAULT);
+    public BulkResponse add(Map<String, Object> jsonDoc) throws IOException {
+        final BulkRequest bulkIndexRequest = new BulkRequest();
+        bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(defaultIndex,jsonDoc));
+        bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
+        bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
+        return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
     }
 
     public BulkResponse add(List<Map<String, Object>> jsonDocs) throws IOException {
         final BulkRequest bulkIndexRequest = new BulkRequest();
         jsonDocs.forEach( jsonDoc -> bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(defaultIndex,jsonDoc)) );
         bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
+        bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
         return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
     }
 
@@ -169,6 +174,11 @@ public  class ElasticVindClient {
         return client.deleteByQuery(request,RequestOptions.DEFAULT);
     }
 
+    public GetFieldMappingsResponse getFieldMappings(String ... fields) throws IOException {
+        final GetFieldMappingsRequest request = ElasticRequestUtils.getFieldMappingsRequest(defaultIndex, fields);
+        return client.indices().getFieldMapping(request, RequestOptions.DEFAULT);
+    }
+
     public void close() throws IOException {
         try {
             this.client.close();
@@ -176,6 +186,11 @@ public  class ElasticVindClient {
             log.error("Unable to close Elasticsearch client connection to {}://{}:{}", scheme, host, port,e);
             throw new IOException(String.format("Unable to ping Elasticsearch client connection to %s://%s:%s", scheme, host, port),e);
         }
+    }
+
+    public SearchResponse query(SearchSourceBuilder query) throws IOException {
+        final SearchRequest request = ElasticRequestUtils.getSearchRequest(defaultIndex, query);
+        return client.search(request,RequestOptions.DEFAULT);
     }
 
     public static class Builder {

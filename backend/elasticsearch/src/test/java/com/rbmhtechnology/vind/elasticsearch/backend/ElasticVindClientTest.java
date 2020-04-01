@@ -31,9 +31,9 @@ public class ElasticVindClientTest  extends ElasticBaseTest{
         doc.put("dynamic_string_title", "The last ascent of man");
         doc.put(FieldUtil.ID, "AA-2X3451");
         doc.put(FieldUtil.TYPE, "TestDoc");
-        final IndexResponse indexResult = client.add(doc);
+        final BulkResponse indexResult = client.add(doc);
         assertNotNull(indexResult);
-        assertEquals("CREATED", indexResult.getResult().name());
+        assertEquals("CREATED", indexResult.getItems()[0].status().name());
     }
 
     @Test
