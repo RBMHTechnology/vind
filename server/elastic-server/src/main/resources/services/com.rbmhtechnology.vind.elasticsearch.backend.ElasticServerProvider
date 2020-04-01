@@ -1,1 +1,1 @@
-com.rbmhtechnology.vind.elasticsearch.backend.RemoteElasticServerProvider
+com.rbmhtechnology.vind.elasticsearch.backend.ElasticsearchServerProvider

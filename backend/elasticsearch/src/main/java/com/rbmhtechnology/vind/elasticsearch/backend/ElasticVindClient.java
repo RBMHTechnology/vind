@@ -24,6 +24,8 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexResponse;
+import org.elasticsearch.client.indices.GetFieldMappingsRequest;
+import org.elasticsearch.client.indices.GetFieldMappingsResponse;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
@@ -169,6 +171,11 @@ public  class ElasticVindClient {
     public BulkByScrollResponse deleteByQuery(QueryBuilder query) throws IOException {
         final DeleteByQueryRequest request = ElasticRequestUtils.getDeleteByQueryRequest(defaultIndex, query);
         return client.deleteByQuery(request,RequestOptions.DEFAULT);
+    }
+
+    public GetFieldMappingsResponse getFieldMappings(String ... fields) throws IOException {
+        final GetFieldMappingsRequest request = ElasticRequestUtils.getFieldMappingsRequest(defaultIndex, fields);
+        return client.indices().getFieldMapping(request, RequestOptions.DEFAULT);
     }
 
     public void close() throws IOException {

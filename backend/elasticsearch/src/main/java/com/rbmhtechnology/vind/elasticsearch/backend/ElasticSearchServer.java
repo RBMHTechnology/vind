@@ -34,7 +34,6 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
@@ -93,16 +92,22 @@ public class ElasticSearchServer extends SearchServer {
                 log.error("Cannot connect to Elasticsearch server: ping failed");
                 throw new SearchServerException("Cannot connect to Elasticsearch server: ping failed", e);
             }
-
             log.info("Connection to Elastic server successful");
-            checkVersionAndSchema();
+            try {
+                checkVersionAndSchema();
+            } catch (IOException e) {
+                log.error("Elasticsearch server Schema validation error: {}", e.getMessage(), e);
+                throw new SearchServerException(String.format("Elastic search Schema validation error: %s", e.getMessage()), e);
+            }
+
         } else {
             log.warn("Elastic ping and schema validity check has been deactivated.");
         }
     }
 
-    private void checkVersionAndSchema() {
+    private void checkVersionAndSchema() throws IOException {
         log.warn("Schema check needs to be implemented");
+
     }
 
     @Override

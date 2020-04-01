@@ -1,6 +1,5 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
-import com.rbmhtechnology.vind.api.query.update.Update;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.MultiGetRequest;
@@ -8,13 +7,11 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.client.indices.GetFieldMappingsRequest;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.ScriptQueryBuilder;
-import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
-import org.elasticsearch.script.Script;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.io.IOException;
@@ -23,7 +20,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ElasticRequestUtils {
 
@@ -68,7 +64,7 @@ public class ElasticRequestUtils {
                 .put("index.number_of_replicas", 1)
         );
 
-        request.mapping(getDefaultMaping(), XContentType.JSON);
+        request.mapping(getDefaultMapping(), XContentType.JSON);
         return request;
     }
 
@@ -80,7 +76,7 @@ public class ElasticRequestUtils {
         return request;
     }
 
-    private static String getDefaultMaping() {
+    public static String getDefaultMapping() {
         final Path mappingsFile = Paths.get(ElasticRequestUtils.class
                 .getClassLoader().getResource("mappings.json").getPath());
 
@@ -89,5 +85,15 @@ public class ElasticRequestUtils {
         } catch (IOException e) {
             throw new RuntimeException();
         }
+    }
+
+    public static GetFieldMappingsRequest getFieldMappingsRequest(String index, String... fields) {
+
+        final GetFieldMappingsRequest request = new GetFieldMappingsRequest();
+        request.indices(index);
+        request.fields(fields);
+        return request;
+
+
     }
 }
