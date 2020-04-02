@@ -212,8 +212,8 @@ public class ElasticSearchServer extends SearchServer {
                 //TODO: if nested doc search is implemented
                 //final Map<String,Integer> childCounts = SolrUtils.getChildCounts(response);
 
-                final List<Document> documents =Arrays.stream(response.getHits().getHits())
-                        .map(hit -> DocumentUtil.buildVindDoc(hit.getSourceAsMap(), factory, search.getSearchContext()))
+                final List<Document> documents = Arrays.stream(response.getHits().getHits())
+                        .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))
                         .collect(Collectors.toList());
 
                 //TODO: when implementing aggregations

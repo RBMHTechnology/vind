@@ -8,19 +8,19 @@ import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.common.geo.builders.CircleBuilder;
 import org.elasticsearch.common.unit.DistanceUnit;
-import org.elasticsearch.geometry.Circle;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.DisMaxQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
-import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
-import javax.swing.text.html.Option;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Objects;
 import java.util.Optional;
 
 public class ElasticQueryBuilder {
@@ -59,17 +59,30 @@ public class ElasticQueryBuilder {
 //        }
 
 
-        //TODO: Add when query DSL implementation
-//        if(search.getGeoDistance() != null) {
-//            final FieldDescriptor descriptor = factory.getField(search.getGeoDistance().getFieldName());
-//            if (Objects.nonNull(descriptor)) {
-//                query.setParam(CommonParams.FL, query.get(CommonParams.FL) + "," + DISTANCE + ":geodist()");
-//                query.setParam("pt", search.getGeoDistance().getLocation().toString());
-//                query.setParam("sfield", getFieldname(descriptor, UseCase.Facet, searchContext));
-//            }
-//        }
-
-        baseQuery.filter(buildFilterQuery(search.getFilter(), factory, searchContext));
+        if(search.getGeoDistance() != null) {
+            final FieldDescriptor distanceField = factory.getField(search.getGeoDistance().getFieldName());
+            if (Objects.nonNull(distanceField)) {
+                searchSource.scriptField(
+                        FieldUtil.DISTANCE,
+                        new Script(
+                                ScriptType.INLINE,
+                                "painless",
+                                String.format(
+                                        "if(doc['%s'].size()!=0)" +
+                                                "doc['%s'].arcDistance(%f,%f);" +
+                                            "else []",
+                                        FieldUtil.getFieldName(distanceField, searchContext),
+                                        FieldUtil.getFieldName(distanceField, searchContext),
+                                        search.getGeoDistance().getLocation().getLat(),
+                                        search.getGeoDistance().getLocation().getLng()
+                                ),
+                                Collections.emptyMap()
+                        )
+                );
+            }
+        }
+    searchSource.fetchSource(true);
+    baseQuery.filter(buildFilterQuery(search.getFilter(), factory, searchContext));
 
         //TODO if nested document search is implemented
         // fulltext search deep search
