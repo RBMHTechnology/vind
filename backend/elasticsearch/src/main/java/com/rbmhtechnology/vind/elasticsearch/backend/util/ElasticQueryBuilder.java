@@ -3,15 +3,25 @@ package com.rbmhtechnology.vind.elasticsearch.backend.util;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.division.Page;
 import com.rbmhtechnology.vind.api.query.division.Slice;
+import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.DisMaxQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
-import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.Optional;
 
 public class ElasticQueryBuilder {
 
@@ -22,7 +32,8 @@ public class ElasticQueryBuilder {
         final BoolQueryBuilder baseQuery = QueryBuilders.boolQuery();
 
         //build full text disMax query
-        final QueryStringQueryBuilder fullTextStringQuery = QueryBuilders.queryStringQuery(search.getSearchString());
+        final QueryStringQueryBuilder fullTextStringQuery = QueryBuilders.queryStringQuery(search.getSearchString())
+                .minimumShouldMatch(search.getMinimumShouldMatch()); //mm
         // Set fulltext fields
         factory.getFields().values().stream()
                 .filter(FieldDescriptor::isFullText)
@@ -32,7 +43,7 @@ public class ElasticQueryBuilder {
         final DisMaxQueryBuilder query = QueryBuilders.disMaxQuery()
                 .add(fullTextStringQuery);
 
-        baseQuery.should(query);
+        baseQuery.must(query);
         searchSource.query(baseQuery);
 
 //        if(search.getTimeZone() != null) {
@@ -48,27 +59,30 @@ public class ElasticQueryBuilder {
 //        }
 
 
-        //TODO: Add when query DSL implementation
-//        if(search.getGeoDistance() != null) {
-//            final FieldDescriptor descriptor = factory.getField(search.getGeoDistance().getFieldName());
-//            if (Objects.nonNull(descriptor)) {
-//                query.setParam(CommonParams.FL, query.get(CommonParams.FL) + "," + DISTANCE + ":geodist()");
-//                query.setParam("pt", search.getGeoDistance().getLocation().toString());
-//                query.setParam("sfield", getFieldname(descriptor, UseCase.Facet, searchContext));
-//            }
-//        }
-
-        final TermQueryBuilder typeFilterQuery = QueryBuilders.termQuery(FieldUtil.TYPE, factory.getType());
-        baseQuery.filter(typeFilterQuery);
-
-
-        //mm
-        searchSource.minScore(Float.parseFloat(search.getMinimumShouldMatch())/10);
-
-        //TODO: Add when query DSL implementation
-        //if(search.hasFilter()) {
-        //    SolrUtils.Query.buildFilterString(search.getFilter(), factory,search.getChildrenFactory(),query, searchContext, search.getStrict());
-        //}
+        if(search.getGeoDistance() != null) {
+            final FieldDescriptor distanceField = factory.getField(search.getGeoDistance().getFieldName());
+            if (Objects.nonNull(distanceField)) {
+                searchSource.scriptField(
+                        FieldUtil.DISTANCE,
+                        new Script(
+                                ScriptType.INLINE,
+                                "painless",
+                                String.format(
+                                        "if(doc['%s'].size()!=0)" +
+                                                "doc['%s'].arcDistance(%f,%f);" +
+                                            "else []",
+                                        FieldUtil.getFieldName(distanceField, searchContext),
+                                        FieldUtil.getFieldName(distanceField, searchContext),
+                                        search.getGeoDistance().getLocation().getLat(),
+                                        search.getGeoDistance().getLocation().getLng()
+                                ),
+                                Collections.emptyMap()
+                        )
+                );
+            }
+        }
+    searchSource.fetchSource(true);
+    baseQuery.filter(buildFilterQuery(search.getFilter(), factory, searchContext));
 
         //TODO if nested document search is implemented
         // fulltext search deep search
@@ -103,5 +117,152 @@ public class ElasticQueryBuilder {
             }
         }
         return searchSource;
+    }
+
+    public static QueryBuilder buildFilterQuery(Filter filter, DocumentFactory factory, String context) {
+        final BoolQueryBuilder filterQuery = QueryBuilders.boolQuery();
+        // Add base doc type filter
+        filterQuery.must(QueryBuilders.termQuery(FieldUtil.TYPE, factory.getType()));
+        Optional.ofNullable(filter)
+                .ifPresent(vindFilter -> {
+                    try {
+                        filterQuery.must(filterMapper(vindFilter, factory, context));
+                    } catch (IOException e) {
+                        throw new ElasticsearchException(
+                                String.format("Error mapping Vind filter to Elasticsearch Query DSL: %s", e.getMessage()),e);
+                    }
+                });
+        return filterQuery;
+
+    }
+
+    private static QueryBuilder filterMapper(Filter filter, DocumentFactory factory, String context) throws IOException {
+
+            switch (filter.getType()) {
+                case "AndFilter":
+                    final Filter.AndFilter andFilter = (Filter.AndFilter) filter;
+                    final BoolQueryBuilder boolMustQuery = QueryBuilders.boolQuery();
+                    andFilter.getChildren()
+                            .forEach(nestedFilter -> {
+                                try {
+                                    boolMustQuery.must(filterMapper(nestedFilter, factory, context));
+                                } catch (IOException e) {
+                                    throw new ElasticsearchException(
+                                            String.format("Error mapping Vind filter to Elasticsearch Query DSL: %s", e.getMessage()),e);
+                                }
+                            });
+                    return boolMustQuery;
+                case "OrFilter":
+                    final Filter.OrFilter orFilter = (Filter.OrFilter) filter;
+                    final BoolQueryBuilder boolShouldQuery = QueryBuilders.boolQuery();
+                    orFilter.getChildren()
+                            .forEach(nestedFilter -> {
+                                try {
+                                    boolShouldQuery.should(filterMapper(nestedFilter, factory, context));
+                                } catch (IOException e) {
+                                    throw new ElasticsearchException(
+                                            String.format("Error mapping Vind filter to Elasticsearch Query DSL: %s", e.getMessage()),e);
+                                }
+                            });
+                    return boolShouldQuery;
+                case "NotFilter":
+                    final Filter.NotFilter notFilter = (Filter.NotFilter) filter;
+                    final BoolQueryBuilder boolMustNotQuery = QueryBuilders.boolQuery();
+                    return boolMustNotQuery.mustNot(filterMapper(notFilter.getDelegate(), factory, context));
+
+                case "TermFilter":
+                    final Filter.TermFilter termFilter = (Filter.TermFilter) filter;
+                    return QueryBuilders
+                            .termQuery(FieldUtil.getFieldName(factory.getField(termFilter.getField()),context),
+                                    termFilter.getTerm());
+                case "PrefixFilter":
+                    final Filter.PrefixFilter prefixFilter = (Filter.PrefixFilter) filter;
+                    return QueryBuilders
+                            .prefixQuery(FieldUtil.getFieldName(factory.getField(prefixFilter.getField()),context),
+                                    prefixFilter.getTerm());
+                case "DescriptorFilter":
+                    //TODO: Add scope support
+                    final Filter.DescriptorFilter descriptorFilter = (Filter.DescriptorFilter) filter;
+                    return QueryBuilders
+                            .termQuery(FieldUtil.getFieldName(descriptorFilter.getDescriptor(),context),
+                                    descriptorFilter.getTerm());
+                case "BetweenDatesFilter":
+                    //TODO: Add scope support
+                    final Filter.BetweenDatesFilter betweenDatesFilter = (Filter.BetweenDatesFilter) filter;
+                    return QueryBuilders
+                            .rangeQuery(FieldUtil.getFieldName(factory.getField(betweenDatesFilter.getField()),context))
+                            .from(betweenDatesFilter.getStart().toString())
+                            .to(betweenDatesFilter.getEnd().toString());
+                case "BeforeFilter":
+                    //TODO: Add scope support
+                    final Filter.BeforeFilter beforeFilter = (Filter.BeforeFilter) filter;
+                    return QueryBuilders
+                            .rangeQuery(FieldUtil.getFieldName(factory.getField(beforeFilter.getField()),context))
+                            .lte(beforeFilter.getDate().toString()) ;
+                case "AfterFilter":
+                    //TODO: Add scope support
+                    final Filter.AfterFilter afterFilter = (Filter.AfterFilter) filter;
+                    return QueryBuilders
+                            .rangeQuery(FieldUtil.getFieldName(factory.getField(afterFilter.getField()),context))
+                            .gte(afterFilter.getDate().toString()) ;
+
+                case "BetweenNumericFilter":
+                    //TODO: Add scope support
+                    final Filter.BetweenNumericFilter betweenNumericFilter = (Filter.BetweenNumericFilter) filter;
+                    return QueryBuilders
+                            .rangeQuery(FieldUtil.getFieldName(factory.getField(betweenNumericFilter.getField()),context))
+                            .from(betweenNumericFilter.getStart())
+                            .to(betweenNumericFilter.getEnd());
+                case "LowerThanFilter":
+                    //TODO: Add scope support
+                    final Filter.LowerThanFilter lowerThanFilter = (Filter.LowerThanFilter) filter;
+                    return QueryBuilders
+                            .rangeQuery(FieldUtil.getFieldName(factory.getField(lowerThanFilter.getField()),context))
+                            .lte(lowerThanFilter.getNumber()) ;
+                case "GreaterThanFilter":
+                    //TODO: Add scope support
+                    final Filter.GreaterThanFilter greaterThanFilter = (Filter.GreaterThanFilter) filter;
+                    return QueryBuilders
+                            .rangeQuery(FieldUtil.getFieldName(factory.getField(greaterThanFilter.getField()),context))
+                            .gte(greaterThanFilter.getNumber()) ;
+                case "NotEmptyTextFilter":
+                    //TODO: Add scope support
+                    final Filter.NotEmptyTextFilter notEmptyTextFilter = (Filter.NotEmptyTextFilter) filter;
+                    final String fieldName = FieldUtil.getFieldName(factory.getField(notEmptyTextFilter.getField()), context);
+                    return QueryBuilders.boolQuery()
+                            .must(QueryBuilders.existsQuery(fieldName))
+                            .mustNot(QueryBuilders.regexpQuery(fieldName , " *"))
+                            ;
+                case "NotEmptyFilter":
+                    //TODO: Add scope support
+                    final Filter.NotEmptyFilter notEmptyFilter = (Filter.NotEmptyFilter) filter;
+                    return QueryBuilders
+                            .existsQuery(FieldUtil.getFieldName(factory.getField(notEmptyFilter.getField()), context));
+                case "NotEmptyLocationFilter":
+                    //TODO: Add scope support
+                    final Filter.NotEmptyLocationFilter notEmptyLocationFilter = (Filter.NotEmptyLocationFilter) filter;
+                    return QueryBuilders
+                            .existsQuery(FieldUtil.getFieldName(factory.getField(notEmptyLocationFilter.getField()), context));
+                case "WithinBBoxFilter":
+                    //TODO: Add scope support
+                    final Filter.WithinBBoxFilter withinBBoxFilter = (Filter.WithinBBoxFilter) filter;
+                    return QueryBuilders
+                            .geoBoundingBoxQuery(FieldUtil.getFieldName(factory.getField(withinBBoxFilter.getField()), context))
+                            .setCorners(
+                                    withinBBoxFilter.getUpperLeft().getLat(),
+                                    withinBBoxFilter.getUpperLeft().getLng(),
+                                    withinBBoxFilter.getLowerRight().getLat(),
+                                    withinBBoxFilter.getLowerRight().getLng()
+                                    );
+                case "WithinCircleFilter":
+                    //TODO: Add scope support
+                    final Filter.WithinCircleFilter withinCircleFilter = (Filter.WithinCircleFilter) filter;
+                    return QueryBuilders
+                            .geoDistanceQuery(FieldUtil.getFieldName(factory.getField(withinCircleFilter.getField()), context))
+                            .point(withinCircleFilter.getCenter().getLat(),withinCircleFilter.getCenter().getLng())
+                            .distance(withinCircleFilter.getDistance(), DistanceUnit.METERS);
+                default:
+                    throw new RuntimeException(String.format("Error parsing filter to Elasticsearch query DSL: filter type not known %s", filter.getType()));
+            }
     }
 }

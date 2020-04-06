@@ -1,14 +1,13 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
 import com.rbmhtechnology.vind.api.Document;
-import com.rbmhtechnology.vind.api.query.update.Update;
-import com.rbmhtechnology.vind.api.query.update.UpdateOperation;
 import com.rbmhtechnology.vind.model.ComplexFieldDescriptor;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import com.rbmhtechnology.vind.model.MultiValueFieldDescriptor;
 import com.rbmhtechnology.vind.model.MultiValuedComplexField;
 import com.rbmhtechnology.vind.model.value.LatLng;
+import org.elasticsearch.search.SearchHit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +25,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -89,8 +87,22 @@ public class DocumentUtil {
         return value;
     }
 
-    public static Document buildVindDoc(Map<String,Object> docMap, DocumentFactory factory, String searchContext) {
+    public static Document buildVindDoc(SearchHit hit , DocumentFactory factory, String searchContext) {
 
+        final Document document = buildVindDoc(hit.getSourceAsMap(), factory, searchContext);
+
+
+        // Setting score if present in result
+        document.setScore(hit.getScore());
+
+        // Setting distance if present in result
+        Optional.ofNullable(hit.field(FieldUtil.DISTANCE))
+                .ifPresent(distance -> document.setDistance(((Double)distance.getValue()).floatValue()));
+
+        return document;
+    }
+
+    public static Document buildVindDoc( Map<String, Object> docMap , DocumentFactory factory, String searchContext) {
         final Document document = factory.createDoc(String.valueOf(docMap.get(FieldUtil.ID)));
 
         //TODO: No child documnt search implemented yet
@@ -98,92 +110,84 @@ public class DocumentUtil {
         //                document.setChildCount(ObjectUtils.defaultIfNull(childCounts.get(document.getId()), 0));
         //            }
 
-        // Setting score if present in result
-        Optional.ofNullable(docMap.get(FieldUtil.SCORE))
-                .ifPresent(score -> document.setScore(Float.parseFloat(score.toString())));
-
-        // Setting distance if present in result
-        Optional.ofNullable(docMap.get(FieldUtil.DISTANCE))
-                .ifPresent(distance -> document.setDistance(Float.parseFloat(distance.toString())));
-
         docMap.keySet().stream()
-            .filter(name -> ! Arrays.asList(FieldUtil.ID, FieldUtil.TYPE, FieldUtil.SCORE, FieldUtil.DISTANCE)
-                    .contains(name))
-            .forEach(name -> {
-                final Object o = docMap.get(name);
-                final String contextPrefix = searchContext != null ? searchContext + "_" : "";
-                final Matcher internalPrefixMatcher = Pattern.compile(FieldUtil.INTERNAL_FIELD_PREFIX).matcher(name);
-                final String contextualizedName = internalPrefixMatcher.replaceFirst("");
-                final boolean contextualized = Objects.nonNull(searchContext) && contextualizedName.contains(contextPrefix);
-                final String fieldRawName = contextualizedName.replace(contextPrefix, "");
-                if (factory.hasField(fieldRawName)) {
-                    final FieldDescriptor<?> field = factory.getField(fieldRawName);
-                    Class<?> type;
-                    if (ComplexFieldDescriptor.class.isAssignableFrom(field.getClass())) {
-                        type = ((ComplexFieldDescriptor) field).getStoreType();
-                    } else {
-                        type = field.getType();
-                    }
-                    try {
-                        if (o instanceof Collection) {
-                            final Collection<Object> elasticValues = new ArrayList<>();
-                            if (ZonedDateTime.class.isAssignableFrom(type)) {
-                                ((Collection<?>) o).forEach(ob -> elasticValues.add(ZonedDateTime.ofInstant(((Date) ob).toInstant(), ZoneId.of("UTC"))));
-                            } else if (Date.class.isAssignableFrom(type)) {
-                                ((Collection<?>) o).forEach(ob -> elasticValues.add(DateTimeFormatter.ISO_INSTANT.format(((Date) ob).toInstant())));
-                            } else if (LatLng.class.isAssignableFrom(type)) {
-                                ((Collection<?>) o).forEach(ob -> {
-                                    try {
-                                        elasticValues.add(LatLng.parseLatLng(ob.toString()));
-                                    } catch (ParseException e) {
-                                        log.error("Unable to parse Elastic result field '{}' value '{}' to field descriptor type [{}]",
-                                                fieldRawName, o.toString(), type);
-                                        throw new RuntimeException(e);
-                                    }
-                                });
-                            } else {
-                                elasticValues.addAll((Collection<Object>) o);
-                            }
-
-                            if (ComplexFieldDescriptor.class.isAssignableFrom(field.getClass())) {
-                                if (contextualized) {
-                                    document.setContextualizedValues((MultiValuedComplexField<Object, ?, ?>) field, searchContext, elasticValues);
-                                } else {
-                                    document.setValues((MultiValuedComplexField<Object, ?, ?>) field, elasticValues);
-                                }
-
-                            } else {
-                                if (contextualized) {
-                                    document.setContextualizedValues((MultiValueFieldDescriptor<Object>) field, searchContext, elasticValues);
-                                } else {
-                                    document.setValues((MultiValueFieldDescriptor<Object>) field, elasticValues);
-                                }
-                            }
-
+                .filter(name -> ! Arrays.asList(FieldUtil.ID, FieldUtil.TYPE, FieldUtil.SCORE, FieldUtil.DISTANCE)
+                        .contains(name))
+                .forEach(name -> {
+                    final Object o = docMap.get(name);
+                    final String contextPrefix = searchContext != null ? searchContext + "_" : "";
+                    final Matcher internalPrefixMatcher = Pattern.compile(FieldUtil.INTERNAL_FIELD_PREFIX).matcher(name);
+                    final String contextualizedName = internalPrefixMatcher.replaceFirst("");
+                    final boolean contextualized = Objects.nonNull(searchContext) && contextualizedName.contains(contextPrefix);
+                    final String fieldRawName = contextualizedName.replace(contextPrefix, "");
+                    if (factory.hasField(fieldRawName)) {
+                        final FieldDescriptor<?> field = factory.getField(fieldRawName);
+                        Class<?> type;
+                        if (ComplexFieldDescriptor.class.isAssignableFrom(field.getClass())) {
+                            type = ((ComplexFieldDescriptor) field).getStoreType();
                         } else {
-                            Object storedValue;
-                            if (ZonedDateTime.class.isAssignableFrom(type)) {
-                                storedValue = ZonedDateTime.ofInstant(((Date) o).toInstant(), ZoneId.of("UTC"));
-                            } else if (Date.class.isAssignableFrom(type)) {
-                                storedValue = (Date) o;
-                            } else if (LatLng.class.isAssignableFrom(type)) {
-                                storedValue = LatLng.parseLatLng(o.toString());
-                            } else {
-                                storedValue = castForDescriptor(o, field, FieldUtil.Fieldname.UseCase.Stored);
-                            }
-                            if (contextualized) {
-                                document.setContextualizedValue((FieldDescriptor<Object>) field, searchContext, storedValue);
-                            } else {
-                                document.setValue((FieldDescriptor<Object>) field, storedValue);
-                            }
+                            type = field.getType();
                         }
-                    } catch (Exception e) {
-                        log.error("Unable to parse Elastic result field '{}' value '{}' to field descriptor type [{}]",
-                                fieldRawName, o.toString(), type);
-                        throw new RuntimeException(e);
+                        try {
+                            if (o instanceof Collection) {
+                                final Collection<Object> elasticValues = new ArrayList<>();
+                                if (ZonedDateTime.class.isAssignableFrom(type)) {
+                                    ((Collection<?>) o).forEach(ob -> elasticValues.add(ZonedDateTime.parse(ob.toString())));
+                                } else if (Date.class.isAssignableFrom(type)) {
+                                    ((Collection<?>) o).forEach(ob -> elasticValues.add(Date.from(Instant.parse(ob.toString()))));
+                                } else if (LatLng.class.isAssignableFrom(type)) {
+                                    ((Collection<?>) o).forEach(ob -> {
+                                        try {
+                                            elasticValues.add(LatLng.parseLatLng(ob.toString()));
+                                        } catch (ParseException e) {
+                                            log.error("Unable to parse Elastic result field '{}' value '{}' to field descriptor type [{}]",
+                                                    fieldRawName, o.toString(), type);
+                                            throw new RuntimeException(e);
+                                        }
+                                    });
+                                } else {
+                                    elasticValues.addAll((Collection<Object>) o);
+                                }
+
+                                if (ComplexFieldDescriptor.class.isAssignableFrom(field.getClass())) {
+                                    if (contextualized) {
+                                        document.setContextualizedValues((MultiValuedComplexField<Object, ?, ?>) field, searchContext, elasticValues);
+                                    } else {
+                                        document.setValues((MultiValuedComplexField<Object, ?, ?>) field, elasticValues);
+                                    }
+
+                                } else {
+                                    if (contextualized) {
+                                        document.setContextualizedValues((MultiValueFieldDescriptor<Object>) field, searchContext, elasticValues);
+                                    } else {
+                                        document.setValues((MultiValueFieldDescriptor<Object>) field, elasticValues);
+                                    }
+                                }
+
+                            } else {
+                                Object storedValue;
+                                if (ZonedDateTime.class.isAssignableFrom(type)) {
+                                    storedValue = ZonedDateTime.parse(o.toString());
+                                } else if (Date.class.isAssignableFrom(type)) {
+                                    storedValue = Date.from(Instant.parse(o.toString())) ;
+                                } else if (LatLng.class.isAssignableFrom(type)) {
+                                    storedValue = LatLng.parseLatLng(o.toString());
+                                } else {
+                                    storedValue = castForDescriptor(o, field, FieldUtil.Fieldname.UseCase.Stored);
+                                }
+                                if (contextualized) {
+                                    document.setContextualizedValue((FieldDescriptor<Object>) field, searchContext, storedValue);
+                                } else {
+                                    document.setValue((FieldDescriptor<Object>) field, storedValue);
+                                }
+                            }
+                        } catch (Exception e) {
+                            log.error("Unable to parse Elastic result field '{}' value '{}' to field descriptor type [{}]",
+                                    fieldRawName, o.toString(), type);
+                            throw new RuntimeException(e);
+                        }
                     }
-                }
-            });
+                });
         return document;
     }
 

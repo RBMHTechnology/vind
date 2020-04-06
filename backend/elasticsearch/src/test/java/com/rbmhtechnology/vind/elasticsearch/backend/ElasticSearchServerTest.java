@@ -3,6 +3,7 @@ package com.rbmhtechnology.vind.elasticsearch.backend;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.Search;
+import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.IndexResult;
@@ -11,7 +12,15 @@ import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
+import com.rbmhtechnology.vind.model.MultiValueFieldDescriptor;
+import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
+import com.rbmhtechnology.vind.model.value.LatLng;
 import org.junit.Test;
+
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
+import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -58,6 +67,102 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         assertEquals(2, searchResult.getNumOfResults());
 
         searchResult = server.execute(Search.fulltext("dawn"), documents);
+        assertNotNull(searchResult);
+        assertEquals(1, searchResult.getNumOfResults());
+    }
+
+    @Test
+    public void filterSearchTest(){
+        final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
+
+        final FieldDescriptor title = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setFullText(true)
+                .buildTextField("title");
+
+        final FieldDescriptor description = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setFullText(true)
+                .buildTextField("description");
+
+        final MultiValueFieldDescriptor.TextFieldDescriptor<String> tags = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setFullText(true)
+                .buildMultivaluedTextField("tags");
+
+        final MultiValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime>  created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildMultivaluedDateField("created");
+
+        final MultiValueFieldDescriptor.UtilDateFieldDescriptor<Date> published = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildMultivaluedUtilDateField("published");
+
+        final SingleValueFieldDescriptor.NumericFieldDescriptor<Number> rating = new FieldDescriptorBuilder()
+                .buildNumericField("rating");
+
+        final SingleValueFieldDescriptor.LocationFieldDescriptor<LatLng> location = new FieldDescriptorBuilder()
+                .buildLocationField("location");
+
+
+        docFactoryBuilder
+                .addField(title, description, tags, created, published, rating, location);
+
+        final DocumentFactory documents = docFactoryBuilder.build();
+        final Document doc1 = documents.createDoc("AA-2X3451")
+                .setValue(title, "The last ascent of man")
+                .setValues(tags, "climbing", "pandemia")
+                .setValue(rating, 9.5)
+                .setValue(created, ZonedDateTime.now())
+                .setValue(published, new Date());
+
+        final LatLng wuhan = new LatLng(30.583332,114.283333);
+
+        final Document doc2 = documents.createDoc("AA-2X6891")
+                .setValue(title, "Dawn of humanity: the COVID-19 chronicles")
+                .setValues(tags, "pandemia")
+                .setValue(description,"Earth year 2020; a new breed of virus born within the rural China spreads " +
+                        "around the world decimating humanity.")
+                .setValue(rating, 9.9)
+                .setValue(location, wuhan)
+                .setValue(created, ZonedDateTime.now())
+                .setValue(published, new Date());
+
+        server.index(doc1,doc2);
+
+        SearchResult searchResult = server.execute(Search.fulltext(), documents);
+        assertNotNull(searchResult);
+        assertEquals(2, searchResult.getNumOfResults());
+
+        searchResult = server.execute(Search.fulltext()
+                .filter(Filter.and(description.isNotEmpty(),rating.greaterThan(9.5))), documents);
+        assertNotNull(searchResult);
+        assertEquals(1, searchResult.getNumOfResults());
+
+        searchResult = server.execute(Search.fulltext()
+                .filter(Filter.or(tags.prefix("climb")
+                        ,rating.greaterThan(9.5))), documents);
+        assertNotNull(searchResult);
+        assertEquals(2, searchResult.getNumOfResults());
+
+        searchResult = server.execute(Search.fulltext()
+                .filter(Filter.not(created.between(ZonedDateTime.now().minusDays(1),ZonedDateTime.now().plusDays(1)))), documents);
+        assertNotNull(searchResult);
+        assertEquals(0, searchResult.getNumOfResults());
+
+        final LatLng salzburg = new LatLng(47.811195, 13.033229);
+
+        searchResult = server.execute(Search.fulltext()
+                        .filter(location.withinCircle(salzburg,10000))
+        , documents);
+
+        assertNotNull(searchResult);
+        assertEquals(0, searchResult.getNumOfResults());
+
+        final LatLng chinaUpperLeftCorner = new LatLng(53.4588044297, 73.6753792663 );
+        final LatLng chinaLowerRightCorner = new LatLng(18.197700914,  135.026311477);
+        searchResult = server.execute(Search.fulltext()
+                .filter(location.withinBBox(chinaUpperLeftCorner, chinaLowerRightCorner)), documents);
         assertNotNull(searchResult);
         assertEquals(1, searchResult.getNumOfResults());
     }
