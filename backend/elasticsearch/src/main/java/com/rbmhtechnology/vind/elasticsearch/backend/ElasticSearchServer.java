@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
@@ -204,11 +205,14 @@ public class ElasticSearchServer extends SearchServer {
     public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
         final StopWatch elapsedtime = StopWatch.createStarted();
         final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory);
+
         //query
         try {
             elasticClientLogger.debug(">>> query({})", query.toString());
             final SearchResponse response = elasticSearchClient.query(query);
-            if(response!=null){
+            if(Objects.nonNull(response)
+                    && Objects.nonNull(response.getHits())
+                    && Objects.nonNull(response.getHits().getHits())){
                 //TODO: if nested doc search is implemented
                 //final Map<String,Integer> childCounts = SolrUtils.getChildCounts(response);
 
@@ -216,10 +220,13 @@ public class ElasticSearchServer extends SearchServer {
                         .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))
                         .collect(Collectors.toList());
 
-                //TODO: when implementing aggregations
+                // Building Vind Facet Results
                 final FacetResults facetResults =
-                        new FacetResults(factory, null, null, null, null, null, null, null, null);
-                //final FacetResults facetResults = SolrUtils.Result.buildFacetResult(response, factory, search.getChildrenFactory(), search.getFacets(),search.getSearchContext());
+                        ResultUtils.buildFacetResults(
+                                response.getAggregations(),
+                                factory,
+                                search.getFacets(),
+                                search.getSearchContext());
 
                 elapsedtime.stop();
 
@@ -235,7 +242,7 @@ public class ElasticSearchServer extends SearchServer {
                         return new PageResult(response.getHits().getTotalHits().value, response.getTook().getMillis(), documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                 }
             }else {
-                throw new ElasticsearchException("Null result from ElasticClient");
+                throw new ElasticsearchException("Empty result from ElasticClient");
             }
 
         } catch (ElasticsearchException | IOException e) {
