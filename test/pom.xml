@@ -62,7 +62,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <skipTests>false</skipTests>
+                            <skipTests>${skipTests}</skipTests>
                             <environmentVariables>
                                 <VIND.TEST.BACKEND>${tests.solrBackend}</VIND.TEST.BACKEND>
                             </environmentVariables>
@@ -106,7 +106,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <skipTests>false</skipTests>
+                            <skipTests>${skipTests}</skipTests>
                             <environmentVariables>
                                 <VIND.TEST.BACKEND>elastic</VIND.TEST.BACKEND>
                             </environmentVariables>
