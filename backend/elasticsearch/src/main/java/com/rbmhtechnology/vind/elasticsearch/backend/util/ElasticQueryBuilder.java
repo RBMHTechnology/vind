@@ -293,7 +293,7 @@ public class ElasticQueryBuilder {
                         .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
            case "DistanceSort":
                Optional.ofNullable(search.getGeoDistance())
-                       .orElseThrow(() -> new RuntimeException("Sorting by distance requires a geodistance set"));
+                       .orElseThrow(() -> new SearchServerException("Sorting by distance requires a geodistance set"));
                final String distanceFieldName = FieldUtil.getFieldName(search.getGeoDistance().getField(), searchContext);
                return SortBuilders
                        .geoDistanceSort(distanceFieldName,
