@@ -1,9 +1,11 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
+import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.division.Page;
 import com.rbmhtechnology.vind.api.query.division.Slice;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
@@ -17,7 +19,11 @@ import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
 
+import javax.swing.text.html.Option;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Objects;
@@ -93,10 +99,12 @@ public class ElasticQueryBuilder {
         // if(search.hasFacet()) {
         // }
 
-        //TODO on sorting implementation
-        //// sorting
-        //if(search.hasSorting()) {
-        //}
+        // sorting
+        if(search.hasSorting()) {
+            search.getSorting().stream()
+                    .map( sort -> buildSort(sort, search, factory, searchContext))
+                    .forEach(searchSource::sort);
+        }
         ////boost functions
         //  if(search.hasSorting()) {
         //}
@@ -265,4 +273,42 @@ public class ElasticQueryBuilder {
                     throw new RuntimeException(String.format("Error parsing filter to Elasticsearch query DSL: filter type not known %s", filter.getType()));
             }
     }
+    private static SortBuilder buildSort(Sort sort, FulltextSearch search, DocumentFactory factory, String searchContext) {
+       switch (sort.getType()) {
+            case "SimpleSort":
+                final FieldDescriptor<?> simpleSortField = factory.getField(((Sort.SimpleSort) sort).getField());
+                final String sortFieldName = Optional.ofNullable(simpleSortField)
+                        .filter(FieldDescriptor::isSort)
+                        .map(descriptor -> FieldUtil.getFieldName(descriptor, searchContext))
+                        .orElse(((Sort.SimpleSort) sort).getField());
+                return SortBuilders
+                        .fieldSort(sortFieldName)
+                        .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
+            case "DescriptorSort":
+                final String descriptorFieldName = Optional.ofNullable(FieldUtil.getFieldName(((Sort.DescriptorSort) sort).getDescriptor(), searchContext))
+                        .orElseThrow(() ->
+                                new RuntimeException("The field '" + ((Sort.DescriptorSort) sort).getDescriptor().getName() + "' is not set as sortable"));
+                return SortBuilders
+                        .fieldSort(descriptorFieldName)
+                        .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
+           case "DistanceSort":
+               Optional.ofNullable(search.getGeoDistance())
+                       .orElseThrow(() -> new RuntimeException("Sorting by distance requires a geodistance set"));
+               final String distanceFieldName = FieldUtil.getFieldName(search.getGeoDistance().getField(), searchContext);
+               return SortBuilders
+                       .geoDistanceSort(distanceFieldName,
+                               search.getGeoDistance().getLocation().getLat(),
+                               search.getGeoDistance().getLocation().getLng())
+                       .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
+           case "ScoredDate":
+               final Sort.SpecialSort.ScoredDate scoreSort = (Sort.SpecialSort.ScoredDate) sort;
+               return SortBuilders.scoreSort()
+                       .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
+           default:
+               throw  new SearchServerException(String
+                        .format("Unable to parse Vind sort '%s' to ElasticSearch sorting: sort type not supported.",
+                                sort.getType()));
+       }
+    }
+
 }
