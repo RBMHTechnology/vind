@@ -1105,7 +1105,7 @@ public class SolrSearchServer extends SearchServer {
     }
 
     @Override
-    public Class getServiceProviderClass() {
+    public Class<? extends ServiceProvider> getServiceProviderClass() {
         return serviceProviderClass!=null? serviceProviderClass.getClass() : null;
     }
 }

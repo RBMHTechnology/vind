@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 public class VindCollectionConfigurationTest {
 
     @Rule
-    public TestSearchServer testSearchServer = new TestSearchServer();
+    public TestSearchServer testSearchServer = TestSearchServer.create();
 
     private DocumentFactory doc;
     private SingleValueFieldDescriptor<String> value;

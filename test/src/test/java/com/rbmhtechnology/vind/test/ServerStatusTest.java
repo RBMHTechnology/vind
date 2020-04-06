@@ -9,7 +9,7 @@ import static org.junit.Assert.assertEquals;
 public class ServerStatusTest {
 
     @Rule
-    public TestSearchServer testSearchServer = new TestSearchServer();
+    public TestSearchServer testSearchServer = TestSearchServer.create();
 
     @Test
     public void testPing() {

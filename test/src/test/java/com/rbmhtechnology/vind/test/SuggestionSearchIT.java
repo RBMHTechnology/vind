@@ -24,7 +24,7 @@ import static org.junit.Assert.assertNotNull;
 public class SuggestionSearchIT {
 
     @Rule
-    public TestSearchServer testSearchServer = new TestSearchServer();
+    public TestSearchServer testSearchServer = TestSearchServer.create();
 
     private DocumentFactory parent, child;
     private SingleValueFieldDescriptor<String> parent_value;

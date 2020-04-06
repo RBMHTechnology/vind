@@ -29,10 +29,10 @@ import static org.junit.Assert.*;
 
 /**
  */
-public class TestServerPojoTest {
+public class ServerPojoTest {
 
     @Rule
-    public TestSearchServer searchServer = new TestSearchServer();
+    public TestSearchServer searchServer = TestSearchServer.create();
 
     @Test
     public void testPojoRoundtrip() {

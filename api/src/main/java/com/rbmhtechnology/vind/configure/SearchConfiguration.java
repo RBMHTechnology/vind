@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.configure;
 
 import com.google.common.io.Resources;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -144,6 +145,10 @@ public class SearchConfiguration {
 
     public static void set(String key, boolean value) {
         set(key, String.valueOf(value));
+    }
+
+    public static boolean isSet(String key) {
+        return get(key) != null;
     }
 
     private static List<String> getResourceFiles(String path) throws IOException {

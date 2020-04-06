@@ -332,8 +332,8 @@ public class ElasticSearchServer extends SearchServer {
     }
 
     @Override
-    public Class<ServiceProvider> getServiceProviderClass() {
-        throw new NotImplementedException();
+    public Class<? extends ServiceProvider> getServiceProviderClass() {
+        return ElasticServerProvider.class;
     }
 
     private static ElasticServerProvider getElasticServerProvider() {

@@ -12,7 +12,7 @@ import org.junit.Test;
 public class CommitTest {
 
     @Rule
-    public TestSearchServer testSearchServer = new TestSearchServer();
+    public TestSearchServer testSearchServer = TestSearchServer.create();
 
     private DocumentFactory document = new DocumentFactoryBuilder("document").build();
 
