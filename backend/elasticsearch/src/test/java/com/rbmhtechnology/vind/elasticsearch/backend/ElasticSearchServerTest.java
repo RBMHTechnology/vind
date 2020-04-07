@@ -8,6 +8,7 @@ import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
+import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.api.result.DeleteResult;
 import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.IndexResult;
@@ -35,6 +36,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
 
     @Test
     public void indexTest(){
+        server.clearIndex();
         final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
 
         final FieldDescriptor descriptor = new FieldDescriptorBuilder().setFacet(true).buildTextField("title");
@@ -51,6 +53,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
 
     @Test
     public void fullTextSearchTest(){
+        server.clearIndex();
         final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
 
         final FieldDescriptor descriptor = new FieldDescriptorBuilder()
@@ -81,6 +84,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
 
     @Test
     public void filterSearchTest(){
+        server.clearIndex();
         final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
 
         final FieldDescriptor title = new FieldDescriptorBuilder()
@@ -176,7 +180,98 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
     }
 
     @Test
+    public void sortSearchTest(){
+        server.clearIndex();
+        final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
+
+        final FieldDescriptor title = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setFullText(true)
+                .buildTextField("title");
+
+        final FieldDescriptor description = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setFullText(true)
+                .buildTextField("description");
+
+        final MultiValueFieldDescriptor.TextFieldDescriptor<String> tags = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setFullText(true)
+                .buildMultivaluedTextField("tags");
+
+        final SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime>  created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+        final MultiValueFieldDescriptor.UtilDateFieldDescriptor<Date> published = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildMultivaluedUtilDateField("published");
+
+        final SingleValueFieldDescriptor.NumericFieldDescriptor<Number> rating = new FieldDescriptorBuilder()
+                .buildNumericField("rating");
+
+        final SingleValueFieldDescriptor.LocationFieldDescriptor<LatLng> location = new FieldDescriptorBuilder()
+                .buildLocationField("location");
+
+
+        docFactoryBuilder
+                .addField(title, description, tags, created, published, rating, location);
+
+        final DocumentFactory documents = docFactoryBuilder.build();
+        final LatLng salzburg = new LatLng(47.811195, 13.033229);
+        final Document doc1 = documents.createDoc("AA-2X3451")
+                .setValue(title, "The last ascent of man")
+                .setValues(tags, "climbing", "pandemia")
+                .setValue(rating, 9.5)
+                .setValue(location, salzburg)
+                .setValue(created, ZonedDateTime.now())
+                .setValue(published, new Date());
+
+        final LatLng wuhan = new LatLng(30.583332,114.283333);
+
+        final Document doc2 = documents.createDoc("AA-2X6891")
+                .setValue(title, "Dawn of humanity: the COVID-19 chronicles")
+                .setValues(tags, "pandemia")
+                .setValue(description,"Earth year 2020; a new breed of virus born within the rural China spreads " +
+                        "around the world decimating humanity.")
+                .setValue(rating, 9.9)
+                .setValue(location, wuhan)
+                .setValue(created, ZonedDateTime.now())
+                .setValue(published, new Date());
+
+        final LatLng gijon = new LatLng(43.53573, -5.66152);
+
+        final Document doc3 = documents.createDoc("AA-6k121")
+                .setValue(title, "Back to the roots")
+                .setValues(tags, "folklore","tradition", "survival")
+                .setValue(description,"In a moment were society is trembling by facing a global health, economic " +
+                        "and social crisis, the old ways, sustainable and deeply linked to the earth where our ancestors " +
+                        "grew, recover their relevance as a real option to move forward.")
+                .setValue(rating, 8)
+                .setValue(location, gijon)
+                .setValue(created, ZonedDateTime.now())
+                .setValue(published, new Date());
+
+        server.index(doc1,doc2, doc3);
+
+        SearchResult searchResult = server.execute(Search.fulltext()
+                .geoDistance(location,wuhan)
+                .sort(Sort.asc(Sort.SpecialSort.distance())), documents);
+        assertNotNull(searchResult);
+        assertEquals(3, searchResult.getNumOfResults());
+        assertTrue(searchResult.getResults().get(0).getId().equals("AA-2X6891"));
+
+        searchResult = server.execute(Search.fulltext()
+                .geoDistance(location,wuhan)
+                .sort(Sort.field(rating, Sort.Direction.Asc)), documents);
+        assertNotNull(searchResult);
+        assertEquals(3, searchResult.getNumOfResults());
+        assertTrue(searchResult.getResults().get(0).getId().equals("AA-6k121"));
+    }
+
+    @Test
     public void facetSearchTest() {
+        server.clearIndex();
         final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
         final FieldDescriptor descriptor = new FieldDescriptorBuilder()
                 .setFacet(true)
@@ -202,20 +297,20 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .setValue(rating, 9.2)
                 .setValue(creationDate, ZonedDateTime.now());
 
-        server.index(doc1,doc2);
+        server.index(doc1, doc2);
 
-        final DateMathExpression yesterday =  new DateMathExpression().sub(2, DateMathExpression.TimeUnit.DAY);
+        final DateMathExpression yesterday = new DateMathExpression().sub(2, DateMathExpression.TimeUnit.DAY);
         final DateMathExpression tomorrow = new DateMathExpression().add(2, DateMathExpression.TimeUnit.DAY);
         SearchResult searchResult = server.execute(Search.fulltext()
                         .facet(descriptor)
                         .facet(new Facet.TypeFacet())
                         .facet(new Facet.QueryFacet("Awesome_rating", rating.greaterThan(9)))
-                        .facet(new Facet.NumericRangeFacet("rating",rating,6,9,1))
+                        .facet(new Facet.NumericRangeFacet("rating", rating, 6, 9, 1))
                         .facet(new Facet.DateRangeFacet.DateMathRangeFacet("created", creationDate, yesterday, tomorrow, Duration.ofDays(1l)))
                         .facet(new Facet.IntervalFacet.DateIntervalFacet.ZoneDateTimeIntervalFacet(
                                 "interval",
                                 creationDate,
-                                new Interval.ZonedDateTimeInterval("yesterday", ZonedDateTime.now().minusDays(1).truncatedTo(ChronoUnit.DAYS),ZonedDateTime.now().plusDays(1).truncatedTo(ChronoUnit.DAYS))))
+                                new Interval.ZonedDateTimeInterval("yesterday", ZonedDateTime.now().minusDays(1).truncatedTo(ChronoUnit.DAYS), ZonedDateTime.now().plusDays(1).truncatedTo(ChronoUnit.DAYS))))
                 , documents);
         assertNotNull(searchResult);
         assertEquals(2, searchResult.getNumOfResults());
@@ -223,6 +318,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
 
     @Test
     public void realTimeGetTest(){
+        server.clearIndex();
         final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
 
         final FieldDescriptor descriptor = new FieldDescriptorBuilder().setFacet(true).buildTextField("title");
@@ -244,6 +340,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
 
     @Test
     public void deleteTest(){
+        server.clearIndex();
         final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
 
         final SingleValueFieldDescriptor.TextFieldDescriptor<String> descriptor = new FieldDescriptorBuilder()
@@ -268,7 +365,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         assertEquals(1, searchResult.getNumOfResults());
 
         result = server.delete(doc2);
-        assertNotNull(searchResult);
+        assertNotNull(result);
 
         searchResult = server.execute(Search.fulltext(), documents);
         assertNotNull(searchResult);

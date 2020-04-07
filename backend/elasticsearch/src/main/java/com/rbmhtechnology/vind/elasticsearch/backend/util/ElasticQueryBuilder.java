@@ -9,6 +9,7 @@ import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.facet.Interval.NumericInterval;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
@@ -29,7 +30,12 @@ import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregati
 import org.elasticsearch.search.aggregations.bucket.range.DateRangeAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import javax.swing.text.html.Option;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -116,10 +122,12 @@ public class ElasticQueryBuilder {
                     .forEach(searchSource::aggregation);
         }
 
-        //TODO on sorting implementation
-        //// sorting
-        //if(search.hasSorting()) {
-        //}
+        // sorting
+        if(search.hasSorting()) {
+            search.getSorting().stream()
+                    .map( sort -> buildSort(sort, search, factory, searchContext))
+                    .forEach(searchSource::sort);
+        }
         ////boost functions
         //  if(search.hasSorting()) {
         //}
@@ -272,6 +280,42 @@ public class ElasticQueryBuilder {
                 default:
                     throw new SearchServerException(String.format("Error parsing filter to Elasticsearch query DSL: filter type not known %s", filter.getType()));
             }
+    }
+
+    private static SortBuilder buildSort(Sort sort, FulltextSearch search, DocumentFactory factory, String searchContext) {
+       switch (sort.getType()) {
+            case "SimpleSort":
+                final FieldDescriptor<?> simpleSortField = factory.getField(((Sort.SimpleSort) sort).getField());
+                final String sortFieldName = Optional.ofNullable(simpleSortField)
+                        .filter(FieldDescriptor::isSort)
+                        .map(descriptor -> FieldUtil.getFieldName(descriptor, searchContext))
+                        .orElse(((Sort.SimpleSort) sort).getField());
+                return SortBuilders
+                        .fieldSort(sortFieldName)
+                        .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
+            case "DescriptorSort":
+                final String descriptorFieldName = Optional.ofNullable(FieldUtil.getFieldName(((Sort.DescriptorSort) sort).getDescriptor(), searchContext))
+                        .orElseThrow(() ->
+                                new RuntimeException("The field '" + ((Sort.DescriptorSort) sort).getDescriptor().getName() + "' is not set as sortable"));
+                return SortBuilders
+                        .fieldSort(descriptorFieldName)
+                        .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
+           case "DistanceSort":
+               Optional.ofNullable(search.getGeoDistance())
+                       .orElseThrow(() -> new SearchServerException("Sorting by distance requires a geodistance set"));
+               final String distanceFieldName = FieldUtil.getFieldName(search.getGeoDistance().getField(), searchContext);
+               return SortBuilders
+                       .geoDistanceSort(distanceFieldName,
+                               search.getGeoDistance().getLocation().getLat(),
+                               search.getGeoDistance().getLocation().getLng())
+                       .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
+           case "ScoredDate":
+               throw new NotImplementedException();
+           default:
+               throw  new SearchServerException(String
+                        .format("Unable to parse Vind sort '%s' to ElasticSearch sorting: sort type not supported.",
+                                sort.getType()));
+       }
     }
 
     private static AggregationBuilder buildElasticAggregations(String name, Facet vindFacet, DocumentFactory factory, String searchContext, int minCount) {
