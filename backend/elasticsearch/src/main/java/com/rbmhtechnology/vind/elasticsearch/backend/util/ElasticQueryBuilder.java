@@ -33,6 +33,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.swing.text.html.Option;
 import java.io.IOException;
@@ -309,9 +310,7 @@ public class ElasticQueryBuilder {
                                search.getGeoDistance().getLocation().getLng())
                        .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
            case "ScoredDate":
-               final Sort.SpecialSort.ScoredDate scoreSort = (Sort.SpecialSort.ScoredDate) sort;
-               return SortBuilders.scoreSort()
-                       .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
+               throw new NotImplementedException();
            default:
                throw  new SearchServerException(String
                         .format("Unable to parse Vind sort '%s' to ElasticSearch sorting: sort type not supported.",
