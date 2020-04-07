@@ -3,7 +3,10 @@ package com.rbmhtechnology.vind.elasticsearch.backend;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.Search;
+import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
+import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.IndexResult;
@@ -21,6 +24,15 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.Date;
+import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
+import org.junit.Test;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -62,7 +74,11 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .setValue(descriptor, "Dawn of humanity: the COVID-19 chronicles");
         server.index(doc1,doc2);
 
-        SearchResult searchResult = server.execute(Search.fulltext(), documents);
+        SearchResult searchResult = server.execute(Search.fulltext("evanescense"), documents);
+        assertNotNull(searchResult);
+        assertEquals(0, searchResult.getNumOfResults());
+
+        searchResult = server.execute(Search.fulltext(), documents);
         assertNotNull(searchResult);
         assertEquals(2, searchResult.getNumOfResults());
 
@@ -165,6 +181,52 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .filter(location.withinBBox(chinaUpperLeftCorner, chinaLowerRightCorner)), documents);
         assertNotNull(searchResult);
         assertEquals(1, searchResult.getNumOfResults());
+    }
+
+    @Test
+    public void facetSearchTest() {
+        final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
+        final FieldDescriptor descriptor = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setFullText(true)
+                .buildTextField("title");
+        final SingleValueFieldDescriptor.NumericFieldDescriptor<Double> rating = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildNumericField("rating", Double.class);
+
+        final SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> creationDate = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+        docFactoryBuilder.addField(descriptor, rating, creationDate);
+        final DocumentFactory documents = docFactoryBuilder.build();
+        final Document doc1 = documents.createDoc("AA-2X3451")
+                .setValue(descriptor, "The last ascent of man")
+                .setValue(rating, 7.8)
+                .setValue(creationDate, ZonedDateTime.now());
+
+        final Document doc2 = documents.createDoc("AA-2X6891")
+                .setValue(descriptor, "Dawn of humanity: the COVID-19 chronicles")
+                .setValue(rating, 9.2)
+                .setValue(creationDate, ZonedDateTime.now());
+
+        server.index(doc1,doc2);
+
+        final DateMathExpression yesterday =  new DateMathExpression().sub(2, DateMathExpression.TimeUnit.DAY);
+        final DateMathExpression tomorrow = new DateMathExpression().add(2, DateMathExpression.TimeUnit.DAY);
+        SearchResult searchResult = server.execute(Search.fulltext()
+                        .facet(descriptor)
+                        .facet(new Facet.TypeFacet())
+                        .facet(new Facet.QueryFacet("Awesome_rating", rating.greaterThan(9)))
+                        .facet(new Facet.NumericRangeFacet("rating",rating,6,9,1))
+                        .facet(new Facet.DateRangeFacet.DateMathRangeFacet("created", creationDate, yesterday, tomorrow, Duration.ofDays(1l)))
+                        .facet(new Facet.IntervalFacet.DateIntervalFacet.ZoneDateTimeIntervalFacet(
+                                "interval",
+                                creationDate,
+                                new Interval.ZonedDateTimeInterval("yesterday", ZonedDateTime.now().minusDays(1).truncatedTo(ChronoUnit.DAYS),ZonedDateTime.now().plusDays(1).truncatedTo(ChronoUnit.DAYS))))
+                , documents);
+        assertNotNull(searchResult);
+        assertEquals(2, searchResult.getNumOfResults());
     }
 
     @Test
