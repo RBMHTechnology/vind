@@ -122,30 +122,29 @@ public class ServerTest {
         Interval.ZonedDateTimeInterval i1 = Interval.dateInterval("past_24_hours", ZonedDateTime.now().minus(Duration.ofDays(1)), ZonedDateTime.now());
         Interval.ZonedDateTimeInterval i2 = Interval.dateInterval("past_week", ZonedDateTime.now().minus(Duration.ofDays(7)), ZonedDateTime.now());
 
-        FulltextSearch search = Search.fulltext("hello");
-                //.filter(category.between(0, 10))
-                //.filter(not(created.after(ZonedDateTime.now())))
-                //.filter(modified.before(new Date()))
+        FulltextSearch search = Search.fulltext("hello")
+                .filter(category.between(0, 10))
+                .filter(not(created.after(ZonedDateTime.now())))
+                .filter(modified.before(new Date()))
                 //.facet(pivot("cats", category, created))
                 //.facet(pivot("catVStitle", category, title))
                 //.facet(stats("avg Cat", category, "cats", "catVStitle").count().sum().percentiles(9.9, 1.0).mean())
                 //.facet(stats("countDate", created).count().sum().mean())
-                //.facet(query("new An dHot", category.between(0, 5), "cats"))
-                //.facet(query("anotherQuery", and(category.between(7, 10), created.after(ZonedDateTime.now().minus(Duration.ofDays(1))))))
-                //.facet(range("dates", created, ZonedDateTime.now().minus(Duration.ofDays(1)), ZonedDateTime.now(), Duration.ofHours(1)))
-                //.facet(range("mod a", modified, new Date(), new Date(), 1L, TimeUnit.HOURS, "cats"))
-                //.facet(interval("quality", category, Interval.numericInterval("low", 0L, 2L), Interval.numericInterval("high", 3L, 4L)))
-
-                //.facet(interval("time", created, i1, i2))
-                //.facet(interval("time2", modified,
-                //        Interval.dateInterval("early", new Date(0), new Date(10000)),
-                //        Interval.dateInterval("late", new Date(10000), new Date(20000))))
-                //.facet(category)
-                //.facet(created)
-                //.facet(modified)
-                //.facet(new TermFacetOption().setPrefix("He"), title)
-                //.page(1, 25)
-                //.sort(desc(created));
+                .facet(query("new An dHot", category.between(0, 5), "cats"))
+                .facet(query("anotherQuery", and(category.between(7, 10), created.after(ZonedDateTime.now().minus(Duration.ofDays(1))))))
+                .facet(range("dates", created, ZonedDateTime.now().minus(Duration.ofDays(1)), ZonedDateTime.now(), Duration.ofHours(1)))
+                .facet(range("mod a", modified, new Date(), new Date(), 1L, TimeUnit.HOURS, "cats"))
+                .facet(interval("quality", category, Interval.numericInterval("low", 0L, 2L), Interval.numericInterval("high", 3L, 4L)))
+                .facet(interval("time", created, i1, i2))
+                .facet(interval("time2", modified,
+                        Interval.dateInterval("early", new Date(0), new Date(10000)),
+                        Interval.dateInterval("late", new Date(10000), new Date(20000))))
+                .facet(category)
+                .facet(created)
+                .facet(modified)
+                .facet(new TermFacetOption().setPrefix("He"), title)
+                .page(1, 25)
+                .sort(desc(created));
 
         PageResult result = (PageResult)server.execute(search,assets);
 
@@ -328,7 +327,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void testTypeIDScoreAsFieldname() {
         SearchServer server = testSearchServer.getSearchServer();
 
@@ -491,7 +490,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void testTermFacetAccess() {
         SearchServer server = testSearchServer.getSearchServer();
 
@@ -535,7 +534,7 @@ public class ServerTest {
 
     //MBDN-352
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void testIndexMultipleDocuments () {
 
 
@@ -602,9 +601,6 @@ public class ServerTest {
         server.index(docList);
         server.commit();
 
-        Interval.ZonedDateTimeInterval i1 = Interval.dateInterval("past_24_hours", ZonedDateTime.now().minus(Duration.ofDays(1)), ZonedDateTime.now());
-        Interval.ZonedDateTimeInterval i2 = Interval.dateInterval("past_week", ZonedDateTime.now().minus(Duration.ofDays(7)), ZonedDateTime.now());
-
         FulltextSearch search = Search.fulltext("hello")
                 .page(1, 25)
                 .sort(desc(created));
@@ -622,7 +618,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void testSearchGetById() {
         SearchServer server = testSearchServer.getSearchServer();
 
@@ -669,7 +665,7 @@ public class ServerTest {
     */
     //MBDN-431
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void testDeleteByQuery() {
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
@@ -749,7 +745,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void testSolrUtilDateMultivalueFields() {
         MultiValueFieldDescriptor.UtilDateFieldDescriptor<Date> date = new FieldDescriptorBuilder()
                 .buildMultivaluedUtilDateField("date");
@@ -769,7 +765,7 @@ public class ServerTest {
 
     //MBDN-432
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void testClearIndex() {
 
         //Storing as text_en solr type
@@ -827,7 +823,7 @@ public class ServerTest {
 
     //MBDN-441
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void timeZoneSearchTest() {
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
@@ -888,7 +884,7 @@ public class ServerTest {
 
     //MBDN-450
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void testDateMathIntervals() {
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
         ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
@@ -983,7 +979,7 @@ public class ServerTest {
 
     //MBDN-451
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void wildcardIntervalLimitTest() {
 
         SingleValueFieldDescriptor<Float> numberField = new FieldDescriptorBuilder()
@@ -1215,7 +1211,7 @@ public class ServerTest {
 
     //MBDN-452
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void supportUnderscoredFieldNamesTest() {
 
         SingleValueFieldDescriptor<Float> numberField = new FieldDescriptorBuilder()
@@ -1328,7 +1324,7 @@ public class ServerTest {
 
     //MBDN-458
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr})
     public void testContextSearch() {
 
         final SingleValueFieldDescriptor<Float> numberField = new FieldDescriptorBuilder()
@@ -1428,7 +1424,7 @@ public class ServerTest {
 
     //MBDN-459
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void isNotEmptyFilterTest() {
 
         final SingleValueFieldDescriptor.TextFieldDescriptor<String> textSingle = new FieldDescriptorBuilder()
@@ -1711,7 +1707,7 @@ public class ServerTest {
 
     //MBDN-461
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void prefixFilterTest(){
 
         final SingleValueFieldDescriptor.TextFieldDescriptor<String> textSingle = new FieldDescriptorBuilder()
@@ -1856,7 +1852,7 @@ public class ServerTest {
 
     //MBDN-498
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void byQueryFacetConfigurationTest() {
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
         ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
@@ -1918,7 +1914,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr})
     public void queryTermWithDashCharTest(){
 
 
@@ -2315,7 +2311,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr})
     public void testTermQueryFilter() {
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
         ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);

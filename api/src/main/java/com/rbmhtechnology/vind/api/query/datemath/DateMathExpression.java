@@ -5,10 +5,13 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.*;
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.MONTHS;
 import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.YEAR;
 
 /**
@@ -200,6 +203,26 @@ public class DateMathExpression {
         return output;
     }
 
+    public String toElasticString() {
+        String output = this.root.toElasticString();
+
+        if(!add.isEmpty()) {
+            output += OP_ADD + add.stream().map(DateMathOperation::toElasticString).collect(Collectors.joining(OP_ADD));
+        }
+        if(!sub.isEmpty()){
+            output += OP_SUB + sub.stream().map(DateMathOperation::toElasticString).collect(Collectors.joining("-"));
+        }
+        if(unit!=null
+                && !this.unit.equals(MILLISECONDS)
+                && !this.unit.equals(MILLISECOND)
+                && !this.unit.equals(MILLIS)
+                && !this.unit.equals(MILLI)) {
+            output+= OP_UNIT + toElasticStringUnit(unit);
+        }
+
+        return output;
+    }
+
     public class RootTime {
         private final boolean relative;
         private ZonedDateTime fixedTime;
@@ -242,6 +265,23 @@ public class DateMathExpression {
             }
             return output;
         }
+
+        public String toElasticString() {
+            String output = "";
+            if (this.relative) {
+                output += "now";
+            } else {
+                output += this.fixedTime.format(DateTimeFormatter.ISO_INSTANT) + "||";
+            }
+            if (this.unit != null
+                    && !this.unit.equals(MILLISECONDS)
+                    && !this.unit.equals(MILLISECOND)
+                    && !this.unit.equals(MILLIS)
+                    && !this.unit.equals(MILLI)) {
+                output+= OP_UNIT + toElasticStringUnit(unit);
+            }
+            return output;
+        }
     }
 
     protected class DateMathOperation {
@@ -265,9 +305,43 @@ public class DateMathExpression {
         public String toString(){
             return String.valueOf(quantity) + unit;
         }
+
+        public String toElasticString(){
+            if( !this.unit.equals(MILLISECONDS)
+                    && !this.unit.equals(MILLISECOND)
+                    && !this.unit.equals(MILLIS)
+                    && !this.unit.equals(MILLI)) {
+                return String.valueOf(quantity) + toElasticStringUnit(unit);
+            } else {
+                return String.valueOf(quantity / 1000) + toElasticStringUnit(SECONDS);
+            }
+        }
     }
     public enum TimeUnit {
         YEAR,MONTH,DAY,HOUR,MINUTE,SECOND,MILLI,MILLISECOND,YEARS,MONTHS,DAYS,HOURS,MINUTES,SECONDS,MILLIS,MILLISECONDS
     }
 
+
+    public static String toElasticStringUnit(TimeUnit unit) {
+
+        return unit.toString()
+                .replaceAll(YEARS.name(), "y")
+                .replaceAll(YEAR.name(), "y")
+                .replaceAll(MONTHS.name(), "M")
+                .replaceAll(MONTH.name(), "M")
+                .replaceAll(DAYS.name(), "d")
+                .replaceAll(DAY.name(), "d")
+                .replaceAll(HOURS.name(), "h")
+                .replaceAll(HOUR.name(), "h")
+                .replaceAll(MINUTES.name(), "m")
+                .replaceAll(MINUTE.name(), "m")
+                .replaceAll(MILLISECONDS.name(), "")
+                .replaceAll(MILLISECOND.name(), "")
+                .replaceAll(MILLIS.name(), "")
+                .replaceAll(MILLI.name(), "")
+                .replaceAll(SECONDS.name(), "s")
+                .replaceAll(SECOND.name(), "s")
+                .replaceAll(NOW, "now")
+                ;
+    }
 }
