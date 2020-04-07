@@ -2,8 +2,12 @@ package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
+import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.division.Page;
 import com.rbmhtechnology.vind.api.query.division.Slice;
+import com.rbmhtechnology.vind.api.query.facet.Facet;
+import com.rbmhtechnology.vind.api.query.facet.Interval;
+import com.rbmhtechnology.vind.api.query.facet.Interval.NumericInterval;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
@@ -18,6 +22,13 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
+import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.range.DateRangeAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -25,9 +36,15 @@ import org.elasticsearch.search.sort.SortOrder;
 
 import javax.swing.text.html.Option;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ElasticQueryBuilder {
 
@@ -93,11 +110,16 @@ public class ElasticQueryBuilder {
         //TODO if nested document search is implemented
         // fulltext search deep search
 
-
-        //TODO on aggregation implementation
-        //// faceting
-        // if(search.hasFacet()) {
-        // }
+        if(search.hasFacet()) {
+            search.getFacets().entrySet().stream()
+                    .map(vindFacet -> buildElasticAggregations(
+                                        vindFacet.getKey(),
+                                        vindFacet.getValue(),
+                                        factory,
+                                        searchContext,
+                                        search.getFacetMinCount()))
+                    .forEach(searchSource::aggregation);
+        }
 
         // sorting
         if(search.hasSorting()) {
@@ -133,18 +155,13 @@ public class ElasticQueryBuilder {
         filterQuery.must(QueryBuilders.termQuery(FieldUtil.TYPE, factory.getType()));
         Optional.ofNullable(filter)
                 .ifPresent(vindFilter -> {
-                    try {
-                        filterQuery.must(filterMapper(vindFilter, factory, context));
-                    } catch (IOException e) {
-                        throw new ElasticsearchException(
-                                String.format("Error mapping Vind filter to Elasticsearch Query DSL: %s", e.getMessage()),e);
-                    }
+                    filterQuery.must(filterMapper(vindFilter, factory, context));
                 });
         return filterQuery;
 
     }
 
-    private static QueryBuilder filterMapper(Filter filter, DocumentFactory factory, String context) throws IOException {
+    private static QueryBuilder filterMapper(Filter filter, DocumentFactory factory, String context) {
 
             switch (filter.getType()) {
                 case "AndFilter":
@@ -152,12 +169,7 @@ public class ElasticQueryBuilder {
                     final BoolQueryBuilder boolMustQuery = QueryBuilders.boolQuery();
                     andFilter.getChildren()
                             .forEach(nestedFilter -> {
-                                try {
-                                    boolMustQuery.must(filterMapper(nestedFilter, factory, context));
-                                } catch (IOException e) {
-                                    throw new ElasticsearchException(
-                                            String.format("Error mapping Vind filter to Elasticsearch Query DSL: %s", e.getMessage()),e);
-                                }
+                                boolMustQuery.must(filterMapper(nestedFilter, factory, context));
                             });
                     return boolMustQuery;
                 case "OrFilter":
@@ -165,12 +177,7 @@ public class ElasticQueryBuilder {
                     final BoolQueryBuilder boolShouldQuery = QueryBuilders.boolQuery();
                     orFilter.getChildren()
                             .forEach(nestedFilter -> {
-                                try {
-                                    boolShouldQuery.should(filterMapper(nestedFilter, factory, context));
-                                } catch (IOException e) {
-                                    throw new ElasticsearchException(
-                                            String.format("Error mapping Vind filter to Elasticsearch Query DSL: %s", e.getMessage()),e);
-                                }
+                                boolShouldQuery.should(filterMapper(nestedFilter, factory, context));
                             });
                     return boolShouldQuery;
                 case "NotFilter":
@@ -270,9 +277,10 @@ public class ElasticQueryBuilder {
                             .point(withinCircleFilter.getCenter().getLat(),withinCircleFilter.getCenter().getLng())
                             .distance(withinCircleFilter.getDistance(), DistanceUnit.METERS);
                 default:
-                    throw new RuntimeException(String.format("Error parsing filter to Elasticsearch query DSL: filter type not known %s", filter.getType()));
+                    throw new SearchServerException(String.format("Error parsing filter to Elasticsearch query DSL: filter type not known %s", filter.getType()));
             }
     }
+
     private static SortBuilder buildSort(Sort sort, FulltextSearch search, DocumentFactory factory, String searchContext) {
        switch (sort.getType()) {
             case "SimpleSort":
@@ -311,4 +319,252 @@ public class ElasticQueryBuilder {
        }
     }
 
+    private static AggregationBuilder buildElasticAggregations(String name, Facet vindFacet, DocumentFactory factory, String searchContext, int minCount) {
+        final String contextualizedFacetName = Stream.of(searchContext, name)
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining("_"));
+
+        switch (vindFacet.getType()) {
+            case "TermFacet":
+                final Facet.TermFacet termFacet = (Facet.TermFacet) vindFacet;
+                return AggregationBuilders
+                        .terms(contextualizedFacetName)
+                        .field(FieldUtil.getFieldName(termFacet.getFieldDescriptor(), searchContext))
+                        .minDocCount(minCount);
+            case "TypeFacet":
+                final Facet.TypeFacet typeFacet = (Facet.TypeFacet) vindFacet;
+                return AggregationBuilders
+                        .terms(name)
+                        .field(FieldUtil.TYPE)
+                        .minDocCount(minCount);
+
+            case "QueryFacet":
+                final Facet.QueryFacet queryFacet = (Facet.QueryFacet) vindFacet;
+                return AggregationBuilders
+                        .filters(contextualizedFacetName, filterMapper(queryFacet.getFilter(), factory, searchContext));
+
+            case "NumericRangeFacet":
+                final Facet.NumericRangeFacet<?> numericRangeFacet = (Facet.NumericRangeFacet) vindFacet;
+                final HistogramAggregationBuilder rangeAggregation = AggregationBuilders
+                        .histogram(name)
+                        .keyed(true)
+                        .field(FieldUtil.getFieldName(numericRangeFacet.getFieldDescriptor(), searchContext))
+                        .interval(numericRangeFacet.getGap().doubleValue())
+                        .minDocCount(minCount);
+
+                final RangeAggregationBuilder numericIntervalRangeAggregation = AggregationBuilders
+                        .range(contextualizedFacetName)
+                        .keyed(true)
+                        .field(FieldUtil.getFieldName(numericRangeFacet.getFieldDescriptor(), searchContext))
+                        .subAggregation(rangeAggregation);
+
+                numericIntervalRangeAggregation
+                        .addRange(
+                                numericRangeFacet.getStart().doubleValue(),
+                                numericRangeFacet.getEnd().doubleValue());
+
+                return numericIntervalRangeAggregation;
+
+            case "ZoneDateRangeFacet":
+                final Facet.DateRangeFacet.ZoneDateRangeFacet zoneDateRangeFacet = (Facet.DateRangeFacet.ZoneDateRangeFacet) vindFacet;
+
+                final DateRangeAggregationBuilder dateRangeAggregation = AggregationBuilders
+                        .dateRange(contextualizedFacetName)
+                        .keyed(true)
+                        .field(FieldUtil.getFieldName(zoneDateRangeFacet.getFieldDescriptor(), searchContext));
+
+                final ZonedDateTime zonedDateTimeEnd = (ZonedDateTime) zoneDateRangeFacet.getEnd();
+                final ZonedDateTime zonedDateTimeStart = (ZonedDateTime) zoneDateRangeFacet.getStart();
+
+                dateRangeAggregation.addRange(zonedDateTimeStart,zonedDateTimeEnd);
+
+                final DateHistogramAggregationBuilder histogramDateRangeAggregation = AggregationBuilders
+                        .dateHistogram(name)
+                        .minDocCount(minCount)
+                        .fixedInterval(DateHistogramInterval
+                                .minutes(new Long(zoneDateRangeFacet.getGapDuration().toMinutes()).intValue()))
+                        .keyed(true)
+                        .field(FieldUtil.getFieldName(zoneDateRangeFacet.getFieldDescriptor(), searchContext));
+
+                dateRangeAggregation.subAggregation(histogramDateRangeAggregation);
+
+                return dateRangeAggregation;
+            case "UtilDateRangeFacet":
+                final Facet.DateRangeFacet.UtilDateRangeFacet utilDateRangeFacet = (Facet.DateRangeFacet.UtilDateRangeFacet) vindFacet;
+
+                final DateRangeAggregationBuilder utilDateRangeAggregation = AggregationBuilders
+                        .dateRange(contextualizedFacetName)
+                        .keyed(true)
+                        .field(FieldUtil.getFieldName(utilDateRangeFacet.getFieldDescriptor(), searchContext));
+
+                final ZonedDateTime dateTimeEnd = ZonedDateTime.ofInstant(((Date) utilDateRangeFacet.getEnd()).toInstant(), ZoneId.of("UTC"));
+                final ZonedDateTime dateTimeStart = ZonedDateTime.ofInstant(((Date) utilDateRangeFacet.getStart()).toInstant(), ZoneId.of("UTC"));
+
+                 utilDateRangeAggregation.addRange(dateTimeStart, dateTimeEnd);
+
+                 final DateHistogramAggregationBuilder histogramUtilDateRangeAggregation = AggregationBuilders
+                         .dateHistogram(name)
+                         .keyed(true)
+                         .fixedInterval(DateHistogramInterval
+                                 .minutes(new Long(utilDateRangeFacet.getGapDuration().toMinutes()).intValue()))
+                         .field(FieldUtil.getFieldName(utilDateRangeFacet.getFieldDescriptor(), searchContext));
+
+                 utilDateRangeAggregation.subAggregation(histogramUtilDateRangeAggregation);
+
+                return utilDateRangeAggregation;
+
+            case "DateMathRangeFacet":
+                final Facet.DateRangeFacet.DateMathRangeFacet dateMathRangeFacet = (Facet.DateRangeFacet.DateMathRangeFacet) vindFacet;
+
+
+
+                final DateRangeAggregationBuilder dateMathDateRangeAggregation = AggregationBuilders
+                        .dateRange(contextualizedFacetName)
+                        .keyed(true)
+                        .field(FieldUtil.getFieldName(dateMathRangeFacet.getFieldDescriptor(), searchContext));
+
+                final ZonedDateTime dateMathEnd =
+                        ZonedDateTime.ofInstant(
+                                Instant.ofEpochSecond(((DateMathExpression) dateMathRangeFacet.getEnd()).getTimeStamp()),
+                                ZoneId.of("UTC"));
+                final ZonedDateTime dateMathStart =
+                        ZonedDateTime.ofInstant(
+                                Instant.ofEpochSecond(((DateMathExpression) dateMathRangeFacet.getStart()).getTimeStamp()),
+                                ZoneId.of("UTC"));
+
+                dateMathDateRangeAggregation.addRange(name, dateMathStart, dateMathEnd);
+
+                final Long minutesGap = dateMathRangeFacet.getGapDuration().toMinutes();
+
+                final DateHistogramAggregationBuilder histogramDateMathDateRangeAggregation = AggregationBuilders
+                        .dateHistogram(name)
+                        .minDocCount(minCount)
+                        .fixedInterval(DateHistogramInterval.minutes(minutesGap.intValue()))
+                        .keyed(true)
+                        .field(FieldUtil.getFieldName(dateMathRangeFacet.getFieldDescriptor(), searchContext));
+                dateMathDateRangeAggregation.subAggregation(histogramDateMathDateRangeAggregation);
+
+                return dateMathDateRangeAggregation;
+
+            case "NumericIntervalFacet":
+                final Facet.NumericIntervalFacet numericIntervalFacet = (Facet.NumericIntervalFacet) vindFacet;
+                final RangeAggregationBuilder numericIntervalAggregation = AggregationBuilders
+                        .range(contextualizedFacetName)
+                        .keyed(true)
+                        .field(FieldUtil.getFieldName(numericIntervalFacet.getFieldDescriptor(), searchContext));
+
+                numericIntervalFacet.getIntervals()
+                        .forEach( interval -> intervalToRange((NumericInterval<?>) interval, numericIntervalAggregation));
+
+                return numericIntervalAggregation;
+
+            case "ZoneDateTimeIntervalFacet":
+                final Facet.DateIntervalFacet.ZoneDateTimeIntervalFacet zoneDateTimeIntervalFacet = (Facet.DateIntervalFacet.ZoneDateTimeIntervalFacet) vindFacet;
+                final DateRangeAggregationBuilder ZoneDateIntervalAggregation = AggregationBuilders
+                        .dateRange(contextualizedFacetName)
+                        .keyed(true)
+                        .field(FieldUtil.getFieldName(zoneDateTimeIntervalFacet.getFieldDescriptor(), searchContext));
+
+                zoneDateTimeIntervalFacet.getIntervals()
+                        .forEach( interval -> intervalToRange((Interval.ZonedDateTimeInterval<?>) interval, ZoneDateIntervalAggregation));
+
+                return ZoneDateIntervalAggregation;
+
+            case "UtilDateIntervalFacet":
+                final Facet.DateIntervalFacet.UtilDateIntervalFacet utilDateIntervalFacet = (Facet.DateIntervalFacet.UtilDateIntervalFacet) vindFacet;
+                final DateRangeAggregationBuilder utilDateIntervalAggregation = AggregationBuilders
+                        .dateRange(contextualizedFacetName)
+                        .keyed(true)
+                        .field(FieldUtil.getFieldName(utilDateIntervalFacet.getFieldDescriptor(), searchContext));
+
+                utilDateIntervalFacet.getIntervals()
+                        .forEach( interval -> intervalToRange((Interval.UtilDateInterval<?>) interval, utilDateIntervalAggregation));
+
+                return utilDateIntervalAggregation;
+
+            case "ZoneDateTimeDateMathIntervalFacet":
+            case "UtilDateMathIntervalFacet":
+                final Facet.DateIntervalFacet.UtilDateMathIntervalFacet dateMathIntervalFacet = (Facet.DateIntervalFacet.UtilDateMathIntervalFacet) vindFacet;
+                final DateRangeAggregationBuilder dateMathIntervalAggregation = AggregationBuilders
+                        .dateRange(contextualizedFacetName)
+                        .keyed(true)
+                        .field(FieldUtil.getFieldName(dateMathIntervalFacet.getFieldDescriptor(), searchContext));
+
+                dateMathIntervalFacet.getIntervals()
+                        .forEach( interval -> intervalToRange((Interval.DateMathInterval<?>) interval, dateMathIntervalAggregation));
+
+                return dateMathIntervalAggregation;
+
+            default:
+                throw new RuntimeException(String.format("Error mapping Vind facet to Elasticsearch aggregation: Unknown facet type %s",vindFacet.getType()));
+        }
+    }
+
+    private static void intervalToRange(NumericInterval<?> interval, RangeAggregationBuilder rangeAggregation) {
+        final Number start = interval.getStart();
+        final Number end = interval.getEnd();
+        if (Objects.nonNull(start) && Objects.nonNull(end)) {
+            rangeAggregation.addRange(interval.getName(), start.doubleValue(), end.doubleValue());
+        } else {
+            Optional.ofNullable(start).ifPresent(n -> rangeAggregation.addUnboundedFrom(interval.getName(), n.doubleValue()));
+            Optional.ofNullable(end).ifPresent(n -> rangeAggregation.addUnboundedTo(interval.getName(), n.doubleValue()));
+        }
+
+    }
+
+    private static void intervalToRange(Interval.ZonedDateTimeInterval<?> interval, DateRangeAggregationBuilder rangeAggregation) {
+
+        final ZonedDateTime start = interval.getStart();
+        final ZonedDateTime end =  interval.getEnd();
+
+        if (Objects.nonNull(start) && Objects.nonNull(end)) {
+            rangeAggregation.addRange(interval.getName(), start, end);
+        } else {
+            Optional.ofNullable(start).ifPresent(n -> rangeAggregation.addUnboundedFrom(interval.getName(), n));
+            Optional.ofNullable(end).ifPresent(n -> rangeAggregation.addUnboundedTo(interval.getName(), n));
+        }
+    }
+
+    private static void intervalToRange(Interval.UtilDateInterval<?> interval, DateRangeAggregationBuilder rangeAggregation) {
+
+        final Date start = interval.getStart();
+        final Date end =  interval.getEnd();
+
+        if (Objects.nonNull(start) && Objects.nonNull(end)) {
+            rangeAggregation.addRange(
+                    interval.getName(),
+                    ZonedDateTime.ofInstant(start.toInstant(), ZoneId.of("UTC")),
+                    ZonedDateTime.ofInstant(end.toInstant(), ZoneId.of("UTC")));
+        } else {
+            Optional.ofNullable(start).ifPresent(n -> rangeAggregation.addUnboundedFrom(
+                    interval.getName(),
+                    ZonedDateTime.ofInstant(n.toInstant(), ZoneId.of("UTC"))));
+            Optional.ofNullable(end).ifPresent(n -> rangeAggregation.addUnboundedTo(
+                    interval.getName(),
+                    ZonedDateTime.ofInstant(n.toInstant(), ZoneId.of("UTC"))));
+        }
+    }
+
+    private static void intervalToRange(Interval.DateMathInterval<?> interval, DateRangeAggregationBuilder rangeAggregation) {
+
+        final DateMathExpression start = interval.getStart();
+        final DateMathExpression end =  interval.getEnd();
+
+        if (Objects.nonNull(start) && Objects.nonNull(end)) {
+            rangeAggregation.addRange(
+                    interval.getName(),
+                    ZonedDateTime.ofInstant(Instant.ofEpochSecond(start.getTimeStamp()), ZoneId.of("UTC")),
+                    ZonedDateTime.ofInstant(Instant.ofEpochSecond(end.getTimeStamp()), ZoneId.of("UTC")));
+        } else {
+            Optional.ofNullable(start).ifPresent(n ->
+                    rangeAggregation.addUnboundedFrom(
+                            interval.getName(),
+                            ZonedDateTime.ofInstant(Instant.ofEpochSecond(n.getTimeStamp()), ZoneId.of("UTC"))));
+            Optional.ofNullable(end).ifPresent(n ->
+                    rangeAggregation.addUnboundedTo(
+                            interval.getName(),
+                            ZonedDateTime.ofInstant(Instant.ofEpochSecond(n.getTimeStamp()), ZoneId.of("UTC"))));
+        }
+
+    }
 }

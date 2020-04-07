@@ -253,7 +253,7 @@ public class DocumentUtil {
         return s;
     }
 
-    private static Object castForDescriptor(Object o, FieldDescriptor<?> descriptor, FieldUtil.Fieldname.UseCase useCase) {
+    protected static Object castForDescriptor(Object o, FieldDescriptor<?> descriptor, FieldUtil.Fieldname.UseCase useCase) {
 
         Class<?> type;
 
@@ -318,7 +318,7 @@ public class DocumentUtil {
                 if(o instanceof Date){
                     return ZonedDateTime.ofInstant(((Date) o).toInstant(), ZoneId.of("UTC"));
                 }
-                return (ZonedDateTime) o;
+                return ZonedDateTime.parse(o.toString());
             }
             if(Date.class.isAssignableFrom(type)) {
                 return (Date) o;
