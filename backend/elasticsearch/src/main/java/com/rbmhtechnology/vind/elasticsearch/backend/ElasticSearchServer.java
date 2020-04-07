@@ -34,7 +34,9 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -188,7 +190,18 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public DeleteResult execute(Delete delete, DocumentFactory factory) {
-        throw new NotImplementedException();
+        try {
+            final StopWatch elapsedTime = StopWatch.createStarted();
+            elasticClientLogger.debug(">>> delete({})", delete);
+            final QueryBuilder deleteQuery = ElasticQueryBuilder.buildFilterQuery(delete.getQuery(), factory, delete.getUpdateContext());
+            final BulkByScrollResponse response = elasticSearchClient.deleteByQuery(deleteQuery);
+            elapsedTime.stop();
+            return new DeleteResult(response.getTook().getMillis()).setElapsedTime(elapsedTime.getTime());
+        } catch (ElasticsearchException | IOException e) {
+            log.error("Cannot delete with query {}", delete.getQuery() , e);
+            throw new SearchServerException(
+                    String.format("Cannot delete with query %s", delete.getQuery().toString()), e);
+        }
     }
 
     @Override
@@ -198,7 +211,9 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
-        throw new NotImplementedException();
+        final DocumentFactory factory = AnnotationUtil.createDocumentFactory(c);
+        final SearchResult docResult = this.execute(search, factory);
+        return docResult.toPojoResult(docResult, c);
     }
 
     @Override
