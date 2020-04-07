@@ -34,7 +34,9 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +48,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
@@ -187,7 +190,18 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public DeleteResult execute(Delete delete, DocumentFactory factory) {
-        throw new NotImplementedException();
+        try {
+            final StopWatch elapsedTime = StopWatch.createStarted();
+            elasticClientLogger.debug(">>> delete({})", delete);
+            final QueryBuilder deleteQuery = ElasticQueryBuilder.buildFilterQuery(delete.getQuery(), factory, delete.getUpdateContext());
+            final BulkByScrollResponse response = elasticSearchClient.deleteByQuery(deleteQuery);
+            elapsedTime.stop();
+            return new DeleteResult(response.getTook().getMillis()).setElapsedTime(elapsedTime.getTime());
+        } catch (ElasticsearchException | IOException e) {
+            log.error("Cannot delete with query {}", delete.getQuery() , e);
+            throw new SearchServerException(
+                    String.format("Cannot delete with query %s", delete.getQuery().toString()), e);
+        }
     }
 
     @Override
@@ -197,18 +211,23 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
-        throw new NotImplementedException();
+        final DocumentFactory factory = AnnotationUtil.createDocumentFactory(c);
+        final SearchResult docResult = this.execute(search, factory);
+        return docResult.toPojoResult(docResult, c);
     }
 
     @Override
     public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
         final StopWatch elapsedtime = StopWatch.createStarted();
         final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory);
+
         //query
         try {
             elasticClientLogger.debug(">>> query({})", query.toString());
             final SearchResponse response = elasticSearchClient.query(query);
-            if(response!=null){
+            if(Objects.nonNull(response)
+                    && Objects.nonNull(response.getHits())
+                    && Objects.nonNull(response.getHits().getHits())){
                 //TODO: if nested doc search is implemented
                 //final Map<String,Integer> childCounts = SolrUtils.getChildCounts(response);
 
@@ -216,10 +235,13 @@ public class ElasticSearchServer extends SearchServer {
                         .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))
                         .collect(Collectors.toList());
 
-                //TODO: when implementing aggregations
+                // Building Vind Facet Results
                 final FacetResults facetResults =
-                        new FacetResults(factory, null, null, null, null, null, null, null, null);
-                //final FacetResults facetResults = SolrUtils.Result.buildFacetResult(response, factory, search.getChildrenFactory(), search.getFacets(),search.getSearchContext());
+                        ResultUtils.buildFacetResults(
+                                response.getAggregations(),
+                                factory,
+                                search.getFacets(),
+                                search.getSearchContext());
 
                 elapsedtime.stop();
 
@@ -235,7 +257,7 @@ public class ElasticSearchServer extends SearchServer {
                         return new PageResult(response.getHits().getTotalHits().value, response.getTook().getMillis(), documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                 }
             }else {
-                throw new ElasticsearchException("Null result from ElasticClient");
+                throw new ElasticsearchException("Empty result from ElasticClient");
             }
 
         } catch (ElasticsearchException | IOException e) {
