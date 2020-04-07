@@ -3,8 +3,10 @@ package com.rbmhtechnology.vind.elasticsearch.backend;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.Search;
+import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
+import com.rbmhtechnology.vind.api.result.DeleteResult;
 import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.IndexResult;
 import com.rbmhtechnology.vind.api.result.SearchResult;
@@ -186,5 +188,38 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         assertNotNull(result);
         assertEquals(2, result.getNumOfResults());
         assertTrue(result.getResults().get(0).hasField(descriptor.getName()));
+    }
+
+    @Test
+    public void deleteTest(){
+        final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
+
+        final SingleValueFieldDescriptor.TextFieldDescriptor<String> descriptor = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setFullText(true)
+                .buildTextField("title");
+        docFactoryBuilder.addField(descriptor);
+        final DocumentFactory documents = docFactoryBuilder.build();
+        final Document doc1 = documents.createDoc("AA-2X3451")
+                .setValue(descriptor, "The last ascent of man");
+
+        final Document doc2 = documents.createDoc("AA-2X6891")
+                .setValue(descriptor, "Dawn of humanity: the COVID-19 chronicles");
+
+        server.index(doc1,doc2);
+
+        DeleteResult result = server.execute(new Delete(descriptor.equals("The last ascent of man")), documents);
+        assertNotNull(result);
+
+        SearchResult searchResult = server.execute(Search.fulltext(), documents);
+        assertNotNull(searchResult);
+        assertEquals(1, searchResult.getNumOfResults());
+
+        result = server.delete(doc2);
+        assertNotNull(searchResult);
+
+        searchResult = server.execute(Search.fulltext(), documents);
+        assertNotNull(searchResult);
+        assertEquals(0, searchResult.getNumOfResults());
     }
 }

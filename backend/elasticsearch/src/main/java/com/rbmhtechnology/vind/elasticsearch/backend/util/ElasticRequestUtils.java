@@ -48,7 +48,8 @@ public class ElasticRequestUtils {
 
 
     public static DeleteRequest getDeleteRequest(String index, String docId) {
-        return new DeleteRequest(index, docId);
+        return new DeleteRequest(index, docId)
+                .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
     }
 
     public static SearchRequest getSearchRequest(String index, SearchSourceBuilder searchSource) {
@@ -74,6 +75,7 @@ public class ElasticRequestUtils {
         final DeleteByQueryRequest request =
                 new DeleteByQueryRequest(index);
         request.setQuery(query);
+        request.setRefresh(true);
         return request;
     }
 
