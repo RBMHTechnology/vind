@@ -32,9 +32,9 @@ public class ElasticRequestUtils {
                 .source(jsonMap);
     }
 
-    public static UpdateRequest getUpdateRequest(String index, String id, Map<String,Object> partialDocMap) {
+    public static UpdateRequest getUpdateRequest(String index, String id, PainlessScript.ScriptBuilder script) {
         final UpdateRequest request = new UpdateRequest(index, id);
-        //request.script(ScriptQueryBuilder.)doc(partialDocMap);
+        request.script(script.build());
         return request;
     }
 

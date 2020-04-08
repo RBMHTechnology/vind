@@ -10,6 +10,7 @@ import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.facet.Interval.NumericInterval;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
+import com.rbmhtechnology.vind.api.query.update.UpdateOperation;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
@@ -42,8 +43,11 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.SortedSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -565,5 +569,13 @@ public class ElasticQueryBuilder {
                             ZonedDateTime.ofInstant(Instant.ofEpochSecond(n.getTimeStamp()), ZoneId.of("UTC"))));
         }
 
+    }
+
+    public static PainlessScript.ScriptBuilder buildUpdateScript(HashMap<FieldDescriptor<?>, HashMap<String, SortedSet<UpdateOperation>>> options, DocumentFactory factory, String updateContext) {
+        final PainlessScript.ScriptBuilder scriptBuilder = new PainlessScript.ScriptBuilder();
+                options.entrySet().stream()
+                .map(entry -> scriptBuilder.addOperations(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+        return scriptBuilder;
     }
 }

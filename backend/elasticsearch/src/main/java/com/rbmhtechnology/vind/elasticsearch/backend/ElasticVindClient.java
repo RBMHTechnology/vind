@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticRequestUtils;
+import com.rbmhtechnology.vind.elasticsearch.backend.util.PainlessScript;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -147,8 +148,8 @@ public  class ElasticVindClient {
         return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
     }
 
-    public UpdateResponse update(String id, Map<String, Object> docMap) throws IOException {
-        final UpdateRequest request = ElasticRequestUtils.getUpdateRequest(defaultIndex, id, docMap);
+    public UpdateResponse update(String id, PainlessScript.ScriptBuilder script) throws IOException {
+        final UpdateRequest request = ElasticRequestUtils.getUpdateRequest(defaultIndex, id, script);
         return client.update(request, RequestOptions.DEFAULT);
     }
 
