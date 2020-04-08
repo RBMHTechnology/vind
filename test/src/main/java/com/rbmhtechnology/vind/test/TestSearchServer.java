@@ -1,50 +1,29 @@
 package com.rbmhtechnology.vind.test;
 
-import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.api.SearchServer;
-import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 /**
  *
  */
-public class TestSearchServer extends ExternalResource {
+public class TestSearchServer {
 
-    private Logger log = LoggerFactory.getLogger(getClass());
+    private static final Logger LOGGER = LoggerFactory.getLogger( TestSearchServer.class );
 
     private SearchServer searchServer;
 
     protected TestSearchServer() {
     }
 
-    public static TestSearchServer create() {
-        switch (ServerType.current()) {
-            case Elastic:
-                return new ElasticTestSearchServer();
-            default:
-                return new TestSearchServer();
-        }
+    protected void start() throws RuntimeException {
+        LOGGER.info("Start testserver");
     }
 
-    @Override
-    protected void before() throws Throwable {
-        super.before();
-    }
-
-    @Override
-    protected void after() {
-        try {
-            if(searchServer != null) {
-                searchServer.close();
-            }
-        } catch (SearchServerException e) {
-            log.error("Error closing SearchServer: {}", e.getMessage(), e);
-        } finally {
-            System.getProperties().remove("runtimeLib");
-            super.after();
-        }
-
+    protected void close() throws RuntimeException {
+        LOGGER.info("Close testserver");
     }
 
     public final SearchServer getSearchServer() {

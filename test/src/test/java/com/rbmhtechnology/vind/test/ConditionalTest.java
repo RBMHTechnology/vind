@@ -8,16 +8,14 @@ import static com.rbmhtechnology.vind.test.Backend.Solr;
 
 public class ConditionalTest {
 
-    @Rule
-    public TestSearchServer testSearchServer = TestSearchServer.create();
 
     @Rule
-    public RunsWithBackendRule runsWithBackendRule = new RunsWithBackendRule();
+    public TestBackend testBackend = new TestBackend();
 
     @Test
     @RunWithBackend(Elastic)
     public void testA() {
-        testSearchServer.getSearchServer();
+        testBackend.getSearchServer();
         System.out.println("A");
     }
 

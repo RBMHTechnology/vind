@@ -9,7 +9,6 @@ import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
 import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -18,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 public class VindCollectionConfigurationTest {
 
     @Rule
-    public TestSearchServer testSearchServer = TestSearchServer.create();
+    public TestBackend backend = new TestBackend();
 
     private DocumentFactory doc;
     private SingleValueFieldDescriptor<String> value;
@@ -28,7 +27,7 @@ public class VindCollectionConfigurationTest {
     @Before
     public void before() {
 
-        server = testSearchServer.getSearchServer();
+        server = backend.getSearchServer();
 
         server.clearIndex();
         server.commit();

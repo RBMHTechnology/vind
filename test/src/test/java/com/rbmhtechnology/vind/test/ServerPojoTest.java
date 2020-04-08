@@ -8,7 +8,6 @@ import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.api.result.BeanGetResult;
 import com.rbmhtechnology.vind.api.result.BeanSearchResult;
-import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.api.result.facet.TermFacetResult;
 
@@ -32,11 +31,11 @@ import static org.junit.Assert.*;
 public class ServerPojoTest {
 
     @Rule
-    public TestSearchServer searchServer = TestSearchServer.create();
+    public TestBackend backend = new TestBackend();
 
     @Test
     public void testPojoRoundtrip() {
-        final SearchServer server = searchServer.getSearchServer();
+        final SearchServer server = backend.getSearchServer();
 
         final Pojo doc1 = Pojo.create("doc1", "Eins", "Erstes Dokument", "simple");
         final Pojo doc2 = Pojo.create("doc2", "Zwei", "Zweites Dokument", "simple");
@@ -81,7 +80,7 @@ public class ServerPojoTest {
 
     @Test
     public void testRoundtrip2() {
-        final SearchServer server = searchServer.getSearchServer();
+        final SearchServer server = backend.getSearchServer();
         server.indexBean(new SimplePojo("1", "Hello World", 1, "hello"));
         server.indexBean(new SimplePojo("2","Hello Thomas",2,"foo","bar"));
         server.commit();
@@ -98,7 +97,7 @@ public class ServerPojoTest {
     //MBDN-352
     @Test
     public void testMultipleBeanIndex() {
-        final SearchServer server = searchServer.getSearchServer();
+        final SearchServer server = backend.getSearchServer();
 
         final Pojo doc1 = Pojo.create("doc1", "Eins", "Erstes Dokument", "simple");
         final Pojo doc2 = Pojo.create("doc2", "Zwei", "Zweites Dokument", "simple");
@@ -125,7 +124,7 @@ public class ServerPojoTest {
 
     @Test
     public void testSearchGetById(){
-        final SearchServer server = searchServer.getSearchServer();
+        final SearchServer server = backend.getSearchServer();
         server.indexBean(new SimplePojo("1", "Hello World", 1, "hello"));
         server.indexBean(new SimplePojo("2","Hello Thomas",2,"foo","bar"));
         server.commit();
@@ -143,7 +142,7 @@ public class ServerPojoTest {
 
     @Test
     public void testTaxonomyPojo() {
-        final SearchServer server = searchServer.getSearchServer();
+        final SearchServer server = backend.getSearchServer();
 
         final Pojo1 doc1 = new Pojo1();
         doc1.id = "pojo-Id-1";

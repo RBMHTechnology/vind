@@ -28,7 +28,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
@@ -65,10 +64,7 @@ import static org.junit.Assert.*;
 public class ServerTest {
 
     @Rule
-    public RunsWithBackendRule runsWithBackendRule = new RunsWithBackendRule();
-
-    @Rule
-    public TestSearchServer testSearchServer = TestSearchServer.create();
+    public TestBackend testBackend = new TestBackend();
 
     @Test
     @RunWithBackend(Elastic)
@@ -113,7 +109,7 @@ public class ServerTest {
                 .setValue(modified, new Date())
                 .addValue(category, 4L);
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -213,7 +209,7 @@ public class ServerTest {
                 .setValue(modified, new Date())
                 .addValue(category, 4L);
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -276,7 +272,7 @@ public class ServerTest {
     @Test
     @RunWithBackend(Solr)
     public void testSuggestions() {
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime yesterday = ZonedDateTime.now().minus(1, ChronoUnit.DAYS);
@@ -329,7 +325,7 @@ public class ServerTest {
     @Test
     @RunWithBackend({Solr, Elastic})
     public void testTypeIDScoreAsFieldname() {
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         FieldDescriptor<String> title = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -375,7 +371,7 @@ public class ServerTest {
    @Test
    @RunWithBackend(Solr)
     public void testPartialUpdate() {
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         SingleValueFieldDescriptor<String> title = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -428,7 +424,7 @@ public class ServerTest {
     @Test
     @RunWithBackend(Solr)
     public void testSubdocuments() throws IOException {
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         SingleValueFieldDescriptor<String> title = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -492,7 +488,7 @@ public class ServerTest {
     @Test
     @RunWithBackend({Solr, Elastic})
     public void testTermFacetAccess() {
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         MultiValueFieldDescriptor<String> term = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -591,7 +587,7 @@ public class ServerTest {
                 .setValue(modified, new Date())
                 .addValue(category, 7L);
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         List<Document> docList = new ArrayList<>();
         docList.add(d3);
@@ -620,7 +616,7 @@ public class ServerTest {
     @Test
     @RunWithBackend({Solr, Elastic})
     public void testSearchGetById() {
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         MultiValueFieldDescriptor<String> term = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -709,7 +705,7 @@ public class ServerTest {
                 .setValue(modified, new Date())
                 .addValue(category, 4L);
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -756,7 +752,7 @@ public class ServerTest {
 
         Document document = factory.createDoc("1").setValue(date, new Date());
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(document);
         server.commit();
@@ -798,7 +794,7 @@ public class ServerTest {
                 .setValue(title, "Hello Friends")
                 .setValue(description, "This value is also not stored");
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.clearIndex();
         server.index(d1);
@@ -866,7 +862,7 @@ public class ServerTest {
                 .setValue(modified, new Date())
                 .addValue(category, 4L);
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -926,7 +922,7 @@ public class ServerTest {
                 .setValue(modified, new Date())
                 .addValue(category, 4L);
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -1011,7 +1007,7 @@ public class ServerTest {
                 .setValue(dateField, new Date());
 
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -1075,7 +1071,7 @@ public class ServerTest {
                 .addValue(category, 4L)
                 .setValue(byteField, ByteBuffer.wrap("oolelelelele".getBytes()));
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.clearIndex();
         server.index(d1);
@@ -1164,7 +1160,7 @@ public class ServerTest {
                 .setValue(dateField, new Date());
 
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -1242,7 +1238,7 @@ public class ServerTest {
                 .setValue(dateField, new Date());
 
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.clearIndex();
         server.index(d1);
@@ -1283,7 +1279,7 @@ public class ServerTest {
         Document doc3 = assets.createDoc("3")
                 .setValues(locationMulti, new LatLng(10, 10), new LatLng(20, 20));
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(doc1);
         server.index(doc2);
@@ -1366,7 +1362,7 @@ public class ServerTest {
                 .setValue(dateField, new Date());
 
 
-        final SearchServer server = testSearchServer.getSearchServer();
+        final SearchServer server = testBackend.getSearchServer();
 
         server.clearIndex();
         server.index(d1);
@@ -1456,7 +1452,7 @@ public class ServerTest {
                 .addValue(textMulti, null)
                 .setValue(numberSingle, 9);
 
-        final SearchServer server = testSearchServer.getSearchServer();
+        final SearchServer server = testBackend.getSearchServer();
 
         server.clearIndex();
         server.index(doc1);
@@ -1545,7 +1541,7 @@ public class ServerTest {
         final Document doc3 = assets.createDoc("3")
                 .addValue(textMulti, null);
 
-        final SearchServer server = testSearchServer.getSearchServer();
+        final SearchServer server = testBackend.getSearchServer();
 
         server.index(doc1);
         server.index(doc2);
@@ -1646,7 +1642,7 @@ public class ServerTest {
                 .setValue(dateField, new Date());
 
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -1690,7 +1686,7 @@ public class ServerTest {
                 .setValue(textComplexField, new Taxonomy("dos", 2, "Label", ZonedDateTime.now()))
                 .setValues(multiComplexField, new Taxonomy("dos . uno", 1, "Label", ZonedDateTime.now()), new Taxonomy("dos . dos", 1, "Label", ZonedDateTime.now()));
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -1731,7 +1727,7 @@ public class ServerTest {
                 .setValue(textSingle, "Other text 2")
                 .setValues(textMulti, "text 2.1", "text 2.2");
 
-        final SearchServer server = testSearchServer.getSearchServer();
+        final SearchServer server = testBackend.getSearchServer();
 
         server.index(doc1);
         server.index(doc2);
@@ -1775,7 +1771,7 @@ public class ServerTest {
                 .setValue(textComplexField, new Taxonomy("dos", 2, "Label", ZonedDateTime.now()))
                 .setValues(multiComplexField, new Taxonomy("dos . uno", 1, "Label", ZonedDateTime.now()), new Taxonomy("dos . dos", 1, "Label", ZonedDateTime.now()));
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -1837,7 +1833,7 @@ public class ServerTest {
         final Document doc3 = assets.createDoc("3")
                 .addValue(textMulti, null);
 
-        final SearchServer server = testSearchServer.getSearchServer();
+        final SearchServer server = testBackend.getSearchServer();
 
         server.index(doc1);
         server.index(doc2);
@@ -1895,7 +1891,7 @@ public class ServerTest {
                 .setValue(created, now)
                 .setValue(modified, new Date());
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -1963,7 +1959,7 @@ public class ServerTest {
                 .setValue(internalId, "")
                 .setValue(textField, "This is a text 1234 field");
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -1990,7 +1986,7 @@ public class ServerTest {
     @Test
     @RunWithBackend(Solr)
     public void testSubdocumentFullReindex() throws IOException {
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
         //SearchServer server = SolrSearchServer.getInstance("com.rbmhtechnology.searchlib.solr.RemoteSolrServerProvider","http://localhost:8983/solr","core");
 
         server.clearIndex();
@@ -2166,7 +2162,7 @@ public class ServerTest {
                 .setValue(numericComplexField, new Taxonomy("dos", 2, "dos label", ZonedDateTime.now()))
                 .setValues(multiComplexField, new Taxonomy("uno", 1, "Label", ZonedDateTime.now()), new Taxonomy("dos", 1, "Label", ZonedDateTime.now()));
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -2182,7 +2178,7 @@ public class ServerTest {
     @RunWithBackend(Solr)
     public void testPartialUpdates() {
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         MultiValueFieldDescriptor<Integer> value = new FieldDescriptorBuilder<Integer>()
                 .setFullText(true)
@@ -2215,7 +2211,7 @@ public class ServerTest {
     @RunWithBackend(Solr)
     public void testSuggestionFiltering() {
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         SingleValueFieldDescriptor<String> value = new FieldDescriptorBuilder<String>()
                 .setSuggest(true)
@@ -2243,7 +2239,7 @@ public class ServerTest {
     @Test
     @RunWithBackend(Solr)
     public void testEmptyChildrenSearch() {
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
         //SearchServer server = SolrSearchServer.getInstance("com.rbmhtechnology.searchlib.solr.RemoteSolrServerProvider","http://localhost:8983/solr","core");
 
         server.clearIndex();
@@ -2352,7 +2348,7 @@ public class ServerTest {
                 .setValue(modified, new Date())
                 .addValue(category, 4L);
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -2394,7 +2390,7 @@ public class ServerTest {
         Document d2 = assets.createDoc("2")
                 .setValue(title, "Hello Friends");
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -2455,7 +2451,7 @@ public class ServerTest {
                 .setValue(modified, new Date())
                 .addValue(category, 4L);
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);

@@ -9,11 +9,11 @@ import static org.junit.Assert.assertEquals;
 public class ServerStatusTest {
 
     @Rule
-    public TestSearchServer testSearchServer = TestSearchServer.create();
+    public TestBackend backend = new TestBackend();
 
     @Test
     public void testPing() {
-        StatusResult statusResult = testSearchServer.getSearchServer().getBackendStatus();
+        StatusResult statusResult = backend.getSearchServer().getBackendStatus();
         assertEquals( StatusResult.Status.UP, statusResult.getStatus());
         assertEquals(0, statusResult.getDetails().get("status"));
     }

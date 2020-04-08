@@ -24,7 +24,7 @@ import static org.junit.Assert.assertNotNull;
 public class SuggestionSearchIT {
 
     @Rule
-    public TestSearchServer testSearchServer = TestSearchServer.create();
+    public TestBackend backend = new TestBackend();
 
     private DocumentFactory parent, child;
     private SingleValueFieldDescriptor<String> parent_value;
@@ -36,7 +36,7 @@ public class SuggestionSearchIT {
     @Before
     public void before() {
 
-        server = testSearchServer.getSearchServer();
+        server = backend.getSearchServer();
         //
         // server = SolrSearchServer.getInstance("com.rbmhtechnology.vind.solr.backend.RemoteSolrServerProvider", "http://localhost:8983/solr", "colorsTest");
 

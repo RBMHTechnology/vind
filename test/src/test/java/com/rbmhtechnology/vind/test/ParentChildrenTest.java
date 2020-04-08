@@ -3,7 +3,6 @@ package com.rbmhtechnology.vind.test;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.Search;
-import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.SearchResult;
@@ -22,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 public class ParentChildrenTest {
 
     @Rule
-    public TestSearchServer testSearchServer = TestSearchServer.create();
+    public TestBackend backend = new TestBackend();
 
     private DocumentFactory parent, child;
     private SingleValueFieldDescriptor<String> parent_value;
@@ -35,7 +34,7 @@ public class ParentChildrenTest {
     @Before
     public void before() {
 
-        server = testSearchServer.getSearchServer();
+        server = backend.getSearchServer();
         //server = SolrSearchServer.getInstance("com.rbmhtechnology.searchlib.solr.RemoteSolrServerProvider", "http://localhost:8983/solr", "searchlib");
 
         server.clearIndex();
