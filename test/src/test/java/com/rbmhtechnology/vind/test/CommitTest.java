@@ -9,6 +9,9 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 
+import static com.rbmhtechnology.vind.test.Backend.Elastic;
+import static com.rbmhtechnology.vind.test.Backend.Solr;
+
 public class CommitTest {
 
     @Rule
@@ -17,6 +20,7 @@ public class CommitTest {
     private DocumentFactory document = new DocumentFactoryBuilder("document").build();
 
     @Test
+    @RunWithBackend(Solr)
     public void testDocumentCommitWithin() throws InterruptedException {
         backend.getSearchServer().indexWithin(document.createDoc("1"), 1000);
 
@@ -31,6 +35,7 @@ public class CommitTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testMultipleDocumentsCommitWithin() throws InterruptedException {
         backend.getSearchServer().indexWithin(ImmutableList.of(
                document.createDoc("2"),
@@ -49,6 +54,7 @@ public class CommitTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testRemoveDocumentWithin() throws InterruptedException {
         Document doc = document.createDoc("4");
 

@@ -24,6 +24,7 @@ import java.util.*;
 import static com.rbmhtechnology.vind.api.query.filter.Filter.eq;
 import static com.rbmhtechnology.vind.api.query.filter.Filter.or;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.desc;
+import static com.rbmhtechnology.vind.test.Backend.Solr;
 import static org.junit.Assert.*;
 
 /**
@@ -34,6 +35,7 @@ public class ServerPojoTest {
     public TestBackend backend = new TestBackend();
 
     @Test
+    @RunWithBackend(Solr)
     public void testPojoRoundtrip() {
         final SearchServer server = backend.getSearchServer();
 
@@ -79,6 +81,7 @@ public class ServerPojoTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testRoundtrip2() {
         final SearchServer server = backend.getSearchServer();
         server.indexBean(new SimplePojo("1", "Hello World", 1, "hello"));
@@ -96,6 +99,7 @@ public class ServerPojoTest {
 
     //MBDN-352
     @Test
+    @RunWithBackend(Solr)
     public void testMultipleBeanIndex() {
         final SearchServer server = backend.getSearchServer();
 
@@ -123,6 +127,7 @@ public class ServerPojoTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testSearchGetById(){
         final SearchServer server = backend.getSearchServer();
         server.indexBean(new SimplePojo("1", "Hello World", 1, "hello"));
@@ -141,6 +146,7 @@ public class ServerPojoTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testTaxonomyPojo() {
         final SearchServer server = backend.getSearchServer();
 

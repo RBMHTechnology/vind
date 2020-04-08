@@ -12,6 +12,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import static com.rbmhtechnology.vind.test.Backend.Elastic;
+import static com.rbmhtechnology.vind.test.Backend.Solr;
 import static org.junit.Assert.assertEquals;
 
 public class VindCollectionConfigurationTest {
@@ -43,6 +45,7 @@ public class VindCollectionConfigurationTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testApostrophes() {
         server.index(doc.createDoc("1").setValue(value, "Neymar Jr's five one"));
         server.index(doc.createDoc("2").setValue(value, "Neymar Jr’s five two"));
