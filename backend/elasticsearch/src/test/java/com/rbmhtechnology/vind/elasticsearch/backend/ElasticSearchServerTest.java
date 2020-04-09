@@ -460,6 +460,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                         .remove( tags, removeTags)
                         .add(tags, addTags)
                         .remove(published)
+                        .increment(rating,1)
                 , documents);
 
         GetResult result = server.execute(new RealTimeGet().get("AA-6k121"), documents);
