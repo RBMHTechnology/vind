@@ -1,5 +1,7 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.Document;
@@ -22,6 +24,7 @@ import com.rbmhtechnology.vind.api.result.StatusResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil;
+import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticMappingUtils;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticQueryBuilder;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ResultUtils;
@@ -32,7 +35,6 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -45,6 +47,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -97,7 +100,7 @@ public class ElasticSearchServer extends SearchServer {
             }
             log.info("Connection to Elastic server successful");
             try {
-                checkVersionAndSchema();
+                checkVersionAndMappings();
             } catch (IOException e) {
                 log.error("Elasticsearch server Schema validation error: {}", e.getMessage(), e);
                 throw new SearchServerException(String.format("Elastic search Schema validation error: %s", e.getMessage()), e);
@@ -108,9 +111,14 @@ public class ElasticSearchServer extends SearchServer {
         }
     }
 
-    private void checkVersionAndSchema() throws IOException {
-        log.warn("Schema check needs to be implemented");
+    private void checkVersionAndMappings() throws IOException {
 
+         final TypeReference<HashMap<String, Object>> typeRef =
+                 new TypeReference<HashMap<String, Object>>() {};
+        final Map<String, Object> localMappings = new ObjectMapper().readValue(ElasticMappingUtils.getDefaultMapping(), typeRef);
+        final Map<String, Object> remoteMappings = elasticSearchClient.getMappings().mappings().get(elasticSearchClient.getDefaultIndex()).getSourceAsMap();
+
+        ElasticMappingUtils.checkMappingsCompatibility(localMappings,remoteMappings,elasticSearchClient.getDefaultIndex());
     }
 
     @Override
