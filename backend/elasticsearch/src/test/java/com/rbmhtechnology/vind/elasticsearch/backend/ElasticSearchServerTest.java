@@ -26,7 +26,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 
@@ -87,7 +86,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
 
     @Test
     public void filterSearchTest(){
-        server.clearIndex();
+
         final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
 
         final FieldDescriptor title = new FieldDescriptorBuilder()
@@ -119,7 +118,6 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         final SingleValueFieldDescriptor.LocationFieldDescriptor<LatLng> location = new FieldDescriptorBuilder()
                 .buildLocationField("location");
 
-
         docFactoryBuilder
                 .addField(title, description, tags, created, published, rating, location);
 
@@ -132,7 +130,6 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .setValue(published, new Date());
 
         final LatLng wuhan = new LatLng(30.583332,114.283333);
-
         final Document doc2 = documents.createDoc("AA-2X6891")
                 .setValue(title, "Dawn of humanity: the COVID-19 chronicles")
                 .setValues(tags, "pandemia")
@@ -143,6 +140,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .setValue(created, ZonedDateTime.now())
                 .setValue(published, new Date());
 
+        server.clearIndex();
         server.index(doc1,doc2);
 
         SearchResult searchResult = server.execute(Search.fulltext(), documents);
@@ -243,7 +241,6 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .setValue(published, new Date());
 
         final LatLng gijon = new LatLng(43.53573, -5.66152);
-
         final Document doc3 = documents.createDoc("AA-6k121")
                 .setValue(title, "Back to the roots")
                 .setValues(tags, "folklore","tradition", "survival")
@@ -416,30 +413,8 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .addField(title, description, tags, created, published, rating, location, age);
 
         final DocumentFactory documents = docFactoryBuilder.build();
-        final LatLng salzburg = new LatLng(47.811195, 13.033229);
-        final Document doc1 = documents.createDoc("AA-2X3451")
-                .setValue(title, "The last ascent of man")
-                .setValues(tags, "climbing", "pandemia")
-                .setValue(rating, 9.5)
-                .setValues(age, 16,17,18)
-                .setValue(location, salzburg)
-                .setValue(created, ZonedDateTime.now())
-                .setValue(published, new Date());
-
-        final LatLng wuhan = new LatLng(30.583332,114.283333);
-
-        final Document doc2 = documents.createDoc("AA-2X6891")
-                .setValue(title, "Dawn of humanity: the COVID-19 chronicles")
-                .setValues(tags, "pandemia")
-                .setValue(description,"Earth year 2020; a new breed of virus born within the rural China spreads " +
-                        "around the world decimating humanity.")
-                .setValue(rating, 9.9)
-                .setValue(location, wuhan)
-                .setValue(created, ZonedDateTime.now())
-                .setValue(published, new Date());
 
         final LatLng gijon = new LatLng(43.53573, -5.66152);
-
         final Document doc3 = documents.createDoc("AA-6k121")
                 .setValue(title, "Back to the roots")
                 .setValues(tags, "folklore","tradition", "survival")
@@ -452,9 +427,10 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .setValue(created, ZonedDateTime.now())
                 .setValue(published, new Date());
 
-        server.index(doc1,doc2, doc3);
-        String[] removeTags = {"tradition", "survival"};
-        String[] addTags = {"COVID-19"};
+        server.index(doc3);
+
+        final String[] removeTags = {"tradition", "survival"};
+        final String[] addTags = {"COVID-19"};
         server.execute(
                 new Update("AA-6k121")
                         .remove( tags, removeTags)

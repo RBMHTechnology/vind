@@ -1,12 +1,10 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.indices.CreateIndexRequest;
@@ -33,9 +31,9 @@ public class ElasticRequestUtils {
     }
 
     public static UpdateRequest getUpdateRequest(String index, String id, PainlessScript.ScriptBuilder script) {
-        final UpdateRequest request = new UpdateRequest(index, id);
-        request.script(script.build());
-        return request;
+       return new UpdateRequest(index, id)
+            .script(script.build())
+            .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
     }
 
     public static GetRequest getRealTimeGetRequest(String index, String docId) {
