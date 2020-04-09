@@ -1,9 +1,12 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
+import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.api.query.update.UpdateOperation;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
@@ -18,6 +21,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PainlessScript {
+
+    private static final Logger log = LoggerFactory.getLogger(PainlessScript.class);
 
     private final List<Sentence> scriptSentences = new ArrayList<>();
 
@@ -129,7 +134,6 @@ public class PainlessScript {
     }
 
     public static class ScriptBuilder {
-
         private final PainlessScript painlessScript;
 
         public ScriptBuilder() {
@@ -139,26 +143,98 @@ public class PainlessScript {
         public ScriptBuilder addOperations(FieldDescriptor<?> field, Map<String, SortedSet<UpdateOperation>> ops) {
             ops.forEach((key, value) -> {
                 final String fieldName = FieldUtil.getFieldName(field, key);
-                value.forEach(op ->
+                value.forEach(op ->{
+                        checkValidPainlessSentence(field, op);
                         painlessScript.addSentence(
                                 new Sentence(
                                         Operator.valueOf(op.getType().name()),
                                         fieldName,
                                         op.getValue(),
-                                        field.getType())));
+                                        field.getType()));
+                });
             });
             return this;
         }
 
-        public Script build() {
-
-            final Map<String, Object> parameters = new HashMap<>();
-
+        public Script build(Map<String, Object> parameters) {
             return new Script(
                     ScriptType.INLINE,
                     "painless",
                     painlessScript.toString(),
                     parameters);
+        }
+
+        public Script build() {
+            final Map<String, Object> parameters = new HashMap<>();
+            return this.build(parameters);
+        }
+
+        public void checkValidPainlessSentence(FieldDescriptor<?> field, UpdateOperation op) {
+            final List<String> errors = new ArrayList<>();
+            if( Objects.isNull(field)) {
+                log.warn("Provided field must not be null");
+                errors.add("Provided field must not be null");
+            }
+
+            if(!Objects.nonNull(op)){
+                log.warn("Provided operation must not be null.");
+                errors.add("Provided operation must not be null");
+            }
+
+            if(Objects.nonNull(op) && Objects.nonNull(field)) {
+                if(field.isUpdate()) {
+                    log.warn("Provided field cannot be updated: field {} is not set as updatable", field.getName());
+                    errors.add(String.format(
+                            "Provided field cannot be updated: field %s is not set as updatable",
+                            field.getName()));
+                }
+
+                switch (op.getType()) {
+                    case set:
+                        break;
+                    case inc:
+                        if(!Number.class.isAssignableFrom(field.getType())) {
+                            log.warn("Provided field cannot be increased: field {} is not number based", field.getName());
+                            errors.add(String.format(
+                                    "Provided field cannot be increased: field %s is not number based",
+                                    field.getName()));
+                        }
+                        if(field.isMultiValue()) {
+                            log.warn("Provided field cannot be increased: field {} must not be multivalued" , field.getName());
+                            errors.add(String.format(
+                                    "Provided field cannot be increased: field %s must not be multivalued",
+                                    field.getName()));
+                        }
+                        break;
+                    case add:
+                        if(!field.isMultiValue()) {
+                            log.warn("Provided field cannot be added values: field {} is not multivalued", field.getName());
+                            errors.add(String.format(
+                                    "Provided field cannot be added values: field %s is not multivalued",
+                                    field.getName()));
+                        }
+                        break;
+                    case remove:
+                        if(Objects.nonNull(op.getValue())){
+                            if(!field.isMultiValue()) {
+                                log.warn("Provided field cannot be removed values: field {} is not multivalued" , field.getName());
+                                errors.add(String.format(
+                                        "Provided field cannot be removed values: field %s is not multivalued",
+                                        field.getName()));
+                            }
+                        }
+                        break;
+                    case removeregex:
+                    default:
+                        throw new NotImplementedException();
+                }
+            }
+
+            if(!errors.isEmpty()) {
+                final String errorMsg = errors.stream()
+                        .collect(Collectors.joining(", "));
+                throw new SearchServerException(String.format("Invalid update operation: %s",errorMsg));
+            }
         }
     }
 

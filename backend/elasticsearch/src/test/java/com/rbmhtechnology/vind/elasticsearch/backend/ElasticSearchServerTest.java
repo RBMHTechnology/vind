@@ -406,11 +406,14 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         final SingleValueFieldDescriptor.NumericFieldDescriptor<Number> rating = new FieldDescriptorBuilder()
                 .buildNumericField("rating");
 
+        final MultiValueFieldDescriptor.NumericFieldDescriptor<Number> age = new FieldDescriptorBuilder()
+                .buildMultivaluedNumericField("age");
+
         final SingleValueFieldDescriptor.LocationFieldDescriptor<LatLng> location = new FieldDescriptorBuilder()
                 .buildLocationField("location");
 
         docFactoryBuilder
-                .addField(title, description, tags, created, published, rating, location);
+                .addField(title, description, tags, created, published, rating, location, age);
 
         final DocumentFactory documents = docFactoryBuilder.build();
         final LatLng salzburg = new LatLng(47.811195, 13.033229);
@@ -418,6 +421,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .setValue(title, "The last ascent of man")
                 .setValues(tags, "climbing", "pandemia")
                 .setValue(rating, 9.5)
+                .setValues(age, 16,17,18)
                 .setValue(location, salzburg)
                 .setValue(created, ZonedDateTime.now())
                 .setValue(published, new Date());
@@ -444,6 +448,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                         "grew, recover their relevance as a real option to move forward.")
                 .setValue(rating, 8)
                 .setValue(location, gijon)
+                .setValues(age, 16,17,18)
                 .setValue(created, ZonedDateTime.now())
                 .setValue(published, new Date());
 
@@ -454,7 +459,6 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 new Update("AA-6k121")
                         .remove( tags, removeTags)
                         .add(tags, addTags)
-                        .increment(rating,1)
                         .remove(published)
                 , documents);
 
