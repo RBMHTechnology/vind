@@ -225,6 +225,7 @@ public class PainlessScript {
                         }
                         break;
                     case removeregex:
+                        //TODO: find a way to implement removeregex in painless script
                     default:
                         throw new NotImplementedException();
                 }
