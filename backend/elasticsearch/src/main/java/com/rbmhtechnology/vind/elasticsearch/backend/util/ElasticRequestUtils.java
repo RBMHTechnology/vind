@@ -26,10 +26,10 @@ public class ElasticRequestUtils {
                 .source(jsonMap);
     }
 
-    public static UpdateRequest getUpdateRequest(String index, String id, Map<String,Object> partialDocMap) {
-        final UpdateRequest request = new UpdateRequest(index, id);
-        //request.script(ScriptQueryBuilder.)doc(partialDocMap);
-        return request;
+    public static UpdateRequest getUpdateRequest(String index, String id, PainlessScript.ScriptBuilder script) {
+       return new UpdateRequest(index, id)
+            .script(script.build())
+            .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
     }
 
     public static GetRequest getRealTimeGetRequest(String index, String docId) {

@@ -27,6 +27,7 @@ import com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticMappingUtils;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticQueryBuilder;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil;
+import com.rbmhtechnology.vind.elasticsearch.backend.util.PainlessScript;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ResultUtils;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import org.apache.commons.lang3.time.StopWatch;
@@ -36,6 +37,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
@@ -193,7 +195,19 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public boolean execute(Update update, DocumentFactory factory) {
-        throw new NotImplementedException();
+        try {
+            log.warn("Update script builder does not check for script injection. Ensure values provided are script safe.");
+            final StopWatch elapsedTime = StopWatch.createStarted();
+            elasticClientLogger.debug(">>> delete({})", update);
+            final PainlessScript.ScriptBuilder updateScript = ElasticQueryBuilder.buildUpdateScript(update.getOptions(), factory, update.getUpdateContext());
+            final UpdateResponse response = elasticSearchClient.update(update.getId(), updateScript);
+            elapsedTime.stop();
+            return true;
+        } catch (ElasticsearchException | IOException e) {
+            log.error("Cannot update document {}: {}", update.getId(), e.getMessage() , e);
+            throw new SearchServerException(
+                    String.format("Cannot update document %s: %s", update.getId(), e.getMessage()), e);
+        }
     }
 
     @Override
