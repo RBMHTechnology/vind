@@ -7,6 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,18 +17,25 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ElasticMappingUtils {
 
+    private static final String MAPPINGS_JSON = "mappings.json";
     private static final Logger log = LoggerFactory.getLogger(ElasticMappingUtils.class);
 
+    private ElasticMappingUtils() {}
+
     public static String getDefaultMapping() {
-        final Path mappingsFile = Paths.get(ElasticMappingUtils.class
-                .getClassLoader().getResource("mappings.json").getPath());
+        final URL resource = Optional.ofNullable(
+                ElasticMappingUtils.class.getClassLoader().getResource(MAPPINGS_JSON))
+                .orElseThrow(() -> new MappingValidationException(
+                        String.format("Error getting default mapping file %s resource", MAPPINGS_JSON)));
+        final Path mappingsFile = Paths.get(resource.getPath());
 
         try {
-            return new String(Files.readAllBytes(mappingsFile));
+            return new String(Files.readAllBytes(mappingsFile), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new SearchServerException(
                     String.format(
@@ -102,13 +112,12 @@ public class ElasticMappingUtils {
         }
 
         if(!validationErrors.isEmpty()) {
-            log.error(
-                    "Remote elasticsearch index mappings do not match current elasticsearch backend version: {}",
+            final String errorMessage = String.format(
+                    "Remote elasticsearch index mappings do not match current elasticsearch backend version: %s",
                     String.join(", ", validationErrors));
-            throw new MappingValidationException(
-                    String.format(
-                            "Remote elasticsearch index mappings do not match current elasticsearch backend version: %s",
-                            String.join(", ",validationErrors)));
+
+            log.error(errorMessage);
+            throw new MappingValidationException(errorMessage);
         }
     }
 }
