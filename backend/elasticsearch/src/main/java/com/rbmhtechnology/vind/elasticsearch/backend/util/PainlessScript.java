@@ -24,28 +24,28 @@ public class PainlessScript {
 
     private static final Logger log = LoggerFactory.getLogger(PainlessScript.class);
 
-    private final List<Sentence> scriptSentences = new ArrayList<>();
+    private final List<Statement> scriptStatements = new ArrayList<>();
 
     private PainlessScript() {
     }
 
-    protected PainlessScript addSentence(Sentence sentence) {
-        scriptSentences.add(sentence);
+    protected PainlessScript addSentence(Statement statement) {
+        scriptStatements.add(statement);
         return this;
     }
-    public List<Sentence> getScriptSentences() {
-        return scriptSentences;
+    public List<Statement> getScriptStatements() {
+        return scriptStatements;
     }
 
     public String toString() {
-        return scriptSentences.stream()
-                .map(Sentence::toString)
+        return scriptStatements.stream()
+                .map(Statement::toString)
                 .collect(Collectors.joining(";"));
     }
 
 
 
-    public static class Sentence {
+    public static class Statement {
 
         private static final String PAINLESS_ADD_TEMPLATE = "ctx._source.%s.addAll(%s)";
         private static final String PAINLESS_SET_TEMPLATE = "ctx._source.%s=%s";
@@ -59,7 +59,7 @@ public class PainlessScript {
         private final Object predicate;
         private final Class<?> predicateType;
 
-        private Sentence(Operator op, String subject, Object predicate, Class<?> predicateType) {
+        private Statement(Operator op, String subject, Object predicate, Class<?> predicateType) {
             this.op = op;
             this.subject = subject;
             this.predicate = predicate;
@@ -90,13 +90,13 @@ public class PainlessScript {
 
             if (Collection.class.isAssignableFrom(predicate.getClass())) {
                 return Arrays.toString(((Collection<Object>) predicate).stream()
-                        .map(pr -> Sentence.getStringPredicate(pr, predicateType))
+                        .map(pr -> Statement.getStringPredicate(pr, predicateType))
                         .toArray());
             }
 
             if (predicate.getClass().isArray()) {
                 return Arrays.toString(Stream.of((Object[]) predicate)
-                        .map(pr -> Sentence.getStringPredicate(pr, predicateType))
+                        .map(pr -> Statement.getStringPredicate(pr, predicateType))
                         .toArray());
             }
 
@@ -110,18 +110,18 @@ public class PainlessScript {
         public String toString() {
             switch (op){
                 case add:
-                    return String.format(PAINLESS_ADD_TEMPLATE, subject, Sentence.getStringPredicate(predicate, predicateType));
+                    return String.format(PAINLESS_ADD_TEMPLATE, subject, Statement.getStringPredicate(predicate, predicateType));
                 case inc:
-                    return String.format(PAINLESS_INC_TEMPLATE, subject, Sentence.getStringPredicate(predicate, predicateType));
+                    return String.format(PAINLESS_INC_TEMPLATE, subject, Statement.getStringPredicate(predicate, predicateType));
                 case set:
                     if(Objects.nonNull(predicate)) {
-                        return String.format(PAINLESS_SET_TEMPLATE, subject, Sentence.getStringPredicate(predicate, predicateType));
+                        return String.format(PAINLESS_SET_TEMPLATE, subject, Statement.getStringPredicate(predicate, predicateType));
                     } else {
                         return String.format(PAINLESS_REMOVE_TEMPLATE, subject);
                     }
                 case remove:
                     if(Objects.nonNull(predicate)) {
-                        return String.format(PAINLESS_REMOVE_ITEM_TEMPLATE, subject, Sentence.getStringPredicate(predicate, predicateType));
+                        return String.format(PAINLESS_REMOVE_ITEM_TEMPLATE, subject, Statement.getStringPredicate(predicate, predicateType));
                     } else {
                         return String.format(PAINLESS_REMOVE_TEMPLATE, subject);
                     }
@@ -146,7 +146,7 @@ public class PainlessScript {
                 value.forEach(op ->{
                         checkValidPainlessSentence(field, op);
                         painlessScript.addSentence(
-                                new Sentence(
+                                new Statement(
                                         Operator.valueOf(op.getType().name()),
                                         fieldName,
                                         op.getValue(),

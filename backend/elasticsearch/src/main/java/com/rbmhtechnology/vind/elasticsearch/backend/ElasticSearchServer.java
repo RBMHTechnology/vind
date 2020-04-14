@@ -188,6 +188,7 @@ public class ElasticSearchServer extends SearchServer {
     @Override
     public boolean execute(Update update, DocumentFactory factory) {
         try {
+            log.warn("Update script builder does not check for script injection. Ensure values provided are script safe.");
             final StopWatch elapsedTime = StopWatch.createStarted();
             elasticClientLogger.debug(">>> delete({})", update);
             final PainlessScript.ScriptBuilder updateScript = ElasticQueryBuilder.buildUpdateScript(update.getOptions(), factory, update.getUpdateContext());
