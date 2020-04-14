@@ -8,17 +8,13 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.indices.CreateIndexRequest;
-import org.elasticsearch.client.indices.GetFieldMappingsRequest;
+import org.elasticsearch.client.indices.GetMappingsRequest;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -66,7 +62,7 @@ public class ElasticRequestUtils {
                 .put("index.number_of_replicas", 1)
         );
 
-        request.mapping(getDefaultMapping(), XContentType.JSON);
+        request.mapping(ElasticMappingUtils.getDefaultMapping(), XContentType.JSON);
         return request;
     }
 
@@ -79,22 +75,9 @@ public class ElasticRequestUtils {
         return request;
     }
 
-    public static String getDefaultMapping() {
-        final Path mappingsFile = Paths.get(ElasticRequestUtils.class
-                .getClassLoader().getResource("mappings.json").getPath());
-
-        try {
-            return new String(Files.readAllBytes(mappingsFile));
-        } catch (IOException e) {
-            throw new RuntimeException();
-        }
-    }
-
-    public static GetFieldMappingsRequest getFieldMappingsRequest(String index, String... fields) {
-
-        final GetFieldMappingsRequest request = new GetFieldMappingsRequest();
+    public static GetMappingsRequest getMappingsRequest(String index) {
+        final GetMappingsRequest request = new GetMappingsRequest();
         request.indices(index);
-        request.fields(fields);
         return request;
     }
 }
