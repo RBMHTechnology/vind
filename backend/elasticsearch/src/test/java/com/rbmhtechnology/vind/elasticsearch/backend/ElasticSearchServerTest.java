@@ -9,6 +9,7 @@ import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
+import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.DeleteResult;
 import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.IndexResult;
@@ -25,6 +26,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
@@ -84,7 +86,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
 
     @Test
     public void filterSearchTest(){
-        server.clearIndex();
+
         final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
 
         final FieldDescriptor title = new FieldDescriptorBuilder()
@@ -116,7 +118,6 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         final SingleValueFieldDescriptor.LocationFieldDescriptor<LatLng> location = new FieldDescriptorBuilder()
                 .buildLocationField("location");
 
-
         docFactoryBuilder
                 .addField(title, description, tags, created, published, rating, location);
 
@@ -129,7 +130,6 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .setValue(published, new Date());
 
         final LatLng wuhan = new LatLng(30.583332,114.283333);
-
         final Document doc2 = documents.createDoc("AA-2X6891")
                 .setValue(title, "Dawn of humanity: the COVID-19 chronicles")
                 .setValues(tags, "pandemia")
@@ -140,6 +140,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .setValue(created, ZonedDateTime.now())
                 .setValue(published, new Date());
 
+        server.clearIndex();
         server.index(doc1,doc2);
 
         SearchResult searchResult = server.execute(Search.fulltext(), documents);
@@ -240,7 +241,6 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .setValue(published, new Date());
 
         final LatLng gijon = new LatLng(43.53573, -5.66152);
-
         final Document doc3 = documents.createDoc("AA-6k121")
                 .setValue(title, "Back to the roots")
                 .setValues(tags, "folklore","tradition", "survival")
@@ -370,5 +370,78 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         searchResult = server.execute(Search.fulltext(), documents);
         assertNotNull(searchResult);
         assertEquals(0, searchResult.getNumOfResults());
+    }
+
+    @Test
+    public void updateSearchTest(){
+        server.clearIndex();
+        final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
+
+        final FieldDescriptor title = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setFullText(true)
+                .buildTextField("title");
+
+        final FieldDescriptor description = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setFullText(true)
+                .buildTextField("description");
+
+        final MultiValueFieldDescriptor.TextFieldDescriptor<String> tags = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setFullText(true)
+                .buildMultivaluedTextField("tags");
+
+        final SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime>  created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+        final MultiValueFieldDescriptor.UtilDateFieldDescriptor<Date> published = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildMultivaluedUtilDateField("published");
+
+        final SingleValueFieldDescriptor.NumericFieldDescriptor<Number> rating = new FieldDescriptorBuilder()
+                .buildNumericField("rating");
+
+        final MultiValueFieldDescriptor.NumericFieldDescriptor<Number> age = new FieldDescriptorBuilder()
+                .buildMultivaluedNumericField("age");
+
+        final SingleValueFieldDescriptor.LocationFieldDescriptor<LatLng> location = new FieldDescriptorBuilder()
+                .buildLocationField("location");
+
+        docFactoryBuilder
+                .addField(title, description, tags, created, published, rating, location, age);
+
+        final DocumentFactory documents = docFactoryBuilder.build();
+
+        final LatLng gijon = new LatLng(43.53573, -5.66152);
+        final Document doc3 = documents.createDoc("AA-6k121")
+                .setValue(title, "Back to the roots")
+                .setValues(tags, "folklore","tradition", "survival")
+                .setValue(description,"In a moment were society is trembling by facing a global health, economic " +
+                        "and social crisis, the old ways, sustainable and deeply linked to the earth where our ancestors " +
+                        "grew, recover their relevance as a real option to move forward.")
+                .setValue(rating, 8)
+                .setValue(location, gijon)
+                .setValues(age, 16,17,18)
+                .setValue(created, ZonedDateTime.now())
+                .setValue(published, new Date());
+
+        server.index(doc3);
+
+        final String[] removeTags = {"tradition", "survival"};
+        final String[] addTags = {"COVID-19"};
+        server.execute(
+                new Update("AA-6k121")
+                        .remove( tags, removeTags)
+                        .add(tags, addTags)
+                        .remove(published)
+                        .increment(rating,1)
+                , documents);
+
+        GetResult result = server.execute(new RealTimeGet().get("AA-6k121"), documents);
+        assertNotNull(result);
+        assertEquals(2, ((Collection<String>)result.getResults().get(0).getValue("tags")).size());
+        assertEquals(9.0F, result.getResults().get(0).getValue(rating));
     }
 }
