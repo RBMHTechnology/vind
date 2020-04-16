@@ -541,7 +541,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         assertNotNull(searchResult);
 
         searchResult = server.execute(
-                Search.suggest("co").fields(title,tags)
+                Search.suggest("co").fields(title, tags)
                 , documents);
         assertNotNull(searchResult);
 

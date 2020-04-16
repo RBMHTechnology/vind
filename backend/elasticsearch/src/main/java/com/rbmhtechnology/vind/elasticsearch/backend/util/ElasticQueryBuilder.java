@@ -608,7 +608,7 @@ public class ElasticQueryBuilder {
 
         searchSource.query(baseQuery);
 
-        final HighlightBuilder highlighter = new HighlightBuilder();
+        final HighlightBuilder highlighter = new HighlightBuilder().numOfFragments(0);
         Stream.of(suggestionFieldNames)
                 .forEach(highlighter::field);
 
