@@ -477,7 +477,7 @@ public class MonitoringSearchServer extends SearchServer {
     }
 
     @Override
-    public Class<ServiceProvider> getServiceProviderClass() {
+    public Class<? extends ServiceProvider> getServiceProviderClass() {
         return this.server.getServiceProviderClass();
     }
 

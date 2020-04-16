@@ -3,7 +3,6 @@ package com.rbmhtechnology.vind.test;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.Search;
-import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.SearchResult;
@@ -13,6 +12,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import static com.rbmhtechnology.vind.api.query.filter.Filter.*;
+import static com.rbmhtechnology.vind.test.Backend.Solr;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 public class ParentChildrenTest {
 
     @Rule
-    public TestSearchServer testSearchServer = new TestSearchServer();
+    public TestBackend backend = new TestBackend();
 
     private DocumentFactory parent, child;
     private SingleValueFieldDescriptor<String> parent_value;
@@ -35,7 +35,7 @@ public class ParentChildrenTest {
     @Before
     public void before() {
 
-        server = testSearchServer.getSearchServer();
+        server = backend.getSearchServer();
         //server = SolrSearchServer.getInstance("com.rbmhtechnology.searchlib.solr.RemoteSolrServerProvider", "http://localhost:8983/solr", "searchlib");
 
         server.clearIndex();
@@ -114,6 +114,7 @@ public class ParentChildrenTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testFilterResultsByParentValue() {
 
         //parent has to contain red
@@ -148,6 +149,7 @@ public class ParentChildrenTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testGetNumberOfChildren() {
         FulltextSearch search = Search.fulltext().orChildrenSearch(child);
         SearchResult result = server.execute(search, parent);
@@ -156,6 +158,7 @@ public class ParentChildrenTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testFilterOnlyWithChildrenValue() {
         FulltextSearch search = Search.fulltext()
                 .setStrict(false)
@@ -168,6 +171,7 @@ public class ParentChildrenTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testFilterOnlyWithParentValue() {
         final FulltextSearch search = Search.fulltext().setStrict(false)
                 .filter(or(eq(shared_value, "blue"),or(eq(child_value, "red"),eq(child_value,"green")))).orChildrenSearch(child);
@@ -177,6 +181,7 @@ public class ParentChildrenTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testParentDuplicationOnAtomicUpdate() {
 
         //Safe check: ensure the orChildren search works
@@ -249,6 +254,7 @@ public class ParentChildrenTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testFilterOnlyWithParentValues() {
         FulltextSearch search = Search.fulltext()
                 .setStrict(false)
@@ -260,6 +266,7 @@ public class ParentChildrenTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testFilterRandomOrderFailure() {
         FulltextSearch search = Search.fulltext()
                 .setStrict(false)
@@ -271,6 +278,7 @@ public class ParentChildrenTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testSubdocumentFacetCountsFailure() {
         FulltextSearch search = Search.fulltext()
                 .setStrict(false)
@@ -292,6 +300,7 @@ public class ParentChildrenTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testQuerySyntaxExceptionOnChildrenFacetSearch() {
 
         FulltextSearch search = Search.fulltext("S003 \"M001\" M004").setStrict(false).orChildrenSearch(child);
@@ -313,6 +322,7 @@ public class ParentChildrenTest {
 
     //Vind #57
     @Test
+    @RunWithBackend(Solr)
     public void testMultipleChildrenSearches(){
         FulltextSearch childSearch1 = Search.fulltext()
                 .filter(eq(child_value, "red"))

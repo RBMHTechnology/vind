@@ -18,6 +18,7 @@ import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.IndexResult;
 import com.rbmhtechnology.vind.api.result.PageResult;
 import com.rbmhtechnology.vind.api.result.SearchResult;
+import com.rbmhtechnology.vind.api.result.SliceResult;
 import com.rbmhtechnology.vind.api.result.StatusResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
@@ -143,7 +144,7 @@ public class ElasticSearchServer extends SearchServer {
     @Override
     public IndexResult index(List<Document> docs) {
         Asserts.notNull(docs,"Document to index should not be null.");
-        Asserts.check(docs.isEmpty(), "Should be at least one document to index.");
+        Asserts.check(!docs.isEmpty(), "Should be at least one document to index.");
 
         return  indexMultipleDocuments(docs, -1);
     }
@@ -245,16 +246,16 @@ public class ElasticSearchServer extends SearchServer {
 
                 elapsedtime.stop();
 
-                //TODO: when implementing paging
+                final long totalHits = response.getHits().getTotalHits().value;
                 switch(search.getResultSet().getType()) {
-//                    case page:{
-//                        return new PageResult(response.getResults().getNumFound(), response.getTook().getMillis(), documents, search, facetResults, this, factory).setElapsedTime(response.getElapsedTime());
-//                    }
-//                    case slice: {
-//                        return new SliceResult(response.getResults().getNumFound(), response.getTook().getMillis(), documents, search, facetResults, this, factory).setElapsedTime(response.getElapsedTime());
-//                    }
+                    case page:{
+                        return new PageResult(totalHits, response.getTook().getMillis(), documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
+                    }
+                    case slice: {
+                        return new SliceResult(totalHits, response.getTook().getMillis(), documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
+                    }
                     default:
-                        return new PageResult(response.getHits().getTotalHits().value, response.getTook().getMillis(), documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
+                        return new PageResult(totalHits, response.getTook().getMillis(), documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                 }
             }else {
                 throw new ElasticsearchException("Empty result from ElasticClient");
@@ -354,8 +355,8 @@ public class ElasticSearchServer extends SearchServer {
     }
 
     @Override
-    public Class<ServiceProvider> getServiceProviderClass() {
-        throw new NotImplementedException();
+    public Class<? extends ServiceProvider> getServiceProviderClass() {
+        return ElasticServerProvider.class;
     }
 
     private static ElasticServerProvider getElasticServerProvider() {

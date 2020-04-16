@@ -15,6 +15,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import static com.rbmhtechnology.vind.test.Backend.Solr;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -24,7 +25,7 @@ import static org.junit.Assert.assertNotNull;
 public class SuggestionSearchIT {
 
     @Rule
-    public TestSearchServer testSearchServer = new TestSearchServer();
+    public TestBackend backend = new TestBackend();
 
     private DocumentFactory parent, child;
     private SingleValueFieldDescriptor<String> parent_value;
@@ -36,7 +37,7 @@ public class SuggestionSearchIT {
     @Before
     public void before() {
 
-        server = testSearchServer.getSearchServer();
+        server = backend.getSearchServer();
         //
         // server = SolrSearchServer.getInstance("com.rbmhtechnology.vind.solr.backend.RemoteSolrServerProvider", "http://localhost:8983/solr", "colorsTest");
 
@@ -101,6 +102,7 @@ public class SuggestionSearchIT {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void childrenSuggestionTest(){
         SuggestionResult suggestionSearch = server.execute(Search.suggest("gree").fields(child_value), parent, child);
         assertEquals(1, suggestionSearch.get(child_value).getValues().size());
@@ -155,6 +157,7 @@ public class SuggestionSearchIT {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testSpecialCharacters() {
         server.index(
                parent.createDoc("P_SPEC_CHAR").setValue(parent_value, "León"));

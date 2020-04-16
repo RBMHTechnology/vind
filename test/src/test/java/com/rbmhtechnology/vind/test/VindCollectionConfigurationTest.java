@@ -9,16 +9,17 @@ import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
 import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
+import static com.rbmhtechnology.vind.test.Backend.Elastic;
+import static com.rbmhtechnology.vind.test.Backend.Solr;
 import static org.junit.Assert.assertEquals;
 
 public class VindCollectionConfigurationTest {
 
     @Rule
-    public TestSearchServer testSearchServer = new TestSearchServer();
+    public TestBackend backend = new TestBackend();
 
     private DocumentFactory doc;
     private SingleValueFieldDescriptor<String> value;
@@ -28,7 +29,7 @@ public class VindCollectionConfigurationTest {
     @Before
     public void before() {
 
-        server = testSearchServer.getSearchServer();
+        server = backend.getSearchServer();
 
         server.clearIndex();
         server.commit();
@@ -44,6 +45,7 @@ public class VindCollectionConfigurationTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testApostrophes() {
         server.index(doc.createDoc("1").setValue(value, "Neymar Jr's five one"));
         server.index(doc.createDoc("2").setValue(value, "Neymar Jr’s five two"));
