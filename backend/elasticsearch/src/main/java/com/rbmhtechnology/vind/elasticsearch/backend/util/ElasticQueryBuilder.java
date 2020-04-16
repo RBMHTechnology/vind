@@ -43,6 +43,7 @@ import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.SortedSet;
@@ -94,6 +95,7 @@ public class ElasticQueryBuilder {
                                 ScriptType.INLINE,
                                 "painless",
                                 String.format(
+                                        Locale.ENGLISH,
                                         "if(doc['%s'].size()!=0)" +
                                                 "doc['%s'].arcDistance(%f,%f);" +
                                             "else []",
