@@ -30,7 +30,9 @@
                 "type": "integer"
               },
               "suggestion": {
-                "type": "integer"
+                "type": "text",
+                "analyzer": "suggestion",
+                "search_analyzer": "suggestion_search"
               },
               "filter": {
                 "type": "integer"
@@ -58,7 +60,9 @@
                 "type": "long"
               },
               "suggestion": {
-                "type": "long"
+                "type": "text",
+                "analyzer": "suggestion",
+                "search_analyzer": "suggestion_search"
               },
               "filter": {
                 "type": "long"
@@ -68,18 +72,6 @@
               },
               "text": {
                 "type": "text"
-              },
-              "en": {
-                "type":     "text",
-                "analyzer": "english"
-              },
-              "de": {
-                "type":     "text",
-                "analyzer": "german"
-              },
-              "es": {
-                "type":     "text",
-                "analyzer": "spanish"
               }
             }
           }
@@ -98,7 +90,9 @@
                 "type": "float"
               },
               "suggestion": {
-                "type": "float"
+                "type": "text",
+                "analyzer": "suggestion",
+                "search_analyzer": "suggestion_search"
               },
               "filter": {
                 "type": "float"
@@ -108,18 +102,6 @@
               },
               "text": {
                 "type": "text"
-              },
-              "en": {
-                "type":     "text",
-                "analyzer": "english"
-              },
-              "de": {
-                "type":     "text",
-                "analyzer": "german"
-              },
-              "es": {
-                "type":     "text",
-                "analyzer": "spanish"
               }
             }
           }
@@ -138,7 +120,9 @@
                 "type": "keyword"
               },
               "suggestion": {
-                "type": "keyword"
+                "type": "text",
+                "analyzer": "suggestion",
+                "search_analyzer": "suggestion_search"
               },
               "filter": {
                 "type": "keyword"
@@ -178,7 +162,9 @@
                 "type": "boolean"
               },
               "suggestion": {
-                "type": "boolean"
+                "type": "text",
+                "analyzer": "suggestion",
+                "search_analyzer": "suggestion_search"
               },
               "filter": {
                 "type": "boolean"
@@ -218,7 +204,9 @@
                 "type": "date"
               },
               "suggestion": {
-                "type": "date"
+                "type": "text",
+                "analyzer": "suggestion",
+                "search_analyzer": "suggestion_search"
               },
               "filter": {
                 "type": "date"

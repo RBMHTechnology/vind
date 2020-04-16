@@ -11,6 +11,8 @@ import java.nio.ByteBuffer;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FieldUtil {
 
@@ -93,6 +95,14 @@ public class FieldUtil {
 
         final Fieldname.Type type = Fieldname.Type.getFromClass(descriptor.getType());
         return fieldName + type.getName() + contextPrefix + descriptor.getName();
+    }
+
+    public static String getSourceFieldName(String elasticFieldName, String context) {
+        final String contextPrefix = context != null ? context + "_" : "";
+        final Matcher internalPrefixMatcher = Pattern.compile(FieldUtil.INTERNAL_FIELD_PREFIX).matcher(elasticFieldName);
+        final String contextualizedName = internalPrefixMatcher.replaceFirst("");
+        final boolean contextualized = Objects.nonNull(context) && contextualizedName.contains(contextPrefix);
+        return contextualizedName.replace(contextPrefix, "");
     }
 
     public static final class Fieldname {

@@ -22,6 +22,7 @@ import com.rbmhtechnology.vind.api.result.PageResult;
 import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.api.result.StatusResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
+import com.rbmhtechnology.vind.api.result.facet.TermFacetResult;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticMappingUtils;
@@ -30,6 +31,8 @@ import com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.PainlessScript;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ResultUtils;
 import com.rbmhtechnology.vind.model.DocumentFactory;
+import com.rbmhtechnology.vind.model.FieldDescriptor;
+import com.sun.org.apache.regexp.internal.RE;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.http.util.Asserts;
 import org.elasticsearch.ElasticsearchException;
@@ -41,6 +44,7 @@ import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class ElasticSearchServer extends SearchServer {
@@ -303,8 +308,25 @@ public class ElasticSearchServer extends SearchServer {
     }
 
     @Override
-    public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets) {
-        throw new NotImplementedException();
+    public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory factory) {
+        final StopWatch elapsedtime = StopWatch.createStarted();
+        final SearchSourceBuilder query = ElasticQueryBuilder.buildSuggestionQuery(search, factory);
+        //query
+        try {
+            elasticClientLogger.debug(">>> query({})", query.toString());
+            final SearchResponse response = elasticSearchClient.query(query);
+            final HashMap<FieldDescriptor, TermFacetResult<?>> suggestionValues =
+                    ResultUtils.buildSuggestionResults(response, factory, search.getSearchContext());
+
+            elapsedtime.stop();
+
+            final SuggestionResult result = new SuggestionResult(suggestionValues, null, response.getTook().getMillis(),factory);
+            result.setElapsedTime(elapsedtime.getTime(TimeUnit.MILLISECONDS));
+            return result;
+
+        } catch (ElasticsearchException | IOException e) {
+            throw new SearchServerException(String.format("Cannot issue query: %s",e.getMessage()), e);
+        }
     }
 
     @Override

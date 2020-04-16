@@ -10,6 +10,10 @@ import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.facet.Interval.NumericInterval;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
+import com.rbmhtechnology.vind.api.query.suggestion.DescriptorSuggestionSearch;
+import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
+import com.rbmhtechnology.vind.api.query.suggestion.StringSuggestionSearch;
+import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.UpdateOperation;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
@@ -17,6 +21,8 @@ import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.DisMaxQueryBuilder;
+import org.elasticsearch.index.query.MultiMatchQueryBuilder;
+import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
@@ -30,6 +36,7 @@ import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregati
 import org.elasticsearch.search.aggregations.bucket.range.DateRangeAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -573,5 +580,62 @@ public class ElasticQueryBuilder {
                 .map(entry -> scriptBuilder.addOperations(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
         return scriptBuilder;
+    }
+
+    public static SearchSourceBuilder buildSuggestionQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
+
+        final String searchContext = search.getSearchContext();
+        final SearchSourceBuilder searchSource = new SearchSourceBuilder();
+
+        final BoolQueryBuilder baseQuery = QueryBuilders.boolQuery();
+
+        final String[] suggestionFieldNames = getSuggestionFieldNames(search, factory, searchContext);
+
+        final MultiMatchQueryBuilder suggestionQuery = QueryBuilders
+                .multiMatchQuery(search.getInput(),suggestionFieldNames)
+                .type(MultiMatchQueryBuilder.Type.BEST_FIELDS)
+                .operator(Operator.OR);
+
+        baseQuery.must(suggestionQuery);
+
+//        if(search.getTimeZone() != null) {
+//            query.set(CommonParams.TZ,search.getTimeZone());
+//        }
+
+        baseQuery.filter(buildFilterQuery(search.getFilter(), factory, searchContext));
+
+        searchSource.query(baseQuery);
+
+        final HighlightBuilder highlighter = new HighlightBuilder();
+        Stream.of(suggestionFieldNames)
+                .forEach(highlighter::field);
+
+        searchSource.highlighter(highlighter);
+        searchSource.trackScores(SearchConfiguration.get(SearchConfiguration.SEARCH_RESULT_SHOW_SCORE, true));
+        searchSource.fetchSource(true);
+
+        //TODO if nested document search is implemented
+
+        return searchSource;
+    }
+
+    protected static String[] getSuggestionFieldNames(ExecutableSuggestionSearch search, DocumentFactory factory, String searchContext) {
+
+        if(search.isStringSuggestion()) {
+            final StringSuggestionSearch suggestionSearch =(StringSuggestionSearch) search;
+            return suggestionSearch.getSuggestionFields().stream()
+                    .map(factory::getField)
+                    .map(descriptor -> FieldUtil.getFieldName(descriptor, searchContext))
+                    .filter(Objects::nonNull)
+                    .map(name ->  name.concat(".suggestion"))
+                    .toArray(String[]::new);
+        } else {
+            final DescriptorSuggestionSearch suggestionSearch =(DescriptorSuggestionSearch) search;
+            return suggestionSearch.getSuggestionFields().stream()
+                    .map(descriptor -> FieldUtil.getFieldName(descriptor, searchContext))
+                    .filter(Objects::nonNull)
+                    .map(name ->  name.concat(".suggestion"))
+                    .toArray(String[]::new);
+        }
     }
 }
