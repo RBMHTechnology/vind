@@ -16,6 +16,7 @@ import java.util.*;
 public class SearchConfiguration {
 
     public static final String SERVER_COLLECTION = "server.collection";
+    public static final String SERVER_COLLECTION_AUTOCREATE = "server.collection.autocreate";
     public static final String SERVER_HOST = "server.host";
     public static final String SERVER_PROVIDER = "server.provider";
     public static final String SERVER_CONNECTION_TIMEOUT = "server.connection.timeout";

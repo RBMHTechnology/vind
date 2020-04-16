@@ -86,7 +86,23 @@ public class ElasticSearchServer extends SearchServer {
      * @param check true to perform local schema validity check against remote schema, false otherwise.
      */
     protected ElasticSearchServer(ElasticVindClient client, boolean check) {
+
         elasticSearchClient = client;
+
+        if(SearchConfiguration.get(SearchConfiguration.SERVER_COLLECTION_AUTOCREATE, false)) {
+            try {
+                log.info("AutoGenerate elastic collection {}", client.getDefaultIndex());
+                client.createIndex(client.getDefaultIndex());
+            } catch (IOException e) {
+                throw new SearchServerException(
+                        String.format(
+                                "Error when creating collection %s: %s", client.getDefaultIndex(), e.getMessage()
+                        ), e
+                );
+            }
+
+            log.info("Collection {} created successfully", client.getDefaultIndex());
+        }
 
         //In order to perform unit tests with mocked ElasticClient, we do not need to do the schema check.
         if(check && client != null) {

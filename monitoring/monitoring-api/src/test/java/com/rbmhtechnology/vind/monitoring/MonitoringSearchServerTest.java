@@ -40,14 +40,14 @@ public class MonitoringSearchServerTest extends SearchTestcase {
     @Test
     public void testSuggestionQueryMonitoring() {
         thrown.expect(RuntimeException.class);
-        final SearchServer server = new MonitoringSearchServer(testSearchServer.getSearchServer());
+        final SearchServer server = new MonitoringSearchServer(backend.getSearchServer());
     }
 
     @Test
     public void testSuggestionQueryMonitoringWithSessionAndLogger() throws IOException {
         TestMonitoringWriter logger = new TestMonitoringWriter();
 
-        MonitoringSearchServer server = new MonitoringSearchServer(testSearchServer.getSearchServer(), new SimpleApplication("app"), new SimpleSession("123"), logger);
+        MonitoringSearchServer server = new MonitoringSearchServer(backend.getSearchServer(), new SimpleApplication("app"), new SimpleSession("123"), logger);
 
         final SingleValueFieldDescriptor.TextFieldDescriptor<String> textField = new FieldDescriptorBuilder<String>()
                 .setFacet(true)
@@ -75,7 +75,7 @@ public class MonitoringSearchServerTest extends SearchTestcase {
     public void testQueryMonitoringWithSessionAndLogger() throws IOException {
         TestMonitoringWriter logger = new TestMonitoringWriter();
 
-        MonitoringSearchServer server = new MonitoringSearchServer(testSearchServer.getSearchServer(), new SimpleApplication("app"), new SimpleSession("123"), logger);
+        MonitoringSearchServer server = new MonitoringSearchServer(backend.getSearchServer(), new SimpleApplication("app"), new SimpleSession("123"), logger);
 
         //index 2 news items
         NewsItem i1 = new NewsItem("1", "New Vind instance needed", ZonedDateTime.now().minusMonths(3), "article", "coding");

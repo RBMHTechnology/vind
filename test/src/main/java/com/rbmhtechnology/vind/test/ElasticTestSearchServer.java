@@ -1,10 +1,7 @@
 package com.rbmhtechnology.vind.test;
 
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
-import com.rbmhtechnology.vind.elasticsearch.backend.ElasticVindClient;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
-
-import java.io.IOException;
 
 public class ElasticTestSearchServer extends TestSearchServer {
 
@@ -18,11 +15,7 @@ public class ElasticTestSearchServer extends TestSearchServer {
         container.start();
         SearchConfiguration.set(SearchConfiguration.SERVER_HOST, "http://" + container.getHttpHostAddress());
         SearchConfiguration.set(SearchConfiguration.SERVER_COLLECTION, DEFAULT_COLLECTION_NAME);
-        try {
-            ((ElasticVindClient)getSearchServer().getBackend()).createIndex(DEFAULT_COLLECTION_NAME);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        SearchConfiguration.set(SearchConfiguration.SERVER_COLLECTION_AUTOCREATE, true);
     }
 
     @Override

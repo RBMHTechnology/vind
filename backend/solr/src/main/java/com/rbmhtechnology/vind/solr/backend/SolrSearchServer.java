@@ -101,6 +101,11 @@ public class SolrSearchServer extends SearchServer {
      * @param check true to perform local schema validity check against remote schema, false otherwise.
      */
     protected SolrSearchServer(SolrClient client, boolean check) {
+
+        if(SearchConfiguration.get(SearchConfiguration.SERVER_COLLECTION_AUTOCREATE, false)) {
+            log.warn("AutoGeneration of solr collection is not implemented, use collection management tool instead");
+        }
+
         solrClient = client;
 
         //In order to perform unit tests with mocked solrClient, we do not need to do the schema check.
