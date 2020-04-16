@@ -1,6 +1,14 @@
 package com.rbmhtechnology.vind.test;
 
-import com.rbmhtechnology.vind.annotations.*;
+import com.rbmhtechnology.vind.annotations.ComplexField;
+import com.rbmhtechnology.vind.annotations.Facet;
+import com.rbmhtechnology.vind.annotations.Field;
+import com.rbmhtechnology.vind.annotations.FullText;
+import com.rbmhtechnology.vind.annotations.Id;
+import com.rbmhtechnology.vind.annotations.Ignore;
+import com.rbmhtechnology.vind.annotations.Operator;
+import com.rbmhtechnology.vind.annotations.Score;
+import com.rbmhtechnology.vind.annotations.Type;
 import com.rbmhtechnology.vind.annotations.language.Language;
 import com.rbmhtechnology.vind.annotations.util.FunctionHelpers;
 import com.rbmhtechnology.vind.api.SearchServer;
@@ -10,7 +18,6 @@ import com.rbmhtechnology.vind.api.result.BeanGetResult;
 import com.rbmhtechnology.vind.api.result.BeanSearchResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.api.result.facet.TermFacetResult;
-
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.beans.SamePropertyValuesAs;
 import org.hamcrest.collection.IsCollectionWithSize;
@@ -19,13 +26,20 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
 
 import static com.rbmhtechnology.vind.api.query.filter.Filter.eq;
 import static com.rbmhtechnology.vind.api.query.filter.Filter.or;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.desc;
 import static com.rbmhtechnology.vind.test.Backend.Solr;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 
 /**
  */

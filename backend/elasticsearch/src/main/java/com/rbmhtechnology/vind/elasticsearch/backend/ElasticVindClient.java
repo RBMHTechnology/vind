@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticRequestUtils;
+import com.rbmhtechnology.vind.elasticsearch.backend.util.PainlessScript;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -23,8 +24,8 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexResponse;
-import org.elasticsearch.client.indices.GetFieldMappingsRequest;
-import org.elasticsearch.client.indices.GetFieldMappingsResponse;
+import org.elasticsearch.client.indices.GetMappingsRequest;
+import org.elasticsearch.client.indices.GetMappingsResponse;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
@@ -147,8 +148,8 @@ public  class ElasticVindClient {
         return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
     }
 
-    public UpdateResponse update(String id, Map<String, Object> docMap) throws IOException {
-        final UpdateRequest request = ElasticRequestUtils.getUpdateRequest(defaultIndex, id, docMap);
+    public UpdateResponse update(String id, PainlessScript.ScriptBuilder script) throws IOException {
+        final UpdateRequest request = ElasticRequestUtils.getUpdateRequest(defaultIndex, id, script);
         return client.update(request, RequestOptions.DEFAULT);
     }
 
@@ -174,9 +175,9 @@ public  class ElasticVindClient {
         return client.deleteByQuery(request,RequestOptions.DEFAULT);
     }
 
-    public GetFieldMappingsResponse getFieldMappings(String ... fields) throws IOException {
-        final GetFieldMappingsRequest request = ElasticRequestUtils.getFieldMappingsRequest(defaultIndex, fields);
-        return client.indices().getFieldMapping(request, RequestOptions.DEFAULT);
+    public GetMappingsResponse getMappings() throws IOException {
+        final GetMappingsRequest request = ElasticRequestUtils.getMappingsRequest(defaultIndex);
+        return client.indices().getMapping(request, RequestOptions.DEFAULT);
     }
 
     public void close() throws IOException {
