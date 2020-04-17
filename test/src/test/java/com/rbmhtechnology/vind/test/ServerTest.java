@@ -21,21 +21,13 @@ import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.*;
 import com.rbmhtechnology.vind.model.MultiValueFieldDescriptor.NumericFieldDescriptor;
 import com.rbmhtechnology.vind.model.value.LatLng;
-import com.rbmhtechnology.vind.utils.mam.FacetMapper;
 
-import org.apache.solr.client.solrj.SolrClient;
-import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.response.QueryResponse;
-import org.apache.solr.common.SolrInputDocument;
-import org.apache.solr.common.util.NamedList;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
@@ -58,6 +50,8 @@ import static com.rbmhtechnology.vind.api.query.sort.Sort.asc;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.desc;
 import static com.rbmhtechnology.vind.model.MultiValueFieldDescriptor.*;
 
+import static com.rbmhtechnology.vind.test.Backend.Elastic;
+import static com.rbmhtechnology.vind.test.Backend.Solr;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.isA;
 import static org.junit.Assert.*;
@@ -67,12 +61,113 @@ import static org.junit.Assert.*;
  * @author Thomas Kurz (tkurz@apache.org)
  * @since 15.06.16.
  */
-public class TestServerTest {
+public class ServerTest {
 
     @Rule
-    public TestSearchServer testSearchServer = new TestSearchServer();
+    public TestBackend testBackend = new TestBackend();
 
     @Test
+    @RunWithBackend(Elastic)
+    public void testSimpleSearch() {
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
+
+        FieldDescriptor<String> title = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("title");
+
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+        SingleValueFieldDescriptor.UtilDateFieldDescriptor<Date> modified = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildUtilDateField("modified");
+
+        NumericFieldDescriptor<Long> category = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildMultivaluedNumericField("category", Long.class);
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(title)
+                .addField(created)
+                .addField(category)
+                .addField(modified)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(title, "Hello World")
+                .setValue(created, yesterday)
+                .setValue(modified, new Date())
+                .setValues(category, Arrays.asList(1L, 2L));
+
+        Document d2 = assets.createDoc("2")
+                .setValue(title, "Hello Friends")
+                .setValue(created, now)
+                .setValue(modified, new Date())
+                .addValue(category, 4L);
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.commit();
+
+        Interval.ZonedDateTimeInterval i1 = Interval.dateInterval("past_24_hours", ZonedDateTime.now().minus(Duration.ofDays(1)), ZonedDateTime.now());
+        Interval.ZonedDateTimeInterval i2 = Interval.dateInterval("past_week", ZonedDateTime.now().minus(Duration.ofDays(7)), ZonedDateTime.now());
+
+        FulltextSearch search = Search.fulltext("hello")
+                .filter(category.between(0, 10))
+                .filter(not(created.after(ZonedDateTime.now())))
+                .filter(modified.before(new Date()))
+                //.facet(pivot("cats", category, created))
+                //.facet(pivot("catVStitle", category, title))
+                //.facet(stats("avg Cat", category, "cats", "catVStitle").count().sum().percentiles(9.9, 1.0).mean())
+                //.facet(stats("countDate", created).count().sum().mean())
+                .facet(query("new An dHot", category.between(0, 5), "cats"))
+                .facet(query("anotherQuery", and(category.between(7, 10), created.after(ZonedDateTime.now().minus(Duration.ofDays(1))))))
+                .facet(range("dates", created, ZonedDateTime.now().minus(Duration.ofDays(1)), ZonedDateTime.now(), Duration.ofHours(1)))
+                .facet(range("mod a", modified, new Date(), new Date(), 1L, TimeUnit.HOURS, "cats"))
+                .facet(interval("quality", category, Interval.numericInterval("low", 0L, 2L), Interval.numericInterval("high", 3L, 4L)))
+                .facet(interval("time", created, i1, i2))
+                .facet(interval("time2", modified,
+                        Interval.dateInterval("early", new Date(0), new Date(10000)),
+                        Interval.dateInterval("late", new Date(10000), new Date(20000))))
+                .facet(category)
+                .facet(created)
+                .facet(modified)
+                .facet(new TermFacetOption().setPrefix("He"), title)
+                .page(1, 25)
+                .sort(desc(created));
+
+        PageResult result = (PageResult)server.execute(search,assets);
+
+        assertEquals(2, result.getNumOfResults());
+        assertEquals(2, result.getResults().size());
+        assertEquals("2", result.getResults().get(0).getId());
+        assertEquals("asset", result.getResults().get(0).getType());
+        assertEquals("2", result.getResults().get(0).getId());
+        assertEquals("asset", result.getResults().get(0).getType());
+        assertTrue(now.equals(result.getResults().get(0).getValue(created)));
+        assertTrue(now.equals(result.getResults().get(0).getValue("created")));
+        assertEquals(2, result.getFacetResults().getIntervalFacet("quality").getValues().size());
+        assertEquals(2, result.getFacetResults().getIntervalFacet("time").getValues().size());
+
+        System.out.println(result);
+
+        PageResult next = (PageResult)result.nextPage();
+        SearchResult prev = next.previousPage();
+
+        TermFacetResult<Long> facet = result.getFacetResults().getTermFacet(category);
+
+        RangeFacetResult<ZonedDateTime> dates = result.getFacetResults().getRangeFacet("dates", ZonedDateTime.class);
+        ZonedDateTime rangeDate = dates.getValues().get(0).getValue();
+    }
+
+    @Test
+    @RunWithBackend(Solr)
     public void testEmbeddedSolr() {
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
@@ -114,7 +209,7 @@ public class TestServerTest {
                 .setValue(modified, new Date())
                 .addValue(category, 4L);
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -172,34 +267,12 @@ public class TestServerTest {
         ZonedDateTime rangeDate = dates.getValues().get(0).getValue();
     }
 
-    @Test
-    public void testRuntimeLib() throws SolrServerException, IOException {
-        SearchServer server = testSearchServer.getSearchServer();
 
-        SolrClient client = (SolrClient) server.getBackend();
-
-        SolrInputDocument document = new SolrInputDocument();
-        document.setField("_id_", "1");
-        document.setField("_type_", "doc");
-        document.setField("dynamic_multi_facet_string_f1", "test");
-        document.setField("dynamic_multi_facet_string_f2", "hello");
-
-        client.add(document);
-        client.commit();
-
-        SolrQuery query = new SolrQuery("t");
-        query.setRequestHandler("/suggester");
-        query.set("suggestion.df", "facets");
-        query.set("suggestion.field", "dynamic_multi_facet_string_f1");
-
-        QueryResponse response = client.query(query);
-
-        assertEquals(1, ((NamedList) response.getResponse().get("suggestions")).get("suggestion_count"));
-    }
 
     @Test
+    @RunWithBackend(Solr)
     public void testSuggestions() {
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime yesterday = ZonedDateTime.now().minus(1, ChronoUnit.DAYS);
@@ -250,8 +323,9 @@ public class TestServerTest {
     }
 
     @Test
+    @RunWithBackend({Solr, Elastic})
     public void testTypeIDScoreAsFieldname() {
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         FieldDescriptor<String> title = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -295,8 +369,9 @@ public class TestServerTest {
     }
 
    @Test
+   @RunWithBackend(Solr)
     public void testPartialUpdate() {
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         SingleValueFieldDescriptor<String> title = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -347,8 +422,9 @@ public class TestServerTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testSubdocuments() throws IOException {
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         SingleValueFieldDescriptor<String> title = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -380,9 +456,15 @@ public class TestServerTest {
                                 .setValue(color, "blue")
                 );
 
-        Document a3 = asset.createDoc("A3").setValue(title,"A3").setValue(color, "green").addChild(marker.createDoc("M2").setValue(title, "M2").setValue(color, "red"));
+        Document a3 = asset.createDoc("A3").setValue(title,"A3").setValue(color, "green")
+                .addChild(marker.createDoc("M2")
+                        .setValue(title, "M2")
+                        .setValue(color, "red"));
 
-        Document a4 = asset.createDoc("A4").setValue(title, "A4").setValue(color, "blue").addChild(marker.createDoc("M3").setValue(title, "M3").setValue(color, "blue"));
+        Document a4 = asset.createDoc("A4").setValue(title, "A4").setValue(color, "blue")
+                .addChild(marker.createDoc("M3")
+                        .setValue(title, "M3")
+                        .setValue(color, "blue"));
 
         server.index(a1);
         server.index(a2);
@@ -409,8 +491,10 @@ public class TestServerTest {
         //server.execute(Search.fulltext("some").includeChildren(true),marker); //search everywhere and include matching children
     }
 
+    @Test
+    @RunWithBackend({Solr, Elastic})
     public void testTermFacetAccess() {
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         MultiValueFieldDescriptor<String> term = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -434,6 +518,7 @@ public class TestServerTest {
     public ExpectedException expectedEx = ExpectedException.none();
 
     @Test
+    @RunWithBackend(Solr)
     public void testDoubleDependency() {
 
         SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.solr.backend.EmbeddedSolrServerProvider");
@@ -451,6 +536,7 @@ public class TestServerTest {
 
     //MBDN-352
     @Test
+    @RunWithBackend({Solr, Elastic})
     public void testIndexMultipleDocuments () {
 
 
@@ -507,7 +593,7 @@ public class TestServerTest {
                 .setValue(modified, new Date())
                 .addValue(category, 7L);
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         List<Document> docList = new ArrayList<>();
         docList.add(d3);
@@ -516,9 +602,6 @@ public class TestServerTest {
         server.index(d1,d2);
         server.index(docList);
         server.commit();
-
-        Interval.ZonedDateTimeInterval i1 = Interval.dateInterval("past_24_hours", ZonedDateTime.now().minus(Duration.ofDays(1)), ZonedDateTime.now());
-        Interval.ZonedDateTimeInterval i2 = Interval.dateInterval("past_week", ZonedDateTime.now().minus(Duration.ofDays(7)), ZonedDateTime.now());
 
         FulltextSearch search = Search.fulltext("hello")
                 .page(1, 25)
@@ -537,8 +620,9 @@ public class TestServerTest {
     }
 
     @Test
+    @RunWithBackend({Solr, Elastic})
     public void testSearchGetById() {
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         MultiValueFieldDescriptor<String> term = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -583,6 +667,7 @@ public class TestServerTest {
     */
     //MBDN-431
     @Test
+    @RunWithBackend({Solr, Elastic})
     public void testDeleteByQuery() {
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
@@ -626,7 +711,7 @@ public class TestServerTest {
                 .setValue(modified, new Date())
                 .addValue(category, 4L);
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -662,6 +747,7 @@ public class TestServerTest {
     }
 
     @Test
+    @RunWithBackend({Solr, Elastic})
     public void testSolrUtilDateMultivalueFields() {
         MultiValueFieldDescriptor.UtilDateFieldDescriptor<Date> date = new FieldDescriptorBuilder()
                 .buildMultivaluedUtilDateField("date");
@@ -672,7 +758,7 @@ public class TestServerTest {
 
         Document document = factory.createDoc("1").setValue(date, new Date());
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(document);
         server.commit();
@@ -681,6 +767,7 @@ public class TestServerTest {
 
     //MBDN-432
     @Test
+    @RunWithBackend({Solr, Elastic})
     public void testClearIndex() {
 
         //Storing as text_en solr type
@@ -713,7 +800,7 @@ public class TestServerTest {
                 .setValue(title, "Hello Friends")
                 .setValue(description, "This value is also not stored");
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.clearIndex();
         server.index(d1);
@@ -738,6 +825,7 @@ public class TestServerTest {
 
     //MBDN-441
     @Test
+    @RunWithBackend({Solr, Elastic})
     public void timeZoneSearchTest() {
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
@@ -780,7 +868,7 @@ public class TestServerTest {
                 .setValue(modified, new Date())
                 .addValue(category, 4L);
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -798,6 +886,7 @@ public class TestServerTest {
 
     //MBDN-450
     @Test
+    @RunWithBackend({Solr, Elastic})
     public void testDateMathIntervals() {
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
         ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
@@ -839,7 +928,7 @@ public class TestServerTest {
                 .setValue(modified, new Date())
                 .addValue(category, 4L);
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -892,6 +981,7 @@ public class TestServerTest {
 
     //MBDN-451
     @Test
+    @RunWithBackend({Solr, Elastic})
     public void wildcardIntervalLimitTest() {
 
         SingleValueFieldDescriptor<Float> numberField = new FieldDescriptorBuilder()
@@ -923,7 +1013,7 @@ public class TestServerTest {
                 .setValue(dateField, new Date());
 
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -942,62 +1032,9 @@ public class TestServerTest {
         assertEquals("No of interval facets", 2, searchResult.getFacetResults().getIntervalFacet("dates").getValues().get(0).getCount());
     }
 
-    //MBDN-442
-    @Test public void string2FacetTest() {
-
-        SingleValueFieldDescriptor<Float> numberField = new FieldDescriptorBuilder()
-                .setFacet(true)
-                .buildNumericField("number", Float.class);
-
-        FieldDescriptor<String> entityID = new FieldDescriptorBuilder()
-                .buildTextField("entityID");
-
-        SingleValueFieldDescriptor<Date> dateField = new FieldDescriptorBuilder()
-                .setFacet(true)
-                .buildUtilDateField("date");
-
-
-        DocumentFactory assets = new DocumentFactoryBuilder("asset")
-                .addField(numberField)
-                .addField(dateField)
-                .addField(entityID)
-                .build();
-
-        Document d1 = assets.createDoc("1")
-                .setValue(numberField, 24f)
-                .setValue(entityID, "123")
-                .setValue(dateField, new Date());
-
-        Document d2 = assets.createDoc("2")
-                .setValue(numberField, 2f)
-                .setValue(entityID, "123")
-                .setValue(dateField, new Date());
-
-        SearchServer server = testSearchServer.getSearchServer();
-
-        server.index(d1);
-        server.index(d2);
-        server.commit();
-
-        HashMap<String, String> numberIntervals = new HashMap<>();
-
-        numberIntervals.put("low","[* TO 20]");
-        numberIntervals.put("high", "[20 TO *]");
-
-        HashMap<String, String> dateIntervals = new HashMap<>();
-        dateIntervals.put("after", "[NOW+23DAYS/DAY TO *]");
-        dateIntervals.put("before", "[* TO NOW+23DAYS/DAY]");
-
-        FulltextSearch searchAll = Search.fulltext().facet(FacetMapper.stringQuery2FacetMapper(numberField, "numberFacets", numberIntervals))
-                .facet(FacetMapper.stringQuery2FacetMapper(dateField, "dateFacets", dateIntervals));
-
-        final SearchResult searchResult = server.execute(searchAll, assets);
-        assertEquals("No of interval number facets", 2, searchResult.getFacetResults().getIntervalFacet("numberFacets").getValues().size());
-        assertEquals("No of interval date facets", 2, searchResult.getFacetResults().getIntervalFacet("dateFacets").getValues().size());
-    }
-
     //MBDN-454
     @Test
+    @RunWithBackend(Solr)
     public void binaryFieldTest() {
         FieldDescriptor<String> title = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -1040,7 +1077,7 @@ public class TestServerTest {
                 .addValue(category, 4L)
                 .setValue(byteField, ByteBuffer.wrap("oolelelelele".getBytes()));
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.clearIndex();
         server.index(d1);
@@ -1059,6 +1096,7 @@ public class TestServerTest {
 
     //MBDN-455
     @Test
+    @RunWithBackend(Solr)
     public void complexFieldTest() {
 
 
@@ -1128,7 +1166,7 @@ public class TestServerTest {
                 .setValue(dateField, new Date());
 
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -1175,6 +1213,7 @@ public class TestServerTest {
 
     //MBDN-452
     @Test
+    @RunWithBackend({Solr, Elastic})
     public void supportUnderscoredFieldNamesTest() {
 
         SingleValueFieldDescriptor<Float> numberField = new FieldDescriptorBuilder()
@@ -1205,7 +1244,7 @@ public class TestServerTest {
                 .setValue(dateField, new Date());
 
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.clearIndex();
         server.index(d1);
@@ -1219,6 +1258,7 @@ public class TestServerTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testLocationDescriptor() {
 
         SingleValueFieldDescriptor.LocationFieldDescriptor<LatLng> locationSingle = new FieldDescriptorBuilder()
@@ -1245,7 +1285,7 @@ public class TestServerTest {
         Document doc3 = assets.createDoc("3")
                 .setValues(locationMulti, new LatLng(10, 10), new LatLng(20, 20));
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(doc1);
         server.index(doc2);
@@ -1286,6 +1326,7 @@ public class TestServerTest {
 
     //MBDN-458
     @Test
+    @RunWithBackend({Solr})
     public void testContextSearch() {
 
         final SingleValueFieldDescriptor<Float> numberField = new FieldDescriptorBuilder()
@@ -1327,7 +1368,7 @@ public class TestServerTest {
                 .setValue(dateField, new Date());
 
 
-        final SearchServer server = testSearchServer.getSearchServer();
+        final SearchServer server = testBackend.getSearchServer();
 
         server.clearIndex();
         server.index(d1);
@@ -1385,6 +1426,7 @@ public class TestServerTest {
 
     //MBDN-459
     @Test
+    @RunWithBackend({Solr, Elastic})
     public void isNotEmptyFilterTest() {
 
         final SingleValueFieldDescriptor.TextFieldDescriptor<String> textSingle = new FieldDescriptorBuilder()
@@ -1416,7 +1458,7 @@ public class TestServerTest {
                 .addValue(textMulti, null)
                 .setValue(numberSingle, 9);
 
-        final SearchServer server = testSearchServer.getSearchServer();
+        final SearchServer server = testBackend.getSearchServer();
 
         server.clearIndex();
         server.index(doc1);
@@ -1458,6 +1500,7 @@ public class TestServerTest {
 
     //MBDN-430
     @Test
+    @RunWithBackend(Solr)
     public void testSortableMultiValuedFields() {
 
 
@@ -1504,7 +1547,7 @@ public class TestServerTest {
         final Document doc3 = assets.createDoc("3")
                 .addValue(textMulti, null);
 
-        final SearchServer server = testSearchServer.getSearchServer();
+        final SearchServer server = testBackend.getSearchServer();
 
         server.index(doc1);
         server.index(doc2);
@@ -1536,6 +1579,7 @@ public class TestServerTest {
 
     //MBDN-483
     @Test
+    @RunWithBackend(Solr)
     public void atomicUpdateComplexFieldsTest() {
         SingleValuedComplexField.NumericComplexField<Taxonomy,Integer,String> numericComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,Integer,String>()
                 .setFacet(true, tx -> Arrays.asList(tx.getId()))
@@ -1604,7 +1648,7 @@ public class TestServerTest {
                 .setValue(dateField, new Date());
 
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -1620,6 +1664,7 @@ public class TestServerTest {
 
     //MDBN-486
     @Test
+    @RunWithBackend(Solr)
     public void advanceFilterTest() {
 
         SingleValuedComplexField.TextComplexField<Taxonomy,String,String> textComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,String,String>()
@@ -1647,7 +1692,7 @@ public class TestServerTest {
                 .setValue(textComplexField, new Taxonomy("dos", 2, "Label", ZonedDateTime.now()))
                 .setValues(multiComplexField, new Taxonomy("dos . uno", 1, "Label", ZonedDateTime.now()), new Taxonomy("dos . dos", 1, "Label", ZonedDateTime.now()));
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -1664,6 +1709,7 @@ public class TestServerTest {
 
     //MBDN-461
     @Test
+    @RunWithBackend({Solr, Elastic})
     public void prefixFilterTest(){
 
         final SingleValueFieldDescriptor.TextFieldDescriptor<String> textSingle = new FieldDescriptorBuilder()
@@ -1687,7 +1733,7 @@ public class TestServerTest {
                 .setValue(textSingle, "Other text 2")
                 .setValues(textMulti, "text 2.1", "text 2.2");
 
-        final SearchServer server = testSearchServer.getSearchServer();
+        final SearchServer server = testBackend.getSearchServer();
 
         server.index(doc1);
         server.index(doc2);
@@ -1704,6 +1750,7 @@ public class TestServerTest {
 
     //MBDN-487
     @Test
+    @RunWithBackend(Solr)
     public void scopedFilterTest() {
 
         MultiValuedComplexField.TextComplexField<Taxonomy,String,String> multiComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,String,String>()
@@ -1730,7 +1777,7 @@ public class TestServerTest {
                 .setValue(textComplexField, new Taxonomy("dos", 2, "Label", ZonedDateTime.now()))
                 .setValues(multiComplexField, new Taxonomy("dos . uno", 1, "Label", ZonedDateTime.now()), new Taxonomy("dos . dos", 1, "Label", ZonedDateTime.now()));
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -1748,6 +1795,7 @@ public class TestServerTest {
 
     //MBDN-495
     @Test
+    @RunWithBackend(Solr)
     public void sliceResultTest(){
         final TextFieldDescriptor textMulti = new FieldDescriptorBuilder()
                 .buildMultivaluedTextField("textMulti");
@@ -1791,7 +1839,7 @@ public class TestServerTest {
         final Document doc3 = assets.createDoc("3")
                 .addValue(textMulti, null);
 
-        final SearchServer server = testSearchServer.getSearchServer();
+        final SearchServer server = testBackend.getSearchServer();
 
         server.index(doc1);
         server.index(doc2);
@@ -1806,6 +1854,7 @@ public class TestServerTest {
 
     //MBDN-498
     @Test
+    @RunWithBackend({Solr, Elastic})
     public void byQueryFacetConfigurationTest() {
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
         ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
@@ -1848,7 +1897,7 @@ public class TestServerTest {
                 .setValue(created, now)
                 .setValue(modified, new Date());
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -1867,6 +1916,7 @@ public class TestServerTest {
     }
 
     @Test
+    @RunWithBackend({Solr})
     public void queryTermWithDashCharTest(){
 
 
@@ -1915,7 +1965,7 @@ public class TestServerTest {
                 .setValue(internalId, "")
                 .setValue(textField, "This is a text 1234 field");
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -1940,8 +1990,9 @@ public class TestServerTest {
 
     //MBDN-563
     @Test
+    @RunWithBackend(Solr)
     public void testSubdocumentFullReindex() throws IOException {
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
         //SearchServer server = SolrSearchServer.getInstance("com.rbmhtechnology.searchlib.solr.RemoteSolrServerProvider","http://localhost:8983/solr","core");
 
         server.clearIndex();
@@ -2086,6 +2137,7 @@ public class TestServerTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void complexFieldBooleanTest() {
 
 
@@ -2116,7 +2168,7 @@ public class TestServerTest {
                 .setValue(numericComplexField, new Taxonomy("dos", 2, "dos label", ZonedDateTime.now()))
                 .setValues(multiComplexField, new Taxonomy("uno", 1, "Label", ZonedDateTime.now()), new Taxonomy("dos", 1, "Label", ZonedDateTime.now()));
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -2129,9 +2181,10 @@ public class TestServerTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testPartialUpdates() {
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         MultiValueFieldDescriptor<Integer> value = new FieldDescriptorBuilder<Integer>()
                 .setFullText(true)
@@ -2161,9 +2214,10 @@ public class TestServerTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testSuggestionFiltering() {
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         SingleValueFieldDescriptor<String> value = new FieldDescriptorBuilder<String>()
                 .setSuggest(true)
@@ -2189,8 +2243,9 @@ public class TestServerTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testEmptyChildrenSearch() {
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
         //SearchServer server = SolrSearchServer.getInstance("com.rbmhtechnology.searchlib.solr.RemoteSolrServerProvider","http://localhost:8983/solr","core");
 
         server.clearIndex();
@@ -2258,6 +2313,7 @@ public class TestServerTest {
     }
 
     @Test
+    @RunWithBackend({Solr})
     public void testTermQueryFilter() {
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
         ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
@@ -2298,7 +2354,7 @@ public class TestServerTest {
                 .setValue(modified, new Date())
                 .addValue(category, 4L);
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -2322,6 +2378,7 @@ public class TestServerTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void test10001TermsTermQueryFilter() throws IOException, URISyntaxException {
 
         final SingleValueFieldDescriptor.TextFieldDescriptor title = new FieldDescriptorBuilder()
@@ -2339,7 +2396,7 @@ public class TestServerTest {
         Document d2 = assets.createDoc("2")
                 .setValue(title, "Hello Friends");
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
@@ -2358,6 +2415,7 @@ public class TestServerTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testTermOptions() {
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
@@ -2399,7 +2457,7 @@ public class TestServerTest {
                 .setValue(modified, new Date())
                 .addValue(category, 4L);
 
-        SearchServer server = testSearchServer.getSearchServer();
+        SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);

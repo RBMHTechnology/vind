@@ -35,20 +35,23 @@ import java.util.List;
 import static com.rbmhtechnology.vind.api.query.filter.Filter.eq;
 import static com.rbmhtechnology.vind.api.query.filter.Filter.or;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.desc;
+import static com.rbmhtechnology.vind.test.Backend.Solr;
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 /**
  */
-public class TestServerPojoTest {
+public class ServerPojoTest {
 
     @Rule
-    public TestSearchServer searchServer = new TestSearchServer();
+    public TestBackend backend = new TestBackend();
 
     @Test
+    @RunWithBackend(Solr)
     public void testPojoRoundtrip() {
-        final SearchServer server = searchServer.getSearchServer();
+        final SearchServer server = backend.getSearchServer();
 
         final Pojo doc1 = Pojo.create("doc1", "Eins", "Erstes Dokument", "simple");
         final Pojo doc2 = Pojo.create("doc2", "Zwei", "Zweites Dokument", "simple");
@@ -92,8 +95,9 @@ public class TestServerPojoTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testRoundtrip2() {
-        final SearchServer server = searchServer.getSearchServer();
+        final SearchServer server = backend.getSearchServer();
         server.indexBean(new SimplePojo("1", "Hello World", 1, "hello"));
         server.indexBean(new SimplePojo("2","Hello Thomas",2,"foo","bar"));
         server.commit();
@@ -109,8 +113,9 @@ public class TestServerPojoTest {
 
     //MBDN-352
     @Test
+    @RunWithBackend(Solr)
     public void testMultipleBeanIndex() {
-        final SearchServer server = searchServer.getSearchServer();
+        final SearchServer server = backend.getSearchServer();
 
         final Pojo doc1 = Pojo.create("doc1", "Eins", "Erstes Dokument", "simple");
         final Pojo doc2 = Pojo.create("doc2", "Zwei", "Zweites Dokument", "simple");
@@ -136,8 +141,9 @@ public class TestServerPojoTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testSearchGetById(){
-        final SearchServer server = searchServer.getSearchServer();
+        final SearchServer server = backend.getSearchServer();
         server.indexBean(new SimplePojo("1", "Hello World", 1, "hello"));
         server.indexBean(new SimplePojo("2","Hello Thomas",2,"foo","bar"));
         server.commit();
@@ -154,8 +160,9 @@ public class TestServerPojoTest {
     }
 
     @Test
+    @RunWithBackend(Solr)
     public void testTaxonomyPojo() {
-        final SearchServer server = searchServer.getSearchServer();
+        final SearchServer server = backend.getSearchServer();
 
         final Pojo1 doc1 = new Pojo1();
         doc1.id = "pojo-Id-1";

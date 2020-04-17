@@ -28,6 +28,7 @@ Currently the following properties are supported:
 | *server.collection* | STRING | The solr collection name |
 | *server.host* | STRING | The solr host or hostlist |
 | *server.provider* | STRING | Fully qualified name of the solr provider |
+| *server.collection.autocreate* | STRING | Collection is created if not existing (currently only in elastic) |
 | *server.connection.timeout* | LONG | Connection timeout for remote server |
 | *server.so.timeout* | LONG | Zookeeper client timeout |
 | *server.solr.cloud* | BOOL | If remote solr runs in cloud mode |

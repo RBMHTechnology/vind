@@ -17,6 +17,7 @@ import com.rbmhtechnology.vind.api.result.facet.SubdocumentFacetResult;
 import com.rbmhtechnology.vind.api.result.facet.TermFacetResult;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.elasticsearch.ElasticsearchException;
@@ -32,8 +33,12 @@ import org.elasticsearch.search.aggregations.bucket.histogram.ParsedDateHistogra
 import org.elasticsearch.search.aggregations.bucket.histogram.ParsedHistogram;
 import org.elasticsearch.search.aggregations.bucket.range.ParsedDateRange;
 import org.elasticsearch.search.aggregations.bucket.range.ParsedRange;
+import org.elasticsearch.search.aggregations.bucket.terms.ParsedLongTerms;
 import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
+import org.elasticsearch.search.aggregations.bucket.terms.ParsedTerms;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -74,7 +79,10 @@ public class ResultUtils {
         final HashMap<FieldDescriptor, TermFacetResult<?>> termFacetResults = new HashMap<>();
         vindFacets.values().stream()
             .filter(facet -> facet.getType().equals("TermFacet"))
-            .map(termFacet -> getTermFacetResults(aggregationsMap.get(Stream.of(searchContext,termFacet.getFacetName()).filter(Objects::nonNull).collect(Collectors.joining("_"))), (Facet.TermFacet)termFacet))
+            .map(termFacet -> getTermFacetResults(
+                    aggregationsMap.get(Stream.of(searchContext,termFacet.getFacetName()).filter(Objects::nonNull).collect(Collectors.joining("_"))),
+                    (Facet.TermFacet)termFacet,
+                    factory))
             .forEach(pair -> termFacetResults.put(pair.getKey(), pair.getValue()));
 
         // Creating Type facet result
@@ -166,14 +174,18 @@ public class ResultUtils {
         return result;
     }
 
-    private static Pair<FieldDescriptor<?> ,TermFacetResult<?>> getTermFacetResults(Aggregation aggregation, Facet.TermFacet termFacet) {
+    private static Pair<FieldDescriptor<?> ,TermFacetResult<?>> getTermFacetResults(Aggregation aggregation, Facet.TermFacet termFacet, DocumentFactory factory) {
         final TermFacetResult<?> result = new TermFacetResult<>();
+        final FieldDescriptor<?> field = factory.getField(termFacet.getFieldName());
         Optional.ofNullable(aggregation)
                 .ifPresent(agg ->
-                        ((ParsedStringTerms) aggregation).getBuckets().stream()
-                            .map( termBucket -> new FacetValue(
-                                    DocumentUtil.castForDescriptor(termBucket.getKey(), termFacet.getFieldDescriptor(), FieldUtil.Fieldname.UseCase.Facet),
-                                    termBucket.getDocCount()))
+                        ((ParsedTerms) aggregation).getBuckets().stream()
+                            .map( bucket -> {
+                                final Object key = Number.class.isAssignableFrom(field.getType()) ?  bucket.getKeyAsNumber() : bucket.getKeyAsString();
+                                return Pair.of(key, bucket.getDocCount());
+                            })
+                            .map( p -> new FacetValue(
+                                    DocumentUtil.castForDescriptor(p.getKey(), field, FieldUtil.Fieldname.UseCase.Facet), p.getValue()))
                             .forEach(result::addFacetValue));
 
         return Pair.of(termFacet.getFieldDescriptor(), result);

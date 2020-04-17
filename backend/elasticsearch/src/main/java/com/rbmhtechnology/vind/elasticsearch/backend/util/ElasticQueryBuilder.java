@@ -42,6 +42,8 @@ import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import javax.swing.text.html.Option;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -223,14 +225,13 @@ public class ElasticQueryBuilder {
                     final Filter.BeforeFilter beforeFilter = (Filter.BeforeFilter) filter;
                     return QueryBuilders
                             .rangeQuery(FieldUtil.getFieldName(factory.getField(beforeFilter.getField()),context))
-                            .lte(beforeFilter.getDate().toString()) ;
+                            .lte(beforeFilter.getDate().toElasticString()) ;
                 case "AfterFilter":
                     //TODO: Add scope support
                     final Filter.AfterFilter afterFilter = (Filter.AfterFilter) filter;
                     return QueryBuilders
                             .rangeQuery(FieldUtil.getFieldName(factory.getField(afterFilter.getField()),context))
-                            .gte(afterFilter.getDate().toString()) ;
-
+                            .gte(afterFilter.getDate().toElasticString()) ;
                 case "BetweenNumericFilter":
                     //TODO: Add scope support
                     final Filter.BetweenNumericFilter betweenNumericFilter = (Filter.BetweenNumericFilter) filter;
@@ -335,9 +336,13 @@ public class ElasticQueryBuilder {
         switch (vindFacet.getType()) {
             case "TermFacet":
                 final Facet.TermFacet termFacet = (Facet.TermFacet) vindFacet;
+                final FieldDescriptor<?> field = factory.getField(termFacet.getFieldName());
+                final String fieldName = Optional.ofNullable(FieldUtil.getFieldName(field, searchContext))
+                        .orElse(termFacet.getFieldName());
+
                 return AggregationBuilders
                         .terms(contextualizedFacetName)
-                        .field(FieldUtil.getFieldName(termFacet.getFieldDescriptor(), searchContext))
+                        .field(fieldName)
                         .minDocCount(minCount);
             case "TypeFacet":
                 final Facet.TypeFacet typeFacet = (Facet.TypeFacet) vindFacet;
@@ -424,8 +429,6 @@ public class ElasticQueryBuilder {
             case "DateMathRangeFacet":
                 final Facet.DateRangeFacet.DateMathRangeFacet dateMathRangeFacet = (Facet.DateRangeFacet.DateMathRangeFacet) vindFacet;
 
-
-
                 final DateRangeAggregationBuilder dateMathDateRangeAggregation = AggregationBuilders
                         .dateRange(contextualizedFacetName)
                         .keyed(true)
@@ -440,7 +443,10 @@ public class ElasticQueryBuilder {
                                 Instant.ofEpochSecond(((DateMathExpression) dateMathRangeFacet.getStart()).getTimeStamp()),
                                 ZoneId.of("UTC"));
 
-                dateMathDateRangeAggregation.addRange(name, dateMathStart, dateMathEnd);
+                dateMathDateRangeAggregation
+                        .addRange(name,
+                                ((DateMathExpression)dateMathRangeFacet.getStart()).toElasticString(),
+                                ((DateMathExpression)dateMathRangeFacet.getEnd()).toElasticString());
 
                 final Long minutesGap = dateMathRangeFacet.getGapDuration().toMinutes();
 
@@ -492,7 +498,7 @@ public class ElasticQueryBuilder {
 
             case "ZoneDateTimeDateMathIntervalFacet":
             case "UtilDateMathIntervalFacet":
-                final Facet.DateIntervalFacet.UtilDateMathIntervalFacet dateMathIntervalFacet = (Facet.DateIntervalFacet.UtilDateMathIntervalFacet) vindFacet;
+                final Facet.DateIntervalFacet dateMathIntervalFacet = (Facet.DateIntervalFacet) vindFacet;
                 final DateRangeAggregationBuilder dateMathIntervalAggregation = AggregationBuilders
                         .dateRange(contextualizedFacetName)
                         .keyed(true)
@@ -561,17 +567,26 @@ public class ElasticQueryBuilder {
         if (Objects.nonNull(start) && Objects.nonNull(end)) {
             rangeAggregation.addRange(
                     interval.getName(),
-                    ZonedDateTime.ofInstant(Instant.ofEpochSecond(start.getTimeStamp()), ZoneId.of("UTC")),
-                    ZonedDateTime.ofInstant(Instant.ofEpochSecond(end.getTimeStamp()), ZoneId.of("UTC")));
+                    start.toElasticString(),
+                    end.toElasticString()
+//                    ZonedDateTime.ofInstant(Instant.ofEpochSecond(start.getTimeStamp()), ZoneId.of("UTC")),
+//                    ZonedDateTime.ofInstant(Instant.ofEpochSecond(end.getTimeStamp()), ZoneId.of("UTC"))
+                    );
         } else {
             Optional.ofNullable(start).ifPresent(n ->
                     rangeAggregation.addUnboundedFrom(
                             interval.getName(),
-                            ZonedDateTime.ofInstant(Instant.ofEpochSecond(n.getTimeStamp()), ZoneId.of("UTC"))));
+                            n.toElasticString()
+                            //ZonedDateTime.ofInstant(Instant.ofEpochSecond(n.getTimeStamp()), ZoneId.of("UTC"))
+                    )
+            );
             Optional.ofNullable(end).ifPresent(n ->
                     rangeAggregation.addUnboundedTo(
                             interval.getName(),
-                            ZonedDateTime.ofInstant(Instant.ofEpochSecond(n.getTimeStamp()), ZoneId.of("UTC"))));
+                            n.toElasticString()
+                            //ZonedDateTime.ofInstant(Instant.ofEpochSecond(n.getTimeStamp()), ZoneId.of("UTC"))
+                    )
+            );
         }
 
     }

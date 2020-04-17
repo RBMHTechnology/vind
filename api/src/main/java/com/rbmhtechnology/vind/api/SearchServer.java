@@ -375,6 +375,6 @@ public abstract class SearchServer implements Closeable {
      */
     public abstract void close();
 
-    public abstract Class<ServiceProvider> getServiceProviderClass();
+    public abstract Class<? extends ServiceProvider> getServiceProviderClass();
 
 }

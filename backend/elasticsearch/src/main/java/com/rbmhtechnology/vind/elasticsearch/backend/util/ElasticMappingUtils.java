@@ -1,22 +1,28 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
 import com.rbmhtechnology.vind.SearchServerException;
-import com.rbmhtechnology.vind.elasticsearch.backend.ElasticSearchServer;
 import com.rbmhtechnology.vind.elasticsearch.backend.MappingValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystemNotFoundException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -26,6 +32,8 @@ public class ElasticMappingUtils {
     private static final String SETTINGS_JSON = "settings.json";
     private static final Logger log = LoggerFactory.getLogger(ElasticMappingUtils.class);
 
+    private static final HashMap<URI, FileSystem> fileSystems = new HashMap<>();
+
     private ElasticMappingUtils() {}
 
     public static String getDefaultMapping() {
@@ -33,7 +41,7 @@ public class ElasticMappingUtils {
                 ElasticMappingUtils.class.getClassLoader().getResource(MAPPINGS_JSON))
                 .orElseThrow(() -> new MappingValidationException(
                         String.format("Error getting default mapping file %s resource", MAPPINGS_JSON)));
-        final Path mappingsFile = Paths.get(resource.getPath());
+        final Path mappingsFile = getResourceAsPath(resource);
 
         try {
             return new String(Files.readAllBytes(mappingsFile), StandardCharsets.UTF_8);
@@ -50,7 +58,7 @@ public class ElasticMappingUtils {
                 ElasticMappingUtils.class.getClassLoader().getResource(SETTINGS_JSON))
                 .orElseThrow(() -> new MappingValidationException(
                         String.format("Error getting default settings file %s resource", SETTINGS_JSON)));
-        final Path mappingsFile = Paths.get(resource.getPath());
+        final Path mappingsFile = getResourceAsPath(resource);
 
         try {
             return new String(Files.readAllBytes(mappingsFile), StandardCharsets.UTF_8);
@@ -60,6 +68,56 @@ public class ElasticMappingUtils {
                             "Error reading default settings definition from %s",
                             mappingsFile.toAbsolutePath()));
         }
+    }
+
+    private static Path getResourceAsPath(URL resource) {
+        if (resource == null) return null;
+
+        final String protocol = resource.getProtocol();
+        final Path resultPath;
+        switch (protocol) {
+            case "file":
+                try {
+                    resultPath = Paths.get(resource.toURI());
+                    break;
+                } catch (URISyntaxException e) {
+                    throw new IllegalStateException("Can't create URI from Resource-URL, how can that happen?", e);
+                }
+            case "jar":
+                final String s = resource.toString();
+                final int separator = s.indexOf("!/");
+                final String entryName = s.substring(separator + 2);
+                final URI jarUri = URI.create(s.substring(0, separator));
+
+                resultPath = getFileSystem(jarUri).getPath(entryName);
+                break;
+            default:
+                throw new IllegalArgumentException("Can't read " + resource + ", unknown protocol '" + protocol + "'");
+        }
+
+        return Objects.nonNull(resultPath) ? resultPath.toAbsolutePath() : null;
+    }
+
+    private static FileSystem getFileSystem(URI jarUri) {
+        FileSystem fs = fileSystems.get(jarUri);
+        if (fs == null) {
+            synchronized (fileSystems) {
+                fs = fileSystems.get(jarUri);
+                if (fs == null) {
+                    try {
+                        fs = FileSystems.getFileSystem(jarUri);
+                    } catch (FileSystemNotFoundException e1) {
+                        try {
+                            fs = FileSystems.newFileSystem(jarUri, Collections.emptyMap());
+                        } catch (IOException e2) {
+                            throw new IllegalStateException("Could not create FileSystem for " + jarUri, e2);
+                        }
+                    }
+                    fileSystems.put(jarUri, fs);
+                }
+            }
+        }
+        return fs;
     }
 
     public static void checkMappingsCompatibility(Map<String, Object> localMappings, Map<String, Object> remoteMappings, String remoteIndex) {

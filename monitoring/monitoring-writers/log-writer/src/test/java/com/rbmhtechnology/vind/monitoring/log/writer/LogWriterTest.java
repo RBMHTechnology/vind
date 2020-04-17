@@ -12,7 +12,7 @@ public class LogWriterTest extends SearchTestcase {
 
     @Test
     public void testSuggestionQueryReporting() {
-        MonitoringSearchServer server = new MonitoringSearchServer(testSearchServer.getSearchServer());
+        MonitoringSearchServer server = new MonitoringSearchServer(backend.getSearchServer());
     }
 
 }

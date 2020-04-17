@@ -11,6 +11,6 @@ import org.junit.Rule;
 public class SearchTestcase {
 
     @Rule
-    public TestSearchServer testSearchServer = new TestSearchServer();
+    public TestBackend backend = new TestBackend();
 
 }

@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.configure;
 
 import com.google.common.io.Resources;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +16,7 @@ import java.util.*;
 public class SearchConfiguration {
 
     public static final String SERVER_COLLECTION = "server.collection";
+    public static final String SERVER_COLLECTION_AUTOCREATE = "server.collection.autocreate";
     public static final String SERVER_HOST = "server.host";
     public static final String SERVER_PROVIDER = "server.provider";
     public static final String SERVER_CONNECTION_TIMEOUT = "server.connection.timeout";
@@ -144,6 +146,10 @@ public class SearchConfiguration {
 
     public static void set(String key, boolean value) {
         set(key, String.valueOf(value));
+    }
+
+    public static boolean isSet(String key) {
+        return get(key) != null;
     }
 
     private static List<String> getResourceFiles(String path) throws IOException {
