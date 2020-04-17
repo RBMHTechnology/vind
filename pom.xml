@@ -567,6 +567,15 @@
 
     <profiles>
         <profile>
+            <id>elastic</id>
+        </profile>
+        <profile>
+            <id>solr</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+        <profile>
             <id>quick</id>
             <activation>
                 <property>
