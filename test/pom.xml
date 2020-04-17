@@ -40,6 +40,7 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>elastic-server</artifactId>
             <version>${project.version}</version>
+
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -47,24 +48,24 @@
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
-                    <artifactId>org.apache.httpcomponents</artifactId>
-                    <groupId>httpcore</groupId>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>com.tdunning</artifactId>
-                    <groupId>t-digest</groupId>
+                    <groupId>com.tdunning</groupId>
+                    <artifactId>t-digest</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>org.apache.logging.log4j</artifactId>
-                    <groupId>log4j-api</groupId>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-api</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>org.apache.httpcomponents</artifactId>
-                    <groupId>httpcore</groupId>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>com.fasterxml.jackson.dataformat</artifactId>
-                    <groupId>jackson-dataformat-smile</groupId>
+                    <groupId>com.fasterxml.jackson.dataformat</groupId>
+                    <artifactId>jackson-dataformat-smile</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
