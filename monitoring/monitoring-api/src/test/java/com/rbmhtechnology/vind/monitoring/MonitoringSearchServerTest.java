@@ -15,6 +15,7 @@ import com.rbmhtechnology.vind.monitoring.logger.entry.MonitoringEntry;
 import com.rbmhtechnology.vind.monitoring.model.NewsItem;
 import com.rbmhtechnology.vind.monitoring.model.application.SimpleApplication;
 import com.rbmhtechnology.vind.monitoring.model.session.SimpleSession;
+import com.rbmhtechnology.vind.test.RunWithBackend;
 import com.rbmhtechnology.vind.test.SearchTestcase;
 import org.junit.Rule;
 import org.junit.Test;
@@ -25,6 +26,8 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 
 import static com.rbmhtechnology.vind.api.query.filter.Filter.*;
+import static com.rbmhtechnology.vind.test.Backend.Elastic;
+import static com.rbmhtechnology.vind.test.Backend.Solr;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -38,16 +41,18 @@ public class MonitoringSearchServerTest extends SearchTestcase {
     public ExpectedException thrown= ExpectedException.none();
 
     @Test
+    @RunWithBackend({Solr, Elastic})
     public void testSuggestionQueryMonitoring() {
         thrown.expect(RuntimeException.class);
-        final SearchServer server = new MonitoringSearchServer(testSearchServer.getSearchServer());
+        final SearchServer server = new MonitoringSearchServer(backend.getSearchServer());
     }
 
     @Test
+    @RunWithBackend({Solr})
     public void testSuggestionQueryMonitoringWithSessionAndLogger() throws IOException {
         TestMonitoringWriter logger = new TestMonitoringWriter();
 
-        MonitoringSearchServer server = new MonitoringSearchServer(testSearchServer.getSearchServer(), new SimpleApplication("app"), new SimpleSession("123"), logger);
+        MonitoringSearchServer server = new MonitoringSearchServer(backend.getSearchServer(), new SimpleApplication("app"), new SimpleSession("123"), logger);
 
         final SingleValueFieldDescriptor.TextFieldDescriptor<String> textField = new FieldDescriptorBuilder<String>()
                 .setFacet(true)
@@ -72,10 +77,11 @@ public class MonitoringSearchServerTest extends SearchTestcase {
     }
 
     @Test
+    @RunWithBackend({Solr})
     public void testQueryMonitoringWithSessionAndLogger() throws IOException {
         TestMonitoringWriter logger = new TestMonitoringWriter();
 
-        MonitoringSearchServer server = new MonitoringSearchServer(testSearchServer.getSearchServer(), new SimpleApplication("app"), new SimpleSession("123"), logger);
+        MonitoringSearchServer server = new MonitoringSearchServer(backend.getSearchServer(), new SimpleApplication("app"), new SimpleSession("123"), logger);
 
         //index 2 news items
         NewsItem i1 = new NewsItem("1", "New Vind instance needed", ZonedDateTime.now().minusMonths(3), "article", "coding");

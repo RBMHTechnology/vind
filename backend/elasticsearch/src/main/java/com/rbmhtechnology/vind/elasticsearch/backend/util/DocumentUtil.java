@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -132,11 +133,17 @@ public class DocumentUtil {
                             if (o instanceof Collection) {
                                 final Collection<Object> elasticValues = new ArrayList<>();
                                 if (ZonedDateTime.class.isAssignableFrom(type)) {
-                                    ((Collection<?>) o).forEach(ob -> elasticValues.add(ZonedDateTime.parse(ob.toString())));
+                                    ((Collection<?>) o).stream()
+                                            .filter(Objects::nonNull)
+                                            .forEach(ob -> elasticValues.add(ZonedDateTime.parse(ob.toString())));
                                 } else if (Date.class.isAssignableFrom(type)) {
-                                    ((Collection<?>) o).forEach(ob -> elasticValues.add(Date.from(Instant.parse(ob.toString()))));
+                                    ((Collection<?>) o).stream()
+                                            .filter(Objects::nonNull)
+                                            .forEach(ob -> elasticValues.add(Date.from(Instant.parse(ob.toString()))));
                                 } else if (LatLng.class.isAssignableFrom(type)) {
-                                    ((Collection<?>) o).forEach(ob -> {
+                                    ((Collection<?>) o).stream()
+                                            .filter(Objects::nonNull)
+                                            .forEach(ob -> {
                                         try {
                                             elasticValues.add(LatLng.parseLatLng(ob.toString()));
                                         } catch (ParseException e) {
@@ -146,7 +153,12 @@ public class DocumentUtil {
                                         }
                                     });
                                 } else {
-                                    elasticValues.addAll((Collection<Object>) o);
+                                    final Collection<Object> values = ((Collection<?>) o).stream()
+                                            .filter(Objects::nonNull)
+                                            .map(ob -> castForDescriptor(ob, field))
+                                            .collect(Collectors.toList());
+
+                                    elasticValues.addAll(values);
                                 }
 
                                 if (ComplexFieldDescriptor.class.isAssignableFrom(field.getClass())) {
@@ -167,7 +179,7 @@ public class DocumentUtil {
                             } else {
                                 Object storedValue;
                                 if (ZonedDateTime.class.isAssignableFrom(type)) {
-                                    storedValue = ZonedDateTime.parse(o.toString());
+                                    storedValue = ZonedDateTime.parse(o.toString()).withZoneSameLocal(ZoneId.of("UTC"));
                                 } else if (Date.class.isAssignableFrom(type)) {
                                     storedValue = Date.from(Instant.parse(o.toString())) ;
                                 } else if (LatLng.class.isAssignableFrom(type)) {
@@ -242,7 +254,7 @@ public class DocumentUtil {
             return Boolean.valueOf(s);
         }
         if(ZonedDateTime.class.isAssignableFrom(type)) {
-            return ZonedDateTime.parse(s);
+            return ZonedDateTime.parse(s).withZoneSameLocal(ZoneId.of("UTC"));
         }
         if(Date.class.isAssignableFrom(type)) {
             return DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(Long.valueOf(s)));
@@ -318,10 +330,10 @@ public class DocumentUtil {
                 if(o instanceof Date){
                     return ZonedDateTime.ofInstant(((Date) o).toInstant(), ZoneId.of("UTC"));
                 }
-                return ZonedDateTime.parse(o.toString());
+                return ZonedDateTime.parse(o.toString()).withZoneSameLocal(ZoneId.of("UTC"));
             }
             if(Date.class.isAssignableFrom(type)) {
-                return (Date) o;
+                return Date.from(Instant.parse(o.toString()));
             }
             if(ByteBuffer.class.isAssignableFrom(type)) {
                 return ByteBuffer.wrap(new String((byte[]) o).getBytes()) ;
