@@ -456,9 +456,15 @@ public class ServerTest {
                                 .setValue(color, "blue")
                 );
 
-        Document a3 = asset.createDoc("A3").setValue(title,"A3").setValue(color, "green").addChild(marker.createDoc("M2").setValue(title, "M2").setValue(color, "red"));
+        Document a3 = asset.createDoc("A3").setValue(title,"A3").setValue(color, "green")
+                .addChild(marker.createDoc("M2")
+                        .setValue(title, "M2")
+                        .setValue(color, "red"));
 
-        Document a4 = asset.createDoc("A4").setValue(title, "A4").setValue(color, "blue").addChild(marker.createDoc("M3").setValue(title, "M3").setValue(color, "blue"));
+        Document a4 = asset.createDoc("A4").setValue(title, "A4").setValue(color, "blue")
+                .addChild(marker.createDoc("M3")
+                        .setValue(title, "M3")
+                        .setValue(color, "blue"));
 
         server.index(a1);
         server.index(a2);
