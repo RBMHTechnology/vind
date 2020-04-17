@@ -111,6 +111,14 @@ public class CompletableSearchServer extends SearchServer {
         return indexAsync(executor, docs);
     }
 
+    public CompletableFuture<IndexResult> indexAsyncWithin(List<Document> docs, int withinMs) {
+        return indexAsync(executor, docs, withinMs);
+    }
+
+    public CompletableFuture<IndexResult> indexAsync(Executor executor, List<Document> docs, int withinMs) {
+        return CompletableFuture.supplyAsync(() -> this.indexWithin(docs, withinMs), executor);
+    }
+
     public CompletableFuture<IndexResult> indexAsync(Executor executor, Document ... docs) {
         return CompletableFuture.supplyAsync(() -> this.index(docs), executor);
     }
@@ -141,6 +149,10 @@ public class CompletableSearchServer extends SearchServer {
         return deleteAsync(AnnotationUtil.createDocument(t), executor);
     }
 
+    public CompletableFuture<Void> deleteAsyncWithin(Document doc, int withinMs) {
+        return deleteAsyncWithin(doc,withinMs, executor);
+    }
+
     public CompletableFuture<Void> deleteAsync(Document doc) {
         return deleteAsync(doc, executor);
     }
@@ -149,12 +161,24 @@ public class CompletableSearchServer extends SearchServer {
         return CompletableFuture.runAsync(() -> this.delete(doc), executor);
     }
 
+    public CompletableFuture<Void> deleteAsyncWithin(Document doc, int withinMs, Executor executor) {
+        return CompletableFuture.runAsync(() -> this.deleteWithin(doc, withinMs), executor);
+    }
+
     public CompletableFuture<Void> executeAsync(Update update, DocumentFactory factory) {
         return executeAsync(update, factory, executor);
     }
 
+    public CompletableFuture<Void> executeAsync(Delete delete, DocumentFactory factory) {
+        return executeAsync(delete, factory, executor);
+    }
+
     public CompletableFuture<Void> executeAsync(Update update, DocumentFactory factory, Executor executor) {
         return CompletableFuture.runAsync(() -> this.execute(update, factory), executor);
+    }
+
+    public CompletableFuture<Void> executeAsync(Delete delete, DocumentFactory factory, Executor executor) {
+        return CompletableFuture.runAsync(() -> this.execute(delete, factory), executor);
     }
 
     public CompletableFuture<Void> commitAsync(boolean optimize) {

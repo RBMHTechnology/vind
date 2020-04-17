@@ -59,9 +59,13 @@ public abstract class SearchServer implements Closeable {
                 server = it.next();
             } else {
                 while (it.hasNext() && server == null) {
-                    server = it.next();
-                    if (server.getServiceProviderClass() == null || !server.getServiceProviderClass().getCanonicalName().equals(providerClassName)) {
-                        server = null;
+                    try {
+                        server = it.next();
+                        if (server.getServiceProviderClass() == null || !server.getServiceProviderClass().getCanonicalName().equals(providerClassName)) {
+                            server = null;
+                        }
+                    } catch (Error | Exception e) {
+                        log.error("Cannot instantiate search server", e);
                     }
                 }
             }
