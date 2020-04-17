@@ -30,6 +30,9 @@
                 "type": "integer"
               },
               "suggestion": {
+                "type": "keyword"
+              },
+              "suggestion_experimental": {
                 "type": "text",
                 "analyzer": "suggestion",
                 "search_analyzer": "suggestion_search"
@@ -60,6 +63,9 @@
                 "type": "long"
               },
               "suggestion": {
+                "type": "keyword"
+              },
+              "suggestion_experimental": {
                 "type": "text",
                 "analyzer": "suggestion",
                 "search_analyzer": "suggestion_search"
@@ -90,6 +96,9 @@
                 "type": "float"
               },
               "suggestion": {
+                "type": "keyword"
+              },
+              "suggestion_experimental": {
                 "type": "text",
                 "analyzer": "suggestion",
                 "search_analyzer": "suggestion_search"
@@ -120,6 +129,9 @@
                 "type": "keyword"
               },
               "suggestion": {
+                "type": "keyword"
+              },
+              "suggestion_experimental": {
                 "type": "text",
                 "analyzer": "suggestion",
                 "search_analyzer": "suggestion_search"
@@ -162,6 +174,9 @@
                 "type": "boolean"
               },
               "suggestion": {
+                "type": "keyword"
+              },
+              "suggestion_experimental": {
                 "type": "text",
                 "analyzer": "suggestion",
                 "search_analyzer": "suggestion_search"
@@ -204,6 +219,9 @@
                 "type": "date"
               },
               "suggestion": {
+                "type": "keyword"
+              },
+              "suggestion_experimental": {
                 "type": "text",
                 "analyzer": "suggestion",
                 "search_analyzer": "suggestion_search"

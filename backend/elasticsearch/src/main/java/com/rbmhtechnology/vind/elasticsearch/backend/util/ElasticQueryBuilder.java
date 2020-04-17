@@ -613,7 +613,9 @@ public class ElasticQueryBuilder {
 
         final BoolQueryBuilder baseQuery = QueryBuilders.boolQuery();
 
-        final String[] suggestionFieldNames = getSuggestionFieldNames(search, factory, searchContext);
+        final String[] suggestionFieldNames = Stream.of(getSuggestionFieldNames(search, factory, searchContext))
+                .map(name -> name.concat("_experimental"))
+                .toArray(String[]::new);
 
         final MultiMatchQueryBuilder suggestionQuery = QueryBuilders
                 .multiMatchQuery(search.getInput(),suggestionFieldNames)
@@ -664,7 +666,7 @@ public class ElasticQueryBuilder {
         suggestionFieldNames.stream()
                 .map(field -> AggregationBuilders
                         .terms(FieldUtil.getSourceFieldName(field.replaceAll(".suggestion", ""), searchContext))
-                        .field(field.replaceAll(".suggestion", ""))
+                        .field(field)
                         .includeExclude(new IncludeExclude(Suggester.getSuggestionRegex(search.getInput()), null))
                 )
                 .forEach(searchSource::aggregation);

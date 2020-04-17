@@ -416,7 +416,9 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         docFactoryBuilder
                 .addField(title, description, tags, created, published, rating, location, age);
 
-        final DocumentFactory documents = docFactoryBuilder.build();
+        final DocumentFactory documents = docFactoryBuilder
+                .setUpdatable(true)
+                .build();
 
         final LatLng gijon = new LatLng(43.53573, -5.66152);
         final Document doc3 = documents.createDoc("AA-6k121")
