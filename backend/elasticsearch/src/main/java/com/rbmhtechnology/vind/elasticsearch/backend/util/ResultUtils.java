@@ -243,6 +243,25 @@ public class ResultUtils {
         if(Objects.nonNull(response)
                 && Objects.nonNull(response.getHits())
                 && Objects.nonNull(response.getHits().getHits())){
+
+            //TODO: if nested doc search is implemented
+
+            final HashMap<FieldDescriptor, TermFacetResult<?>> suggestionValues = new HashMap<>();
+
+            response.getAggregations().asList().stream()
+                    .map(aggregation -> getTermFacetResults(aggregation, new Facet.TermFacet(factory.getField(aggregation.getName())), factory))
+                    .forEach(pair -> suggestionValues.put(pair.getKey(), pair.getValue()));
+
+            return suggestionValues;
+        } else {
+            throw new ElasticsearchException("Empty result from ElasticClient");
+        }
+    }
+    public static HashMap<FieldDescriptor, TermFacetResult<?>> buildExperimentalSuggestionResults(SearchResponse response, DocumentFactory factory, String context) {
+
+        if(Objects.nonNull(response)
+                && Objects.nonNull(response.getHits())
+                && Objects.nonNull(response.getHits().getHits())){
             //TODO: if nested doc search is implemented
             //final Map<String,Integer> childCounts = SolrUtils.getChildCounts(response);
 

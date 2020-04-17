@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
+import com.google.common.collect.Lists;
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
@@ -18,6 +19,7 @@ import com.rbmhtechnology.vind.api.query.update.UpdateOperation;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
+import org.apache.commons.lang3.tuple.Pair;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.DisMaxQueryBuilder;
@@ -30,11 +32,13 @@ import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.range.DateRangeAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.terms.IncludeExclude;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
@@ -47,9 +51,12 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -599,7 +606,7 @@ public class ElasticQueryBuilder {
         return scriptBuilder;
     }
 
-    public static SearchSourceBuilder buildSuggestionQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
+    public static SearchSourceBuilder buildExperimentalSuggestionQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
 
         final String searchContext = search.getSearchContext();
         final SearchSourceBuilder searchSource = new SearchSourceBuilder();
@@ -632,6 +639,35 @@ public class ElasticQueryBuilder {
         searchSource.fetchSource(true);
 
         //TODO if nested document search is implemented
+
+        return searchSource;
+    }
+
+    public static SearchSourceBuilder buildSuggestionQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
+
+        final String searchContext = search.getSearchContext();
+
+        final SearchSourceBuilder searchSource = new SearchSourceBuilder();
+
+        final BoolQueryBuilder filterSuggestions = QueryBuilders.boolQuery()
+                .must(QueryBuilders.matchAllQuery())
+                .filter(buildFilterQuery(search.getFilter(), factory, searchContext));
+
+        searchSource.query(filterSuggestions);
+
+//        if(search.getTimeZone() != null) {
+//            query.set(CommonParams.TZ,search.getTimeZone());
+//        }
+
+        final List<String> suggestionFieldNames =
+                Lists.newArrayList(getSuggestionFieldNames(search, factory, searchContext));
+        suggestionFieldNames.stream()
+                .map(field -> AggregationBuilders
+                        .terms(FieldUtil.getSourceFieldName(field.replaceAll(".suggestion", ""), searchContext))
+                        .field(field.replaceAll(".suggestion", ""))
+                        .includeExclude(new IncludeExclude(Suggester.getSuggestionRegex(search.getInput()), null))
+                )
+                .forEach(searchSource::aggregation);
 
         return searchSource;
     }

@@ -33,8 +33,8 @@ import com.rbmhtechnology.vind.elasticsearch.backend.util.PainlessScript;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ResultUtils;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
-import com.sun.org.apache.regexp.internal.RE;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.util.Asserts;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -42,10 +42,12 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
-import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -334,6 +336,28 @@ public class ElasticSearchServer extends SearchServer {
             final SearchResponse response = elasticSearchClient.query(query);
             final HashMap<FieldDescriptor, TermFacetResult<?>> suggestionValues =
                     ResultUtils.buildSuggestionResults(response, factory, search.getSearchContext());
+
+//            final SearchSourceBuilder suggestionFacetQuery = new SearchSourceBuilder();
+//            final BoolQueryBuilder filterSuggestions = QueryBuilders.boolQuery()
+//                    .must(QueryBuilders.matchAllQuery())
+//                    .filter(ElasticQueryBuilder.buildFilterQuery(search.getFilter(), factory, search.getSearchContext()));
+//            suggestionFacetQuery.query(filterSuggestions);
+//
+//            suggestionValues.entrySet().stream()
+//                    .map(e -> Pair.of(
+//                            e.getKey().getName(),
+//                            e.getValue().getValues().stream()
+//                                    .map(value ->  new FiltersAggregator.KeyedFilter(
+//                                            value.getValue().toString(),
+//                                            QueryBuilders.termQuery(FieldUtil.getFieldName(e.getKey(), search.getSearchContext()), value.getValue())))
+//                                    .toArray(FiltersAggregator.KeyedFilter[]::new)
+//                            )
+//                    )
+//                    .forEach( fieldAggs ->
+//                            suggestionFacetQuery.aggregation(
+//                                    AggregationBuilders.filters(fieldAggs.getKey(),fieldAggs.getValue())
+//                            )
+//                    );
 
             elapsedtime.stop();
 
