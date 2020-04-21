@@ -22,10 +22,10 @@ public class ElasticBaseTest {
         container.start();
 
         client = new ElasticVindClient.Builder("http://" + container.getHttpHostAddress())
-                .setDefaultIndex("vind-test")
+                .setDefaultIndex("vind")
                 .build("elastic", "changeme");
 
-        client.createIndex("vind-test");
+        client.createIndex("vind");
 
         server = new ElasticSearchServer(client);
 

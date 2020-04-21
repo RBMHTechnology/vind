@@ -1,10 +1,13 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
+import com.google.common.collect.Streams;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
+import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.result.FacetResults;
 import com.rbmhtechnology.vind.api.result.GetResult;
+import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.api.result.facet.FacetValue;
 import com.rbmhtechnology.vind.api.result.facet.IntervalFacetResult;
 import com.rbmhtechnology.vind.api.result.facet.PivotFacetResult;
@@ -18,9 +21,12 @@ import com.rbmhtechnology.vind.model.FieldDescriptor;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilters;
@@ -32,17 +38,21 @@ import org.elasticsearch.search.aggregations.bucket.terms.ParsedLongTerms;
 import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
 import org.elasticsearch.search.aggregations.bucket.terms.ParsedTerms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.suggest.Suggest;
+import org.elasticsearch.search.suggest.Suggest.Suggestion.Entry.Option;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -230,5 +240,85 @@ public class ResultUtils {
         final IntervalFacetResult intervalFacetResult = new IntervalFacetResult(values);
 
         return Pair.of(intervalFacet.getFacetName(), intervalFacetResult);
+    }
+
+    public static HashMap<FieldDescriptor, TermFacetResult<?>> buildSuggestionResults(SearchResponse response, DocumentFactory factory, String context) {
+
+        if(Objects.nonNull(response)
+                && Objects.nonNull(response.getHits())
+                && Objects.nonNull(response.getHits().getHits())){
+
+            //TODO: if nested doc search is implemented
+
+            final HashMap<FieldDescriptor, TermFacetResult<?>> suggestionValues = new HashMap<>();
+
+            response.getAggregations().asList().stream()
+                    .map(aggregation -> getTermFacetResults(aggregation, new Facet.TermFacet(factory.getField(aggregation.getName())), factory))
+                    .forEach(pair -> suggestionValues.put(pair.getKey(), pair.getValue()));
+
+
+            return suggestionValues;
+        } else {
+            throw new ElasticsearchException("Empty result from ElasticClient");
+        }
+    }
+
+    public static HashMap<FieldDescriptor, TermFacetResult<?>> buildExperimentalSuggestionResults(SearchResponse response, DocumentFactory factory, String context) {
+
+        if(Objects.nonNull(response)
+                && Objects.nonNull(response.getHits())
+                && Objects.nonNull(response.getHits().getHits())){
+            //TODO: if nested doc search is implemented
+            //final Map<String,Integer> childCounts = SolrUtils.getChildCounts(response);
+
+            final HashMap<FieldDescriptor, TermFacetResult<?>> suggestionValues = new HashMap<>();
+
+
+            Arrays.stream(response.getHits().getHits())
+                    .map(SearchHit::getHighlightFields)
+                    .map(Map::entrySet)
+                    .flatMap(Collection::stream)
+                    .forEach(e -> addSuggestionValue(suggestionValues,e.getKey(),e.getValue().fragments()[0].string(),factory, context));
+
+            return suggestionValues;
+        } else {
+            throw new ElasticsearchException("Empty result from ElasticClient");
+        }
+    }
+
+    private static void addSuggestionValue(HashMap<FieldDescriptor, TermFacetResult<?>> suggestionValues,
+                                    String suggestionFieldName,
+                                    String suggestedValue,
+                                    DocumentFactory factory,
+                                    String context) {
+
+        final String fieldName = FieldUtil.getSourceFieldName(suggestionFieldName.replaceAll(".suggestion", ""),context);
+        final FieldDescriptor<?> suggestionField = factory.getField(fieldName);
+        final String cleanValue = suggestedValue.replaceAll("</*em>", "");
+        final TermFacetResult<?> termSuggestions = Optional.ofNullable(suggestionValues.get(suggestionField))
+                .orElse(new TermFacetResult(Collections.singletonList(new FacetValue(cleanValue, 0))));
+
+
+        final List<FacetValue> updatedFacetValues = new ArrayList<>();
+        final Optional<FacetValue> updatedValue = termSuggestions.getValues().stream()
+                .map((FacetValue<?> oldFacetValue) -> {
+                    if (oldFacetValue.getValue().toString().equals(cleanValue)) {
+                        final long updatedCount = oldFacetValue.getCount() + 1;
+                        final FacetValue updatedFacetValue = new FacetValue(cleanValue, updatedCount);
+                        updatedFacetValues.add(updatedFacetValue);
+                        return updatedFacetValue;
+                    } else {
+                        updatedFacetValues.add(oldFacetValue);
+                        return oldFacetValue;
+                    }
+                })
+                .filter((FacetValue oldFacetValue) -> oldFacetValue.getValue().toString().equals(cleanValue))
+                .findAny();
+
+        if(!updatedValue.isPresent()){
+            updatedFacetValues.add(new FacetValue(cleanValue, 1));
+        }
+
+        suggestionValues.put(suggestionField,new TermFacetResult(updatedFacetValues));
     }
 }

@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 public class ElasticMappingUtils {
 
     private static final String MAPPINGS_JSON = "mappings.json";
+    private static final String SETTINGS_JSON = "settings.json";
     private static final Logger log = LoggerFactory.getLogger(ElasticMappingUtils.class);
 
     private static final HashMap<URI, FileSystem> fileSystems = new HashMap<>();
@@ -48,6 +49,23 @@ public class ElasticMappingUtils {
             throw new SearchServerException(
                     String.format(
                             "Error reading default mapping definition from %s",
+                            mappingsFile.toAbsolutePath()));
+        }
+    }
+
+    public static String getDefaultSettings() {
+        final URL resource = Optional.ofNullable(
+                ElasticMappingUtils.class.getClassLoader().getResource(SETTINGS_JSON))
+                .orElseThrow(() -> new MappingValidationException(
+                        String.format("Error getting default settings file %s resource", SETTINGS_JSON)));
+        final Path mappingsFile = getResourceAsPath(resource);
+
+        try {
+            return new String(Files.readAllBytes(mappingsFile), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new SearchServerException(
+                    String.format(
+                            "Error reading default settings definition from %s",
                             mappingsFile.toAbsolutePath()));
         }
     }

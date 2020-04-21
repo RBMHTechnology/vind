@@ -1,5 +1,7 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Streams;
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
@@ -10,13 +12,20 @@ import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.facet.Interval.NumericInterval;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
+import com.rbmhtechnology.vind.api.query.suggestion.DescriptorSuggestionSearch;
+import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
+import com.rbmhtechnology.vind.api.query.suggestion.StringSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.UpdateOperation;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
+import org.apache.commons.lang3.tuple.Pair;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.DisMaxQueryBuilder;
+import org.elasticsearch.index.query.MultiMatchQueryBuilder;
+import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
@@ -29,21 +38,28 @@ import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInter
 import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.range.DateRangeAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.terms.IncludeExclude;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import org.elasticsearch.search.suggest.Suggest;
+import org.elasticsearch.search.suggest.Suggest.Suggestion.Entry.Option;
+import org.elasticsearch.search.suggest.SuggestBuilder;
+import org.elasticsearch.search.suggest.SuggestBuilders;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import javax.swing.text.html.Option;
-import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.SortedSet;
@@ -590,5 +606,128 @@ public class ElasticQueryBuilder {
                 .map(entry -> scriptBuilder.addOperations(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
         return scriptBuilder;
+    }
+
+    public static SearchSourceBuilder buildExperimentalSuggestionQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
+
+        final String searchContext = search.getSearchContext();
+        final SearchSourceBuilder searchSource = new SearchSourceBuilder();
+
+        final BoolQueryBuilder baseQuery = QueryBuilders.boolQuery();
+
+        final String[] suggestionFieldNames = Stream.of(getSuggestionFieldNames(search, factory, searchContext))
+                .map(name -> name.concat("_experimental"))
+                .toArray(String[]::new);
+
+        final MultiMatchQueryBuilder suggestionQuery = QueryBuilders
+                .multiMatchQuery(search.getInput(),suggestionFieldNames)
+                .type(MultiMatchQueryBuilder.Type.BEST_FIELDS)
+                .operator(Operator.OR);
+
+        baseQuery.must(suggestionQuery);
+
+//        if(search.getTimeZone() != null) {
+//            query.set(CommonParams.TZ,search.getTimeZone());
+//        }
+
+        baseQuery.filter(buildFilterQuery(search.getFilter(), factory, searchContext));
+
+        searchSource.query(baseQuery);
+
+        final HighlightBuilder highlighter = new HighlightBuilder().numOfFragments(0);
+        Stream.of(suggestionFieldNames)
+                .forEach(highlighter::field);
+
+        searchSource.highlighter(highlighter);
+        searchSource.trackScores(SearchConfiguration.get(SearchConfiguration.SEARCH_RESULT_SHOW_SCORE, true));
+        searchSource.fetchSource(true);
+
+        //TODO if nested document search is implemented
+
+        return searchSource;
+    }
+
+    public static SearchSourceBuilder buildSuggestionQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
+
+        final String searchContext = search.getSearchContext();
+
+        final SearchSourceBuilder searchSource = new SearchSourceBuilder()
+                .size(0);
+
+        final BoolQueryBuilder filterSuggestions = QueryBuilders.boolQuery()
+                .must(QueryBuilders.matchAllQuery())
+                .filter(buildFilterQuery(search.getFilter(), factory, searchContext));
+
+        searchSource.query(filterSuggestions);
+
+//        if(search.getTimeZone() != null) {
+//            query.set(CommonParams.TZ,search.getTimeZone());
+//        }
+
+        final List<String> suggestionFieldNames =
+                Lists.newArrayList(getSuggestionFieldNames(search, factory, searchContext));
+
+        suggestionFieldNames.stream()
+                .map(field -> AggregationBuilders
+                        .terms(FieldUtil.getSourceFieldName(field.replaceAll(".suggestion", ""), searchContext))
+                        .field(field)
+                        .includeExclude(new IncludeExclude(Suggester.getSuggestionRegex(search.getInput()), null))
+                )
+                .forEach(searchSource::aggregation);
+
+        final SuggestBuilder suggestBuilder = new SuggestBuilder();
+        suggestBuilder.setGlobalText(search.getInput());
+        suggestionFieldNames
+                .forEach(fieldName -> suggestBuilder
+                        .addSuggestion(
+                                FieldUtil.getSourceFieldName(fieldName.replaceAll(".suggestion", ""), searchContext),
+                                SuggestBuilders.termSuggestion(fieldName.concat("_experimental"))));
+
+        searchSource.suggest(suggestBuilder);
+        return searchSource;
+    }
+
+    public static List<String> getSpellCheckedQuery(SearchResponse response) {
+        final Map<String, Pair<String,Double>> spellcheck = Streams.stream(response.getSuggest().iterator())
+                .map(e ->Pair.of(e.getName(),  e.getEntries().stream()
+                        .map(word ->
+                                word.getOptions().stream()
+                                        .sorted(Comparator.comparingDouble(Option::getScore).reversed())
+                                        .map(o -> Pair.of(o.getText().string(),o.getScore()))
+                                        .findFirst()
+                                        .orElse(Pair.of(word.getText().string(),0f))
+                        ).collect(Collectors.toMap( Pair::getKey,Pair::getValue)))
+                )
+                .collect(Collectors.toMap(
+                        Pair::getKey,
+                        p -> Pair.of(
+                                String.join(" ", p.getValue().keySet()),
+                                p.getValue().values().stream().mapToDouble(Float::floatValue).sum())));
+
+        return spellcheck.values().stream()
+                .filter( v -> v.getValue() > 0.0)
+                .sorted((p1,p2) -> Double.compare(p2.getValue(),p1.getValue()))
+                .map(Pair::getKey)
+                .collect(Collectors.toList());
+    }
+
+    protected static String[] getSuggestionFieldNames(ExecutableSuggestionSearch search, DocumentFactory factory, String searchContext) {
+
+        if(search.isStringSuggestion()) {
+            final StringSuggestionSearch suggestionSearch =(StringSuggestionSearch) search;
+            return suggestionSearch.getSuggestionFields().stream()
+                    .map(factory::getField)
+                    .map(descriptor -> FieldUtil.getFieldName(descriptor, searchContext))
+                    .filter(Objects::nonNull)
+                    .map(name ->  name.concat(".suggestion"))
+                    .toArray(String[]::new);
+        } else {
+            final DescriptorSuggestionSearch suggestionSearch =(DescriptorSuggestionSearch) search;
+            return suggestionSearch.getSuggestionFields().stream()
+                    .map(descriptor -> FieldUtil.getFieldName(descriptor, searchContext))
+                    .filter(Objects::nonNull)
+                    .map(name ->  name.concat(".suggestion"))
+                    .toArray(String[]::new);
+        }
     }
 }

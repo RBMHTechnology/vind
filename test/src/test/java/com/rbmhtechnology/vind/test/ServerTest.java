@@ -270,7 +270,7 @@ public class ServerTest {
 
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr})
     public void testSuggestions() {
         SearchServer server = testBackend.getSearchServer();
 
@@ -1258,7 +1258,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr})
     public void testLocationDescriptor() {
 
         SingleValueFieldDescriptor.LocationFieldDescriptor<LatLng> locationSingle = new FieldDescriptorBuilder()
@@ -1326,7 +1326,7 @@ public class ServerTest {
 
     //MBDN-458
     @Test
-    @RunWithBackend({Solr})
+    @RunWithBackend({Solr, Elastic})
     public void testContextSearch() {
 
         final SingleValueFieldDescriptor<Float> numberField = new FieldDescriptorBuilder()
@@ -2181,7 +2181,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void testPartialUpdates() {
 
         SearchServer server = testBackend.getSearchServer();
@@ -2214,7 +2214,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void testSuggestionFiltering() {
 
         SearchServer server = testBackend.getSearchServer();

@@ -182,7 +182,7 @@ public class PainlessScript {
             }
 
             if(Objects.nonNull(op) && Objects.nonNull(field)) {
-                if(field.isUpdate()) {
+                if(!field.isUpdate()) {
                     log.warn("Provided field cannot be updated: field {} is not set as updatable", field.getName());
                     errors.add(String.format(
                             "Provided field cannot be updated: field %s is not set as updatable",

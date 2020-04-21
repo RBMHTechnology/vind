@@ -15,6 +15,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import static com.rbmhtechnology.vind.test.Backend.Elastic;
 import static com.rbmhtechnology.vind.test.Backend.Solr;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -157,7 +158,7 @@ public class SuggestionSearchIT {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void testSpecialCharacters() {
         server.index(
                parent.createDoc("P_SPEC_CHAR").setValue(parent_value, "León"));

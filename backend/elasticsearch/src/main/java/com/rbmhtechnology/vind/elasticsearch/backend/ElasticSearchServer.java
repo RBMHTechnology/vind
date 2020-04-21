@@ -23,6 +23,7 @@ import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.api.result.SliceResult;
 import com.rbmhtechnology.vind.api.result.StatusResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
+import com.rbmhtechnology.vind.api.result.facet.TermFacetResult;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticMappingUtils;
@@ -31,7 +32,10 @@ import com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.PainlessScript;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ResultUtils;
 import com.rbmhtechnology.vind.model.DocumentFactory;
+import com.rbmhtechnology.vind.model.FieldDescriptor;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.util.Asserts;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -39,9 +43,12 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +63,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class ElasticSearchServer extends SearchServer {
@@ -320,8 +328,61 @@ public class ElasticSearchServer extends SearchServer {
     }
 
     @Override
-    public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets) {
-        throw new NotImplementedException();
+    public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory factory) {
+        final StopWatch elapsedtime = StopWatch.createStarted();
+        final SearchSourceBuilder query = ElasticQueryBuilder.buildSuggestionQuery(search, factory);
+        //query
+        try {
+            elasticClientLogger.debug(">>> query({})", query.toString());
+            final SearchResponse response = elasticSearchClient.query(query);
+            final HashMap<FieldDescriptor, TermFacetResult<?>> suggestionValues =
+                    ResultUtils.buildSuggestionResults(response, factory, search.getSearchContext());
+
+            String spellcheckText = null;
+            if (!suggestionValues.values().stream()
+                    .anyMatch(termFacetResult -> CollectionUtils.isNotEmpty(termFacetResult.getValues())) ) {
+
+                //if no results, try spellchecker (if defined and if spellchecked query differs from original)
+                final List<String> spellCheckedQuery = ElasticQueryBuilder.getSpellCheckedQuery(response);
+
+
+                //query with checked query
+
+                if(spellCheckedQuery != null && CollectionUtils.isNotEmpty(spellCheckedQuery)) {
+                    final Iterator<String> iterator = spellCheckedQuery.iterator();
+                    while(iterator.hasNext()) {
+                        final String text = iterator.next();
+                        final SearchSourceBuilder spellcheckQuery = ElasticQueryBuilder.buildSuggestionQuery(search.text(text), factory);
+                        final SearchResponse spellcheckResponse = elasticSearchClient.query(spellcheckQuery);
+                        final HashMap<FieldDescriptor, TermFacetResult<?>> spellcheckValues =
+                                ResultUtils.buildSuggestionResults(spellcheckResponse, factory, search.getSearchContext());
+                        if (spellcheckValues.values().stream()
+                                .anyMatch(termFacetResult -> CollectionUtils.isNotEmpty(termFacetResult.getValues())) ) {
+                            spellcheckText = text;
+                            break;
+                        }
+                    }
+
+                    final SearchSourceBuilder spellcheckQuery = ElasticQueryBuilder.buildSuggestionQuery(search.text(""), factory);
+                    final SearchResponse spellcheckResponse = elasticSearchClient.query(spellcheckQuery);
+                    final HashMap<FieldDescriptor, TermFacetResult<?>> spellcheckValues =
+                            ResultUtils.buildSuggestionResults(spellcheckResponse, factory, search.getSearchContext());
+                    if (spellcheckValues.values().stream()
+                            .anyMatch(termFacetResult -> CollectionUtils.isNotEmpty(termFacetResult.getValues())) ) {
+                        spellcheckText = "";
+                    }
+                }
+            }
+
+            elapsedtime.stop();
+
+            final SuggestionResult result = new SuggestionResult(suggestionValues, spellcheckText, response.getTook().getMillis(),factory);
+            result.setElapsedTime(elapsedtime.getTime(TimeUnit.MILLISECONDS));
+            return result;
+
+        } catch (ElasticsearchException | IOException e) {
+            throw new SearchServerException(String.format("Cannot issue query: %s",e.getMessage()), e);
+        }
     }
 
     @Override

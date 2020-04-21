@@ -57,11 +57,7 @@ public class ElasticRequestUtils {
 
     public static CreateIndexRequest getCreateIndexRequest(String index) {
         final CreateIndexRequest request = new CreateIndexRequest(index);
-        request.settings(Settings.builder()
-                .put("index.number_of_shards", 1)
-                .put("index.number_of_replicas", 1)
-        );
-
+        request.settings(ElasticMappingUtils.getDefaultSettings(), XContentType.JSON);
         request.mapping(ElasticMappingUtils.getDefaultMapping(), XContentType.JSON);
         return request;
     }

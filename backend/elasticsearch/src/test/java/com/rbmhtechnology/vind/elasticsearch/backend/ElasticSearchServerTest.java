@@ -9,11 +9,15 @@ import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
+import com.rbmhtechnology.vind.api.query.suggestion.DescriptorSuggestionSearch;
+import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
+import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.DeleteResult;
 import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.IndexResult;
 import com.rbmhtechnology.vind.api.result.SearchResult;
+import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
@@ -412,7 +416,9 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         docFactoryBuilder
                 .addField(title, description, tags, created, published, rating, location, age);
 
-        final DocumentFactory documents = docFactoryBuilder.build();
+        final DocumentFactory documents = docFactoryBuilder
+                .setUpdatable(true)
+                .build();
 
         final LatLng gijon = new LatLng(43.53573, -5.66152);
         final Document doc3 = documents.createDoc("AA-6k121")
@@ -443,5 +449,103 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         assertNotNull(result);
         assertEquals(2, ((Collection<String>)result.getResults().get(0).getValue("tags")).size());
         assertEquals(9.0F, result.getResults().get(0).getValue(rating));
+    }
+
+    @Test
+    public void suggestionSearchTest(){
+        server.clearIndex();
+        final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
+
+        final FieldDescriptor title = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setFullText(true)
+                .buildTextField("title");
+
+        final FieldDescriptor description = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setFullText(true)
+                .buildTextField("description");
+
+        final MultiValueFieldDescriptor.TextFieldDescriptor<String> tags = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setFullText(true)
+                .buildMultivaluedTextField("tags");
+
+        final SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime>  created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+        final MultiValueFieldDescriptor.UtilDateFieldDescriptor<Date> published = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildMultivaluedUtilDateField("published");
+
+        final SingleValueFieldDescriptor.NumericFieldDescriptor<Number> rating = new FieldDescriptorBuilder()
+                .buildNumericField("rating");
+
+        final SingleValueFieldDescriptor.LocationFieldDescriptor<LatLng> location = new FieldDescriptorBuilder()
+                .buildLocationField("location");
+
+        docFactoryBuilder
+                .addField(title, description, tags, created, published, rating, location);
+
+        final DocumentFactory documents = docFactoryBuilder.build();
+        final LatLng salzburg = new LatLng(47.811195, 13.033229);
+        final Document doc1 = documents.createDoc("AA-2X3451")
+                .setValue(title, "The last ascent of man")
+                .setValues(tags, "climbing", "pandemia")
+                .setValue(rating, 9.5)
+                .setValue(location, salzburg)
+                .setValue(created, ZonedDateTime.now())
+                .setValue(published, new Date());
+
+        final LatLng wuhan = new LatLng(30.583332,114.283333);
+
+        final Document doc2 = documents.createDoc("AA-2X6891")
+                .setValue(title, "Dawn of humanity: the COVID-19 chronicles")
+                .setValues(tags, "pandemia")
+                .setValue(description,"Earth year 2020; a new breed of virus born within the rural China spreads " +
+                        "around the world decimating humanity.")
+                .setValue(rating, 9.9)
+                .setValue(location, wuhan)
+                .setValue(created, ZonedDateTime.now())
+                .setValue(published, new Date());
+
+        final LatLng gijon = new LatLng(43.53573, -5.66152);
+        final Document doc3 = documents.createDoc("AA-6k121")
+                .setValue(title, "Back to the roots")
+                .setValues(tags, "folklore","tradition", "survival")
+                .setValue(description,"In a moment were society is trembling by facing a global health, economic " +
+                        "and social crisis, the old ways, sustainable and deeply linked to the earth where our ancestors " +
+                        "grew, recover their relevance as a real option to move forward.")
+                .setValue(rating, 8)
+                .setValue(location, gijon)
+                .setValue(created, ZonedDateTime.now())
+                .setValue(published, new Date());
+
+        final Document doc4 = documents.createDoc("AA-A027F")
+                .setValue(title, "Corona Virus: global crisis")
+                .setValues(tags, "survival", "pandemia", "COVID19")
+                .setValue(rating, 9.1)
+                .setValue(created, ZonedDateTime.now())
+                .setValue(published, new Date());
+        server.index(doc1,doc2, doc3,doc4);
+
+        SuggestionResult searchResult = server.execute(
+                Search.suggest("colona pamdemia")
+                        .fields(title,tags)
+                        .filter(rating.greaterThan(9))
+                , documents);
+        assertNotNull(searchResult);
+
+        searchResult = server.execute(
+                Search.suggest("pan").fields(title,tags)
+                , documents);
+        assertNotNull(searchResult);
+
+        searchResult = server.execute(
+                Search.suggest("co").fields(title, tags)
+                , documents);
+        assertNotNull(searchResult);
+
     }
 }
