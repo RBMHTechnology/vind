@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Streams;
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
@@ -14,12 +15,12 @@ import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.api.query.suggestion.DescriptorSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.StringSuggestionSearch;
-import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.UpdateOperation;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.apache.commons.lang3.tuple.Pair;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.DisMaxQueryBuilder;
@@ -32,7 +33,6 @@ import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregationBuilder;
@@ -44,22 +44,22 @@ import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import org.elasticsearch.search.suggest.Suggest;
+import org.elasticsearch.search.suggest.Suggest.Suggestion.Entry.Option;
 import org.elasticsearch.search.suggest.SuggestBuilder;
 import org.elasticsearch.search.suggest.SuggestBuilders;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import javax.swing.text.html.Option;
-import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.SortedSet;
@@ -685,6 +685,30 @@ public class ElasticQueryBuilder {
 
         searchSource.suggest(suggestBuilder);
         return searchSource;
+    }
+
+    public static List<String> getSpellCheckedQuery(SearchResponse response) {
+        final Map<String, Pair<String,Double>> spellcheck = Streams.stream(response.getSuggest().iterator())
+                .map(e ->Pair.of(e.getName(),  e.getEntries().stream()
+                        .map(word ->
+                                word.getOptions().stream()
+                                        .sorted(Comparator.comparingDouble(Option::getScore).reversed())
+                                        .map(o -> Pair.of(o.getText().string(),o.getScore()))
+                                        .findFirst()
+                                        .orElse(Pair.of(word.getText().string(),0f))
+                        ).collect(Collectors.toMap( Pair::getKey,Pair::getValue)))
+                )
+                .collect(Collectors.toMap(
+                        Pair::getKey,
+                        p -> Pair.of(
+                                String.join(" ", p.getValue().keySet()),
+                                p.getValue().values().stream().mapToDouble(Float::floatValue).sum())));
+
+        return spellcheck.values().stream()
+                .filter( v -> v.getValue() > 0.0)
+                .sorted((p1,p2) -> Double.compare(p2.getValue(),p1.getValue()))
+                .map(Pair::getKey)
+                .collect(Collectors.toList());
     }
 
     protected static String[] getSuggestionFieldNames(ExecutableSuggestionSearch search, DocumentFactory factory, String searchContext) {

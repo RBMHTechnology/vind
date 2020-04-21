@@ -33,6 +33,7 @@ import com.rbmhtechnology.vind.elasticsearch.backend.util.PainlessScript;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ResultUtils;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.util.Asserts;
@@ -337,31 +338,45 @@ public class ElasticSearchServer extends SearchServer {
             final HashMap<FieldDescriptor, TermFacetResult<?>> suggestionValues =
                     ResultUtils.buildSuggestionResults(response, factory, search.getSearchContext());
 
-//            final SearchSourceBuilder suggestionFacetQuery = new SearchSourceBuilder();
-//            final BoolQueryBuilder filterSuggestions = QueryBuilders.boolQuery()
-//                    .must(QueryBuilders.matchAllQuery())
-//                    .filter(ElasticQueryBuilder.buildFilterQuery(search.getFilter(), factory, search.getSearchContext()));
-//            suggestionFacetQuery.query(filterSuggestions);
-//
-//            suggestionValues.entrySet().stream()
-//                    .map(e -> Pair.of(
-//                            e.getKey().getName(),
-//                            e.getValue().getValues().stream()
-//                                    .map(value ->  new FiltersAggregator.KeyedFilter(
-//                                            value.getValue().toString(),
-//                                            QueryBuilders.termQuery(FieldUtil.getFieldName(e.getKey(), search.getSearchContext()), value.getValue())))
-//                                    .toArray(FiltersAggregator.KeyedFilter[]::new)
-//                            )
-//                    )
-//                    .forEach( fieldAggs ->
-//                            suggestionFacetQuery.aggregation(
-//                                    AggregationBuilders.filters(fieldAggs.getKey(),fieldAggs.getValue())
-//                            )
-//                    );
+            String spellcheckText = null;
+            if (!suggestionValues.values().stream()
+                    .anyMatch(termFacetResult -> CollectionUtils.isNotEmpty(termFacetResult.getValues())) ) {
+
+                //if no results, try spellchecker (if defined and if spellchecked query differs from original)
+                final List<String> spellCheckedQuery = ElasticQueryBuilder.getSpellCheckedQuery(response);
+
+
+                //query with checked query
+
+                if(spellCheckedQuery != null && CollectionUtils.isNotEmpty(spellCheckedQuery)) {
+                    final Iterator<String> iterator = spellCheckedQuery.iterator();
+                    while(iterator.hasNext()) {
+                        final String text = iterator.next();
+                        final SearchSourceBuilder spellcheckQuery = ElasticQueryBuilder.buildSuggestionQuery(search.text(text), factory);
+                        final SearchResponse spellcheckResponse = elasticSearchClient.query(spellcheckQuery);
+                        final HashMap<FieldDescriptor, TermFacetResult<?>> spellcheckValues =
+                                ResultUtils.buildSuggestionResults(spellcheckResponse, factory, search.getSearchContext());
+                        if (spellcheckValues.values().stream()
+                                .anyMatch(termFacetResult -> CollectionUtils.isNotEmpty(termFacetResult.getValues())) ) {
+                            spellcheckText = text;
+                            break;
+                        }
+                    }
+
+                    final SearchSourceBuilder spellcheckQuery = ElasticQueryBuilder.buildSuggestionQuery(search.text(""), factory);
+                    final SearchResponse spellcheckResponse = elasticSearchClient.query(spellcheckQuery);
+                    final HashMap<FieldDescriptor, TermFacetResult<?>> spellcheckValues =
+                            ResultUtils.buildSuggestionResults(spellcheckResponse, factory, search.getSearchContext());
+                    if (spellcheckValues.values().stream()
+                            .anyMatch(termFacetResult -> CollectionUtils.isNotEmpty(termFacetResult.getValues())) ) {
+                        spellcheckText = "";
+                    }
+                }
+            }
 
             elapsedtime.stop();
 
-            final SuggestionResult result = new SuggestionResult(suggestionValues, null, response.getTook().getMillis(),factory);
+            final SuggestionResult result = new SuggestionResult(suggestionValues, spellcheckText, response.getTook().getMillis(),factory);
             result.setElapsedTime(elapsedtime.getTime(TimeUnit.MILLISECONDS));
             return result;
 

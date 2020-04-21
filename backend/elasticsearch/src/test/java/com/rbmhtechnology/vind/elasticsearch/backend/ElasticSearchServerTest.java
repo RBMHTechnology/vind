@@ -531,7 +531,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         server.index(doc1,doc2, doc3,doc4);
 
         SuggestionResult searchResult = server.execute(
-                Search.suggest("colona")
+                Search.suggest("colona pamdemia")
                         .fields(title,tags)
                         .filter(rating.greaterThan(9))
                 , documents);

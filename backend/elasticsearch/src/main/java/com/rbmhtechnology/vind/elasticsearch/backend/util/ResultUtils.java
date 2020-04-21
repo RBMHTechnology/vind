@@ -256,53 +256,11 @@ public class ResultUtils {
                     .map(aggregation -> getTermFacetResults(aggregation, new Facet.TermFacet(factory.getField(aggregation.getName())), factory))
                     .forEach(pair -> suggestionValues.put(pair.getKey(), pair.getValue()));
 
-            if (!suggestionValues.values().stream()
-                    .anyMatch(termFacetResult -> CollectionUtils.isNotEmpty(termFacetResult.getValues())) ) {
-                //if no results, try spellchecker (if defined and if spellchecked query differs from original)
-                final String spellCheckedQuery = getSpellCheckedQuery(response);
-//                final Object spellCheckResult = response.getValues().get("spellcheck");
-//
-//                //query with checked query
-                if(spellCheckedQuery != null) {
 
-                }
-//                    final SolrQueryResponse spellCheckedResponse = query(spellCheckedQuery,params,df,fields,fqs,termLimit,suggestionField,intervals);
-//                    result = this.getSuggestionResults(spellCheckedQuery, operator, df, singlevalue_fields, multiValueFields, termLimit, limit, limitType, type, strategy, suggestionField, intervals, spellCheckedResponse);
-//                    //add result of spellchecker component
-//                    if(spellCheckResult != null && result != null) {
-//                        //TODO remove * on last position of collation
-//                        rsp.add("spellcheck",spellCheckResult);
-//                    }
-//                }
-            }
             return suggestionValues;
         } else {
             throw new ElasticsearchException("Empty result from ElasticClient");
         }
-    }
-
-    private static String getSpellCheckedQuery(SearchResponse response) {
-        final Map<String, Pair<String,Double>> spellcheck = Streams.stream(response.getSuggest().iterator())
-                .map(e ->Pair.of(e.getName(),  e.getEntries().stream()
-                        .map(word ->
-                                word.getOptions().stream()
-                                        .sorted(Comparator.comparingDouble(Option::getScore))
-                                        .map(o -> Pair.of(o.getText().string(),o.getScore()))
-                                        .findFirst()
-                                        .orElse(Pair.of(word.getText().string(),0f))
-                        ).collect(Collectors.toMap( Pair::getKey,Pair::getValue)))
-                )
-                .collect(Collectors.toMap(
-                        Pair::getKey,
-                        p -> Pair.of(
-                                String.join(" ", p.getValue().keySet()),
-                                p.getValue().values().stream().mapToDouble(Float::floatValue).sum())));
-
-        return spellcheck.values().stream()
-                .filter( v -> v.getValue() > 0.0)
-                .sorted(Comparator.comparingDouble(Pair::getValue))
-                .map(Pair::getKey)
-                 .findFirst().orElse(null);
     }
 
     public static HashMap<FieldDescriptor, TermFacetResult<?>> buildExperimentalSuggestionResults(SearchResponse response, DocumentFactory factory, String context) {
