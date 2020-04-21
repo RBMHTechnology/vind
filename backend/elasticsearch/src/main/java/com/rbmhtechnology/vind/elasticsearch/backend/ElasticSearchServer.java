@@ -97,21 +97,6 @@ public class ElasticSearchServer extends SearchServer {
 
         elasticSearchClient = client;
 
-        if(SearchConfiguration.get(SearchConfiguration.SERVER_COLLECTION_AUTOCREATE, false)) {
-            try {
-                log.info("AutoGenerate elastic collection {}", client.getDefaultIndex());
-                client.createIndex(client.getDefaultIndex());
-            } catch (IOException e) {
-                throw new SearchServerException(
-                        String.format(
-                                "Error when creating collection %s: %s", client.getDefaultIndex(), e.getMessage()
-                        ), e
-                );
-            }
-
-            log.info("Collection {} created successfully", client.getDefaultIndex());
-        }
-
         //In order to perform unit tests with mocked ElasticClient, we do not need to do the schema check.
         if(check && client != null) {
             try {
@@ -126,6 +111,30 @@ public class ElasticSearchServer extends SearchServer {
                 throw new SearchServerException("Cannot connect to Elasticsearch server: ping failed", e);
             }
             log.info("Connection to Elastic server successful");
+
+            try {
+                if(!client.indexExists()) {
+                    if(SearchConfiguration.get(SearchConfiguration.SERVER_COLLECTION_AUTOCREATE, false)) {
+                        try {
+                            log.info("AutoGenerate elastic collection {}", client.getDefaultIndex());
+                            client.createIndex(client.getDefaultIndex());
+                        } catch (IOException e) {
+                            throw new SearchServerException(
+                                    String.format(
+                                            "Error when creating collection %s: %s", client.getDefaultIndex(), e.getMessage()
+                                    ), e
+                            );
+                        }
+
+                        log.info("Collection {} created successfully", client.getDefaultIndex());
+                    } else {
+                        throw new SearchServerException("Index does not exists, try to enable auto-generation");
+                    }
+                }
+            } catch (IOException e) {
+                throw new SearchServerException("Cannot connect to Elasticsearch server: index check failed", e);
+            }
+
             try {
                 checkVersionAndMappings();
             } catch (IOException e) {
@@ -314,7 +323,8 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public String getRawQuery(FulltextSearch search, DocumentFactory factory) {
-        throw new NotImplementedException();
+        //TODO implement for monitoring search server;
+        return "";
     }
 
     @Override
@@ -392,7 +402,8 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
-        throw new NotImplementedException();
+        //TODO implement for monitoring search server;
+        return "";
     }
 
     @Override

@@ -1,5 +1,9 @@
 package com.rbmhtechnology.vind.demo.step5.service;
 
+import com.rbmhtechnology.vind.api.MasterSlaveSearchServer;
+import com.rbmhtechnology.vind.api.result.SuggestionResult;
+import com.rbmhtechnology.vind.api.result.facet.FacetValue;
+import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.demo.step5.guardian.GuardianNewsItem;
 import com.rbmhtechnology.vind.demo.step5.guardian.GuardianNewsIterator;
 import com.rbmhtechnology.vind.api.Document;
@@ -15,6 +19,7 @@ import com.rbmhtechnology.vind.monitoring.logger.MonitoringWriter;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import static com.rbmhtechnology.vind.api.query.facet.Facets.range;
 import static com.rbmhtechnology.vind.api.query.filter.Filter.eq;
@@ -44,7 +49,7 @@ public class SearchService implements AutoCloseable {
     private String guardianApiKey;
     private SearchServer server;
     private final MonitoringWriter writer = new LogWriter();
-    private final MonitoringSearchServer monitoringSearchServer;
+    //private final MonitoringSearchServer monitoringSearchServer;
 
 
     private SingleValueFieldDescriptor.TextFieldDescriptor<String> title;
@@ -59,10 +64,9 @@ public class SearchService implements AutoCloseable {
 
         this.guardianApiKey = guardianApiKey;
 
-        this.server = SearchServer.getInstance();
+        this.server = getElasticServer();
 
-        this.monitoringSearchServer = new MonitoringSearchServer(server, writer);
-
+        //this.monitoringSearchServer = new MonitoringSearchServer(server, writer);
 
         this.title = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -77,10 +81,12 @@ public class SearchService implements AutoCloseable {
                 .setFacet(true)
                 .setFullText(true)
                 .setBoost(1.2f)
+                .setSuggest(true)
                 .buildMultivaluedTextField("category");
 
         this.kind = new FieldDescriptorBuilder()
                 .setFacet(true)
+                .setSuggest(true)
                 .buildTextField("kind");
 
         this.url = new FieldDescriptorBuilder()
@@ -93,6 +99,26 @@ public class SearchService implements AutoCloseable {
                 .addField(kind)
                 .addField(url)
                 .build();
+    }
+
+    private SearchServer getSolrServer() {
+        SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.solr.backend.RemoteSolrServerProvider");
+        SearchConfiguration.set(SearchConfiguration.SERVER_HOST, "http://localhost:8983/solr");
+        SearchConfiguration.set(SearchConfiguration.SERVER_COLLECTION, "vind");
+        SearchConfiguration.set(SearchConfiguration.SERVER_SOLR_CLOUD, false);
+        return SearchServer.getInstance();
+    }
+
+    private SearchServer getCombinedServer() {
+        return new MasterSlaveSearchServer(getSolrServer(), getElasticServer());
+    }
+
+    private SearchServer getElasticServer() {
+        SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.elasticsearch.backend.ElasticServerProvider");
+        SearchConfiguration.set(SearchConfiguration.SERVER_HOST, "http://localhost:9200");
+        SearchConfiguration.set(SearchConfiguration.SERVER_COLLECTION_AUTOCREATE, true);
+        SearchConfiguration.set(SearchConfiguration.SERVER_COLLECTION, "vind");
+        return SearchServer.getInstance();
     }
 
     public boolean index() {
@@ -123,7 +149,7 @@ public class SearchService implements AutoCloseable {
 
         if (categories != null) Arrays.stream(categories).map(c -> eq(category, c)).forEach(search::filter);
 
-        return monitoringSearchServer.execute(search, newsItems);
+        return server.execute(search, newsItems);
     }
 
     public Object suggest(String query, String... categories) {
@@ -132,7 +158,15 @@ public class SearchService implements AutoCloseable {
 
         if (categories != null) Arrays.stream(categories).map(c -> eq(category, c)).forEach(search::filter);
 
-        return monitoringSearchServer.execute(search, newsItems);
+        return transformSuggestions(server.execute(search, newsItems));
+    }
+
+    private Object transformSuggestions(SuggestionResult result) {
+        HashMap <String,Object> values = new HashMap<>();
+        result.getSuggestedFields().forEach((FieldDescriptor f) -> {
+            values.put(f.getName(), result.get(f).getValues());
+        });
+        return values;
     }
 
     public Object search(String query, int page, Sort sort) {
@@ -161,7 +195,7 @@ public class SearchService implements AutoCloseable {
                 )
         );
 
-        return monitoringSearchServer.execute(search, newsItems);
+        return server.execute(search, newsItems);
 
     }
 

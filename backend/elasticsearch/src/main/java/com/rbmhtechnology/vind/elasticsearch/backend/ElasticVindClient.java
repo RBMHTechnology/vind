@@ -8,9 +8,11 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.get.MultiGetResponse;
@@ -123,6 +125,16 @@ public  class ElasticVindClient {
         return this;
     }
 
+    public boolean indexExists() throws IOException {
+        try {
+            final RequestOptions authenticatedDefaultRequest = RequestOptions.DEFAULT;
+            final GetIndexRequest existsRequest = new GetIndexRequest(getDefaultIndex());
+            return this.client.indices().exists(existsRequest, authenticatedDefaultRequest);
+        } catch (Exception e) {
+            throw new IOException(String.format("Index does not exist: %s", getDefaultIndex()),e);
+        }
+    }
+
     public boolean ping() throws IOException {
         try {
             final RequestOptions authenticatedDefaultRequest = RequestOptions.DEFAULT;
@@ -132,6 +144,7 @@ public  class ElasticVindClient {
             throw new IOException(String.format("Unable to ping Elasticsearch server %s://%s:%s", scheme, host, port),e);
         }
     }
+
     public BulkResponse add(Map<String, Object> jsonDoc) throws IOException {
         final BulkRequest bulkIndexRequest = new BulkRequest();
         bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(defaultIndex,jsonDoc));
