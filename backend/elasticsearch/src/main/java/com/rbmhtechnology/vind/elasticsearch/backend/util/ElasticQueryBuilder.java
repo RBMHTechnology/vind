@@ -44,6 +44,8 @@ import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import org.elasticsearch.search.suggest.SuggestBuilder;
+import org.elasticsearch.search.suggest.SuggestBuilders;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.swing.text.html.Option;
@@ -649,7 +651,8 @@ public class ElasticQueryBuilder {
 
         final String searchContext = search.getSearchContext();
 
-        final SearchSourceBuilder searchSource = new SearchSourceBuilder();
+        final SearchSourceBuilder searchSource = new SearchSourceBuilder()
+                .size(0);
 
         final BoolQueryBuilder filterSuggestions = QueryBuilders.boolQuery()
                 .must(QueryBuilders.matchAllQuery())
@@ -663,6 +666,7 @@ public class ElasticQueryBuilder {
 
         final List<String> suggestionFieldNames =
                 Lists.newArrayList(getSuggestionFieldNames(search, factory, searchContext));
+
         suggestionFieldNames.stream()
                 .map(field -> AggregationBuilders
                         .terms(FieldUtil.getSourceFieldName(field.replaceAll(".suggestion", ""), searchContext))
@@ -671,6 +675,15 @@ public class ElasticQueryBuilder {
                 )
                 .forEach(searchSource::aggregation);
 
+        final SuggestBuilder suggestBuilder = new SuggestBuilder();
+        suggestBuilder.setGlobalText(search.getInput());
+        suggestionFieldNames
+                .forEach(fieldName -> suggestBuilder
+                        .addSuggestion(
+                                FieldUtil.getSourceFieldName(fieldName.replaceAll(".suggestion", ""), searchContext),
+                                SuggestBuilders.termSuggestion(fieldName.concat("_experimental"))));
+
+        searchSource.suggest(suggestBuilder);
         return searchSource;
     }
 
