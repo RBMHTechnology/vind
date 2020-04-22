@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,5 +49,17 @@ public class ElasticVindClientTest  extends ElasticBaseTest{
         final BulkResponse indexResult = client.add(Arrays.asList(doc1,doc2));
         assertNotNull(indexResult);
         assertFalse(indexResult.hasFailures());
+    }
+
+    @Test
+    public void testAddBinaryField() throws IOException {
+
+        final Map<String, Object> doc = new HashMap<>();
+        doc.put("dynamic_binary_raw_data", Base64.getEncoder().encode("The last ascent of man".getBytes()));
+        doc.put(FieldUtil.ID, "AA-2X3451");
+        doc.put(FieldUtil.TYPE, "TestDoc");
+        final BulkResponse indexResult = client.add(doc);
+        assertNotNull(indexResult);
+        assertEquals("CREATED", indexResult.getItems()[0].status().name());
     }
 }

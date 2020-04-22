@@ -9,9 +9,6 @@ import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
-import com.rbmhtechnology.vind.api.query.suggestion.DescriptorSuggestionSearch;
-import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
-import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.DeleteResult;
 import com.rbmhtechnology.vind.api.result.GetResult;
@@ -27,6 +24,7 @@ import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
 import com.rbmhtechnology.vind.model.value.LatLng;
 import org.junit.Test;
 
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -547,5 +545,30 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 , documents);
         assertNotNull(searchResult);
 
+    }
+
+    @Test
+    public void binaryFieldTest() {
+        server.clearIndex();
+        final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
+
+        final SingleValueFieldDescriptor.BinaryFieldDescriptor<ByteBuffer> data =
+                new FieldDescriptorBuilder<>()
+                        .setStored(true)
+                        .buildBinaryField("raw_data");
+
+        docFactoryBuilder
+                .addField(data);
+
+
+        final DocumentFactory documents = docFactoryBuilder.build();
+        final Document doc1 = documents.createDoc("AA-2X3451")
+                .setValue(data, ByteBuffer.wrap("{\"payload\":\"empty\"}".getBytes()));
+
+        server.index(doc1);
+
+        final SearchResult searchResult = server.execute(Search.fulltext(), documents);
+        assertNotNull(searchResult);
+        assertEquals("{\"payload\":\"empty\"}",new String(searchResult.getResults().get(0).getValue(data).array()));
     }
 }

@@ -85,11 +85,6 @@ public class FieldUtil {
 
         String fieldName = _DYNAMIC;
 
-        // TODO check on updates implementation
-//        if(descriptor.isUpdate()) {
-//            fieldName = fieldName.concat(_STORED);
-//        }
-
         //TODO check complexFields implementation
         final boolean isComplexField = ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass());
 

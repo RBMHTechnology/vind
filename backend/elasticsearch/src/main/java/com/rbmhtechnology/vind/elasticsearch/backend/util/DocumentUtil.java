@@ -19,10 +19,10 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -83,6 +83,10 @@ public class DocumentUtil {
             if(value instanceof Date) {
                 //noinspection RedundantCast
                 return ((Date) value);
+            }
+            if(value instanceof ByteBuffer) {
+                //noinspection RedundantCast
+                return ((ByteBuffer) value).array();
             }
         }
         return value;
@@ -260,7 +264,7 @@ public class DocumentUtil {
             return DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(Long.valueOf(s)));
         }
         if(ByteBuffer.class.isAssignableFrom(type)) {
-            return ByteBuffer.wrap(s.getBytes(UTF_8));
+            return ByteBuffer.wrap(Base64.getDecoder().decode(s.getBytes(UTF_8)));
         }
         return s;
     }
@@ -336,7 +340,7 @@ public class DocumentUtil {
                 return Date.from(Instant.parse(o.toString()));
             }
             if(ByteBuffer.class.isAssignableFrom(type)) {
-                return ByteBuffer.wrap(new String((byte[]) o).getBytes()) ;
+                return ByteBuffer.wrap(Base64.getDecoder().decode(((String) o).getBytes(UTF_8))) ;
             }
         }
         return o;
