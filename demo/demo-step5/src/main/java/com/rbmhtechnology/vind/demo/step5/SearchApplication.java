@@ -2,7 +2,7 @@ package com.rbmhtechnology.vind.demo.step5;
 
 import com.rbmhtechnology.vind.demo.step5.guardian.ResultTransformer;
 import com.rbmhtechnology.vind.demo.step5.service.SearchService;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import spark.Spark;
 
 import static spark.Spark.get;
