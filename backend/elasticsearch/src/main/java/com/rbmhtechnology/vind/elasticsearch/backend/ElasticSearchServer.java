@@ -193,7 +193,7 @@ public class ElasticSearchServer extends SearchServer {
     @Override
     public IndexResult indexWithin(List<Document> docs, int withinMs) {
         Asserts.notNull(docs,"Document to index should not be null.");
-        Asserts.check(docs.isEmpty(), "Should be at least one document to index.");
+        Asserts.check(!docs.isEmpty(), "Should be at least one document to index.");
         log.warn("Parameter 'within' not in use in elastic search backend");
         return  indexMultipleDocuments(docs, withinMs);
     }
