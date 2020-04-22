@@ -35,7 +35,6 @@ import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.util.Asserts;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -43,12 +42,9 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateResponse;
-import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -497,12 +493,14 @@ public class ElasticSearchServer extends SearchServer {
                         break;
                     }
                 }
-
+                if(Objects.isNull(serverProvider)) {
+                    log.info("No server provider of type class {} found in classpath for server {}",
+                            providerClassName, ElasticServerProvider.class.getCanonicalName());
+                }
             } catch (ClassNotFoundException e) {
                 log.warn("Specified class {} is not in classpath",providerClassName, e);
                 //throw new RuntimeException("Specified class " + providerClassName + " is not in classpath");
             }
-            log.info("No server provider of type class {} found in classpath for server {}", providerClassName, ElasticServerProvider.class.getCanonicalName());
         }
 
         return serverProvider;

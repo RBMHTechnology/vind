@@ -65,7 +65,7 @@ public abstract class SearchServer implements Closeable {
                             server = null;
                         }
                     } catch (Error | Exception e) {
-                        //log.error("Cannot instantiate search server", e);
+                        log.debug("Cannot instantiate search server: {}", e.getMessage());
                     }
                 }
             }
