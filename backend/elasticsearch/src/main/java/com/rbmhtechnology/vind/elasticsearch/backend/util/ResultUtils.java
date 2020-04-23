@@ -243,6 +243,7 @@ public class ResultUtils {
 
             response.getAggregations().asList().stream()
                     .map(aggregation -> getTermFacetResults(aggregation, new Facet.TermFacet(factory.getField(aggregation.getName())), factory))
+                    .filter(pair -> CollectionUtils.isNotEmpty(pair.getValue().getValues()))
                     .forEach(pair -> suggestionValues.put(pair.getKey(), pair.getValue()));
 
 
