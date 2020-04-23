@@ -210,6 +210,11 @@ public class ElasticQueryBuilder {
                     return QueryBuilders
                             .termQuery(FieldUtil.getFieldName(factory.getField(termFilter.getField()),context),
                                     termFilter.getTerm());
+                case "TermsQueryFilter":
+                    final Filter.TermsQueryFilter termsQueryFilter = (Filter.TermsQueryFilter) filter;
+                    return QueryBuilders
+                            .termsQuery(FieldUtil.getFieldName(factory.getField(termsQueryFilter.getField()),context),
+                                    termsQueryFilter.getTerm());
                 case "PrefixFilter":
                     final Filter.PrefixFilter prefixFilter = (Filter.PrefixFilter) filter;
                     return QueryBuilders
