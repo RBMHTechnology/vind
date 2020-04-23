@@ -11,6 +11,7 @@ import com.rbmhtechnology.vind.api.result.DeleteResult;
 import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.IndexResult;
 import com.rbmhtechnology.vind.api.result.SearchResult;
+import com.rbmhtechnology.vind.api.result.StatusResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 
@@ -34,6 +35,21 @@ public class MasterSlaveSearchServer extends SearchServer {
     @Override
     public Object getBackend() {
         return this.backend;
+    }
+
+    @Override
+    public StatusResult getBackendStatus() {
+        final StatusResult masterStatus = this.backend.getBackendStatus();
+        final StatusResult slaveStatus = this.slaveBackend.getBackendStatus();
+        if (masterStatus.getStatus().equals(StatusResult.Status.UP) &&
+                slaveStatus.getStatus().equals(StatusResult.Status.UP)) {
+            return StatusResult.up()
+                    .setDetail("master", masterStatus)
+                    .setDetail("slave", slaveStatus);
+        }
+        return StatusResult.down()
+                .setDetail("master", masterStatus)
+                .setDetail("slave", slaveStatus);
     }
 
     @Override
