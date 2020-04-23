@@ -270,7 +270,7 @@ public class ServerTest {
 
 
     @Test
-    @RunWithBackend({Solr})
+    @RunWithBackend({Solr, Elastic})
     public void testSuggestions() {
         SearchServer server = testBackend.getSearchServer();
 
@@ -308,12 +308,12 @@ public class ServerTest {
                 .setValue(created, now)
                 .addValue(category, 4L);
 
-        SuggestionResult emptySuggestion = server.execute(Search.suggest().addField(title).filter(created.before(ZonedDateTime.now().minus(6, ChronoUnit.HOURS))).text("Hel"), assets);
-        assertTrue(emptySuggestion.size() == 0);
-
         server.index(d1);
         server.index(d2);
         server.commit(true);
+
+        SuggestionResult emptySuggestion = server.execute(Search.suggest().addField(title).filter(created.before(ZonedDateTime.now().minus(6, ChronoUnit.DAYS))).text("Hel"), assets);
+        assertTrue(emptySuggestion.size() == 0);
 
         SuggestionResult suggestion = server.execute(Search.suggest().fields(title, category).filter(created.before(ZonedDateTime.now().minus(6, ChronoUnit.HOURS))).text("4"), assets);
         assertTrue(suggestion.size() > 0);
@@ -369,7 +369,7 @@ public class ServerTest {
     }
 
    @Test
-   @RunWithBackend(Solr)
+   @RunWithBackend({Solr, Elastic})
     public void testPartialUpdate() {
         SearchServer server = testBackend.getSearchServer();
 
@@ -395,7 +395,7 @@ public class ServerTest {
                 .build();
 
         ZonedDateTime now = ZonedDateTime.now();
-       Document d1 = assets.createDoc("123")
+        Document d1 = assets.createDoc("123")
                 .setValue(title, "Hello World")
                 .setValue(count, 0)
                 .setValues(category, 1L, 2L, 3L)
@@ -1034,7 +1034,7 @@ public class ServerTest {
 
     //MBDN-454
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void binaryFieldTest() {
         FieldDescriptor<String> title = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -2313,7 +2313,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend({Solr})
+    @RunWithBackend({Solr, Elastic})
     public void testTermQueryFilter() {
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
         ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
@@ -2378,7 +2378,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void test10001TermsTermQueryFilter() throws IOException, URISyntaxException {
 
         final SingleValueFieldDescriptor.TextFieldDescriptor title = new FieldDescriptorBuilder()
@@ -2415,7 +2415,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void testTermOptions() {
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));

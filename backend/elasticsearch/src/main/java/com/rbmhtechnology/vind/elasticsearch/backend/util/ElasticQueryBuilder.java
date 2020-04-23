@@ -10,6 +10,7 @@ import com.rbmhtechnology.vind.api.query.division.Slice;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.facet.Interval.NumericInterval;
+import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.api.query.suggestion.DescriptorSuggestionSearch;
@@ -33,12 +34,14 @@ import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.BucketOrder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.range.DateRangeAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.IncludeExclude;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
@@ -47,6 +50,8 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.search.suggest.Suggest.Suggestion.Entry.Option;
 import org.elasticsearch.search.suggest.SuggestBuilder;
 import org.elasticsearch.search.suggest.SuggestBuilders;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.time.Instant;
@@ -66,6 +71,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ElasticQueryBuilder {
+    private static final Logger log = LoggerFactory.getLogger(ElasticQueryBuilder.class);
 
     public static SearchSourceBuilder buildQuery(FulltextSearch search, DocumentFactory factory) {
 
@@ -353,10 +359,14 @@ public class ElasticQueryBuilder {
                 final String fieldName = Optional.ofNullable(FieldUtil.getFieldName(field, searchContext))
                         .orElse(termFacet.getFieldName());
 
-                return AggregationBuilders
+                final TermsAggregationBuilder termsAgg = AggregationBuilders
                         .terms(contextualizedFacetName)
                         .field(fieldName)
                         .minDocCount(minCount);
+
+                Optional.ofNullable(termFacet.getOption()).ifPresent(option -> setTermOptions(termsAgg, option));
+
+                return termsAgg;
             case "TypeFacet":
                 final Facet.TypeFacet typeFacet = (Facet.TypeFacet) vindFacet;
                 return AggregationBuilders
@@ -524,6 +534,55 @@ public class ElasticQueryBuilder {
 
             default:
                 throw new RuntimeException(String.format("Error mapping Vind facet to Elasticsearch aggregation: Unknown facet type %s",vindFacet.getType()));
+        }
+    }
+
+    private static void setTermOptions(TermsAggregationBuilder agg, TermFacetOption option) {
+        if(Objects.nonNull(option.getPrefix())) {
+            agg.includeExclude(new IncludeExclude(option.getPrefix() + ".*", null));
+        }
+        if(Objects.nonNull(option.getLimit())) {
+            agg.size(option.getLimit());
+        }
+
+        if(Objects.nonNull(option.getMethod())) {
+            log.warn("Elasticearch backend implementation does not support set method for term facets");
+        }
+
+        if(Objects.nonNull(option.getMincount())) {
+            agg.minDocCount(option.getMincount());
+        }
+
+        if(Objects.nonNull(option.getOffset())) {
+            log.warn("Elasticearch backend implementation does not support set offset for term facets");
+        }
+
+        if(Objects.nonNull(option.getOverrefine())) {
+            log.warn("Elasticearch backend implementation does not support set overrefine for term facets");
+        }
+
+        if(Objects.nonNull(option.getOverrequest())) {
+            log.warn("Elasticearch backend implementation does not support set overrequest for term facets");
+        }
+
+        if(Objects.nonNull(option.getSort())) {
+            log.warn("Elasticearch backend implementation does not support set sorting for term facets");
+        }
+
+        if(Objects.nonNull(option.isAllBuckets())) {
+            log.warn("Elasticearch backend implementation does not support set all Buckets for term facets");
+        }
+
+        if(Objects.nonNull(option.isMissing())) {
+            agg.missing("");
+        }
+
+        if(Objects.nonNull(option.isNumBuckets())) {
+            log.warn("Elasticearch backend implementation does not support set numBuckets for term facets");
+        }
+
+        if(Objects.nonNull(option.isRefine())) {
+            log.warn("Elasticearch backend implementation does not support set refine for term facets");
         }
     }
 

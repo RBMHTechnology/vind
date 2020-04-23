@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2018 Redlink GmbH.
- */
 package com.rbmhtechnology.vind.api.query.facet;
 
 /**

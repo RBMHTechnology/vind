@@ -1,6 +1,4 @@
-/*
- * Copyright (c) 2018 Redlink GmbH.
- */
+
 package com.rbmhtechnology.vind.monitoring.analysis;
 
 import com.rbmhtechnology.vind.monitoring.logger.entry.FullTextEntry;

@@ -1,6 +1,4 @@
-/*
- * Copyright (c) 2018 Redlink GmbH.
- */
+
 package com.rbmhtechnology.vind.monitoring.utils;
 
 import com.google.common.io.ByteStreams;

@@ -323,7 +323,6 @@ public class SolrUtils {
                             final TermFacetOption option = value.getOption();
                             if(Objects.nonNull(option.getPrefix())) {
                                 termFacet.put("prefix", option.getPrefix());
-
                             }
                             if(Objects.nonNull(option.getLimit())) {
                                 termFacet.put("limit", option.getLimit());

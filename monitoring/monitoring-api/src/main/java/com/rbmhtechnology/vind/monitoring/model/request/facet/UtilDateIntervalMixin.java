@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2017 Redlink GmbH.
- */
 package com.rbmhtechnology.vind.monitoring.model.request.facet;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
