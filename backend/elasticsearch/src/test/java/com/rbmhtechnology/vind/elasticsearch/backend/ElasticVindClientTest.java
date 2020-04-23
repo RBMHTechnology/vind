@@ -60,6 +60,6 @@ public class ElasticVindClientTest  extends ElasticBaseTest{
         doc.put(FieldUtil.TYPE, "TestDoc");
         final BulkResponse indexResult = client.add(doc);
         assertNotNull(indexResult);
-        assertEquals("CREATED", indexResult.getItems()[0].status().name());
+        assertEquals("OK", indexResult.getItems()[0].status().name());
     }
 }
