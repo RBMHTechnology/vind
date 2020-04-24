@@ -334,9 +334,15 @@ public class DocumentUtil {
                 if(o instanceof Date){
                     return ZonedDateTime.ofInstant(((Date) o).toInstant(), ZoneId.of("UTC"));
                 }
+                if( Number.class.isAssignableFrom(o.getClass())) {
+                    return ZonedDateTime.ofInstant(Instant.ofEpochMilli(((Number) o).longValue()), ZoneId.of("UTC"));
+                }
                 return ZonedDateTime.parse(o.toString()).withZoneSameLocal(ZoneId.of("UTC"));
             }
             if(Date.class.isAssignableFrom(type)) {
+                if( Number.class.isAssignableFrom(o.getClass())) {
+                    return  Date.from(Instant.ofEpochMilli(((Number) o).longValue()));
+                }
                 return Date.from(Instant.parse(o.toString()));
             }
             if(ByteBuffer.class.isAssignableFrom(type)) {

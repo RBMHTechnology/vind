@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
+import com.google.common.collect.Streams;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
@@ -16,6 +17,7 @@ import com.rbmhtechnology.vind.api.result.facet.TermFacetResult;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.get.GetResponse;
@@ -25,13 +27,19 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
 import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilters;
 import org.elasticsearch.search.aggregations.bucket.histogram.ParsedDateHistogram;
 import org.elasticsearch.search.aggregations.bucket.histogram.ParsedHistogram;
+import org.elasticsearch.search.aggregations.bucket.missing.ParsedMissing;
 import org.elasticsearch.search.aggregations.bucket.range.ParsedDateRange;
 import org.elasticsearch.search.aggregations.bucket.range.ParsedRange;
 import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
 import org.elasticsearch.search.aggregations.bucket.terms.ParsedTerms;
+import org.elasticsearch.search.aggregations.metrics.ParsedCardinality;
+import org.elasticsearch.search.aggregations.metrics.ParsedExtendedStats;
+import org.elasticsearch.search.aggregations.metrics.ParsedPercentiles;
+import org.elasticsearch.search.aggregations.metrics.Percentile;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -103,12 +111,18 @@ public class ResultUtils {
             .map(intervalFacet -> getIntervalFacetResults(aggregationsMap.get(Stream.of(searchContext, intervalFacet.getFacetName()).filter(Objects::nonNull).collect(Collectors.joining("_"))), (Facet.IntervalFacet)intervalFacet))
             .forEach(pair -> intervalFacetResults.put(pair.getKey(), pair.getValue()));
 
-//TODO:
         HashMap<String, StatsFacetResult<?>> statsFacetResults = new HashMap<>();
-//        if(response.getFieldStatsInfo()!=null) {
-//            statsFacetResults = getStatsFacetsResults(response.getFieldStatsInfo().entrySet(), facetsQuery);
-//        }
-//
+        vindFacets.values().stream()
+                .filter(facet -> Arrays.asList("StatsDateFacet", "StatsUtilDateFacet", "StatsNumericFacet", "StatsFacet").
+                        contains(facet.getType()))
+                .map(statsFacet -> getStatsFacetResults(
+                        aggregationsMap.entrySet().stream()
+                                .filter( e -> e.getKey().startsWith(Stream.of(searchContext, statsFacet.getFacetName()).filter(Objects::nonNull).collect(Collectors.joining("_"))))
+                                .collect(Collectors.toMap((Map.Entry<String, Aggregation> e) -> e.getKey(), (Map.Entry<String, Aggregation> e) -> e.getValue())),
+                        (Facet.StatsFacet) statsFacet))
+                .forEach(pair -> statsFacetResults.put(pair.getKey(), pair.getValue()));
+
+        //TODO:
         HashMap<String, List<PivotFacetResult<?>>> pivotFacetResults = new HashMap<>();
 //        if(response.getFacetPivot()!=null) {
 //
@@ -144,6 +158,129 @@ public class ResultUtils {
                 statsFacetResults,
                 pivotFacetResults,
                 subDocumentFacet);
+    }
+
+    private static Pair<String, StatsFacetResult> getStatsFacetResults(Map <String, Aggregation> aggregations, Facet.StatsFacet statsFacet) {
+        final FieldDescriptor field = statsFacet.getField();
+        Object min = null;
+        Object max = null;
+        Double sum = null;
+        Long count = null;
+        Long missing = null;
+        Double sumOfSquares = null;
+        Object mean = null;
+        Double stddev = null;
+        Map<Double, Double> percentiles = null;
+        List distinctValues = null;
+        Long countDistinct = null;
+        Long cardinality = null;
+
+        final ParsedExtendedStats statsAggregation = (ParsedExtendedStats)aggregations.entrySet().stream()
+                .filter(entry -> entry.getKey().endsWith(statsFacet.getFacetName()))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElseThrow(RuntimeException::new);
+
+        if(statsFacet.getSum()) {
+            sum = statsAggregation.getSum();
+        }
+
+        if(statsFacet.getMin()) {
+            min = DocumentUtil.castForDescriptor(statsAggregation.getMin(),field, FieldUtil.Fieldname.UseCase.Facet);
+        }
+
+        if(statsFacet.getMax()) {
+            max = DocumentUtil.castForDescriptor(statsAggregation.getMax(),field, FieldUtil.Fieldname.UseCase.Facet);
+        }
+
+        if(statsFacet.getCount()) {
+            count = statsAggregation.getCount();
+        }
+
+        if(statsFacet.getMissing()) {
+            final ParsedMissing statsMissingAggregation = (ParsedMissing) aggregations.entrySet().stream()
+                    .filter(entry -> entry.getKey().endsWith(statsFacet.getFacetName() + "_missing"))
+                    .map(Map.Entry::getValue)
+                    .findFirst()
+                    .orElseThrow(RuntimeException::new);
+
+            missing = statsMissingAggregation.getDocCount();
+        }
+
+        if(statsFacet.getSumOfSquares()) {
+            sumOfSquares = statsAggregation.getSumOfSquares();
+        }
+
+        if(statsFacet.getMean()) {
+            mean = DocumentUtil.castForDescriptor(statsAggregation.getAvg(),field, FieldUtil.Fieldname.UseCase.Facet);
+        }
+
+        if(statsFacet.getStddev()) {
+            stddev = statsAggregation.getStdDeviation();
+        }
+
+        if(ArrayUtils.isNotEmpty(statsFacet.getPercentiles())) {
+            final ParsedPercentiles statsPercentilesAggregation = (ParsedPercentiles) aggregations.entrySet().stream()
+                    .filter(entry -> entry.getKey().endsWith(statsFacet.getFacetName() + "_percentiles"))
+                    .map(Map.Entry::getValue)
+                    .findFirst()
+                    .orElseThrow(RuntimeException::new);
+
+            percentiles = Streams.stream(statsPercentilesAggregation.iterator())
+                    .collect(Collectors.toMap((Percentile p) -> Double.valueOf(p.getPercent()), (Percentile p) -> Double.valueOf(p.getValue())));
+        }
+
+        if(statsFacet.getDistinctValues()) {
+            final ParsedTerms statsValuesAggregation = (ParsedTerms) aggregations.entrySet().stream()
+                    .filter(entry -> entry.getKey().endsWith(statsFacet.getFacetName() + "_values"))
+                    .map(Map.Entry::getValue)
+                    .findFirst()
+                    .orElseThrow(RuntimeException::new);
+
+            distinctValues = statsValuesAggregation.getBuckets().stream()
+                    .filter(bucket -> bucket.getDocCount() > 0)
+                    .map(MultiBucketsAggregation.Bucket::getKey)
+                    .map( o -> DocumentUtil.castForDescriptor(o, field, FieldUtil.Fieldname.UseCase.Facet))
+                    .collect(Collectors.toList());
+        }
+
+        if(statsFacet.getCountDistinct()) {
+            final ParsedTerms statsValuesAggregation = (ParsedTerms) aggregations.entrySet().stream()
+                    .filter(entry -> entry.getKey().endsWith(statsFacet.getFacetName() + "_values"))
+                    .map(Map.Entry::getValue)
+                    .findFirst()
+                    .orElseThrow(RuntimeException::new);
+
+            countDistinct = statsValuesAggregation.getBuckets().stream()
+                    .filter(bucket -> bucket.getDocCount() > 0)
+                    .count();
+        }
+
+
+        if(statsFacet.getMissing()) {
+            final ParsedCardinality statsCardinalityAggregation = (ParsedCardinality) aggregations.entrySet().stream()
+                    .filter(entry -> entry.getKey().endsWith(statsFacet.getFacetName() + "_cardinality"))
+                    .map(Map.Entry::getValue)
+                    .findFirst()
+                    .orElseThrow(RuntimeException::new);
+
+            cardinality = statsCardinalityAggregation.getValue();
+        }
+
+        final StatsFacetResult statsFacetResult = new StatsFacetResult(field,
+                min,
+                max,
+                sum,
+                count,
+                missing,
+                sumOfSquares,
+                mean,
+                stddev,
+                percentiles,
+                distinctValues,
+                countDistinct,
+                cardinality);
+        return Pair.of(statsFacet.getFacetName(), statsFacetResult);
     }
 
     private static Pair<String, QueryFacetResult<?>> getQueryFacetResults(Aggregation aggregation, Facet.QueryFacet queryFacet) {
