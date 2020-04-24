@@ -24,6 +24,7 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.ParsedQuery;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -124,6 +125,12 @@ public class ResultUtils {
 
         //TODO:
         HashMap<String, List<PivotFacetResult<?>>> pivotFacetResults = new HashMap<>();
+
+        vindFacets.values().stream()
+                .filter(facet -> facet.getType().equals("PivotFacet"))
+                .map(pivotFacet -> getPivotFacetResults(aggregationsMap.get(Stream.of(searchContext,pivotFacet.getFacetName()).filter(Objects::nonNull).collect(Collectors.joining("_"))), (Facet.PivotFacet)pivotFacet, vindFacets))
+                .forEach(pair -> pivotFacetResults.put(pair.getKey(), (List)pair.getValue()));
+
 //        if(response.getFacetPivot()!=null) {
 //
 //            final Stream<Map.Entry<String, List<PivotField>>> pivotFacets = StreamSupport.stream(
@@ -158,6 +165,58 @@ public class ResultUtils {
                 statsFacetResults,
                 pivotFacetResults,
                 subDocumentFacet);
+    }
+
+    private static Pair<String, List<PivotFacetResult>> getPivotFacetResults(Aggregation aggregation, Facet.PivotFacet pivotFacet, Map<String, Facet> vindFacets) {
+
+        final FieldDescriptor field = pivotFacet.getFieldDescriptors().get(0);
+
+        if( Objects.nonNull(aggregation) ){
+            final ParsedTerms rootPivot = (ParsedTerms) aggregation;
+            final List<PivotFacetResult> pivotFacetResult = rootPivot.getBuckets().stream()
+                    .map(bucket -> {
+                        final Map<String, Aggregation> aggMap = bucket.getAggregations().asMap();
+                        final Aggregation pivotAgg = aggMap.get(pivotFacet.getFacetName());
+                        final Map<String, RangeFacetResult<?>> rangeSubfacets = new HashMap<>();
+                        final Map<String, QueryFacetResult<?>> querySubfacets = new HashMap<>();
+                        final Map<String, StatsFacetResult<?>> statsSubfacets = new HashMap<>();
+
+                        aggMap.values().forEach(agg -> {
+                            if (ParsedExtendedStats.class.isAssignableFrom(agg.getClass())) {
+                                final HashMap<String, Aggregation> statsMap = new HashMap<>();
+                                statsMap.put(agg.getName(), agg);
+                                statsSubfacets.put(
+                                        agg.getName(),
+                                        ResultUtils.getStatsFacetResults(statsMap, (Facet.StatsFacet) vindFacets.get(agg.getName())).getValue());
+                            }
+                            if (ParsedQuery.class.isAssignableFrom(agg.getClass())) {
+
+                                querySubfacets.put(
+                                        agg.getName(),
+                                        ResultUtils.getQueryFacetResults(agg, (Facet.QueryFacet) vindFacets.get(agg.getName())).getValue());
+                            }
+                            if (ParsedRange.class.isAssignableFrom(agg.getClass())) {
+                                rangeSubfacets.put(
+                                        agg.getName(),
+                                        ResultUtils.getRangeFacetResults(agg, vindFacets.get(agg.getName())).getValue());
+                            }
+                        });
+
+                        final List<PivotFacetResult> subPivot = getPivotFacetResults(pivotAgg, pivotFacet, vindFacets).getValue();
+                        return new PivotFacetResult(
+                                subPivot,
+                                bucket.getKey(),
+                                field,
+                                Long.valueOf(bucket.getDocCount()).intValue(),
+                                rangeSubfacets,
+                                querySubfacets,
+                                statsSubfacets);
+                    })
+                    .collect(Collectors.toList());
+
+            return Pair.of(pivotFacet.getFacetName(), pivotFacetResult);
+        }
+        return Pair.of(null, null);
     }
 
     private static Pair<String, StatsFacetResult> getStatsFacetResults(Map <String, Aggregation> aggregations, Facet.StatsFacet statsFacet) {
@@ -198,13 +257,14 @@ public class ResultUtils {
         }
 
         if(statsFacet.getMissing()) {
-            final ParsedMissing statsMissingAggregation = (ParsedMissing) aggregations.entrySet().stream()
+            final Optional<Aggregation> statsMissingAggregation = aggregations.entrySet().stream()
                     .filter(entry -> entry.getKey().endsWith(statsFacet.getFacetName() + "_missing"))
                     .map(Map.Entry::getValue)
-                    .findFirst()
-                    .orElseThrow(RuntimeException::new);
+                    .findFirst();
 
-            missing = statsMissingAggregation.getDocCount();
+            if (statsMissingAggregation.isPresent()) {
+                    missing = ((ParsedMissing)statsMissingAggregation.get()).getDocCount();
+            }
         }
 
         if(statsFacet.getSumOfSquares()) {
@@ -220,51 +280,59 @@ public class ResultUtils {
         }
 
         if(ArrayUtils.isNotEmpty(statsFacet.getPercentiles())) {
-            final ParsedPercentiles statsPercentilesAggregation = (ParsedPercentiles) aggregations.entrySet().stream()
+            final Optional<Aggregation> statsPercentilesAggregation = aggregations.entrySet().stream()
                     .filter(entry -> entry.getKey().endsWith(statsFacet.getFacetName() + "_percentiles"))
                     .map(Map.Entry::getValue)
-                    .findFirst()
-                    .orElseThrow(RuntimeException::new);
+                    .findFirst();
 
-            percentiles = Streams.stream(statsPercentilesAggregation.iterator())
-                    .collect(Collectors.toMap((Percentile p) -> Double.valueOf(p.getPercent()), (Percentile p) -> Double.valueOf(p.getValue())));
+            if (statsPercentilesAggregation.isPresent()) {
+                percentiles = Streams.stream(((ParsedPercentiles)statsPercentilesAggregation.get()).iterator())
+                        .collect(Collectors.toMap((Percentile p) -> Double.valueOf(p.getPercent()), (Percentile p) -> Double.valueOf(p.getValue())));
+            }
+
         }
 
         if(statsFacet.getDistinctValues()) {
-            final ParsedTerms statsValuesAggregation = (ParsedTerms) aggregations.entrySet().stream()
+            final Optional<Aggregation> statsValuesAggregation = aggregations.entrySet().stream()
                     .filter(entry -> entry.getKey().endsWith(statsFacet.getFacetName() + "_values"))
                     .map(Map.Entry::getValue)
-                    .findFirst()
-                    .orElseThrow(RuntimeException::new);
+                    .findFirst();
 
-            distinctValues = statsValuesAggregation.getBuckets().stream()
-                    .filter(bucket -> bucket.getDocCount() > 0)
-                    .map(MultiBucketsAggregation.Bucket::getKey)
-                    .map( o -> DocumentUtil.castForDescriptor(o, field, FieldUtil.Fieldname.UseCase.Facet))
-                    .collect(Collectors.toList());
+            if(statsValuesAggregation.isPresent()) {
+
+                distinctValues = ((ParsedTerms) statsValuesAggregation.get()).getBuckets().stream()
+                        .filter(bucket -> bucket.getDocCount() > 0)
+                        .map(MultiBucketsAggregation.Bucket::getKey)
+                        .map( o -> DocumentUtil.castForDescriptor(o, field, FieldUtil.Fieldname.UseCase.Facet))
+                        .collect(Collectors.toList());
+            }
+
         }
 
         if(statsFacet.getCountDistinct()) {
-            final ParsedTerms statsValuesAggregation = (ParsedTerms) aggregations.entrySet().stream()
+            final Optional<Aggregation> statsValuesAggregation = aggregations.entrySet().stream()
                     .filter(entry -> entry.getKey().endsWith(statsFacet.getFacetName() + "_values"))
                     .map(Map.Entry::getValue)
-                    .findFirst()
-                    .orElseThrow(RuntimeException::new);
+                    .findFirst();
 
-            countDistinct = statsValuesAggregation.getBuckets().stream()
-                    .filter(bucket -> bucket.getDocCount() > 0)
-                    .count();
+            if(statsValuesAggregation.isPresent()) {
+                countDistinct = ((ParsedTerms) statsValuesAggregation.get()).getBuckets().stream()
+                        .filter(bucket -> bucket.getDocCount() > 0)
+                        .count();
+            }
         }
 
 
-        if(statsFacet.getMissing()) {
-            final ParsedCardinality statsCardinalityAggregation = (ParsedCardinality) aggregations.entrySet().stream()
+        if(statsFacet.getCardinality()) {
+            final Optional<Aggregation> statsCardinalityAggregation =  aggregations.entrySet().stream()
                     .filter(entry -> entry.getKey().endsWith(statsFacet.getFacetName() + "_cardinality"))
                     .map(Map.Entry::getValue)
-                    .findFirst()
-                    .orElseThrow(RuntimeException::new);
+                    .findFirst();
 
-            cardinality = statsCardinalityAggregation.getValue();
+            if(statsCardinalityAggregation.isPresent()) {
+                cardinality = ((ParsedCardinality) statsCardinalityAggregation.get()).getValue();
+            }
+
         }
 
         final StatsFacetResult statsFacetResult = new StatsFacetResult(field,

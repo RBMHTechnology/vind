@@ -34,8 +34,10 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
+import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.AggregatorFactories;
 import org.elasticsearch.search.aggregations.PipelineAggregatorBuilders;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
@@ -62,6 +64,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -151,8 +154,33 @@ public class ElasticQueryBuilder {
                                         searchContext,
                                         search.getFacetMinCount()))
                     .flatMap(Collection::stream)
+                    .filter(Objects::nonNull)
                     .forEach(searchSource::aggregation);
         }
+
+        search.getFacets().values().stream()
+                .filter( facet -> facet.getType().equals("PivotFacet"))
+                .map( pivotFacet -> searchSource.aggregations().getAggregatorFactories().stream()
+                        .filter( agg -> agg.getName().equals(Stream.of(searchContext, pivotFacet.getFacetName())
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.joining("_"))))
+                        .collect(Collectors.toList()))
+                .flatMap(Collection::stream)
+                .forEach( pivotAgg -> {
+                    final List<String> facets = search.getFacets().values().stream()
+                            .filter(facet ->
+                                    Arrays.asList(facet.getTagedPivots())
+                                            .contains(pivotAgg.getName().replaceAll(searchContext + "_", "")))
+                            .map(facet -> Stream.of(searchContext, facet.getFacetName())
+                                    .filter(Objects::nonNull)
+                                    .collect(Collectors.joining("_")))
+                            .collect(Collectors.toList());
+                    final List<AggregationBuilder> aggs = searchSource.aggregations().getAggregatorFactories().stream()
+                            .filter(agg -> facets.contains(agg.getName()))
+                            .collect(Collectors.toList());
+
+                    addToPivotAggs(pivotAgg, aggs);
+                });
 
         // sorting
         if(search.hasSorting()) {
@@ -180,6 +208,12 @@ public class ElasticQueryBuilder {
             }
         }
         return searchSource;
+    }
+
+    private static void addToPivotAggs(AggregationBuilder pivotAgg, List<AggregationBuilder> aggs) {
+        pivotAgg.getSubAggregations()
+                .forEach(subAgg -> addToPivotAggs(subAgg,aggs));
+        aggs.forEach(pivotAgg::subAggregation);
     }
 
     public static QueryBuilder buildFilterQuery(Filter filter, DocumentFactory factory, String context) {
@@ -551,6 +585,17 @@ public class ElasticQueryBuilder {
                 if(!CharSequence.class.isAssignableFrom(((Facet.StatsFacet) vindFacet).getField().getType())) {
                     return getStatsAggregationBuilders(searchContext, contextualizedFacetName, statsFacet);
                 }
+            case "PivotFacet":
+                final Facet.PivotFacet pivotFacet = (Facet.PivotFacet) vindFacet;
+                final Optional<TermsAggregationBuilder> pivotAgg = pivotFacet.getFieldDescriptors().stream()
+                        .map(f -> FieldUtil.getFieldName(f, searchContext))
+                        .filter(Objects::nonNull)
+                        .map(n -> AggregationBuilders
+                                .terms(contextualizedFacetName)
+                                .field(n)
+                                .minDocCount(minCount))
+                        .reduce( AbstractAggregationBuilder::subAggregation);
+                return Collections.singletonList(pivotAgg.orElse(null));
 
             default:
                 throw new SearchServerException(
