@@ -1,6 +1,4 @@
-/*
- * Copyright (c) 2018 Redlink GmbH.
- */
+
 package com.rbmhtechnology.vind.monitoring.elastic.writer;
 
 import com.rbmhtechnology.vind.monitoring.logger.MonitoringWriter;

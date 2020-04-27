@@ -67,107 +67,7 @@ public class ServerTest {
     public TestBackend testBackend = new TestBackend();
 
     @Test
-    @RunWithBackend(Elastic)
-    public void testSimpleSearch() {
-
-        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
-        ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
-
-        FieldDescriptor<String> title = new FieldDescriptorBuilder()
-                .setFullText(true)
-                .setFacet(true)
-                .buildTextField("title");
-
-        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
-                .setFacet(true)
-                .buildDateField("created");
-
-        SingleValueFieldDescriptor.UtilDateFieldDescriptor<Date> modified = new FieldDescriptorBuilder()
-                .setFacet(true)
-                .buildUtilDateField("modified");
-
-        NumericFieldDescriptor<Long> category = new FieldDescriptorBuilder()
-                .setFacet(true)
-                .buildMultivaluedNumericField("category", Long.class);
-
-        DocumentFactory assets = new DocumentFactoryBuilder("asset")
-                .addField(title)
-                .addField(created)
-                .addField(category)
-                .addField(modified)
-                .build();
-
-        Document d1 = assets.createDoc("1")
-                .setValue(title, "Hello World")
-                .setValue(created, yesterday)
-                .setValue(modified, new Date())
-                .setValues(category, Arrays.asList(1L, 2L));
-
-        Document d2 = assets.createDoc("2")
-                .setValue(title, "Hello Friends")
-                .setValue(created, now)
-                .setValue(modified, new Date())
-                .addValue(category, 4L);
-
-        SearchServer server = testBackend.getSearchServer();
-
-        server.index(d1);
-        server.index(d2);
-        server.commit();
-
-        Interval.ZonedDateTimeInterval i1 = Interval.dateInterval("past_24_hours", ZonedDateTime.now().minus(Duration.ofDays(1)), ZonedDateTime.now());
-        Interval.ZonedDateTimeInterval i2 = Interval.dateInterval("past_week", ZonedDateTime.now().minus(Duration.ofDays(7)), ZonedDateTime.now());
-
-        FulltextSearch search = Search.fulltext("hello")
-                .filter(category.between(0, 10))
-                .filter(not(created.after(ZonedDateTime.now())))
-                .filter(modified.before(new Date()))
-                //.facet(pivot("cats", category, created))
-                //.facet(pivot("catVStitle", category, title))
-                //.facet(stats("avg Cat", category, "cats", "catVStitle").count().sum().percentiles(9.9, 1.0).mean())
-                //.facet(stats("countDate", created).count().sum().mean())
-                .facet(query("new An dHot", category.between(0, 5), "cats"))
-                .facet(query("anotherQuery", and(category.between(7, 10), created.after(ZonedDateTime.now().minus(Duration.ofDays(1))))))
-                .facet(range("dates", created, ZonedDateTime.now().minus(Duration.ofDays(1)), ZonedDateTime.now(), Duration.ofHours(1)))
-                .facet(range("mod a", modified, new Date(), new Date(), 1L, TimeUnit.HOURS, "cats"))
-                .facet(interval("quality", category, Interval.numericInterval("low", 0L, 2L), Interval.numericInterval("high", 3L, 4L)))
-                .facet(interval("time", created, i1, i2))
-                .facet(interval("time2", modified,
-                        Interval.dateInterval("early", new Date(0), new Date(10000)),
-                        Interval.dateInterval("late", new Date(10000), new Date(20000))))
-                .facet(category)
-                .facet(created)
-                .facet(modified)
-                .facet(new TermFacetOption().setPrefix("He"), title)
-                .page(1, 25)
-                .sort(desc(created));
-
-        PageResult result = (PageResult)server.execute(search,assets);
-
-        assertEquals(2, result.getNumOfResults());
-        assertEquals(2, result.getResults().size());
-        assertEquals("2", result.getResults().get(0).getId());
-        assertEquals("asset", result.getResults().get(0).getType());
-        assertEquals("2", result.getResults().get(0).getId());
-        assertEquals("asset", result.getResults().get(0).getType());
-        assertTrue(now.equals(result.getResults().get(0).getValue(created)));
-        assertTrue(now.equals(result.getResults().get(0).getValue("created")));
-        assertEquals(2, result.getFacetResults().getIntervalFacet("quality").getValues().size());
-        assertEquals(2, result.getFacetResults().getIntervalFacet("time").getValues().size());
-
-        System.out.println(result);
-
-        PageResult next = (PageResult)result.nextPage();
-        SearchResult prev = next.previousPage();
-
-        TermFacetResult<Long> facet = result.getFacetResults().getTermFacet(category);
-
-        RangeFacetResult<ZonedDateTime> dates = result.getFacetResults().getRangeFacet("dates", ZonedDateTime.class);
-        ZonedDateTime rangeDate = dates.getValues().get(0).getValue();
-    }
-
-    @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void testEmbeddedSolr() {
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
@@ -270,7 +170,7 @@ public class ServerTest {
 
 
     @Test
-    @RunWithBackend({Solr})
+    @RunWithBackend({Solr, Elastic})
     public void testSuggestions() {
         SearchServer server = testBackend.getSearchServer();
 
@@ -308,12 +208,12 @@ public class ServerTest {
                 .setValue(created, now)
                 .addValue(category, 4L);
 
-        SuggestionResult emptySuggestion = server.execute(Search.suggest().addField(title).filter(created.before(ZonedDateTime.now().minus(6, ChronoUnit.HOURS))).text("Hel"), assets);
-        assertTrue(emptySuggestion.size() == 0);
-
         server.index(d1);
         server.index(d2);
         server.commit(true);
+
+        SuggestionResult emptySuggestion = server.execute(Search.suggest().addField(title).filter(created.before(ZonedDateTime.now().minus(6, ChronoUnit.DAYS))).text("Hel"), assets);
+        assertTrue(emptySuggestion.size() == 0);
 
         SuggestionResult suggestion = server.execute(Search.suggest().fields(title, category).filter(created.before(ZonedDateTime.now().minus(6, ChronoUnit.HOURS))).text("4"), assets);
         assertTrue(suggestion.size() > 0);
@@ -369,7 +269,7 @@ public class ServerTest {
     }
 
    @Test
-   @RunWithBackend(Solr)
+   @RunWithBackend({Solr, Elastic})
     public void testPartialUpdate() {
         SearchServer server = testBackend.getSearchServer();
 
@@ -395,7 +295,7 @@ public class ServerTest {
                 .build();
 
         ZonedDateTime now = ZonedDateTime.now();
-       Document d1 = assets.createDoc("123")
+        Document d1 = assets.createDoc("123")
                 .setValue(title, "Hello World")
                 .setValue(count, 0)
                 .setValues(category, 1L, 2L, 3L)
@@ -405,7 +305,7 @@ public class ServerTest {
         server.commit();
 
 
-        server.execute(Search.update("123").set(title, "123").add(category, 6L, 10L).remove(created, now).removeRegex(category, "10").increment(count, 1), assets);
+        server.execute(Search.update("123").set(title, "123").add(category, 6L, 10L).remove(created, now)/*.removeRegex(category, "10")*/.increment(count, 1), assets);
 
         server.commit();
         SearchResult result = server.execute(Search.fulltext("123"), assets);
@@ -1034,7 +934,7 @@ public class ServerTest {
 
     //MBDN-454
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void binaryFieldTest() {
         FieldDescriptor<String> title = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -2313,7 +2213,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend({Solr})
+    @RunWithBackend({Solr, Elastic})
     public void testTermQueryFilter() {
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
         ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
@@ -2378,7 +2278,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void test10001TermsTermQueryFilter() throws IOException, URISyntaxException {
 
         final SingleValueFieldDescriptor.TextFieldDescriptor title = new FieldDescriptorBuilder()
@@ -2415,7 +2315,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void testTermOptions() {
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));

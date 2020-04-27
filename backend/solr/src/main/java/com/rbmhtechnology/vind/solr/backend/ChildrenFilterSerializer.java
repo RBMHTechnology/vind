@@ -1,6 +1,4 @@
-/*
- * Copyright (c) 2018 Redlink GmbH.
- */
+
 package com.rbmhtechnology.vind.solr.backend;
 
 import com.google.common.collect.Sets;

@@ -1,6 +1,4 @@
-/*
- * Copyright (c) 2018 Redlink GmbH.
- */
+
 package com.rbmhtechnology.vind.monitoring.report;
 
 import com.google.gson.JsonObject;

@@ -341,7 +341,7 @@ public class ElasticSearchServer extends SearchServer {
         try {
             elasticClientLogger.debug(">>> query({})", query.toString());
             final SearchResponse response = elasticSearchClient.query(query);
-            final HashMap<FieldDescriptor, TermFacetResult<?>> suggestionValues =
+            HashMap<FieldDescriptor, TermFacetResult<?>> suggestionValues =
                     ResultUtils.buildSuggestionResults(response, factory, search.getSearchContext());
 
             String spellcheckText = null;
@@ -350,7 +350,6 @@ public class ElasticSearchServer extends SearchServer {
 
                 //if no results, try spellchecker (if defined and if spellchecked query differs from original)
                 final List<String> spellCheckedQuery = ElasticQueryBuilder.getSpellCheckedQuery(response);
-
 
                 //query with checked query
 
@@ -365,26 +364,20 @@ public class ElasticSearchServer extends SearchServer {
                         if (spellcheckValues.values().stream()
                                 .anyMatch(termFacetResult -> CollectionUtils.isNotEmpty(termFacetResult.getValues())) ) {
                             spellcheckText = text;
+                            suggestionValues = spellcheckValues;
                             break;
                         }
-                    }
-
-                    final SearchSourceBuilder spellcheckQuery = ElasticQueryBuilder.buildSuggestionQuery(search.text(""), factory);
-                    final SearchResponse spellcheckResponse = elasticSearchClient.query(spellcheckQuery);
-                    final HashMap<FieldDescriptor, TermFacetResult<?>> spellcheckValues =
-                            ResultUtils.buildSuggestionResults(spellcheckResponse, factory, search.getSearchContext());
-                    if (spellcheckValues.values().stream()
-                            .anyMatch(termFacetResult -> CollectionUtils.isNotEmpty(termFacetResult.getValues())) ) {
-                        spellcheckText = "";
                     }
                 }
             }
 
             elapsedtime.stop();
-
-            final SuggestionResult result = new SuggestionResult(suggestionValues, spellcheckText, response.getTook().getMillis(),factory);
-            result.setElapsedTime(elapsedtime.getTime(TimeUnit.MILLISECONDS));
-            return result;
+            return new SuggestionResult(
+                    suggestionValues,
+                    spellcheckText,
+                    response.getTook().getMillis(),
+                    factory)
+                    .setElapsedTime(elapsedtime.getTime(TimeUnit.MILLISECONDS));
 
         } catch (ElasticsearchException | IOException e) {
             throw new SearchServerException(String.format("Cannot issue query: %s",e.getMessage()), e);
