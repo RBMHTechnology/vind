@@ -29,7 +29,9 @@ public class ElasticsearchServerProvider implements ElasticServerProvider {
             ElasticVindClient client =
                     new ElasticVindClient.Builder(host)
                             .setDefaultIndex(collection)
-                            .build(SearchConfiguration.SEARCH_AUTHENTICATION_KEY, SearchConfiguration.SEARCH_AUTHENTICATION_KEY);
+                            .build(
+                                    SearchConfiguration.get(SearchConfiguration.SEARCH_AUTHENTICATION_USER),
+                                    SearchConfiguration.get(SearchConfiguration.SEARCH_AUTHENTICATION_KEY));
 
             if(StringUtils.isNotEmpty(connectionTimeout)) {
                 client.setConnectionTimeOut(Long.parseLong(connectionTimeout));
