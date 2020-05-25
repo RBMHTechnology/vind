@@ -2409,13 +2409,13 @@ public class ServerTest {
         server.commit();
 
 
-        FulltextSearch search = Search.fulltext("jello").spellcheck(true);
+        FulltextSearch search = Search.fulltext("jello word").spellcheck(true);
 
         PageResult result = (PageResult)server.execute(search,assets);
 
         assertEquals(2, result.getResults().size());
 
-         search = Search.fulltext("jello").spellcheck(false);
+         search = Search.fulltext("jello word").spellcheck(false);
 
          result = (PageResult)server.execute(search,assets);
 

@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public  class ElasticVindClient {
 
@@ -63,8 +64,12 @@ public  class ElasticVindClient {
         this.key = key;
 
         final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY,
-                new UsernamePasswordCredentials(user, key));
+
+        if(Objects.nonNull(this.user) && Objects.nonNull(this.key)) {
+            credentialsProvider.setCredentials(AuthScope.ANY,
+                    new UsernamePasswordCredentials(user, key));
+        }
+
 
         this.client = new RestHighLevelClient(
                 RestClient.builder(
