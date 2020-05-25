@@ -61,9 +61,9 @@ public class SuggestionService {
         final NamedList l = new NamedList();
 
         //set spellcheck component if there is one
-        if(((ArrayList)args.get("first-components")).contains("spellcheck")) {
+        if(((ArrayList)args.get("first-components")).contains("suggestionSpellcheck")) {
             final List component = new ArrayList<String>();
-            component.add("spellcheck");
+            component.add("suggestionSpellcheck");
             l.add("first-components",component);
             spellCheckEnabled = true;
         }
