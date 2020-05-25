@@ -94,7 +94,8 @@ public class ElasticQueryBuilder {
         // Set fulltext fields
         factory.getFields().values().stream()
                 .filter(FieldDescriptor::isFullText)
-                .forEach(field -> fullTextStringQuery.field(FieldUtil.getFieldName(field, searchContext).concat(".text"), field.getBoost()));
+                .forEach(field -> fullTextStringQuery
+                        .field(FieldUtil.getFieldName(field, searchContext).concat(".text"), field.getBoost()));
 
 
         final DisMaxQueryBuilder query = QueryBuilders.disMaxQuery()
@@ -107,6 +108,17 @@ public class ElasticQueryBuilder {
 //            query.set(CommonParams.TZ,search.getTimeZone());
 //        }
 
+        if (search.isSpellcheck()) {
+            final SuggestBuilder suggestBuilder = new SuggestBuilder();
+            suggestBuilder.setGlobalText(search.getSearchString());
+            Lists.newArrayList(getFullTextFieldNames(search,factory,searchContext))
+                    .forEach(fieldName -> suggestBuilder
+                            .addSuggestion(
+                                    FieldUtil.getSourceFieldName(fieldName.replaceAll(".text", ""), searchContext),
+                                    SuggestBuilders.termSuggestion(fieldName).prefixLength(0)));
+
+            searchSource.suggest(suggestBuilder);
+        }
 
         searchSource.trackScores(SearchConfiguration.get(SearchConfiguration.SEARCH_RESULT_SHOW_SCORE, true));
 //        if(SearchConfiguration.get(SearchConfiguration.SEARCH_RESULT_SHOW_SCORE, true)) {
@@ -769,7 +781,10 @@ public class ElasticQueryBuilder {
 
     }
 
-    public static PainlessScript.ScriptBuilder buildUpdateScript(HashMap<FieldDescriptor<?>, HashMap<String, SortedSet<UpdateOperation>>> options, DocumentFactory factory, String updateContext) {
+    public static PainlessScript.ScriptBuilder buildUpdateScript(
+            HashMap<FieldDescriptor<?>, HashMap<String, SortedSet<UpdateOperation>>> options,
+            DocumentFactory factory,
+            String updateContext) {
         final PainlessScript.ScriptBuilder scriptBuilder = new PainlessScript.ScriptBuilder();
                 options.entrySet().stream()
                 .map(entry -> scriptBuilder.addOperations(entry.getKey(), entry.getValue()))
@@ -777,7 +792,9 @@ public class ElasticQueryBuilder {
         return scriptBuilder;
     }
 
-    public static SearchSourceBuilder buildExperimentalSuggestionQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
+    public static SearchSourceBuilder buildExperimentalSuggestionQuery(
+            ExecutableSuggestionSearch search,
+            DocumentFactory factory) {
 
         final String searchContext = search.getSearchContext();
         final SearchSourceBuilder searchSource = new SearchSourceBuilder();
@@ -840,7 +857,8 @@ public class ElasticQueryBuilder {
                 .map(field -> AggregationBuilders
                         .terms(FieldUtil.getSourceFieldName(field.replaceAll(".suggestion", ""), searchContext))
                         .field(field)
-                        .includeExclude(new IncludeExclude(Suggester.getSuggestionRegex(search.getInput()), null))
+                        .includeExclude(
+                                new IncludeExclude(Suggester.getSuggestionRegex(search.getInput()), null))
                 )
                 .forEach(searchSource::aggregation);
 
@@ -850,7 +868,7 @@ public class ElasticQueryBuilder {
                 .forEach(fieldName -> suggestBuilder
                         .addSuggestion(
                                 FieldUtil.getSourceFieldName(fieldName.replaceAll(".suggestion", ""), searchContext),
-                                SuggestBuilders.termSuggestion(fieldName.concat("_experimental"))));
+                                SuggestBuilders.termSuggestion(fieldName.concat("_experimental")).prefixLength(0)));
 
         searchSource.suggest(suggestBuilder);
         return searchSource;
@@ -898,5 +916,15 @@ public class ElasticQueryBuilder {
                     .map(name ->  name.concat(".suggestion"))
                     .toArray(String[]::new);
         }
+    }
+    protected static String[] getFullTextFieldNames(FulltextSearch search, DocumentFactory factory, String searchContext) {
+
+        return factory.getFields().entrySet().stream()
+                .filter( e -> e.getValue().isFullText())
+                .map(e -> FieldUtil.getFieldName(e.getValue(), searchContext))
+                .filter(Objects::nonNull)
+                .map(name ->  name.concat(".text"))
+                .toArray(String[]::new);
+
     }
 }
