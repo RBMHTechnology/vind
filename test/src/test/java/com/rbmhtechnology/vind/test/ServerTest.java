@@ -2375,4 +2375,50 @@ public class ServerTest {
 
         assertEquals(1, result.getFacetResults().getTermFacet(title).getValues().size());
     }
+
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testSpellCheckSearch() {
+
+        FieldDescriptor<String> title = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("title");
+
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(title)
+
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(title, "Hello World")
+                ;
+
+
+        Document d2 = assets.createDoc("2")
+                .setValue(title, "hello friends")
+              ;
+
+
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.commit();
+
+
+        FulltextSearch search = Search.fulltext("jello").spellcheck(true);
+
+        PageResult result = (PageResult)server.execute(search,assets);
+
+        assertEquals(2, result.getResults().size());
+
+         search = Search.fulltext("jello").spellcheck(false);
+
+         result = (PageResult)server.execute(search,assets);
+
+        assertEquals(0,  result.getResults().size());
+    }
 }
