@@ -287,8 +287,8 @@ public class ElasticSearchServer extends SearchServer {
                         .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))
                         .collect(Collectors.toList());
 
-                String spellcheckText = null;
-                if ( search.isSpellcheck() && CollectionUtils.isEmpty(documents)) {
+                if ( search.isSpellcheck()
+                        && CollectionUtils.isEmpty(documents)) {
 
                     //if no results, try spellchecker (if defined and if spellchecked query differs from original)
                     final List<String> spellCheckedQuery = ElasticQueryBuilder.getSpellCheckedQuery(response);
@@ -299,8 +299,9 @@ public class ElasticSearchServer extends SearchServer {
                         final Iterator<String> iterator = spellCheckedQuery.iterator();
                         while(iterator.hasNext()) {
                             final String text = iterator.next();
+                            final FulltextSearch spellcheckSearch = search.copy().text(text).spellcheck(false);
                             final SearchSourceBuilder spellcheckQuery =
-                                    ElasticQueryBuilder.buildQuery(search.text(text).spellcheck(false), factory);
+                                    ElasticQueryBuilder.buildQuery(spellcheckSearch, factory);
                             final SearchResponse spellcheckResponse = elasticSearchClient.query(spellcheckQuery);
                             documents.addAll(Arrays.stream(spellcheckResponse.getHits().getHits())
                                     .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))

@@ -379,7 +379,10 @@ public class SolrSearchServer extends SearchServer {
             final QueryResponse response = solrClient.query(query, REQUEST_METHOD);
             if(response!=null){
                 final SolrDocumentList responseResults = response.getResults();
-                if (search.isSpellcheck() && responseResults.getNumFound() <=0 && !response.getSpellCheckResponse().isCorrectlySpelled()) {
+                if (search.isSpellcheck()
+                        && responseResults.getNumFound() <= 0
+                        && !response.getSpellCheckResponse().isCorrectlySpelled()
+                        && CollectionUtils.isNotEmpty(response.getSpellCheckResponse().getCollatedResults())) {
                     final FulltextSearch spellcheckSearch = search.copy().spellcheck(false).text(response.getSpellCheckResponse().getCollatedResult());
                     return execute(spellcheckSearch, factory);
                 }
