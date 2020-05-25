@@ -45,6 +45,7 @@ public class FulltextSearch {
     private String minimumShouldMatch = "1";
     private String searchContext = null;
     private boolean strict = true;
+    private boolean spellcheck = false;
 
     /**
      * Creates a new basic full text search query object.
@@ -649,6 +650,25 @@ public class FulltextSearch {
      */
     public boolean getStrict() {
         return this.strict;
+    }
+
+    /**
+     * Changes the Fulltext search {@link FulltextSearch#spellcheck} flag. If set to true spellcheck will be
+     * perform and its results will be returned if the original query has no results.
+     * @param spellcheck boolean value to activate or deactivate the spellcheck search.
+     * @return This {@link FulltextSearch} object with the {@link FulltextSearch#spellcheck} flag changes.
+     */
+    public FulltextSearch spellcheck(boolean spellcheck) {
+        this.spellcheck = spellcheck;
+        return this;
+    }
+
+    /**
+     * Get the value of the flag {@link FulltextSearch#spellcheck} for this {@link FulltextSearch} object.
+     * @return the boolean value of {@link FulltextSearch#spellcheck}.
+     */
+    public boolean isSpellcheck() {
+        return this.spellcheck;
     }
 
     @Override

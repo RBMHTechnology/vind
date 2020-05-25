@@ -38,6 +38,7 @@ import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.client.solrj.response.schema.SchemaResponse;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.*;
 import org.apache.solr.common.util.NamedList;
@@ -377,21 +378,26 @@ public class SolrSearchServer extends SearchServer {
             solrClientLogger.debug(">>> query({})", query.toString());
             final QueryResponse response = solrClient.query(query, REQUEST_METHOD);
             if(response!=null){
+                final SolrDocumentList responseResults = response.getResults();
+                if (search.isSpellcheck() && responseResults.getNumFound() <=0 && !response.getSpellCheckResponse().isCorrectlySpelled()) {
+                    final FulltextSearch spellcheckSearch = search.copy().spellcheck(false).text(response.getSpellCheckResponse().getCollatedResult());
+                    return execute(spellcheckSearch, factory);
+                }
 
                 final Map<String,Integer> childCounts = SolrUtils.getChildCounts(response);
 
-                final List<Document> documents = SolrUtils.Result.buildResultList(response.getResults(), childCounts, factory, search.getSearchContext());
+                final List<Document> documents = SolrUtils.Result.buildResultList(responseResults, childCounts, factory, search.getSearchContext());
                 final FacetResults facetResults = SolrUtils.Result.buildFacetResult(response, factory, search.getChildrenFactory(), search.getFacets(),search.getSearchContext());
 
                 switch(search.getResultSet().getType()) {
                     case page:{
-                        return new PageResult(response.getResults().getNumFound(), response.getQTime(), documents, search, facetResults, this, factory).setElapsedTime(response.getElapsedTime());
+                        return new PageResult(responseResults.getNumFound(), response.getQTime(), documents, search, facetResults, this, factory).setElapsedTime(response.getElapsedTime());
                     }
                     case slice: {
-                        return new SliceResult(response.getResults().getNumFound(), response.getQTime(), documents, search, facetResults, this, factory).setElapsedTime(response.getElapsedTime());
+                        return new SliceResult(responseResults.getNumFound(), response.getQTime(), documents, search, facetResults, this, factory).setElapsedTime(response.getElapsedTime());
                     }
                     default:
-                        return new PageResult(response.getResults().getNumFound(), response.getQTime(), documents, search, facetResults, this, factory).setElapsedTime(response.getElapsedTime());
+                        return new PageResult(responseResults.getNumFound(), response.getQTime(), documents, search, facetResults, this, factory).setElapsedTime(response.getElapsedTime());
                 }
             }else {
                 throw new SolrServerException("Null result from SolrClient");
@@ -458,6 +464,12 @@ public class SolrSearchServer extends SearchServer {
 
         if(search.hasFilter()) {
             SolrUtils.Query.buildFilterString(search.getFilter(), factory,search.getChildrenFactory(),query, searchContext, search.getStrict());
+        }
+
+        if (search.isSpellcheck()) {
+            query.setParam("spellcheck", true);
+            query.setParam("spellcheck.collate", true);
+            query.setParam("spellcheck.q", search.getSearchString());
         }
 
         // fulltext search deep search

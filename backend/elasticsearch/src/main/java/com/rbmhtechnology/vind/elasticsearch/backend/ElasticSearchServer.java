@@ -287,6 +287,28 @@ public class ElasticSearchServer extends SearchServer {
                         .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))
                         .collect(Collectors.toList());
 
+                String spellcheckText = null;
+                if ( search.isSpellcheck() && CollectionUtils.isEmpty(documents)) {
+
+                    //if no results, try spellchecker (if defined and if spellchecked query differs from original)
+                    final List<String> spellCheckedQuery = ElasticQueryBuilder.getSpellCheckedQuery(response);
+
+                    //query with checked query
+
+                    if(spellCheckedQuery != null && CollectionUtils.isNotEmpty(spellCheckedQuery)) {
+                        final Iterator<String> iterator = spellCheckedQuery.iterator();
+                        while(iterator.hasNext()) {
+                            final String text = iterator.next();
+                            final SearchSourceBuilder spellcheckQuery =
+                                    ElasticQueryBuilder.buildQuery(search.text(text).spellcheck(false), factory);
+                            final SearchResponse spellcheckResponse = elasticSearchClient.query(spellcheckQuery);
+                            documents.addAll(Arrays.stream(spellcheckResponse.getHits().getHits())
+                                    .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))
+                                    .collect(Collectors.toList()));
+                        }
+                    }
+                }
+
                 // Building Vind Facet Results
                 final FacetResults facetResults =
                         ResultUtils.buildFacetResults(
