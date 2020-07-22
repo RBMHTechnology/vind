@@ -6,11 +6,16 @@ import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import com.rbmhtechnology.vind.model.MultiValueFieldDescriptor;
 import com.rbmhtechnology.vind.model.MultiValuedComplexField;
+import com.rbmhtechnology.vind.model.SingleValuedComplexField;
 import com.rbmhtechnology.vind.model.value.LatLng;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.elasticsearch.search.SearchHit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.time.Instant;
@@ -23,12 +28,14 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -44,23 +51,42 @@ public class DocumentUtil {
                 .values()
                 .stream()
                 .filter(doc::hasValue)
-                .forEach(descriptor ->
-                        doc.getFieldContexts(descriptor)
-                                .forEach(context -> {
-                                    Optional.ofNullable(FieldUtil.getFieldName(descriptor, context))
-                                            .ifPresent( fieldName -> {
-                                                Optional.ofNullable( doc.getContextualizedValue(descriptor, context))
-                                                        .ifPresent( value -> docMap.put(fieldName, toElasticType(value)));
-                                            });
-                                }
-                        )
-                );
+                .forEach(descriptor -> addFieldToDoc(doc, docMap, descriptor));
 
         //TODO: add subdocuments if implemented
         docMap.put(FieldUtil.ID, doc.getId());
         docMap.put(FieldUtil.TYPE, doc.getType());
 
         return docMap;
+    }
+
+    private static void addFieldToDoc(Document doc, Map<String, Object> docMap, FieldDescriptor<?> descriptor) {
+        if (ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass())) {
+            addFieldToDoc(doc, docMap, (ComplexFieldDescriptor) descriptor);
+        } else {
+            doc.getFieldContexts(descriptor)
+                    .forEach(context ->
+                            Optional.ofNullable(FieldUtil.getFieldName(descriptor, context))
+                                    .ifPresent(fieldName ->
+                                            Optional.ofNullable(doc.getContextualizedValue(descriptor, context))
+                                                    .ifPresent(value -> docMap.put(fieldName, toElasticType(value)))
+                                    )
+                    );
+        }
+    }
+
+    private static void addFieldToDoc(Document doc, Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor) {
+        doc.getFieldContexts(descriptor)
+                .forEach(context ->
+                    Stream.of(FieldUtil.Fieldname.UseCase.values()).forEach( useCase -> {
+                        final String name = FieldUtil.getFieldName(descriptor, useCase, context);
+                        Optional.ofNullable(name).ifPresent( fieldName ->
+                            Optional.ofNullable( doc.getContextualizedValue(descriptor, context)).ifPresent(
+                                contextualizedValue ->
+                                    docMap.put(fieldName.replaceAll("\\.\\w+" , ""), toElasticType(contextualizedValue, descriptor, useCase)))
+                        );
+                    })
+                );
     }
 
     private static Object toElasticType(Object value) {
@@ -92,6 +118,103 @@ public class DocumentUtil {
         return value;
     }
 
+    private static Object toElasticType(Object value, ComplexFieldDescriptor descriptor, FieldUtil.Fieldname.UseCase useCase) {
+        if(value!=null) {
+            if (Object[].class.isAssignableFrom(value.getClass())) {
+                return toElasticType(Arrays.asList((Object[]) value, descriptor, useCase));
+            }
+            if (Collection.class.isAssignableFrom(value.getClass())) {
+                final Collection<Object> values = (Collection<Object>) value;
+                List<Object> objs = values.stream()
+                        .map(v -> toElasticType(v, descriptor, useCase))
+                        .collect(Collectors.toList());
+
+                if (objs.stream().allMatch( o -> Collection.class.isAssignableFrom(o.getClass()))) {
+                    objs =  objs.stream()
+                            .map(o -> (List<Collection<Object>>)o)
+                            .flatMap(Collection::stream)
+                            .collect(Collectors.toList());
+                }
+                return objs;
+            }
+            switch (useCase) {
+                case Fulltext: {
+                    if (descriptor.getFullTextFunction() != null) {
+                        return descriptor.getFullTextFunction().apply(value);
+                    } else {
+                        return null;
+                    }
+                }
+                case Facet: {
+                    if (descriptor.getFacetFunction() != null) {
+                        return descriptor.getFacetFunction().apply(value);
+                    } else {
+                        return null;
+                    }
+                }
+                case Suggest: {
+                    if (descriptor.getSuggestFunction() != null) {
+                        return descriptor.getSuggestFunction().apply(value);
+                    } else {
+                        return null;
+                    }
+                }
+                case Stored: {
+                    if (descriptor.getStoreFunction() != null) {
+                        return descriptor.getStoreFunction().apply(value);
+                    } else {
+                        return null;
+                    }
+                }
+                case Sort: {
+                    if (descriptor.isMultiValue()) {
+                        final MultiValuedComplexField multiField = (MultiValuedComplexField) descriptor;
+                        if (multiField.getSortFunction() != null) {
+                            return multiField.getSortFunction().apply(value);
+                        } else {
+                            return null;
+                        }
+                    } else {
+                        final SingleValuedComplexField singleField = (SingleValuedComplexField) descriptor;
+                        if (singleField.getSortFunction() != null) {
+                            return singleField.getSortFunction().apply(value);
+                        } else {
+                            if (singleField.isStored()) {
+                                return toElasticType(value, singleField, FieldUtil.Fieldname.UseCase.Stored);
+                            }
+                            return null;
+                        }
+                    }
+
+                }
+                case Filter: {
+                    if (descriptor.isAdvanceFilter() && Objects.nonNull(descriptor.getFacetType())) {
+                        return descriptor.getAdvanceFilter().apply(value);
+                    } else {
+                        return null;
+                    }
+
+                }
+                default: {
+                    try {
+                        ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
+                        ObjectOutputStream oos = new ObjectOutputStream(bytesOut);
+                        oos.writeObject(value);
+                        oos.flush();
+                        byte[] bytes = bytesOut.toByteArray();
+                        bytesOut.close();
+                        oos.close();
+                        return bytes;
+                    } catch (IOException e) {
+                        //TODO:
+                        throw new RuntimeException("Unable to serialize complex Object", e);
+                    }
+                }
+            }
+        }
+        return value;
+    }
+
     public static Document buildVindDoc(SearchHit hit , DocumentFactory factory, String searchContext) {
 
         final Document document = buildVindDoc(hit.getSourceAsMap(), factory, searchContext);
@@ -118,10 +241,12 @@ public class DocumentUtil {
         docMap.keySet().stream()
                 .filter(name -> ! Arrays.asList(FieldUtil.ID, FieldUtil.TYPE, FieldUtil.SCORE, FieldUtil.DISTANCE)
                         .contains(name))
+                .filter(name ->  name.startsWith("complex_") && name.contains("_stored_") || name.startsWith("dynamic_"))
                 .forEach(name -> {
                     final Object o = docMap.get(name);
                     final String contextPrefix = searchContext != null ? searchContext + "_" : "";
-                    final Matcher internalPrefixMatcher = Pattern.compile(FieldUtil.INTERNAL_FIELD_PREFIX).matcher(name);
+                    final String pattern = "(" + FieldUtil.INTERNAL_FIELD_PREFIX + ")|(" + FieldUtil.INTERNAL_COMPLEX_FIELD_PREFIX + ")";
+                    final Matcher internalPrefixMatcher = Pattern.compile(pattern).matcher(name);
                     final String contextualizedName = internalPrefixMatcher.replaceFirst("");
                     final boolean contextualized = Objects.nonNull(searchContext) && contextualizedName.contains(contextPrefix);
                     final String fieldRawName = contextualizedName.replace(contextPrefix, "");
@@ -134,7 +259,7 @@ public class DocumentUtil {
                             type = field.getType();
                         }
                         try {
-                            if (o instanceof Collection) {
+                            if (o instanceof Collection && field.isMultiValue()) {
                                 final Collection<Object> elasticValues = new ArrayList<>();
                                 if (ZonedDateTime.class.isAssignableFrom(type)) {
                                     ((Collection<?>) o).stream()
@@ -181,15 +306,19 @@ public class DocumentUtil {
                                 }
 
                             } else {
+                                Object val = o;
+                                if (val instanceof Collection) {
+                                    val = ((Collection) o).iterator().next();
+                                }
                                 Object storedValue;
                                 if (ZonedDateTime.class.isAssignableFrom(type)) {
-                                    storedValue = ZonedDateTime.parse(o.toString()).withZoneSameLocal(ZoneId.of("UTC"));
+                                    storedValue = ZonedDateTime.parse(val.toString()).withZoneSameLocal(ZoneId.of("UTC"));
                                 } else if (Date.class.isAssignableFrom(type)) {
-                                    storedValue = Date.from(Instant.parse(o.toString())) ;
+                                    storedValue = Date.from(Instant.parse(val.toString())) ;
                                 } else if (LatLng.class.isAssignableFrom(type)) {
-                                    storedValue = LatLng.parseLatLng(o.toString());
+                                    storedValue = LatLng.parseLatLng(val.toString());
                                 } else {
-                                    storedValue = castForDescriptor(o, field, FieldUtil.Fieldname.UseCase.Stored);
+                                    storedValue = castForDescriptor(val, field, FieldUtil.Fieldname.UseCase.Stored);
                                 }
                                 if (contextualized) {
                                     document.setContextualizedValue((FieldDescriptor<Object>) field, searchContext, storedValue);
@@ -271,18 +400,20 @@ public class DocumentUtil {
 
     protected static Object castForDescriptor(Object o, FieldDescriptor<?> descriptor, FieldUtil.Fieldname.UseCase useCase) {
 
-        Class<?> type;
+        Class<?> type = descriptor.getType();
 
         if (ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass())){
             switch (useCase) {
+                case Filter:
                 case Facet: type = ((ComplexFieldDescriptor)descriptor).getFacetType();
                     break;
                 case Stored: type = ((ComplexFieldDescriptor)descriptor).getStoreType();
                     break;
+                case Suggest:
+                case Fulltext: type = String.class;
+                    break;
                 default: type = descriptor.getType();
             }
-        } else {
-            type = descriptor.getType();
         }
 
         if(o != null){
@@ -316,15 +447,27 @@ public class DocumentUtil {
         if(o != null){
 
             if(Long.class.isAssignableFrom(type)) {
+                if(String.class.isAssignableFrom(o.getClass()) && NumberUtils.isCreatable((String) o)) {
+                    return NumberUtils.createNumber((String)o).longValue();
+                }
                 return ((Number)o).longValue();
             }
             if(Integer.class.isAssignableFrom(type)) {
+                if(String.class.isAssignableFrom(o.getClass()) && NumberUtils.isCreatable((String) o)) {
+                    return NumberUtils.createNumber((String)o).intValue();
+                }
                 return ((Number)o).intValue();
             }
             if(Double.class.isAssignableFrom(type)) {
+                if(String.class.isAssignableFrom(o.getClass()) && NumberUtils.isCreatable((String) o)) {
+                    return NumberUtils.createNumber((String)o).doubleValue();
+                }
                 return ((Number)o).doubleValue();
             }
             if(Number.class.isAssignableFrom(type)) {
+                if(String.class.isAssignableFrom(o.getClass()) && NumberUtils.isCreatable((String) o)) {
+                    return NumberUtils.createNumber((String)o).floatValue();
+                }
                 return ((Number)o).floatValue();
             }
             if(Boolean.class.isAssignableFrom(type)) {
@@ -347,6 +490,9 @@ public class DocumentUtil {
             }
             if(ByteBuffer.class.isAssignableFrom(type)) {
                 return ByteBuffer.wrap(Base64.getDecoder().decode(((String) o).getBytes(UTF_8))) ;
+            }
+            if (String.class.isAssignableFrom(type)) {
+                return o.toString();
             }
         }
         return o;
