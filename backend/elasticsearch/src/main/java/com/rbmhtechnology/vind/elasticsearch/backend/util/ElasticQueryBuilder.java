@@ -347,7 +347,7 @@ public class ElasticQueryBuilder {
                     //TODO: Add scope support
                     final Filter.WithinBBoxFilter withinBBoxFilter = (Filter.WithinBBoxFilter) filter;
                     return QueryBuilders
-                            .geoBoundingBoxQuery(FieldUtil.getFieldName(factory.getField(withinBBoxFilter.getField()), useCase, context))
+                            .geoBoundingBoxQuery(FieldUtil.getFieldName(factory.getField(withinBBoxFilter.getField()), null, context))
                             .setCorners(
                                     withinBBoxFilter.getUpperLeft().getLat(),
                                     withinBBoxFilter.getUpperLeft().getLng(),
@@ -358,7 +358,7 @@ public class ElasticQueryBuilder {
                     //TODO: Add scope support
                     final Filter.WithinCircleFilter withinCircleFilter = (Filter.WithinCircleFilter) filter;
                     return QueryBuilders
-                            .geoDistanceQuery(FieldUtil.getFieldName(factory.getField(withinCircleFilter.getField()), useCase, context))
+                            .geoDistanceQuery(FieldUtil.getFieldName(factory.getField(withinCircleFilter.getField()), null, context))
                             .point(withinCircleFilter.getCenter().getLat(),withinCircleFilter.getCenter().getLng())
                             .distance(withinCircleFilter.getDistance(), DistanceUnit.METERS);
                 default:
@@ -387,7 +387,7 @@ public class ElasticQueryBuilder {
            case "DistanceSort":
                Optional.ofNullable(search.getGeoDistance())
                        .orElseThrow(() -> new SearchServerException("Sorting by distance requires a geodistance set"));
-               final String distanceFieldName = FieldUtil.getFieldName(search.getGeoDistance().getField(), UseCase.Sort, searchContext);
+               final String distanceFieldName = FieldUtil.getFieldName(search.getGeoDistance().getField(), null, searchContext);
                return SortBuilders
                        .geoDistanceSort(distanceFieldName,
                                search.getGeoDistance().getLocation().getLat(),

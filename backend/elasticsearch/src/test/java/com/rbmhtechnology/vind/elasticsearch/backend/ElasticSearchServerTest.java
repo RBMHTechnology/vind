@@ -115,6 +115,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .buildMultivaluedUtilDateField("published");
 
         final SingleValueFieldDescriptor.NumericFieldDescriptor<Number> rating = new FieldDescriptorBuilder()
+                .setFacet(true)
                 .buildNumericField("rating");
 
         final SingleValueFieldDescriptor.LocationFieldDescriptor<LatLng> location = new FieldDescriptorBuilder()
@@ -457,6 +458,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         final FieldDescriptor title = new FieldDescriptorBuilder()
                 .setFacet(true)
                 .setFullText(true)
+                .setSuggest(true)
                 .buildTextField("title");
 
         final FieldDescriptor description = new FieldDescriptorBuilder()
@@ -467,6 +469,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         final MultiValueFieldDescriptor.TextFieldDescriptor<String> tags = new FieldDescriptorBuilder()
                 .setFacet(true)
                 .setFullText(true)
+                .setSuggest(true)
                 .buildMultivaluedTextField("tags");
 
         final SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime>  created = new FieldDescriptorBuilder()
@@ -478,6 +481,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .buildMultivaluedUtilDateField("published");
 
         final SingleValueFieldDescriptor.NumericFieldDescriptor<Number> rating = new FieldDescriptorBuilder()
+                .setFacet(true)
                 .buildNumericField("rating");
 
         final SingleValueFieldDescriptor.LocationFieldDescriptor<LatLng> location = new FieldDescriptorBuilder()

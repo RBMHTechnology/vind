@@ -69,7 +69,7 @@ public class DocumentUtil {
                             Optional.ofNullable(FieldUtil.getFieldName(descriptor, context))
                                     .ifPresent(fieldName ->
                                             Optional.ofNullable(doc.getContextualizedValue(descriptor, context))
-                                                    .ifPresent(value -> docMap.put(fieldName, toElasticType(value)))
+                                                    .ifPresent(value -> docMap.put(fieldName.replaceAll("\\.\\w+" , ""), toElasticType(value)))
                                     )
                     );
         }

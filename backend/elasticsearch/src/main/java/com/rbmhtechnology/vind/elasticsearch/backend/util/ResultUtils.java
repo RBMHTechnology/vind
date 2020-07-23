@@ -450,11 +450,13 @@ public class ResultUtils {
 
             final HashMap<FieldDescriptor, TermFacetResult<?>> suggestionValues = new HashMap<>();
 
-            response.getAggregations().asList().stream()
-                    .map(aggregation -> getTermFacetResults(aggregation, new Facet.TermFacet(factory.getField(aggregation.getName())), factory, FieldUtil.Fieldname.UseCase.Suggest))
-                    .filter(pair -> CollectionUtils.isNotEmpty(pair.getValue().getValues()))
-                    .forEach(pair -> suggestionValues.put(pair.getKey(), pair.getValue()));
-
+            final Aggregations aggregations = response.getAggregations();
+            if (Objects.nonNull(aggregations)) {
+                aggregations.asList().stream()
+                        .map(aggregation -> getTermFacetResults(aggregation, new Facet.TermFacet(factory.getField(aggregation.getName())), factory, FieldUtil.Fieldname.UseCase.Suggest))
+                        .filter(pair -> CollectionUtils.isNotEmpty(pair.getValue().getValues()))
+                        .forEach(pair -> suggestionValues.put(pair.getKey(), pair.getValue()));
+            }
 
             return suggestionValues;
         } else {

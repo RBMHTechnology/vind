@@ -83,7 +83,7 @@ public class FieldUtil {
     public static final String INTERNAL_CONTEXT_PREFIX = "(%s_)?";
 
     public static String getFieldName(FieldDescriptor<?> descriptor, String context) {
-        return getFieldName(descriptor, UseCase.Facet, context);
+        return getFieldName(descriptor, null, context);
     }
     public static String getFieldName(FieldDescriptor descriptor, UseCase useCase, String context) {
 
@@ -103,9 +103,13 @@ public class FieldUtil {
         Fieldname.Type type = Fieldname.Type.getFromClass(descriptor.getType());
 
         final boolean isComplexField = ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass());
+        if (Objects.isNull(useCase)) {
+            return fieldName + type.getName() + contextPrefix + descriptor.getName();
+        }
         switch (useCase) {
             case Fulltext: {
                 if (descriptor.isFullText()) {
+                    fieldName = fieldName + type.getName();
                     final String lang = "." + StringUtils.defaultIfBlank(descriptor.getLanguage().getLangCode(),"text");
                     if (isComplexField) {
                         fieldName = _COMPLEX + TEXT;
@@ -136,7 +140,6 @@ public class FieldUtil {
                         return _COMPLEX + "suggestion_" + contextPrefix + descriptor.getName() + _SUGGEST;
                     } else {
                         type = Fieldname.Type.getFromClass(descriptor.getType());
-                        type = type.getName().equals(Fieldname.Type.STRING.getName()) ? Fieldname.Type.ANALYZED : type;
                         return fieldName + type.getName() + contextPrefix + descriptor.getName() + _SUGGEST;
                     }
                 } else {
