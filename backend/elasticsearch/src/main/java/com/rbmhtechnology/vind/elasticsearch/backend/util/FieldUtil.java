@@ -176,6 +176,7 @@ public class FieldUtil {
             case Filter: {
                 if(isComplexField && ((ComplexFieldDescriptor)descriptor).isAdvanceFilter() && Objects.nonNull(((ComplexFieldDescriptor)descriptor).getFacetType())) {
                     type = Fieldname.Type.getFromClass(((ComplexFieldDescriptor)descriptor).getFacetType());
+                    fieldName = _COMPLEX;
                     return fieldName + type.getName() + "filter_" + contextPrefix + descriptor.getName() + _FILTER;
 
                 } else {
