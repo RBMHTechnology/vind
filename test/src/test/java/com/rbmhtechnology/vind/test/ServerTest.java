@@ -1401,7 +1401,7 @@ public class ServerTest {
 
     //MBDN-430
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic, Solr})
     public void testSortableMultiValuedFields() {
 
 
@@ -1480,7 +1480,7 @@ public class ServerTest {
 
     //MBDN-483
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic,Solr})
     public void atomicUpdateComplexFieldsTest() {
         SingleValuedComplexField.NumericComplexField<Taxonomy,Integer,String> numericComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,Integer,String>()
                 .setFacet(true, tx -> Arrays.asList(tx.getId()))
@@ -1565,7 +1565,7 @@ public class ServerTest {
 
     //MDBN-486
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic, Solr})
     public void advanceFilterTest() {
 
         SingleValuedComplexField.TextComplexField<Taxonomy,String,String> textComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,String,String>()
@@ -1651,7 +1651,7 @@ public class ServerTest {
 
     //MBDN-487
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic,Solr})
     public void scopedFilterTest() {
 
         MultiValuedComplexField.TextComplexField<Taxonomy,String,String> multiComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,String,String>()
@@ -1696,7 +1696,7 @@ public class ServerTest {
 
     //MBDN-495
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic,Solr})
     public void sliceResultTest(){
         final TextFieldDescriptor textMulti = new FieldDescriptorBuilder()
                 .buildMultivaluedTextField("textMulti");
@@ -2038,7 +2038,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic, Solr})
     public void complexFieldBooleanTest() {
 
 

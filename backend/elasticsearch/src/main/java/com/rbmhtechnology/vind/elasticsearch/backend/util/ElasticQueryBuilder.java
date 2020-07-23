@@ -152,11 +152,11 @@ public class ElasticQueryBuilder {
                 );
             }
         }
-    searchSource.fetchSource(true);
-    baseQuery.filter(buildFilterQuery(search.getFilter(), factory, searchContext));
+        searchSource.fetchSource(true);
+        baseQuery.filter(buildFilterQuery(search.getFilter(), factory, searchContext));
 
-        //TODO if nested document search is implemented
-        // fulltext search deep search
+            //TODO if nested document search is implemented
+            // fulltext search deep search
 
         if(search.hasFacet()) {
             search.getFacets().entrySet().stream()
@@ -606,7 +606,7 @@ public class ElasticQueryBuilder {
                         .map(f -> FieldUtil.getFieldName(f, useCase, searchContext))
                         .filter(Objects::nonNull)
                         .map(n -> AggregationBuilders
-                                .terms(n)
+                                .terms(contextualizedFacetName + "-" + FieldUtil.getSourceFieldName(n, null))
                                 .field(n)
                                 .minDocCount(minCount))
                         .reduce( AbstractAggregationBuilder::subAggregation);

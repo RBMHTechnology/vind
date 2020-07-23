@@ -433,12 +433,15 @@ public class ComplexFieldDescriptorBuilder<T,F,S> {
         if(stored) {
             complexFieldDescriptor.sort = true;
             complexFieldDescriptor.setSort(c ->{
-                final Iterator iterator = ((Collection)c).iterator();
-                if (iterator.hasNext()) {
-                    return storeFunction.apply((T)iterator.next());
-                } else {
-                    return null;
+                if(Collection.class.isAssignableFrom(c.getClass())) {
+                    final Iterator iterator = ((Collection)c).iterator();
+                    if (iterator.hasNext()) {
+                        return storeFunction.apply((T)iterator.next());
+                    } else {
+                        return null;
+                    }
                 }
+                return storeFunction.apply((T)c);
             });
         }
         complexFieldDescriptor.setFacet(facet, facetFunction);
