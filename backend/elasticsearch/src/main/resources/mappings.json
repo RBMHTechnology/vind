@@ -277,6 +277,397 @@
             }
           }
         }
+      },
+      {
+        "complex_int_facet_fields":
+        {
+          "match":   "complex_int_facet_*",
+          "mapping": {
+            "type": "integer",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "facet": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_int_sort_fields":
+        {
+          "match":   "complex_int_sort_*",
+          "mapping": {
+            "type": "integer",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "facet": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_int_stored_fields":
+        {
+          "match":   "complex_int_stored_*",
+          "mapping": {
+            "type": "integer",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "facet": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_int_filter_fields":
+        {
+          "match":   "complex_int_filter_*",
+          "mapping": {
+            "type": "integer",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "filter": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_long_facet_fields":
+        {
+          "match":   "complex_long_facet_*",
+          "mapping": {
+            "type": "long",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "facet": {
+                "type": "long"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_long_filter_fields":
+        {
+          "match":   "complex_long_filter_*",
+          "mapping": {
+            "type": "long",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "filter": {
+                "type": "long"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_long_sort_fields":
+        {
+          "match":   "complex_long_sort_*",
+          "mapping": {
+            "type": "long",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "sort": {
+                "type": "long"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_long_stored_fields":
+        {
+          "match":   "complex_long_stored_*",
+          "mapping": {
+            "type": "long",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "sort": {
+                "type": "long"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_float_facet_fields":
+        {
+          "match":   "complex_float_facet_*",
+          "mapping": {
+            "type": "float",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "facet": {
+                "type": "float"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_float_filter_fields":
+        {
+          "match":   "complex_float_filter_*",
+          "mapping": {
+            "type": "float",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "filter": {
+                "type": "float"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_float_stored_fields":
+        {
+          "match":   "complex_stored_filter_*",
+          "mapping": {
+            "type": "float",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "filter": {
+                "type": "float"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_float_sort_fields":
+        {
+          "match":   "complex_float_sort_*",
+          "mapping": {
+            "type": "float",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "sort": {
+                "type": "float"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_string_facet_fields":
+        {
+          "match":   "complex_string_facet_*",
+          "mapping": {
+            "type": "keyword",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "facet": {
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_string_filter_fields":
+        {
+          "match":   "complex_string_filter_*",
+          "mapping": {
+            "type": "keyword",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "filter": {
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_string_sort_fields":
+        {
+          "match":   "complex_string_sort_*",
+          "mapping": {
+            "type": "keyword",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "sort": {
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_string_stored_fields":
+        {
+          "match":   "complex_string_stored_*",
+          "mapping": {
+            "type": "keyword",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "sort": {
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_date_facet_fields":
+        {
+          "match":   "complex_date_facet_*",
+          "mapping": {
+            "type": "date",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "facet": {
+                "type": "date"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_date_filter_fields":
+        {
+          "match":   "complex_date_filter_*",
+          "mapping": {
+            "type": "date",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "filter": {
+                "type": "date"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_date_sort_fields":
+        {
+          "match":   "complex_date_sort_*",
+          "mapping": {
+            "type": "date",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "sort": {
+                "type": "date"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_date_stored_fields":
+        {
+          "match":   "complex_date_stored_*",
+          "mapping": {
+            "type": "date",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "sort": {
+                "type": "date"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_suggestion_fields":
+        {
+          "match": "complex_suggestion_*",
+          "mapping": {
+            "type": "keyword",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "suggestion": {
+                "type": "keyword"
+              },
+              "suggestion_experimental": {
+                "type": "text",
+                "analyzer": "suggestion",
+                "search_analyzer": "suggestion_search"
+              }
+            }
+          }
+        }
+      },
+      {
+        "complex_fulltext_fields":
+        {
+          "match":   "complex_text_*",
+          "mapping": {
+            "type": "keyword",
+            "fields": {
+              "raw": {
+                "type": "keyword"
+              },
+              "text": {
+                "type": "text"
+              },
+              "en": {
+                "type":     "text",
+                "analyzer": "english"
+              },
+              "de": {
+                "type":     "text",
+                "analyzer": "german"
+              },
+              "es": {
+                "type":     "text",
+                "analyzer": "spanish"
+              }
+            }
+          }
+        }
       }
     ]
   }

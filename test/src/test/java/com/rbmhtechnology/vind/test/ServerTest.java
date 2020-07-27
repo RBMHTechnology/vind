@@ -7,6 +7,7 @@ import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
+import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
@@ -996,7 +997,7 @@ public class ServerTest {
 
     //MBDN-455
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic,Solr})
     public void complexFieldTest() {
 
 
@@ -1074,20 +1075,20 @@ public class ServerTest {
 
         FulltextSearch searchAll = Search.fulltext().filter(
                 and(textComplexField.isNotEmpty(Scope.Facet),
-                    or(Filter.eq(numericComplexField, 1), Filter.eq(numericComplexField, 2)),
-                    numericComplexField.between(0, 5),
-                    dateComplexField.between(ZonedDateTime.now().minusDays(3), ZonedDateTime.now().plusDays(3)),
-                    textComplexField.equals("Label")))
+                        or(Filter.eq(numericComplexField, 1), Filter.eq(numericComplexField, 2)),
+                        numericComplexField.between(0, 5),
+                        dateComplexField.between(ZonedDateTime.now().minusDays(3), ZonedDateTime.now().plusDays(3)),
+                        textComplexField.equals("Label")))
                 .facet(interval("facetNumber", numericComplexField, Interval.numericInterval("[1-4]", 0, 5), Interval.numericInterval("[6-9]", 5, 10)))
                 .facet(interval("facetDateInterval", dateComplexField,
                         Interval.dateInterval("3_days_ago_till_now-1_hour]", ZonedDateTime.now().minusDays(3), ZonedDateTime.now().minusHours(1)),
                         Interval.dateInterval("[now-1_hour_till_the_future]", ZonedDateTime.now().minusHours(1), null)))
                 .facet(range("facetRange", numericComplexField, 0, 10, 5))
                 .facet(range("facetDateRange", dateComplexField, ZonedDateTime.now().minusDays(3), ZonedDateTime.now().plusDays(3), Duration.ofDays(1)))
-                .facet(stats("facetStats", numericComplexField))
+                .facet(((Facet.StatsNumericFacet)stats("facetStats", numericComplexField)).min().max().sum())
                 .facet(stats("facetDateStats", dateComplexField))
-                .facet(stats("facetTextStats", textComplexField))
-                .facet(pivot("facetPivot", numericComplexField, entityID, dateComplexField, textComplexField))
+                //        .facet(stats("facetTextStats", textComplexField))
+                .facet(pivot("facetNumericPivot", numericComplexField, entityID, dateComplexField, textComplexField))
                 .facet(numericComplexField, entityID, dateComplexField, textComplexField)
                 .sort(desc(dateStoredComplexField));
 
@@ -1099,7 +1100,7 @@ public class ServerTest {
         assertThat("Multivalued text exists", (List<String>) searchResult.getResults().get(0).getValue(multiComplexField), containsInAnyOrder("uno", "dos"));
         assertEquals("No of interval", 2, searchResult.getFacetResults().getIntervalFacet("facetNumber").getValues().size());
         assertEquals("No of doc in interval", 2, searchResult.getFacetResults().getIntervalFacet("facetNumber").getValues().get(0).getCount());
-        assertEquals("No of StatsFacets", 3, searchResult.getFacetResults().getStatsFacets().size());
+        assertEquals("No of StatsFacets", 2, searchResult.getFacetResults().getStatsFacets().size());
         assertEquals("Stats Min: ", (Integer) 1, searchResult.getFacetResults().getStatsFacet("facetStats", Integer.class).getMin());
         assertEquals("Stats Max: ", (Integer) 2, searchResult.getFacetResults().getStatsFacet("facetStats", Integer.class).getMax());
         assertEquals("Stats Sum: ",  (Double) 3.0, searchResult.getFacetResults().getStatsFacet("facetStats", Integer.class).getSum());
@@ -1400,7 +1401,7 @@ public class ServerTest {
 
     //MBDN-430
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic, Solr})
     public void testSortableMultiValuedFields() {
 
 
@@ -1479,7 +1480,7 @@ public class ServerTest {
 
     //MBDN-483
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic,Solr})
     public void atomicUpdateComplexFieldsTest() {
         SingleValuedComplexField.NumericComplexField<Taxonomy,Integer,String> numericComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,Integer,String>()
                 .setFacet(true, tx -> Arrays.asList(tx.getId()))
@@ -1564,7 +1565,7 @@ public class ServerTest {
 
     //MDBN-486
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic, Solr})
     public void advanceFilterTest() {
 
         SingleValuedComplexField.TextComplexField<Taxonomy,String,String> textComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,String,String>()
@@ -1650,7 +1651,7 @@ public class ServerTest {
 
     //MBDN-487
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic,Solr})
     public void scopedFilterTest() {
 
         MultiValuedComplexField.TextComplexField<Taxonomy,String,String> multiComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,String,String>()
@@ -1695,7 +1696,7 @@ public class ServerTest {
 
     //MBDN-495
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic,Solr})
     public void sliceResultTest(){
         final TextFieldDescriptor textMulti = new FieldDescriptorBuilder()
                 .buildMultivaluedTextField("textMulti");
@@ -2037,7 +2038,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic, Solr})
     public void complexFieldBooleanTest() {
 
 
