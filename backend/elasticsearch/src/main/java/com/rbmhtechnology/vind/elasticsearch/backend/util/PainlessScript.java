@@ -50,10 +50,7 @@ public class PainlessScript {
         private static final String PAINLESS_ADD_TEMPLATE = "ctx._source.%s.addAll(%s)";
         private static final String PAINLESS_SET_TEMPLATE = "ctx._source.%s=%s";
         private static final String PAINLESS_INC_TEMPLATE = "ctx._source.%s+=%s";
-        private static final String PAINLESS_REMOVE_ITEM_TEMPLATE =
-                "if(ctx._source.%s instanceof List) {" +
-                        "ctx._source.%s.removeAll(%s);" +
-                "}";
+        private static final String PAINLESS_REMOVE_ITEM_TEMPLATE = "ctx._source.%s.removeAll(%s)";
         private static final String PAINLESS_REMOVE_TEMPLATE = "ctx._source.remove(\"%s\")";
         //private static final String PAINLESS_REMOVE_REGEX_TEMPLATE = "Pattern prefix = /%s/; ctx._source.%s.removeIf(item -> prefix. )";
 
@@ -124,7 +121,7 @@ public class PainlessScript {
                     }
                 case remove:
                     if(Objects.nonNull(predicate)) {
-                        return String.format(PAINLESS_REMOVE_ITEM_TEMPLATE, subject, subject, Statement.getStringPredicate(predicate, predicateType));
+                        return String.format(PAINLESS_REMOVE_ITEM_TEMPLATE, subject, Statement.getStringPredicate(predicate, predicateType));
                     } else {
                         return String.format(PAINLESS_REMOVE_TEMPLATE, subject);
                     }
