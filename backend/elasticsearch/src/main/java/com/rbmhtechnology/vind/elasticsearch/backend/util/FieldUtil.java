@@ -29,8 +29,8 @@ public class FieldUtil {
 
     public static final String TEXT = "text_";
     public static final String FACET = "facet_";
-    private static final String _DYNAMIC = "dynamic_";
-    private static final String _COMPLEX = "complex_";
+    public static final String _DYNAMIC = "dynamic_";
+    public static final String _COMPLEX = "complex_";
     private static final String _STORED = ".stored";
     private static final String _MULTI = "multi_";
     private static final String _SINGLE = "single_";

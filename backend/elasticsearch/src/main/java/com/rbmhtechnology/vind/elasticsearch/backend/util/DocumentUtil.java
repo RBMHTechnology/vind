@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
+import com.rbmhtechnology.vind.annotations.FullText;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.model.ComplexFieldDescriptor;
 import com.rbmhtechnology.vind.model.DocumentFactory;
@@ -37,6 +38,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil._COMPLEX;
+import static com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil._DYNAMIC;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class DocumentUtil {
@@ -118,6 +121,9 @@ public class DocumentUtil {
         return value;
     }
 
+    /*
+     * Returns the value of a complex field for a given use case applying the defined function to the original field type
+     */
     private static Object toElasticType(Object value, ComplexFieldDescriptor descriptor, FieldUtil.Fieldname.UseCase useCase) {
         if(value!=null) {
             if (Object[].class.isAssignableFrom(value.getClass())) {
@@ -142,29 +148,25 @@ public class DocumentUtil {
                     if (descriptor.getFullTextFunction() != null) {
                         return descriptor.getFullTextFunction().apply(value);
                     } else {
-                        return null;
-                    }
+                        return null;                    }
                 }
                 case Facet: {
                     if (descriptor.getFacetFunction() != null) {
                         return descriptor.getFacetFunction().apply(value);
                     } else {
-                        return null;
-                    }
+                        return null;                    }
                 }
                 case Suggest: {
                     if (descriptor.getSuggestFunction() != null) {
                         return descriptor.getSuggestFunction().apply(value);
                     } else {
-                        return null;
-                    }
+                        return null;                    }
                 }
                 case Stored: {
                     if (descriptor.getStoreFunction() != null) {
                         return descriptor.getStoreFunction().apply(value);
                     } else {
-                        return null;
-                    }
+                        return null;                    }
                 }
                 case Sort: {
                     if (descriptor.isMultiValue()) {
@@ -172,8 +174,7 @@ public class DocumentUtil {
                         if (multiField.getSortFunction() != null) {
                             return multiField.getSortFunction().apply(value);
                         } else {
-                            return null;
-                        }
+                            return null;                        }
                     } else {
                         final SingleValuedComplexField singleField = (SingleValuedComplexField) descriptor;
                         if (singleField.getSortFunction() != null) {
@@ -182,8 +183,7 @@ public class DocumentUtil {
                             if (singleField.isStored()) {
                                 return toElasticType(value, singleField, FieldUtil.Fieldname.UseCase.Stored);
                             }
-                            return null;
-                        }
+                            return null;                        }
                     }
 
                 }
@@ -241,7 +241,7 @@ public class DocumentUtil {
         docMap.keySet().stream()
                 .filter(name -> ! Arrays.asList(FieldUtil.ID, FieldUtil.TYPE, FieldUtil.SCORE, FieldUtil.DISTANCE)
                         .contains(name))
-                .filter(name ->  name.startsWith("complex_") && name.contains("_stored_") || name.startsWith("dynamic_"))
+                .filter(name ->  name.startsWith(_COMPLEX) && name.contains("_stored_") || name.startsWith(_DYNAMIC))
                 .forEach(name -> {
                     final Object o = docMap.get(name);
                     final String contextPrefix = searchContext != null ? searchContext + "_" : "";

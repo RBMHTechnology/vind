@@ -104,8 +104,9 @@ public class ComplexFieldDescriptorBuilder<T,F,S> {
                     } else {
                         return null;
                     }
+                } else {
+                    return storeFunction.apply((T)c);
                 }
-                return storeFunction.apply((T)c);
             });
         }
         complexFieldDescriptor.setFacet(facet, facetFunction);
@@ -440,8 +441,9 @@ public class ComplexFieldDescriptorBuilder<T,F,S> {
                     } else {
                         return null;
                     }
+                } else {
+                    return storeFunction.apply((T)c);
                 }
-                return storeFunction.apply((T)c);
             });
         }
         complexFieldDescriptor.setFacet(facet, facetFunction);
