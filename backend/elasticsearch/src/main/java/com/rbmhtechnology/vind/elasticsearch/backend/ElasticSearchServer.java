@@ -342,13 +342,15 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public String getRawQuery(FulltextSearch search, DocumentFactory factory) {
-        //TODO implement for monitoring search server;
-        return "";
+        final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory);
+        return query.toString();
     }
 
     @Override
     public <T> String getRawQuery(FulltextSearch search, Class<T> c) {
-        throw new NotImplementedException();
+        final DocumentFactory factory = AnnotationUtil.createDocumentFactory(c);
+        final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory);
+        return query.toString();
     }
 
     @Override

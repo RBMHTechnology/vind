@@ -110,7 +110,7 @@ public class SolrFilterSerializer {
     }
     public String serialize(Filter.WithinBBoxFilter filter, String searchContext) {
         //TODO: could be also bbox filter function
-        return String.format("%s:[%s TO %s]", getFieldName(filter.getField(), searchContext, SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())), filter.getUpperLeft(), filter.getLowerRight());
+        return String.format("%s:[%s,%s TO %s,%s]", getFieldName(filter.getField(), searchContext, SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())), filter.getLowerRight().getLat(),filter.getUpperLeft().getLng(),filter.getUpperLeft().getLat(), filter.getLowerRight().getLng());
     }
 
     public String serialize(Filter.WithinCircleFilter filter, String searchContext) {

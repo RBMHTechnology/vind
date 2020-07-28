@@ -21,10 +21,10 @@ import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil.Fieldname.UseCase;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.DisMaxQueryBuilder;
@@ -38,8 +38,6 @@ import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.AggregatorFactories;
-import org.elasticsearch.search.aggregations.PipelineAggregatorBuilders;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregationBuilder;
@@ -48,7 +46,6 @@ import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilde
 import org.elasticsearch.search.aggregations.bucket.terms.IncludeExclude;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.ExtendedStatsAggregationBuilder;
-import org.elasticsearch.search.aggregations.metrics.StatsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
@@ -282,51 +279,43 @@ public class ElasticQueryBuilder {
                             .prefixQuery(FieldUtil.getFieldName(factory.getField(prefixFilter.getField()), useCase,context),
                                     prefixFilter.getTerm());
                 case "DescriptorFilter":
-                    //TODO: Add scope support
                     final Filter.DescriptorFilter descriptorFilter = (Filter.DescriptorFilter) filter;
                     return QueryBuilders
                             .termQuery(FieldUtil.getFieldName(descriptorFilter.getDescriptor(), useCase, context),
                                     descriptorFilter.getTerm());
                 case "BetweenDatesFilter":
-                    //TODO: Add scope support
                     final Filter.BetweenDatesFilter betweenDatesFilter = (Filter.BetweenDatesFilter) filter;
                     return QueryBuilders
                             .rangeQuery(FieldUtil.getFieldName(factory.getField(betweenDatesFilter.getField()), useCase,context))
                             .from(betweenDatesFilter.getStart().toString())
                             .to(betweenDatesFilter.getEnd().toString());
                 case "BeforeFilter":
-                    //TODO: Add scope support
                     final Filter.BeforeFilter beforeFilter = (Filter.BeforeFilter) filter;
                     return QueryBuilders
                             .rangeQuery(FieldUtil.getFieldName(factory.getField(beforeFilter.getField()), useCase,context))
                             .lte(beforeFilter.getDate().toElasticString()) ;
                 case "AfterFilter":
-                    //TODO: Add scope support
                     final Filter.AfterFilter afterFilter = (Filter.AfterFilter) filter;
                     return QueryBuilders
                             .rangeQuery(FieldUtil.getFieldName(factory.getField(afterFilter.getField()), useCase,context))
                             .gte(afterFilter.getDate().toElasticString()) ;
                 case "BetweenNumericFilter":
-                    //TODO: Add scope support
                     final Filter.BetweenNumericFilter betweenNumericFilter = (Filter.BetweenNumericFilter) filter;
                     return QueryBuilders
                             .rangeQuery(FieldUtil.getFieldName(factory.getField(betweenNumericFilter.getField()), useCase,context))
                             .from(betweenNumericFilter.getStart())
                             .to(betweenNumericFilter.getEnd());
                 case "LowerThanFilter":
-                    //TODO: Add scope support
                     final Filter.LowerThanFilter lowerThanFilter = (Filter.LowerThanFilter) filter;
                     return QueryBuilders
                             .rangeQuery(FieldUtil.getFieldName(factory.getField(lowerThanFilter.getField()), useCase,context))
                             .lte(lowerThanFilter.getNumber()) ;
                 case "GreaterThanFilter":
-                    //TODO: Add scope support
                     final Filter.GreaterThanFilter greaterThanFilter = (Filter.GreaterThanFilter) filter;
                     return QueryBuilders
                             .rangeQuery(FieldUtil.getFieldName(factory.getField(greaterThanFilter.getField()), useCase,context))
                             .gte(greaterThanFilter.getNumber()) ;
                 case "NotEmptyTextFilter":
-                    //TODO: Add scope support
                     final Filter.NotEmptyTextFilter notEmptyTextFilter = (Filter.NotEmptyTextFilter) filter;
                     final String fieldName = FieldUtil.getFieldName(factory.getField(notEmptyTextFilter.getField()), useCase, context);
                     return QueryBuilders.boolQuery()
@@ -334,33 +323,31 @@ public class ElasticQueryBuilder {
                             .mustNot(QueryBuilders.regexpQuery(fieldName , " *"))
                             ;
                 case "NotEmptyFilter":
-                    //TODO: Add scope support
                     final Filter.NotEmptyFilter notEmptyFilter = (Filter.NotEmptyFilter) filter;
                     return QueryBuilders
                             .existsQuery(FieldUtil.getFieldName(factory.getField(notEmptyFilter.getField()), useCase, context));
                 case "NotEmptyLocationFilter":
-                    //TODO: Add scope support
                     final Filter.NotEmptyLocationFilter notEmptyLocationFilter = (Filter.NotEmptyLocationFilter) filter;
                     return QueryBuilders
                             .existsQuery(FieldUtil.getFieldName(factory.getField(notEmptyLocationFilter.getField()), useCase, context));
                 case "WithinBBoxFilter":
-                    //TODO: Add scope support
                     final Filter.WithinBBoxFilter withinBBoxFilter = (Filter.WithinBBoxFilter) filter;
                     return QueryBuilders
                             .geoBoundingBoxQuery(FieldUtil.getFieldName(factory.getField(withinBBoxFilter.getField()), null, context))
                             .setCorners(
-                                    withinBBoxFilter.getUpperLeft().getLat(),
-                                    withinBBoxFilter.getUpperLeft().getLng(),
-                                    withinBBoxFilter.getLowerRight().getLat(),
-                                    withinBBoxFilter.getLowerRight().getLng()
+                                    new GeoPoint(
+                                        withinBBoxFilter.getUpperLeft().getLat(),
+                                        withinBBoxFilter.getUpperLeft().getLng()),
+                                    new GeoPoint(
+                                        withinBBoxFilter.getLowerRight().getLat(),
+                                        withinBBoxFilter.getLowerRight().getLng())
                                     );
                 case "WithinCircleFilter":
-                    //TODO: Add scope support
                     final Filter.WithinCircleFilter withinCircleFilter = (Filter.WithinCircleFilter) filter;
                     return QueryBuilders
                             .geoDistanceQuery(FieldUtil.getFieldName(factory.getField(withinCircleFilter.getField()), null, context))
                             .point(withinCircleFilter.getCenter().getLat(),withinCircleFilter.getCenter().getLng())
-                            .distance(withinCircleFilter.getDistance(), DistanceUnit.METERS);
+                            .distance(withinCircleFilter.getDistance(), DistanceUnit.KILOMETERS);
                 default:
                     throw new SearchServerException(String.format("Error parsing filter to Elasticsearch query DSL: filter type not known %s", filter.getType()));
             }
