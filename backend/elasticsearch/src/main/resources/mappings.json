@@ -13,7 +13,8 @@
         "type": "keyword"
       },
       "full_text": {
-        "type": "text"
+        "type": "text",
+        "analyzer": "vind_text"
       }
     },
     "dynamic_templates": [
@@ -44,7 +45,8 @@
                 "type": "integer"
               },
               "text": {
-                "type": "text"
+                "type": "text",
+                "analyzer": "vind_text"
               }
             }
           }
@@ -77,7 +79,8 @@
                 "type": "long"
               },
               "text": {
-                "type": "text"
+                "type": "text",
+                "analyzer": "vind_text"
               }
             }
           }
@@ -110,7 +113,8 @@
                 "type": "float"
               },
               "text": {
-                "type": "text"
+                "type": "text",
+                "analyzer": "vind_text"
               }
             }
           }
@@ -143,7 +147,8 @@
                 "type": "keyword"
               },
               "text": {
-                "type": "text"
+                "type": "text",
+                "analyzer": "vind_text"
               },
               "en": {
                 "type":     "text",
@@ -188,7 +193,8 @@
                 "type": "boolean"
               },
               "text": {
-                "type": "text"
+                "type": "text",
+                "analyzer": "vind_text"
               },
               "en": {
                 "type":     "text",
@@ -233,7 +239,8 @@
                 "type": "date"
               },
               "text": {
-                "type": "text"
+                "type": "text",
+                "analyzer": "vind_text"
               }
             }
           }
@@ -651,7 +658,8 @@
                 "type": "keyword"
               },
               "text": {
-                "type": "text"
+                "type": "text",
+                "analyzer": "vind_text"
               },
               "en": {
                 "type":     "text",

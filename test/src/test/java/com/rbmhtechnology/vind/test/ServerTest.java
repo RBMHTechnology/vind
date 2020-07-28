@@ -1826,9 +1826,8 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Solr, Elastic})
     public void queryTermWithDashCharTest(){
-
 
         SingleValueFieldDescriptor.TextFieldDescriptor internalId = new FieldDescriptorBuilder()
                 .setFullText(true)
