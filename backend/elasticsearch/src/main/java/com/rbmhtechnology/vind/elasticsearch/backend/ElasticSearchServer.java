@@ -348,9 +348,7 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public <T> String getRawQuery(FulltextSearch search, Class<T> c) {
-        final DocumentFactory factory = AnnotationUtil.createDocumentFactory(c);
-        final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory);
-        return query.toString();
+        return getRawQuery(search, AnnotationUtil.createDocumentFactory(c));
     }
 
     @Override
