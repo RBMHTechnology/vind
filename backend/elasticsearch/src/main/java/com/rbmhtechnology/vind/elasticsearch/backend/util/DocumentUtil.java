@@ -225,7 +225,7 @@ public class DocumentUtil {
 
         // Setting distance if present in result
         Optional.ofNullable(hit.field(FieldUtil.DISTANCE))
-                .ifPresent(distance -> document.setDistance(((Double)distance.getValue()).floatValue()));
+                .ifPresent(distance -> document.setDistance(((Double)distance.getValue()).floatValue()/1000));
 
         return document;
     }

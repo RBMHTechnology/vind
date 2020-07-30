@@ -169,7 +169,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         final LatLng salzburg = new LatLng(47.811195, 13.033229);
 
         searchResult = server.execute(Search.fulltext()
-                        .filter(location.withinCircle(salzburg,10000))
+                        .filter(location.withinCircle(salzburg,10))
         , documents);
 
         assertNotNull(searchResult);

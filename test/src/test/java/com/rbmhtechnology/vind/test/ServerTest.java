@@ -1159,8 +1159,14 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend({Solr})
+    @RunWithBackend({Solr, Elastic})
     public void testLocationDescriptor() {
+
+        final LatLng gijon = new LatLng(43.545231, -5.661920);
+        final LatLng oviedo = new LatLng(28.669996, -81.208122);
+        final LatLng salzburg = new LatLng(47.809490, 13.055010);
+        final LatLng wuhan = new LatLng(30.592850, 114.305542);
+
 
         SingleValueFieldDescriptor.LocationFieldDescriptor<LatLng> locationSingle = new FieldDescriptorBuilder()
                 .setFacet(true)
@@ -1176,15 +1182,15 @@ public class ServerTest {
                 .build();
 
         Document doc1 = assets.createDoc("1")
-                .setValue(locationSingle, new LatLng(10, 10))
-                .setValues(locationMulti, new LatLng(15, 15));
+                .setValue(locationSingle, wuhan)
+                .setValues(locationMulti, salzburg);
 
         Document doc2 = assets.createDoc("2")
-                .setValue(locationSingle, new LatLng(20, 20))
-                .setValues(locationMulti, new LatLng(11, 11));
+                .setValue(locationSingle, salzburg)
+                .setValues(locationMulti, gijon);
 
         Document doc3 = assets.createDoc("3")
-                .setValues(locationMulti, new LatLng(10, 10), new LatLng(20, 20));
+                .setValues(locationMulti, oviedo, gijon);
 
         SearchServer server = testBackend.getSearchServer();
 
@@ -1193,34 +1199,37 @@ public class ServerTest {
         server.index(doc3);
         server.commit();
 
-        //test bbox filter
-        FulltextSearch searchAll = Search.fulltext().filter(locationSingle.withinBBox(new LatLng(10, 10), new LatLng(11, 1)));
+        //test bbox filter: within Austria
+        FulltextSearch searchAll = Search.fulltext().filter(locationSingle.withinBBox(new LatLng(49.003646, 9.446277), new LatLng(46.379149, 17.174708)));
         SearchResult searchResult = server.execute(searchAll, assets).print();
         assertEquals("LatLng filter 'within' does not filter properly single value fields", 1, searchResult.getNumOfResults());
 
-        //test bbox filter multivalue
-        searchAll = Search.fulltext().filter(locationMulti.withinBBox(new LatLng(10,10), new LatLng(12,12)));
+        //test bbox filter multivalue: within Asturias
+        searchAll = Search.fulltext().filter(locationMulti.withinBBox(new LatLng(43.646013,-7.173549), new LatLng(42.902125,-4.513121)));
         searchResult = server.execute(searchAll, assets).print();
-        assertEquals("LatLng filter 'within' does not filter properly mutivalue fields", 2, searchResult.getNumOfResults());
+        assertEquals("LatLng filter 'within' does not filter properly mutivalued fields", 2, searchResult.getNumOfResults());
 
-        //test circle filter
-        searchAll = Search.fulltext().filter(locationSingle.withinCircle(new LatLng(10, 10), 1));
+        //test circle filter: center Beijing with a radius of 230km
+        final LatLng beijing = new LatLng(29.3464, 116.199);
+        searchAll = Search.fulltext().filter(locationSingle.withinCircle(beijing, 230));
         searchResult = server.execute(searchAll, assets).print();
-        assertEquals("LatLng filter 'within' does not filter properly singlevalue fields", 1, searchResult.getNumOfResults());
+        assertEquals("LatLng filter 'withinCircle' does not filter properly singlevalued fields", 1, searchResult.getNumOfResults());
 
-        searchAll = Search.fulltext().filter(locationMulti.withinCircle(new LatLng(10,10), 160));
+        //test circle filter: center Madrid with a radius of 384km
+        final LatLng madrid = new LatLng(40.4165, -3.70256);
+        searchAll = Search.fulltext().filter(locationMulti.withinCircle(madrid, 384));
         searchResult = server.execute(searchAll, assets).print();
-        assertEquals("LatLng filter 'within' does not filter properly singlevalue fields", 2, searchResult.getNumOfResults());
+        assertEquals("LatLng filter 'withinFilter' does not filter properly multivalued fields", 2, searchResult.getNumOfResults());
 
         //test retrieving geodist
         //TODO this feature is a little hacky, but should be easy to clean uo
-        searchAll = Search.fulltext().geoDistance(locationSingle,new LatLng(5,5));
+        searchAll = Search.fulltext().geoDistance(locationSingle, beijing);
         searchResult = server.execute(searchAll, assets).print();
-        assertEquals("Distance is not appended to results", 782.78015, searchResult.getResults().get(0).getDistance(),0.001);
+        assertEquals("Distance is not appended to results", 229, searchResult.getResults().get(0).getDistance(),0.1);
 
         //test sorting
         //TODO does not yet work (parsing error)
-        searchAll = Search.fulltext().sort(Sort.SpecialSort.distance()).geoDistance(locationSingle, new LatLng(30, 30));;
+        searchAll = Search.fulltext().sort(Sort.SpecialSort.distance()).geoDistance(locationSingle, madrid);;
         searchResult = server.execute(searchAll, assets).print();
         assertTrue("Distance sorting is not correct", searchResult.getResults().get(0).getDistance() < searchResult.getResults().get(1).getDistance());
     }
@@ -1817,9 +1826,8 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend({Solr})
+    @RunWithBackend({Solr, Elastic})
     public void queryTermWithDashCharTest(){
-
 
         SingleValueFieldDescriptor.TextFieldDescriptor internalId = new FieldDescriptorBuilder()
                 .setFullText(true)
