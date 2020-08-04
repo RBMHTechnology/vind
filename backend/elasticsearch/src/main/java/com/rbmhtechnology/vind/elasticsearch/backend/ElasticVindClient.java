@@ -40,6 +40,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -203,13 +205,15 @@ public  class ElasticVindClient {
         return client.indices().getMapping(request, RequestOptions.DEFAULT);
     }
 
-    public BulkResponse addPercolateQuery(QueryBuilder query) throws IOException {
-        final XContentBuilder queryDoc = jsonBuilder()
-                .startObject()
-                    .field("query", query) // Register the query
-                .endObject();
+    public BulkResponse addPercolateQuery(String queryId, QueryBuilder query) throws IOException {
+        return addPercolateQuery(queryId, query, new HashMap<>());
+    }
+    public BulkResponse addPercolateQuery(String queryId, QueryBuilder query, Map<String, Object> metadata) throws IOException {
+        metadata.put("query", query);
+        final XContentBuilder queryDoc = mapToXContentBuilder(metadata);
+
         final BulkRequest bulkIndexRequest = new BulkRequest();
-        bulkIndexRequest.add(ElasticRequestUtils.addPercolatorQueryRequest(defaultIndex,queryDoc));
+        bulkIndexRequest.add(ElasticRequestUtils.addPercolatorQueryRequest(defaultIndex, queryId, queryDoc));
         bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
         bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
         return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);

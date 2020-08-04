@@ -74,7 +74,7 @@ public class ElasticVindClientTest  extends ElasticBaseTest{
     @Test
     public void testPercolatorQuery() throws IOException {
 
-        final BulkResponse indexResult = client.addPercolateQuery(getBasicTestSearch().query());
+        final BulkResponse indexResult = client.addPercolateQuery("testQuery", getBasicTestSearch().query());
         assertNotNull(indexResult);
         assertEquals("CREATED", indexResult.getItems()[0].status().name());
 
@@ -85,6 +85,7 @@ public class ElasticVindClientTest  extends ElasticBaseTest{
         SearchResponse percolatorResponse = client.getPercolateQuery(matchingDoc);
         assertNotNull(percolatorResponse);
         assertEquals(1, percolatorResponse.getHits().getTotalHits().value);
+        assertEquals("testQuery", percolatorResponse.getHits().getHits()[0].getId());
 
         final Map<String, Object> notMatchingDoc = new HashMap<>();
         notMatchingDoc.put(FieldUtil.ID, "AA-2X3451");

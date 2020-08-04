@@ -85,8 +85,9 @@ public class ElasticRequestUtils {
         return new IndexRequest(index)
                 .source(query);
     }
-    public static IndexRequest addPercolatorQueryRequest(String index, XContentBuilder query) {
+    public static IndexRequest addPercolatorQueryRequest(String index, String id, XContentBuilder query) {
         return new IndexRequest(index)
+                .id(id)
                 .source(query);
     }
 
