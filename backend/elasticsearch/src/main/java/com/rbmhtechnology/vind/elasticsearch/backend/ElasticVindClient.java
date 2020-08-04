@@ -1,5 +1,7 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticRequestUtils;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.PainlessScript;
 import org.apache.http.HttpHost;
@@ -28,6 +30,7 @@ import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.indices.GetMappingsRequest;
 import org.elasticsearch.client.indices.GetMappingsResponse;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
@@ -41,9 +44,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+
 public  class ElasticVindClient {
 
     private static final Logger log = LoggerFactory.getLogger(ElasticVindClient.class);
+    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private String defaultIndex;
     private final RestHighLevelClient client;
@@ -197,6 +203,25 @@ public  class ElasticVindClient {
         return client.indices().getMapping(request, RequestOptions.DEFAULT);
     }
 
+    public BulkResponse addPercolateQuery(QueryBuilder query) throws IOException {
+        final XContentBuilder queryDoc = jsonBuilder()
+                .startObject()
+                    .field("query", query) // Register the query
+                .endObject();
+        final BulkRequest bulkIndexRequest = new BulkRequest();
+        bulkIndexRequest.add(ElasticRequestUtils.addPercolatorQueryRequest(defaultIndex,queryDoc));
+        bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
+        bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
+        return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
+    }
+
+    public SearchResponse getPercolateQuery(Map<String, Object> mapDoc) throws IOException {
+
+        final XContentBuilder doc = mapToXContentBuilder(mapDoc);
+        final SearchRequest request = ElasticRequestUtils.percolateDocumentRequest(defaultIndex,doc);
+        return client.search(request, RequestOptions.DEFAULT);
+    }
+
     public void close() throws IOException {
         try {
             this.client.close();
@@ -233,5 +258,15 @@ public  class ElasticVindClient {
         public ElasticVindClient build(String user, String key) {
             return new ElasticVindClient(defaultIndex, port, scheme, host, user, key);
         }
+    }
+
+    private XContentBuilder mapToXContentBuilder(Map<String, Object> doc) throws IOException {
+        final XContentBuilder builder = jsonBuilder().startObject();
+        for (Map.Entry<String, Object> entry : doc.entrySet()) {
+            String k = entry.getKey();
+            Object value = entry.getValue();
+            builder.field(k, value);
+        }
+        return builder.endObject();
     }
 }

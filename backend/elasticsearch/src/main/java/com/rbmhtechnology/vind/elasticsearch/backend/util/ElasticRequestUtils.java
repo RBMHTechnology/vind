@@ -9,13 +9,18 @@ import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetMappingsRequest;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
+import org.elasticsearch.percolator.PercolateQueryBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.util.List;
 import java.util.Map;
+
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class ElasticRequestUtils {
 
@@ -75,4 +80,24 @@ public class ElasticRequestUtils {
         request.indices(index);
         return request;
     }
+
+    public static IndexRequest addPercolatorQueryRequest(String index, Map<String,Object> query) {
+        return new IndexRequest(index)
+                .source(query);
+    }
+    public static IndexRequest addPercolatorQueryRequest(String index, XContentBuilder query) {
+        return new IndexRequest(index)
+                .source(query);
+    }
+
+    public static SearchRequest percolateDocumentRequest(String index,XContentBuilder doc) {
+        final SearchSourceBuilder searchSource = new SearchSourceBuilder();
+        final PercolateQueryBuilder query = new PercolateQueryBuilder("query", BytesReference.bytes(doc), doc.contentType());
+        searchSource.query(query);
+        final SearchRequest searchRequest = new SearchRequest(index);
+        searchRequest.source(searchSource);
+        return searchRequest;
+    }
+
+
 }

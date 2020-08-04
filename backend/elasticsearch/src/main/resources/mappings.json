@@ -15,6 +15,9 @@
       "full_text": {
         "type": "text",
         "analyzer": "vind_text"
+      },
+      "query": {
+        "type": "percolator"
       }
     },
     "dynamic_templates": [
