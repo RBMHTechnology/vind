@@ -1,12 +1,10 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
 import com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil;
-import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.DisMaxQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -73,8 +71,12 @@ public class ElasticVindClientTest  extends ElasticBaseTest{
     }
     @Test
     public void testPercolatorQuery() throws IOException {
+        client.addPercolateQuery("testQuery", getBasicTestSearch().query());
 
-        final BulkResponse indexResult = client.addPercolateQuery("testQuery", getBasicTestSearch().query());
+        final Map<String, Object> queryMetadata = new HashMap<>();
+        queryMetadata.put(FieldUtil.TYPE, "_percolator_query");
+        final BulkResponse indexResult =
+                client.addPercolateQuery("testQueryMetadata", getBasicTestSearch().query(), queryMetadata);
         assertNotNull(indexResult);
         assertEquals("CREATED", indexResult.getItems()[0].status().name());
 
@@ -82,15 +84,21 @@ public class ElasticVindClientTest  extends ElasticBaseTest{
         matchingDoc.put(FieldUtil.ID, "AA-2X3451");
         matchingDoc.put(FieldUtil.TYPE, "TestDoc");
 
-        SearchResponse percolatorResponse = client.getPercolateQuery(matchingDoc);
+        SearchResponse percolatorResponse =
+                client.percolatorDocQuery(matchingDoc);
+        assertNotNull(percolatorResponse);
+        assertEquals(2, percolatorResponse.getHits().getTotalHits().value);
+
+        percolatorResponse =
+                client.percolatorDocQuery(matchingDoc, termQuery("_type_", "_percolator_query"));
         assertNotNull(percolatorResponse);
         assertEquals(1, percolatorResponse.getHits().getTotalHits().value);
-        assertEquals("testQuery", percolatorResponse.getHits().getHits()[0].getId());
+        assertEquals("testQueryMetadata", percolatorResponse.getHits().getHits()[0].getId());
 
         final Map<String, Object> notMatchingDoc = new HashMap<>();
-        notMatchingDoc.put(FieldUtil.ID, "AA-2X3451");
+        notMatchingDoc.put(FieldUtil.ID, "BB-2X3451");
         notMatchingDoc.put(FieldUtil.TYPE, "notMatching");
-        percolatorResponse = client.getPercolateQuery(notMatchingDoc);
+        percolatorResponse = client.percolatorDocQuery(notMatchingDoc);
         assertNotNull(percolatorResponse);
         assertEquals(0, percolatorResponse.getHits().getTotalHits().value);
 

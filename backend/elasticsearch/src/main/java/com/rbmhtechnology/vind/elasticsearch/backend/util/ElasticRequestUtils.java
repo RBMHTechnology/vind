@@ -12,13 +12,16 @@ import org.elasticsearch.client.indices.GetMappingsRequest;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.percolator.PercolateQueryBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -91,10 +94,13 @@ public class ElasticRequestUtils {
                 .source(query);
     }
 
-    public static SearchRequest percolateDocumentRequest(String index,XContentBuilder doc) {
+    public static SearchRequest percolateDocumentRequest(String index, XContentBuilder doc, QueryBuilder query) {
         final SearchSourceBuilder searchSource = new SearchSourceBuilder();
-        final PercolateQueryBuilder query = new PercolateQueryBuilder("query", BytesReference.bytes(doc), doc.contentType());
-        searchSource.query(query);
+        final PercolateQueryBuilder docQuery = new PercolateQueryBuilder("query", BytesReference.bytes(doc), doc.contentType());
+        final BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+        boolQueryBuilder.must(docQuery);
+        Optional.ofNullable(query).ifPresent(boolQueryBuilder::must);
+        searchSource.query(boolQueryBuilder);
         final SearchRequest searchRequest = new SearchRequest(index);
         searchRequest.source(searchSource);
         return searchRequest;

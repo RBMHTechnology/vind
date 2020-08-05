@@ -219,11 +219,13 @@ public  class ElasticVindClient {
         return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
     }
 
-    public SearchResponse getPercolateQuery(Map<String, Object> mapDoc) throws IOException {
-
+    public SearchResponse percolatorDocQuery(Map<String, Object> mapDoc, QueryBuilder query) throws IOException {
         final XContentBuilder doc = mapToXContentBuilder(mapDoc);
-        final SearchRequest request = ElasticRequestUtils.percolateDocumentRequest(defaultIndex,doc);
+        final SearchRequest request = ElasticRequestUtils.percolateDocumentRequest(defaultIndex, doc, query);
         return client.search(request, RequestOptions.DEFAULT);
+    }
+    public SearchResponse percolatorDocQuery(Map<String, Object> mapDoc) throws IOException {
+        return percolatorDocQuery(mapDoc, null);
     }
 
     public void close() throws IOException {
