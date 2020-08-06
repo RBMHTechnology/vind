@@ -8,8 +8,13 @@ import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.ServiceProvider;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
+import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
+import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
+import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearch;
+import com.rbmhtechnology.vind.model.InverseSearchQuery;
+import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearchQueryFactory;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.BeanGetResult;
@@ -18,6 +23,9 @@ import com.rbmhtechnology.vind.api.result.DeleteResult;
 import com.rbmhtechnology.vind.api.result.FacetResults;
 import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.IndexResult;
+import com.rbmhtechnology.vind.api.result.InverseSearchPageResult;
+import com.rbmhtechnology.vind.api.result.InverseSearchResult;
+import com.rbmhtechnology.vind.api.result.InverseSearchSliceResult;
 import com.rbmhtechnology.vind.api.result.PageResult;
 import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.api.result.SliceResult;
@@ -50,7 +58,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -456,6 +467,89 @@ public class ElasticSearchServer extends SearchServer {
     }
 
     @Override
+    public InverseSearchResult execute(InverseSearch inverseSearch, DocumentFactory documentFactory) {
+        final StopWatch elapsedtime = StopWatch.createStarted();
+        final List<Map<String,Object>> mapDocs = inverseSearch.getDocs().parallelStream()
+                .map(DocumentUtil::createInputDocument)
+                .collect(Collectors.toList());
+        final FulltextSearch fullTextSearch = Search.fulltext().filter(inverseSearch.getQueryFilter());
+        final QueryBuilder query =
+                ElasticQueryBuilder.buildFilterQuery(inverseSearch.getQueryFilter(), documentFactory, null);
+        //query
+        try {
+            elasticClientLogger.debug(">>> query({})", query.toString());
+            //TODO: inverse search support multiple docs
+            final SearchResponse response = elasticSearchClient.percolatorDocQuery(mapDocs.get(0), query);
+
+            if(Objects.nonNull(response)
+                    && Objects.nonNull(response.getHits())
+                    && Objects.nonNull(response.getHits().getHits())){
+
+                final List<InverseSearchQuery> resultQueries = Arrays.stream(response.getHits().getHits())
+                        .map(hit -> DocumentUtil.buildVindDoc(hit, InverseSearchQueryFactory.getQueryFactory(),null))
+                        .map(doc ->
+                                documentFactory.createInverseSearchQuery(
+                                        doc.getId(),
+                                        deserializeByteArrayFilter(((ByteBuffer)doc.getValue(InverseSearchQueryFactory.BINARY_QUERY_FIELD)).array()))
+
+                        )
+                        .collect(Collectors.toList());
+
+
+                elapsedtime.stop();
+
+                final long totalHits = response.getHits().getTotalHits().value;
+                switch(inverseSearch.getResultSet().getType()) {
+                    case page:{
+                        return new InverseSearchPageResult(totalHits, response.getTook().getMillis(), resultQueries, inverseSearch, this, documentFactory).setElapsedTime(elapsedtime.getTime());
+                    }
+                    case slice: {
+                        return new InverseSearchSliceResult(totalHits, response.getTook().getMillis(), resultQueries, inverseSearch, this, documentFactory).setElapsedTime(elapsedtime.getTime());
+                    }
+                    default:
+                        return new InverseSearchPageResult(totalHits, response.getTook().getMillis(), resultQueries, inverseSearch,  this, documentFactory).setElapsedTime(elapsedtime.getTime());
+                }
+            }else {
+                throw new ElasticsearchException("Empty result from ElasticClient");
+            }
+
+        } catch (ElasticsearchException | IOException e) {
+            throw new SearchServerException(String.format("Cannot issue inverse search: %s", e.getMessage()), e);
+        }
+
+    }
+
+    @Override
+    public IndexResult addInverseSearchQuery(InverseSearchQuery query) {
+        Asserts.notNull(query,"Query should not be null.");
+        final StopWatch elapsedTime = StopWatch.createStarted();
+
+        final QueryBuilder elasticQuery =
+                ElasticQueryBuilder.buildFilterQuery(query.getQuery(), query.getFactory(), null);
+
+        try {
+            if (elasticClientLogger.isTraceEnabled()) {
+                elasticClientLogger.debug(">>> add inverse search Query({})", query);
+            } else {
+                elasticClientLogger.debug(">>> add inverse search Query({})", query);
+            }
+            final Map<String, Object> metadataMap = new HashMap<>();
+
+            if (!query.getValues().isEmpty()) {
+                 metadataMap.putAll(DocumentUtil.createInputDocument(query));
+            }
+
+            final BulkResponse response = this.elasticSearchClient.addPercolateQuery(query.getId(), elasticQuery, metadataMap) ;
+            elapsedTime.stop();
+            return new IndexResult(elapsedTime.getTime()).setElapsedTime(elapsedTime.getTime());
+
+        } catch (ElasticsearchException | IOException e) {
+            log.error("Cannot add inverse search query {}", query, e);
+            throw new SearchServerException("Cannot  add inverse search query", e);
+        }
+    }
+
+    @Override
     public void clearIndex() {
         try {
             elasticClientLogger.debug(">>> clear complete index");
@@ -564,6 +658,21 @@ public class ElasticSearchServer extends SearchServer {
         } catch (ElasticsearchException | IOException e) {
             log.error("Cannot index documents {}", jsonDocs, e);
             throw new SearchServerException("Cannot index documents", e);
+        }
+    }
+
+    private Filter deserializeByteArrayFilter(byte[] data) {
+        ByteArrayInputStream bytesIn = new ByteArrayInputStream(data);
+        try(ObjectInputStream ois = new ObjectInputStream(bytesIn))
+        {
+            Filter query = (Filter) ois.readObject();
+            return query;
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("Error desearializing byte[] filter: "+e.getMessage(),e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Error desearializing byte[] filter: "+e.getMessage(),e);
         }
     }
 }

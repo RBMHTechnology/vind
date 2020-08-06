@@ -1,7 +1,5 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticRequestUtils;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.PainlessScript;
 import org.apache.http.HttpHost;
@@ -40,7 +38,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +48,6 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 public  class ElasticVindClient {
 
     private static final Logger log = LoggerFactory.getLogger(ElasticVindClient.class);
-    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private String defaultIndex;
     private final RestHighLevelClient client;

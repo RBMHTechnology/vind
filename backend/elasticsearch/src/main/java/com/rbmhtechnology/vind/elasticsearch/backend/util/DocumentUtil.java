@@ -2,9 +2,11 @@ package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
 import com.rbmhtechnology.vind.annotations.FullText;
 import com.rbmhtechnology.vind.api.Document;
+import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearchQueryFactory;
 import com.rbmhtechnology.vind.model.ComplexFieldDescriptor;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
+import com.rbmhtechnology.vind.model.InverseSearchQuery;
 import com.rbmhtechnology.vind.model.MultiValueFieldDescriptor;
 import com.rbmhtechnology.vind.model.MultiValuedComplexField;
 import com.rbmhtechnology.vind.model.SingleValuedComplexField;
@@ -63,6 +65,25 @@ public class DocumentUtil {
         return docMap;
     }
 
+    public static Map<String, Object> createInputDocument(InverseSearchQuery doc) {
+
+        final Map<String, Object> docMap = new HashMap<>();
+        //add fields
+        doc.listFieldDescriptors()
+                .values()
+                .stream()
+                .filter(doc::hasValue)
+                .forEach(descriptor -> addFieldToDoc(doc, docMap, descriptor));
+
+        addFieldToDoc(doc, docMap, InverseSearchQueryFactory.BINARY_QUERY_FIELD);
+
+        //TODO: add subdocuments if implemented
+        docMap.put(FieldUtil.ID, doc.getId());
+        docMap.put(FieldUtil.TYPE, doc.getType());
+
+        return docMap;
+    }
+
     private static void addFieldToDoc(Document doc, Map<String, Object> docMap, FieldDescriptor<?> descriptor) {
         if (ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass())) {
             addFieldToDoc(doc, docMap, (ComplexFieldDescriptor) descriptor);
@@ -74,6 +95,18 @@ public class DocumentUtil {
                                             Optional.ofNullable(doc.getContextualizedValue(descriptor, context))
                                                     .ifPresent(value -> docMap.put(fieldName.replaceAll("\\.\\w+" , ""), toElasticType(value)))
                                     )
+                    );
+        }
+    }
+
+    private static void addFieldToDoc(InverseSearchQuery doc, Map<String, Object> docMap, FieldDescriptor<?> descriptor) {
+        if (ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass())) {
+            addFieldToDoc(doc, docMap, (ComplexFieldDescriptor) descriptor);
+        } else {
+            Optional.ofNullable(FieldUtil.getFieldName(descriptor, null))
+                    .ifPresent(fieldName ->
+                            Optional.ofNullable(doc.getValue(descriptor))
+                                    .ifPresent(value -> docMap.put(fieldName.replaceAll("\\.\\w+" , ""), toElasticType(value)))
                     );
         }
     }
@@ -90,6 +123,18 @@ public class DocumentUtil {
                         );
                     })
                 );
+    }
+
+    private static void addFieldToDoc(InverseSearchQuery doc, Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor) {
+
+                        Stream.of(FieldUtil.Fieldname.UseCase.values()).forEach( useCase -> {
+                            final String name = FieldUtil.getFieldName(descriptor, useCase, null);
+                            Optional.ofNullable(name).ifPresent( fieldName ->
+                                    Optional.ofNullable( doc.getValue(descriptor)).ifPresent(
+                                            contextualizedValue ->
+                                                    docMap.put(fieldName.replaceAll("\\.\\w+" , ""), toElasticType(contextualizedValue, descriptor, useCase)))
+                            );
+                        });
     }
 
     private static Object toElasticType(Object value) {
@@ -232,11 +277,6 @@ public class DocumentUtil {
 
     public static Document buildVindDoc( Map<String, Object> docMap , DocumentFactory factory, String searchContext) {
         final Document document = factory.createDoc(String.valueOf(docMap.get(FieldUtil.ID)));
-
-        //TODO: No child documnt search implemented yet
-        //            if (childCounts != null) {
-        //                document.setChildCount(ObjectUtils.defaultIfNull(childCounts.get(document.getId()), 0));
-        //            }
 
         docMap.keySet().stream()
                 .filter(name -> ! Arrays.asList(FieldUtil.ID, FieldUtil.TYPE, FieldUtil.SCORE, FieldUtil.DISTANCE)

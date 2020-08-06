@@ -3,6 +3,8 @@ package com.rbmhtechnology.vind.api;
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
+import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearch;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
@@ -10,6 +12,7 @@ import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.*;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
+import com.rbmhtechnology.vind.model.InverseSearchQuery;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +21,7 @@ import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
 
 /**
@@ -367,6 +371,22 @@ public abstract class SearchServer implements Closeable {
      * @throws SearchServerException if not possible to execute the real time get.
      */
     public abstract GetResult execute(RealTimeGet search, DocumentFactory assets);
+
+    /**
+     * Finds the matching queries for a given document. {@link InverseSearch}.
+     * @param inverseSearch {@link InverseSearch} definition of the inverse search.
+     * @param factory {@link DocumentFactory} mapping the index documents and the result type.
+     * @return {@link SearchResult} storing the search results matching the inverse search.
+     * @throws SearchServerException if not possible to execute the update.
+     */
+    public abstract InverseSearchResult execute(InverseSearch inverseSearch, DocumentFactory factory);
+
+    /**
+     * Adds a {@link InverseSearchQuery} to the index. If the query already exists it will be updated.
+     * @param query {@link InverseSearchQuery} to be stored.
+     * @return {@link IndexResult} containing the time information.
+     */
+    public abstract IndexResult addInverseSearchQuery(InverseSearchQuery query);
 
     /**
      * Deletes all elements on the current index.

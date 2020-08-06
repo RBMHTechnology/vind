@@ -11,6 +11,7 @@ import com.rbmhtechnology.vind.utils.SerializerVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -28,7 +29,7 @@ import java.util.stream.Collectors;
  * {@link BetweenNumericFilter}, {@link GreaterThanFilter}, {@link LowerThanFilter}) and providing
  * static user friendly methods to create them.
  */
-public abstract class Filter {
+public abstract class Filter  implements Serializable {
 
     private Logger logger = LoggerFactory.getLogger(Filter.class);
 

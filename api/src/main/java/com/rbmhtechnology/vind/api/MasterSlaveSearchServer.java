@@ -2,7 +2,9 @@ package com.rbmhtechnology.vind.api;
 
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
+import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
+import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.BeanGetResult;
@@ -10,10 +12,12 @@ import com.rbmhtechnology.vind.api.result.BeanSearchResult;
 import com.rbmhtechnology.vind.api.result.DeleteResult;
 import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.IndexResult;
+import com.rbmhtechnology.vind.api.result.InverseSearchResult;
 import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.api.result.StatusResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.model.DocumentFactory;
+import com.rbmhtechnology.vind.model.InverseSearchQuery;
 
 import java.util.Collections;
 import java.util.List;
@@ -165,6 +169,17 @@ public class MasterSlaveSearchServer extends SearchServer {
     public GetResult execute(RealTimeGet search, DocumentFactory assets) {
         return backend.execute(search, assets);
     }
+
+    @Override
+    public InverseSearchResult execute(InverseSearch inverseSearch, DocumentFactory factory) {
+        return backend.execute(inverseSearch, factory);
+    }
+
+    @Override
+    public IndexResult addInverseSearchQuery(InverseSearchQuery query) {
+        return backend.addInverseSearchQuery(query);
+    }
+
 
     @Override
     public void clearIndex() {

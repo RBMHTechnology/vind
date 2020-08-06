@@ -2,6 +2,7 @@ package com.rbmhtechnology.vind.model;
 
 import com.google.common.base.Preconditions;
 import com.rbmhtechnology.vind.api.Document;
+import com.rbmhtechnology.vind.api.query.filter.Filter;
 import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,6 +101,17 @@ public class DocumentFactory {
      */
     public boolean isUpdatable() {
         return updatable;
+    }
+
+    /**
+     * Creates an instance of a {@link InverseSearchQuery} within the schema of the actual configuration of the factory.
+     *
+     * @param id Identification string of the new InverseSearchQuery.
+     * @param query Query to apply on inverse search
+     * @return A {@link InverseSearchQuery} with the configured {@link FieldDescriptor}s.
+     */
+    public InverseSearchQuery createInverseSearchQuery(String id, Filter query) {
+        return new InverseSearchQuery(id, query, this);
     }
 
     @Override
