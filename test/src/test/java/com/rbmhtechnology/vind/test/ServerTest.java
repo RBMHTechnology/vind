@@ -2430,44 +2430,4 @@ public class ServerTest {
 
         assertEquals(0,  result.getResults().size());
     }
-
-    @Test
-    @RunWithBackend(Elastic)
-    public void testInverseSearch() {
-        final SearchServer server = testBackend.getSearchServer();
-        final SingleValueFieldDescriptor.TextFieldDescriptor title = new FieldDescriptorBuilder()
-                .setFullText(true)
-                .setFacet(true)
-                .buildTextField("title");
-
-        final SingleValueFieldDescriptor.TextFieldDescriptor volume = new FieldDescriptorBuilder()
-                .setFullText(true)
-                .setFacet(true)
-                .buildTextField("volume");
-
-        final DocumentFactory testDocsFactory = new DocumentFactoryBuilder("TestDocument")
-                .addField(title, volume)
-                .build();
-
-        // Reverse Search
-        Document d1 = testDocsFactory.createDoc("1")
-                .setValue(title, "Hello World");
-        server.index(d1);
-
-        final InverseSearchQuery inverseSearchQuery = testDocsFactory.createInverseSearchQuery(
-                "testQuery1",
-                title.equals("Hello World"))
-                .setValue(volume,"volume1");
-        final IndexResult indexResult =
-                server.addInverseSearchQuery(inverseSearchQuery);
-
-        InverseSearch inverseSearch = Search.inverseSearch(d1).setQueryFilter(volume.equals("volume1"));
-        InverseSearchResult result = server.execute(inverseSearch, testDocsFactory);
-        assertEquals(1, result.getNumOfResults());
-
-        inverseSearch = Search.inverseSearch(d1).setQueryFilter(volume.equals("v1"));
-        result = server.execute(inverseSearch, testDocsFactory);
-        assertEquals(0, result.getNumOfResults());
-
-    }
 }

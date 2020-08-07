@@ -146,7 +146,7 @@ public class InverseSearchQuery {
             log.error("Invalid field name {}: unable to modify the aforementioned field.", field);
             throw new IllegalArgumentException("Invalid field name "+field+": unable to modify the aforementioned field.");
         }
-        if (!this.listFieldDescriptors().containsKey(field) && !InverseSearchQueryFactory.BINARY_QUERY_FIELD.getName().equals(field)) {
+        if (!this.listFieldDescriptors().containsKey(field)) {
             log.error("The field {} does not exist in this factory",field);
             throw new IllegalArgumentException("The field " + field + " does not exist in this factory");
         } else if (val != null) {
@@ -301,14 +301,8 @@ public class InverseSearchQuery {
     }
 
     public Map<String, FieldDescriptor<?>> listFieldDescriptors() {
-
-        final Map<String, FieldDescriptor<?>> fields = new HashMap<>();
-        fields.putAll(factory.getFields());
-        fields.put(InverseSearchQueryFactory.BINARY_QUERY_FIELD.getName(), InverseSearchQueryFactory.BINARY_QUERY_FIELD);
-
-        return unmodifiableMap(fields);
+        return unmodifiableMap(factory.getInverseSearchMetaFields());
     }
-
 
     public Map<String, Object> getValues() {
         Map<String, Object> collect = this.values.entrySet().stream()

@@ -30,6 +30,7 @@ public class DocumentFactory {
     private final boolean updatable;
 
     protected final Map<String, FieldDescriptor<?>> fields;
+    protected final Map<String, FieldDescriptor<?>> inverseSearchMetaFields;
 
     /**
      * Creates a new instance of {@link DocumentFactory} with a given type name.
@@ -41,6 +42,21 @@ public class DocumentFactory {
         this.type = type;
         this.updatable = updatable;
         this.fields = fields;
+        inverseSearchMetaFields = Collections.emptyMap();
+    }
+
+    /**
+     * Creates a new instance of {@link DocumentFactory} with a given type name.
+     * @param type type of the {@link Document} instantiated by this factory.
+     * @param updatable flag to define a document factory which will produce documents suporting partial updates.
+     * @param fields a {@link Map} of {@link String} field name and {@link FieldDescriptor} objects.
+     * @param inverseSearchMetaFields a {@link Map} of {@link String} field name and {@link FieldDescriptor} objects.
+     */
+    protected DocumentFactory(String type,boolean updatable, Map<String, FieldDescriptor<?>> fields, Map<String, FieldDescriptor<?>> inverseSearchMetaFields) {
+        this.type = type;
+        this.updatable = updatable;
+        this.fields = fields;
+        this.inverseSearchMetaFields = inverseSearchMetaFields;
     }
 
     /**
@@ -68,13 +84,34 @@ public class DocumentFactory {
      * @param name Name of the field.
      * @return A {@link FieldDescriptor}.
      */
-    public FieldDescriptor<?> getField(String name) {
-        return fields.get(name);
+    public FieldDescriptor getField(String name) {
+        return Optional.ofNullable(fields.get(name)).orElse(getInverseSearchMetaField(name));
     }
 
-    //TODO: Documentation
+    /**
+     * Gets the {@link FieldDescriptor} of a specific inverse search metadata field.
+     * @param name Name of the field.
+     * @return A {@link FieldDescriptor}.
+     */
+    public FieldDescriptor getInverseSearchMetaField(String name) {
+        return inverseSearchMetaFields.get(name);
+    }
+
+    /**
+     * Gets a copy of the the Map of fields configured in the document factory.
+     * @return A collection of field descriptors.
+     */
     public Map<String, FieldDescriptor<?>> getFields() {
         return Collections.unmodifiableMap(fields);
+    }
+
+
+    /**
+     * Gets a copy of the the Map of inverse search metadata fields configured in the document factory.
+     * @return A collection of field descriptors.
+     */
+    public Map<String, FieldDescriptor<?>> getInverseSearchMetaFields() {
+        return Collections.unmodifiableMap(inverseSearchMetaFields);
     }
 
     /**
