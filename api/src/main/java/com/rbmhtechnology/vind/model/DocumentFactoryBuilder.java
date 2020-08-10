@@ -140,6 +140,7 @@ public class DocumentFactoryBuilder {
         if (isUpdatable()) {
             this.listFields().stream().forEach( field -> field.setUpdate(true));
         }
+
         return new DocumentFactory(this.type, this. updatable, this.fields);
     }
 
