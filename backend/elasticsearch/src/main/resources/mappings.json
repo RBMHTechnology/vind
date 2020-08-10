@@ -6,6 +6,9 @@
       "_type_": {
         "type": "keyword"
       },
+      "percolator_flag_": {
+        "type" : "boolean"
+      },
       "facets": {
         "type": "keyword"
       },

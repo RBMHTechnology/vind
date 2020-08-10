@@ -221,16 +221,28 @@ public class ElasticQueryBuilder {
         return searchSource;
     }
 
+    public static SearchSourceBuilder buildPercolatorQueryReadiness(DocumentFactory factory) {
+
+        final SearchSourceBuilder searchSource = new SearchSourceBuilder();
+        final QueryBuilder baseQuery =  QueryBuilders.termQuery(FieldUtil.PERCOLATOR_FLAG, true);
+        searchSource.query(baseQuery);
+        searchSource.fetchSource(true);
+        return searchSource;
+    }
+
     private static void addToPivotAggs(AggregationBuilder pivotAgg, List<AggregationBuilder> aggs) {
         pivotAgg.getSubAggregations()
                 .forEach(subAgg -> addToPivotAggs(subAgg,aggs));
         aggs.forEach(pivotAgg::subAggregation);
     }
-
     public static QueryBuilder buildFilterQuery(Filter filter, DocumentFactory factory, String context) {
+        return buildFilterQuery(filter, factory, context,false);
+    }
+    public static QueryBuilder buildFilterQuery(Filter filter, DocumentFactory factory, String context, Boolean percolatorFlag) {
         final BoolQueryBuilder filterQuery = QueryBuilders.boolQuery();
         // Add base doc type filter
         filterQuery.must(QueryBuilders.termQuery(FieldUtil.TYPE, factory.getType()));
+        filterQuery.must(QueryBuilders.termQuery(FieldUtil.PERCOLATOR_FLAG, percolatorFlag));
         Optional.ofNullable(filter)
                 .ifPresent(vindFilter -> {
                     filterQuery.must(filterMapper(vindFilter, factory, UseCase.valueOf(filter.getFilterScope().name()), context));

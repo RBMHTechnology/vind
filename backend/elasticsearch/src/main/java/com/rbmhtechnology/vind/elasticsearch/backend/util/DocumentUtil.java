@@ -1,6 +1,5 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
-import com.rbmhtechnology.vind.annotations.FullText;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearchQueryFactory;
 import com.rbmhtechnology.vind.model.ComplexFieldDescriptor;
@@ -49,6 +48,10 @@ public class DocumentUtil {
     private static final Logger log = LoggerFactory.getLogger(DocumentUtil.class);
 
     public static Map<String, Object> createInputDocument(Document doc) {
+        return createInputDocument(doc, false);
+    }
+
+    public static Map<String, Object> createInputDocument(Document doc, Boolean percolator) {
 
         final Map<String, Object> docMap = new HashMap<>();
         //add fields
@@ -58,9 +61,9 @@ public class DocumentUtil {
                 .filter(doc::hasValue)
                 .forEach(descriptor -> addFieldToDoc(doc, docMap, descriptor));
 
-        //TODO: add subdocuments if implemented
         docMap.put(FieldUtil.ID, doc.getId());
         docMap.put(FieldUtil.TYPE, doc.getType());
+        docMap.put(FieldUtil.PERCOLATOR_FLAG, percolator);
 
         return docMap;
     }
@@ -77,9 +80,9 @@ public class DocumentUtil {
 
         addFieldToDoc(doc, docMap, InverseSearchQueryFactory.BINARY_QUERY_FIELD);
 
-        //TODO: add subdocuments if implemented
         docMap.put(FieldUtil.ID, doc.getId());
         docMap.put(FieldUtil.TYPE, doc.getType());
+        docMap.put(FieldUtil.PERCOLATOR_FLAG, false);
 
         return docMap;
     }
@@ -99,6 +102,16 @@ public class DocumentUtil {
         }
     }
 
+    private static void addFieldToDoc(Map<String, Object> docMap, FieldDescriptor<?> descriptor) {
+        if (ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass())) {
+            addFieldToDoc( docMap, (ComplexFieldDescriptor) descriptor);
+        } else {
+            Optional.ofNullable(FieldUtil.getFieldName(descriptor, null))
+                    .ifPresent(fieldName ->
+                            docMap.put(fieldName.replaceAll("\\.\\w+" , ""), toElasticType("0"))
+                    );
+        }
+    }
     private static void addFieldToDoc(InverseSearchQuery doc, Map<String, Object> docMap, FieldDescriptor<?> descriptor) {
         if (ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass())) {
             addFieldToDoc(doc, docMap, (ComplexFieldDescriptor) descriptor);
@@ -123,6 +136,17 @@ public class DocumentUtil {
                         );
                     })
                 );
+    }
+
+    private static void addFieldToDoc( Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor) {
+
+        Stream.of(FieldUtil.Fieldname.UseCase.values()).forEach( useCase -> {
+            final String name = FieldUtil.getFieldName(descriptor, useCase, null);
+            Optional.ofNullable(name)
+                    .ifPresent( fieldName ->
+                            docMap.put(fieldName.replaceAll("\\.\\w+" , ""), toElasticType("0", descriptor, useCase))
+            );
+        });
     }
 
     private static void addFieldToDoc(InverseSearchQuery doc, Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor) {
@@ -536,5 +560,18 @@ public class DocumentUtil {
             }
         }
         return o;
+    }
+    public static Map<String, Object> createEmptyDocument(DocumentFactory factory) {
+
+        final Map<String, Object> docMap = new HashMap<>();
+        //add fields
+        factory.getFields().values().stream()
+                .forEach(descriptor -> addFieldToDoc(docMap, descriptor));
+
+        docMap.put(FieldUtil.ID, "");
+        docMap.put(FieldUtil.TYPE, factory.getType());
+        docMap.put(FieldUtil.PERCOLATOR_FLAG, true);
+
+        return docMap;
     }
 }

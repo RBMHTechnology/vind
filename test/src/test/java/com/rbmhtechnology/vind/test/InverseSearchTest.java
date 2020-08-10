@@ -49,7 +49,6 @@ public class InverseSearchTest {
         // Reverse Search
         Document d1 = testDocsFactory.createDoc("1")
                 .setValue(title, "Hello World");
-        server.index(d1);
 
         final InverseSearchQuery inverseSearchQuery =
                 testDocsFactory.createInverseSearchQuery("testQuery1", title.equals("Hello World"))

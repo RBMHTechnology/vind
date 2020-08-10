@@ -1,9 +1,6 @@
-/*
- * Copyright (c) 2017 Redlink GmbH.
- */
+
 package com.rbmhtechnology.vind.monitoring.logger.entry;
 
-import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.model.InverseSearchQuery;
 import com.rbmhtechnology.vind.monitoring.model.application.Application;
 import com.rbmhtechnology.vind.monitoring.model.response.Response;
@@ -11,8 +8,6 @@ import com.rbmhtechnology.vind.monitoring.model.session.Session;
 
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Created on 10.08.20.

@@ -73,6 +73,8 @@ import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil.createEmptyDocument;
+
 public class ElasticSearchServer extends SearchServer {
 
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchServer.class);
@@ -524,6 +526,8 @@ public class ElasticSearchServer extends SearchServer {
         Asserts.notNull(query,"Query should not be null.");
         final StopWatch elapsedTime = StopWatch.createStarted();
 
+        preparePercolator(query.getFactory());
+
         final QueryBuilder elasticQuery =
                 ElasticQueryBuilder.buildFilterQuery(query.getQuery(), query.getFactory(), null);
 
@@ -673,6 +677,34 @@ public class ElasticSearchServer extends SearchServer {
             throw new RuntimeException("Error desearializing byte[] filter: "+e.getMessage(),e);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Error desearializing byte[] filter: "+e.getMessage(),e);
+        }
+    }
+
+    private void preparePercolator(DocumentFactory factory) {
+        final SearchSourceBuilder query = ElasticQueryBuilder.buildPercolatorQueryReadiness(factory);
+
+        try {
+            elasticClientLogger.debug(">>> query({})", query.toString());
+            final SearchResponse response = elasticSearchClient.query(query);
+            if(Objects.nonNull(response)
+                    && Objects.nonNull(response.getHits())
+                    && Objects.nonNull(response.getHits().getHits())){
+
+                 final List<Document> documents = Arrays.stream(response.getHits().getHits())
+                        .map(hit -> DocumentUtil.buildVindDoc(hit, factory, null))
+                        .collect(Collectors.toList());
+
+                 if (CollectionUtils.isEmpty(documents) || !FieldUtil.compareFieldLists(documents.get(0).listFieldDescriptors().values(),factory.getFields().values())){
+                     this.elasticSearchClient.add(createEmptyDocument(factory));
+                 }
+
+
+            }else {
+                throw new ElasticsearchException("Empty result from ElasticClient");
+            }
+
+        } catch (ElasticsearchException | IOException e) {
+            throw new SearchServerException(String.format("Cannot issue query: %s",e.getMessage()), e);
         }
     }
 }
