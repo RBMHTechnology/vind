@@ -103,7 +103,7 @@ public class PainlessScript {
             if(String.class.isAssignableFrom(predicateType)) {
                 return "\"" + predicate + "\"";
             }
-            return predicate.toString();
+            return   predicate.toString() ;
         }
 
         @Override
@@ -216,12 +216,12 @@ public class PainlessScript {
                         break;
                     case remove:
                         if(Objects.nonNull(op.getValue())){
-                            if(!field.isMultiValue()) {
-                                log.warn("Provided field cannot be removed values: field {} is not multivalued" , field.getName());
-                                errors.add(String.format(
-                                        "Provided field cannot be removed values: field %s is not multivalued",
-                                        field.getName()));
-                            }
+//                            if(!field.isMultiValue()) {
+//                                log.warn("Provided field cannot be removed values: field {} is not multivalued" , field.getName());
+//                                errors.add(String.format(
+//                                        "Provided field cannot be removed values: field %s is not multivalued",
+//                                        field.getName()));
+//                            }
                         }
                         break;
                     case removeregex:

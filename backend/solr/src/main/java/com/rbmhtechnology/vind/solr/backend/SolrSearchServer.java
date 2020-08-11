@@ -1,7 +1,6 @@
 package com.rbmhtechnology.vind.solr.backend;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.io.Resources;
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.Document;
@@ -13,23 +12,40 @@ import com.rbmhtechnology.vind.api.query.division.Page;
 import com.rbmhtechnology.vind.api.query.division.Slice;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.facet.Interval;
+import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
+import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.DescriptorSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.StringSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.query.update.Update.UpdateOperations;
 import com.rbmhtechnology.vind.api.query.update.UpdateOperation;
-import com.rbmhtechnology.vind.api.result.*;
+import com.rbmhtechnology.vind.api.result.BeanGetResult;
+import com.rbmhtechnology.vind.api.result.BeanSearchResult;
+import com.rbmhtechnology.vind.api.result.DeleteResult;
+import com.rbmhtechnology.vind.api.result.FacetResults;
+import com.rbmhtechnology.vind.api.result.GetResult;
+import com.rbmhtechnology.vind.api.result.IndexResult;
+import com.rbmhtechnology.vind.api.result.InverseSearchResult;
+import com.rbmhtechnology.vind.api.result.PageResult;
+import com.rbmhtechnology.vind.api.result.SearchResult;
+import com.rbmhtechnology.vind.api.result.SliceResult;
+import com.rbmhtechnology.vind.api.result.StatusResult;
+import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
+import com.rbmhtechnology.vind.model.InverseSearchQuery;
 import com.rbmhtechnology.vind.model.value.LatLng;
-import com.rbmhtechnology.vind.utils.FileSystemUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.util.Asserts;
-import org.apache.solr.client.solrj.*;
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrRequest;
+import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.request.schema.SchemaRequest;
 import org.apache.solr.client.solrj.response.QueryResponse;
@@ -40,26 +56,44 @@ import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
-import org.apache.solr.common.params.*;
+import org.apache.solr.common.params.CommonParams;
+import org.apache.solr.common.params.DisMaxParams;
+import org.apache.solr.common.params.FacetParams;
+import org.apache.solr.common.params.StatsParams;
 import org.apache.solr.common.util.NamedList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.nio.file.Path;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.rbmhtechnology.vind.api.query.update.Update.UpdateOperations.set;
-import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.*;
+import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.DISTANCE;
+import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.ID;
+import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.TEXT;
+import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.TYPE;
+import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.UseCase;
+import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.getFieldname;
 
 /**
  * @author Thomas Kurz (tkurz@apache.org)
@@ -379,7 +413,10 @@ public class SolrSearchServer extends SearchServer {
             final QueryResponse response = solrClient.query(query, REQUEST_METHOD);
             if(response!=null){
                 final SolrDocumentList responseResults = response.getResults();
-                if (search.isSpellcheck() && responseResults.getNumFound() <=0 && !response.getSpellCheckResponse().isCorrectlySpelled()) {
+                if (search.isSpellcheck()
+                        && responseResults.getNumFound() <= 0
+                        && !response.getSpellCheckResponse().isCorrectlySpelled()
+                        && CollectionUtils.isNotEmpty(response.getSpellCheckResponse().getCollatedResults())) {
                     final FulltextSearch spellcheckSearch = search.copy().spellcheck(false).text(response.getSpellCheckResponse().getCollatedResult());
                     return execute(spellcheckSearch, factory);
                 }
@@ -1044,6 +1081,16 @@ public class SolrSearchServer extends SearchServer {
             log.error("Cannot execute realTime get query");
             throw new SearchServerException("Cannot execute realTime get query", e);
         }
+    }
+
+    @Override
+    public InverseSearchResult execute(InverseSearch inverseSearch, DocumentFactory factory) {
+        throw new NotImplementedException("This feature is not supported in the current Vind version");
+    }
+
+    @Override
+    public IndexResult addInverseSearchQuery(InverseSearchQuery query) {
+        throw new NotImplementedException("This feature is not supported in the current Vind version");
     }
 
     @Override

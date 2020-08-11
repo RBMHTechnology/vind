@@ -373,18 +373,22 @@ public class ResultUtils {
     }
 
     private static Pair<FieldDescriptor<?> ,TermFacetResult<?>> getTermFacetResults(Aggregation aggregation, Facet.TermFacet termFacet, DocumentFactory factory) {
+        return getTermFacetResults(aggregation, termFacet, factory, FieldUtil.Fieldname.UseCase.Facet);
+    }
+
+    private static Pair<FieldDescriptor<?> ,TermFacetResult<?>> getTermFacetResults(Aggregation aggregation, Facet.TermFacet termFacet, DocumentFactory factory, FieldUtil.Fieldname.UseCase useCase) {
         final TermFacetResult<?> result = new TermFacetResult<>();
         final FieldDescriptor<?> field = factory.getField(termFacet.getFieldName());
         Optional.ofNullable(aggregation)
                 .ifPresent(agg ->
                         ((ParsedTerms) aggregation).getBuckets().stream()
-                            .map( bucket -> {
-                                final Object key = Number.class.isAssignableFrom(field.getType()) ?  bucket.getKeyAsNumber() : bucket.getKeyAsString();
-                                return Pair.of(key, bucket.getDocCount());
-                            })
-                            .map( p -> new FacetValue(
-                                    DocumentUtil.castForDescriptor(p.getKey(), field, FieldUtil.Fieldname.UseCase.Facet), p.getValue()))
-                            .forEach(result::addFacetValue));
+                                .map( bucket -> {
+                                    final Object key = Number.class.isAssignableFrom(field.getType()) ?  bucket.getKeyAsNumber() : bucket.getKeyAsString();
+                                    return Pair.of(key, bucket.getDocCount());
+                                })
+                                .map( p -> new FacetValue(
+                                        DocumentUtil.castForDescriptor(p.getKey(), field, useCase), p.getValue()))
+                                .forEach(result::addFacetValue));
 
         return Pair.of(termFacet.getFieldDescriptor(), result);
     }
@@ -446,11 +450,13 @@ public class ResultUtils {
 
             final HashMap<FieldDescriptor, TermFacetResult<?>> suggestionValues = new HashMap<>();
 
-            response.getAggregations().asList().stream()
-                    .map(aggregation -> getTermFacetResults(aggregation, new Facet.TermFacet(factory.getField(aggregation.getName())), factory))
-                    .filter(pair -> CollectionUtils.isNotEmpty(pair.getValue().getValues()))
-                    .forEach(pair -> suggestionValues.put(pair.getKey(), pair.getValue()));
-
+            final Aggregations aggregations = response.getAggregations();
+            if (Objects.nonNull(aggregations)) {
+                aggregations.asList().stream()
+                        .map(aggregation -> getTermFacetResults(aggregation, new Facet.TermFacet(factory.getField(aggregation.getName())), factory, FieldUtil.Fieldname.UseCase.Suggest))
+                        .filter(pair -> CollectionUtils.isNotEmpty(pair.getValue().getValues()))
+                        .forEach(pair -> suggestionValues.put(pair.getKey(), pair.getValue()));
+            }
 
             return suggestionValues;
         } else {

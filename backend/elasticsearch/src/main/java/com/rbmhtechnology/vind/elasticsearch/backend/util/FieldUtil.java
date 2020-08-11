@@ -4,15 +4,21 @@ import com.rbmhtechnology.vind.elasticsearch.backend.ElasticSearchServer;
 import com.rbmhtechnology.vind.model.ComplexFieldDescriptor;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import com.rbmhtechnology.vind.model.value.LatLng;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil.Fieldname.UseCase;
 
 public class FieldUtil {
 
@@ -20,34 +26,45 @@ public class FieldUtil {
 
     public static final String ID = "_id_";
     public static final String TYPE = "_type_";
+    public static final String PERCOLATOR_FLAG = "_percolator_flag_";
     public static final String SCORE = "score";
     public static final String DISTANCE = "_distance_";
-    public static final String TEXT = "text";
     public static final String FACETS = "facets";
 
-    private static final String _DYNAMIC = "dynamic_";
-    private static final String _STORED = "stored_";
+    public static final String TEXT = "text_";
+    public static final String FACET = "facet_";
+    public static final String _DYNAMIC = "dynamic_";
+    public static final String _COMPLEX = "complex_";
+    private static final String _STORED = ".stored";
     private static final String _MULTI = "multi_";
     private static final String _SINGLE = "single_";
-    private static final String _FACET = "facet_";
-    private static final String _SUGGEST = "suggest_";
-    private static final String _FILTER = "filter_";
+    private static final String _FACET = ".facet";
+    private static final String _SUGGEST = ".suggestion";
+    private static final String _FILTER = ".filter";
 
-    private static final String _SORT = "sort_";
+    private static final String _SORT = ".sort";
 
     public static final String INTERNAL_FIELD_PREFIX = String.format("%s(%s|%s|%s|%s|%s|%s|%s|%s)",
             _DYNAMIC,
             Fieldname.Type.BOOLEAN.getName(), Fieldname.Type.DATE.getName(),
-            Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(),Fieldname.Type.NUMBER.getName(),
-            Fieldname.Type.STRING.getName(),Fieldname.Type.BINARY.getName(),Fieldname.Type.LOCATION.getName());
+            Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(), Fieldname.Type.NUMBER.getName(),
+            Fieldname.Type.STRING.getName(), Fieldname.Type.BINARY.getName(), Fieldname.Type.LOCATION.getName());
+
+    public static final String INTERNAL_COMPLEX_FIELD_PREFIX = String.format("%s(%s|%s|%s|%s|%s|%s|%s|%s)?(%s|%s|%s|%s|%s)",
+            _COMPLEX,
+            Fieldname.Type.BOOLEAN.getName(), Fieldname.Type.DATE.getName(),
+            Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(), Fieldname.Type.NUMBER.getName(),
+            Fieldname.Type.STRING.getName(), Fieldname.Type.BINARY.getName(), Fieldname.Type.LOCATION.getName(),
+            TEXT, FACET, "suggestion_", "sort_", "stored_"
+            );
 
     public static final String INTERNAL_FACET_FIELD_PREFIX = String.format("%s(%s)?%s(%s|%s|%s|%s|%s|%s|%s)",
             _DYNAMIC,
             _STORED,
             _FACET,
             Fieldname.Type.BOOLEAN.getName(), Fieldname.Type.DATE.getName(),
-            Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(),Fieldname.Type.NUMBER.getName(),
-            Fieldname.Type.STRING.getName(),Fieldname.Type.LOCATION.getName());
+            Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(), Fieldname.Type.NUMBER.getName(),
+            Fieldname.Type.STRING.getName(), Fieldname.Type.LOCATION.getName());
 
     public static final String INTERNAL_SCOPE_FACET_FIELD_PREFIX = String.format("%s(%s|%s)(%s)?(%s|%s|%s)(%s|%s|%s|%s|%s|%s|%s)",
             _DYNAMIC,
@@ -55,8 +72,8 @@ public class FieldUtil {
             _STORED,
             _FACET,_SUGGEST,_FILTER,
             Fieldname.Type.BOOLEAN.getName(), Fieldname.Type.DATE.getName(),
-            Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(),Fieldname.Type.NUMBER.getName(),
-            Fieldname.Type.STRING.getName(),Fieldname.Type.LOCATION.getName());
+            Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(), Fieldname.Type.NUMBER.getName(),
+            Fieldname.Type.STRING.getName(), Fieldname.Type.LOCATION.getName());
 
     public static final String INTERNAL_SUGGEST_FIELD_PREFIX = String.format("%s(%s|%s)(%s)?%s(%s|%s|%s|%s|%s|%s|%s|%s)",
             _DYNAMIC,
@@ -64,12 +81,15 @@ public class FieldUtil {
             _STORED,
             _SUGGEST,
             Fieldname.Type.BOOLEAN.getName(), Fieldname.Type.DATE.getName(),
-            Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(),Fieldname.Type.NUMBER.getName(),
-            Fieldname.Type.STRING.getName(),Fieldname.Type.LOCATION.getName(), Fieldname.Type.ANALYZED.getName());
+            Fieldname.Type.INTEGER.getName(), Fieldname.Type.LONG.getName(), Fieldname.Type.NUMBER.getName(),
+            Fieldname.Type.STRING.getName(), Fieldname.Type.LOCATION.getName(), Fieldname.Type.ANALYZED.getName());
 
     public static final String INTERNAL_CONTEXT_PREFIX = "(%s_)?";
 
     public static String getFieldName(FieldDescriptor<?> descriptor, String context) {
+        return getFieldName(descriptor, null, context);
+    }
+    public static String getFieldName(FieldDescriptor descriptor, UseCase useCase, String context) {
 
         if (Objects.isNull(descriptor)) {
             log.warn("Trying to get name of null field descriptor.");
@@ -82,26 +102,108 @@ public class FieldUtil {
         } else {
             contextPrefix = context + "_";
         }
-
         String fieldName = _DYNAMIC;
 
-        //TODO check complexFields implementation
-        final boolean isComplexField = ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass());
+        Fieldname.Type type = Fieldname.Type.getFromClass(descriptor.getType());
 
-        final Fieldname.Type type = Fieldname.Type.getFromClass(descriptor.getType());
-        return fieldName + type.getName() + contextPrefix + descriptor.getName();
+        final boolean isComplexField = ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass());
+        if (Objects.isNull(useCase)) {
+            return fieldName + type.getName() + contextPrefix + descriptor.getName();
+        }
+        switch (useCase) {
+            case Fulltext: {
+                if (descriptor.isFullText()) {
+                    fieldName = fieldName + type.getName();
+                    final String lang = "." + StringUtils.defaultIfBlank(descriptor.getLanguage().getLangCode(),"text");
+                    if (isComplexField) {
+                        fieldName = _COMPLEX + TEXT;
+                    }
+                    return fieldName + contextPrefix + descriptor.getName() + lang;
+                } else {
+                    log.debug("Descriptor {} is not configured for full text search.", descriptor.getName());
+                    return null;
+                }
+            }
+
+            case Facet: {
+                if(descriptor.isFacet()) {
+                    if (isComplexField) {
+                       type = Fieldname.Type.getFromClass(((ComplexFieldDescriptor)descriptor).getFacetType());
+                        return _COMPLEX + type.getName() + FACET + contextPrefix + descriptor.getName() + _FACET;
+                    }
+                    return fieldName + type.getName() + contextPrefix + descriptor.getName() + _FACET;
+
+                } else {
+                    log.debug("Descriptor {} is not configured for facet search.", descriptor.getName());
+                    return null;
+                }
+            }
+            case Suggest: {
+                if(descriptor.isSuggest()) {
+                    if (isComplexField) {
+                        return _COMPLEX + "suggestion_" + contextPrefix + descriptor.getName() + _SUGGEST;
+                    } else {
+                        type = Fieldname.Type.getFromClass(descriptor.getType());
+                        return fieldName + type.getName() + contextPrefix + descriptor.getName() + _SUGGEST;
+                    }
+                } else {
+                    log.debug("Descriptor {} is not configured for suggestion search.", descriptor.getName());
+                    return null;
+                }
+            }
+            case Stored: { //TODO
+                if (descriptor.isStored()) {
+                    fieldName = fieldName + type.getName();
+                    if (isComplexField) {
+                        type = Fieldname.Type.getFromClass(((ComplexFieldDescriptor) descriptor).getStoreType());
+                        fieldName = _COMPLEX + type.getName() + "stored_" ;
+                    }
+
+                }
+                return fieldName + contextPrefix + descriptor.getName();
+            }
+            case Sort: {
+                fieldName = fieldName + type.getName();
+                if (isComplexField) {
+                    type = Fieldname.Type.getFromClass(((ComplexFieldDescriptor) descriptor).getStoreType());
+                    fieldName = _COMPLEX + type.getName() + "sort_";
+                }
+                if (descriptor.isSort() && Objects.nonNull(type)){
+                    return fieldName + contextPrefix + descriptor.getName() + _SORT;
+                } else if(isComplexField && descriptor.isStored() && !descriptor.isMultiValue() && Objects.nonNull(type)){
+                    return fieldName + contextPrefix + descriptor.getName() + _SORT ;
+                } else {
+                    log.debug("Descriptor {} is not configured for sorting.", descriptor.getName());
+                    return null; //TODO: throw runtime exception?
+                }
+            }
+            case Filter: {
+                if(isComplexField && ((ComplexFieldDescriptor)descriptor).isAdvanceFilter() && Objects.nonNull(((ComplexFieldDescriptor)descriptor).getFacetType())) {
+                    type = Fieldname.Type.getFromClass(((ComplexFieldDescriptor)descriptor).getFacetType());
+                    fieldName = _COMPLEX;
+                    return fieldName + type.getName() + "filter_" + contextPrefix + descriptor.getName() + _FILTER;
+
+                } else {
+                    log.debug("Descriptor {} is not configured for advance filter search.", descriptor.getName());
+                    return null;
+                }
+            }
+            default: {
+                log.warn("Unsupported use case {}.", useCase);
+                return fieldName + type.getName() + contextPrefix + descriptor.getName();
+            }
+        }
     }
 
     public static String getSourceFieldName(String elasticFieldName, String context) {
         final String contextPrefix = context != null ? context + "_" : "";
-        final Matcher internalPrefixMatcher = Pattern.compile(FieldUtil.INTERNAL_FIELD_PREFIX).matcher(elasticFieldName);
+        final String pattern = "(" + FieldUtil.INTERNAL_FIELD_PREFIX + ")|(" + FieldUtil.INTERNAL_COMPLEX_FIELD_PREFIX + ")";
+        final Matcher internalPrefixMatcher = Pattern.compile(pattern).matcher(elasticFieldName);
         final String contextualizedName = internalPrefixMatcher.replaceFirst("");
-        final boolean contextualized = Objects.nonNull(context) && contextualizedName.contains(contextPrefix);
         return contextualizedName.replace(contextPrefix, "");
     }
 
     public static final class Fieldname {
-
         public enum UseCase {
             Facet,
             Fulltext,
@@ -158,6 +260,21 @@ public class FieldUtil {
                 } else return null;
             }
         }
+    }
+
+    public static Boolean compareFieldLists(Collection<FieldDescriptor<?>> fields1, Collection<FieldDescriptor<?>> fields2) {
+        if(fields1.size()!= fields2.size()) {
+            return false;
+        }
+
+        final List<String> fields1Names = fields1.stream()
+                .map(FieldDescriptor::getName)
+                .collect(Collectors.toList());
+        final List<String> fields2Names = fields2.stream().map(FieldDescriptor::getName).collect(Collectors.toList());
+        if (!fields1Names.containsAll(fields2Names)) {
+            return false;
+        }
+        return true;
     }
 
 }

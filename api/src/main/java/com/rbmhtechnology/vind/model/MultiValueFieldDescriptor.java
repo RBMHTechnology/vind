@@ -359,7 +359,7 @@ public abstract class MultiValueFieldDescriptor<T> extends FieldDescriptor<T> {
          * Instantiates a new {@link Filter} to checking if a field value is within a circle.
          *
          * @param center   the of teh circle
-         * @param distance the radius of the circle
+         * @param distance the radius in Kilometer of the circle
          * @return A configured filter for the field.
          */
         public Filter withinCircle(LatLng center, double distance) {

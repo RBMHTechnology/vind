@@ -1,12 +1,14 @@
 package com.rbmhtechnology.vind.model;
 
 import com.rbmhtechnology.vind.api.Document;
+import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearchQueryFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * {@link DocumentFactoryBuilder} to create a {@link DocumentFactory}.
@@ -20,6 +22,7 @@ public class DocumentFactoryBuilder {
     private boolean updatable = false;
 
     protected final Map<String, FieldDescriptor<?>> fields = new HashMap<>();
+    protected final Map<String, FieldDescriptor<?>> inverSearchMetadataFields = new HashMap<>();
 
     /**
      * Creates a new instance of {@link DocumentFactoryBuilder} with a given type name.
@@ -27,15 +30,7 @@ public class DocumentFactoryBuilder {
      */
     public DocumentFactoryBuilder(String type) {
         this.type = type;
-
-        // MBDN-408: Add a work around to allow filtering by internal _id_
-        // TO do so we internally create a field descriptor for the _id_
-       /* FieldDescriptor<String> id = new FieldDescriptorBuilder()
-                .setIndexed(true)
-                .setStored(true)
-                .buildTextField(DocumentFactory.ID);
-
-        this.fields.put(DocumentFactory.ID,id);*/
+        this.addInverseSearchMetaField(InverseSearchQueryFactory.BINARY_QUERY_FIELD);
     }
 
     /**
@@ -140,8 +135,51 @@ public class DocumentFactoryBuilder {
         if (isUpdatable()) {
             this.listFields().stream().forEach( field -> field.setUpdate(true));
         }
+        return new DocumentFactory(this.type, this. updatable, this.fields, this.inverSearchMetadataFields);
+    }
 
-        return new DocumentFactory(this.type, this. updatable, this.fields);
+    /**
+     * Adds a field descriptors to the inverse search query metadata schema.
+     * @param fieldDescriptors {@link FieldDescriptor} to be part of the inverse search metadata factory.
+     * @return This {@link DocumentFactoryBuilder} with the new fields.
+     */
+    public DocumentFactoryBuilder addInverseSearchMetaField(FieldDescriptor ... fieldDescriptors) {
+
+        final FieldDescriptor[] fields = Optional.ofNullable(fieldDescriptors).orElse(new FieldDescriptor[0]);
+        for(FieldDescriptor fieldDescriptor : fields) {
+            if (this.inverSearchMetadataFields.containsKey(fieldDescriptor.getName())) {
+                log.error("There is already a field defined with the same name: {}",fieldDescriptor.getName());
+                throw new IllegalArgumentException("There is already a field defined with the same name: " + fieldDescriptor.getName());
+            }
+            this.inverSearchMetadataFields.put(fieldDescriptor.getName(), fieldDescriptor);
+        }
+
+        return this;
+    }
+    /**
+     * Removes the field descriptors from the inverse search query metadata schema.
+     * @param fieldDescriptors {@link FieldDescriptor} to be removed of the inverse search query metadata.
+     * @return This {@link DocumentFactoryBuilder} without the fields.
+     */
+    public DocumentFactoryBuilder removeInverseSearchMetaField(FieldDescriptor... fieldDescriptors) {
+        if (fieldDescriptors != null) {
+            for(FieldDescriptor fieldDescriptor : fieldDescriptors) {
+                removeInverseSearchMetaField(fieldDescriptor.getName());
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Removes a field descriptor from the inverse search query metadata schema.
+     * @param name Name of the field to be removed of the inverse search query metadata.
+     * @return This {@link DocumentFactoryBuilder} without the field.
+     */
+    public DocumentFactoryBuilder removeInverseSearchMetaField(String name) {
+        if (!name.equals(InverseSearchQueryFactory.BINARY_QUERY_FIELD.getName())) {
+            inverSearchMetadataFields.remove(name);
+        }
+        return this;
     }
 
 }

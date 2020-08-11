@@ -7,11 +7,16 @@ import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
+import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearch;
+import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearchQueryFactory;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.api.result.GetResult;
+import com.rbmhtechnology.vind.api.result.IndexResult;
+import com.rbmhtechnology.vind.api.result.InverseSearchResult;
 import com.rbmhtechnology.vind.api.result.PageResult;
 import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
@@ -996,7 +1001,7 @@ public class ServerTest {
 
     //MBDN-455
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic,Solr})
     public void complexFieldTest() {
 
 
@@ -1074,20 +1079,20 @@ public class ServerTest {
 
         FulltextSearch searchAll = Search.fulltext().filter(
                 and(textComplexField.isNotEmpty(Scope.Facet),
-                    or(Filter.eq(numericComplexField, 1), Filter.eq(numericComplexField, 2)),
-                    numericComplexField.between(0, 5),
-                    dateComplexField.between(ZonedDateTime.now().minusDays(3), ZonedDateTime.now().plusDays(3)),
-                    textComplexField.equals("Label")))
+                        or(Filter.eq(numericComplexField, 1), Filter.eq(numericComplexField, 2)),
+                        numericComplexField.between(0, 5),
+                        dateComplexField.between(ZonedDateTime.now().minusDays(3), ZonedDateTime.now().plusDays(3)),
+                        textComplexField.equals("Label")))
                 .facet(interval("facetNumber", numericComplexField, Interval.numericInterval("[1-4]", 0, 5), Interval.numericInterval("[6-9]", 5, 10)))
                 .facet(interval("facetDateInterval", dateComplexField,
                         Interval.dateInterval("3_days_ago_till_now-1_hour]", ZonedDateTime.now().minusDays(3), ZonedDateTime.now().minusHours(1)),
                         Interval.dateInterval("[now-1_hour_till_the_future]", ZonedDateTime.now().minusHours(1), null)))
                 .facet(range("facetRange", numericComplexField, 0, 10, 5))
                 .facet(range("facetDateRange", dateComplexField, ZonedDateTime.now().minusDays(3), ZonedDateTime.now().plusDays(3), Duration.ofDays(1)))
-                .facet(stats("facetStats", numericComplexField))
+                .facet(((Facet.StatsNumericFacet)stats("facetStats", numericComplexField)).min().max().sum())
                 .facet(stats("facetDateStats", dateComplexField))
-                .facet(stats("facetTextStats", textComplexField))
-                .facet(pivot("facetPivot", numericComplexField, entityID, dateComplexField, textComplexField))
+                //        .facet(stats("facetTextStats", textComplexField))
+                .facet(pivot("facetNumericPivot", numericComplexField, entityID, dateComplexField, textComplexField))
                 .facet(numericComplexField, entityID, dateComplexField, textComplexField)
                 .sort(desc(dateStoredComplexField));
 
@@ -1099,7 +1104,7 @@ public class ServerTest {
         assertThat("Multivalued text exists", (List<String>) searchResult.getResults().get(0).getValue(multiComplexField), containsInAnyOrder("uno", "dos"));
         assertEquals("No of interval", 2, searchResult.getFacetResults().getIntervalFacet("facetNumber").getValues().size());
         assertEquals("No of doc in interval", 2, searchResult.getFacetResults().getIntervalFacet("facetNumber").getValues().get(0).getCount());
-        assertEquals("No of StatsFacets", 3, searchResult.getFacetResults().getStatsFacets().size());
+        assertEquals("No of StatsFacets", 2, searchResult.getFacetResults().getStatsFacets().size());
         assertEquals("Stats Min: ", (Integer) 1, searchResult.getFacetResults().getStatsFacet("facetStats", Integer.class).getMin());
         assertEquals("Stats Max: ", (Integer) 2, searchResult.getFacetResults().getStatsFacet("facetStats", Integer.class).getMax());
         assertEquals("Stats Sum: ",  (Double) 3.0, searchResult.getFacetResults().getStatsFacet("facetStats", Integer.class).getSum());
@@ -1158,8 +1163,14 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend({Solr})
+    @RunWithBackend({Solr, Elastic})
     public void testLocationDescriptor() {
+
+        final LatLng gijon = new LatLng(43.545231, -5.661920);
+        final LatLng oviedo = new LatLng(28.669996, -81.208122);
+        final LatLng salzburg = new LatLng(47.809490, 13.055010);
+        final LatLng wuhan = new LatLng(30.592850, 114.305542);
+
 
         SingleValueFieldDescriptor.LocationFieldDescriptor<LatLng> locationSingle = new FieldDescriptorBuilder()
                 .setFacet(true)
@@ -1175,15 +1186,15 @@ public class ServerTest {
                 .build();
 
         Document doc1 = assets.createDoc("1")
-                .setValue(locationSingle, new LatLng(10, 10))
-                .setValues(locationMulti, new LatLng(15, 15));
+                .setValue(locationSingle, wuhan)
+                .setValues(locationMulti, salzburg);
 
         Document doc2 = assets.createDoc("2")
-                .setValue(locationSingle, new LatLng(20, 20))
-                .setValues(locationMulti, new LatLng(11, 11));
+                .setValue(locationSingle, salzburg)
+                .setValues(locationMulti, gijon);
 
         Document doc3 = assets.createDoc("3")
-                .setValues(locationMulti, new LatLng(10, 10), new LatLng(20, 20));
+                .setValues(locationMulti, oviedo, gijon);
 
         SearchServer server = testBackend.getSearchServer();
 
@@ -1192,34 +1203,37 @@ public class ServerTest {
         server.index(doc3);
         server.commit();
 
-        //test bbox filter
-        FulltextSearch searchAll = Search.fulltext().filter(locationSingle.withinBBox(new LatLng(10, 10), new LatLng(11, 1)));
+        //test bbox filter: within Austria
+        FulltextSearch searchAll = Search.fulltext().filter(locationSingle.withinBBox(new LatLng(49.003646, 9.446277), new LatLng(46.379149, 17.174708)));
         SearchResult searchResult = server.execute(searchAll, assets).print();
         assertEquals("LatLng filter 'within' does not filter properly single value fields", 1, searchResult.getNumOfResults());
 
-        //test bbox filter multivalue
-        searchAll = Search.fulltext().filter(locationMulti.withinBBox(new LatLng(10,10), new LatLng(12,12)));
+        //test bbox filter multivalue: within Asturias
+        searchAll = Search.fulltext().filter(locationMulti.withinBBox(new LatLng(43.646013,-7.173549), new LatLng(42.902125,-4.513121)));
         searchResult = server.execute(searchAll, assets).print();
-        assertEquals("LatLng filter 'within' does not filter properly mutivalue fields", 2, searchResult.getNumOfResults());
+        assertEquals("LatLng filter 'within' does not filter properly mutivalued fields", 2, searchResult.getNumOfResults());
 
-        //test circle filter
-        searchAll = Search.fulltext().filter(locationSingle.withinCircle(new LatLng(10, 10), 1));
+        //test circle filter: center Beijing with a radius of 230km
+        final LatLng beijing = new LatLng(29.3464, 116.199);
+        searchAll = Search.fulltext().filter(locationSingle.withinCircle(beijing, 230));
         searchResult = server.execute(searchAll, assets).print();
-        assertEquals("LatLng filter 'within' does not filter properly singlevalue fields", 1, searchResult.getNumOfResults());
+        assertEquals("LatLng filter 'withinCircle' does not filter properly singlevalued fields", 1, searchResult.getNumOfResults());
 
-        searchAll = Search.fulltext().filter(locationMulti.withinCircle(new LatLng(10,10), 160));
+        //test circle filter: center Madrid with a radius of 384km
+        final LatLng madrid = new LatLng(40.4165, -3.70256);
+        searchAll = Search.fulltext().filter(locationMulti.withinCircle(madrid, 384));
         searchResult = server.execute(searchAll, assets).print();
-        assertEquals("LatLng filter 'within' does not filter properly singlevalue fields", 2, searchResult.getNumOfResults());
+        assertEquals("LatLng filter 'withinFilter' does not filter properly multivalued fields", 2, searchResult.getNumOfResults());
 
         //test retrieving geodist
         //TODO this feature is a little hacky, but should be easy to clean uo
-        searchAll = Search.fulltext().geoDistance(locationSingle,new LatLng(5,5));
+        searchAll = Search.fulltext().geoDistance(locationSingle, beijing);
         searchResult = server.execute(searchAll, assets).print();
-        assertEquals("Distance is not appended to results", 782.78015, searchResult.getResults().get(0).getDistance(),0.001);
+        assertEquals("Distance is not appended to results", 229, searchResult.getResults().get(0).getDistance(),0.1);
 
         //test sorting
         //TODO does not yet work (parsing error)
-        searchAll = Search.fulltext().sort(Sort.SpecialSort.distance()).geoDistance(locationSingle, new LatLng(30, 30));;
+        searchAll = Search.fulltext().sort(Sort.SpecialSort.distance()).geoDistance(locationSingle, madrid);;
         searchResult = server.execute(searchAll, assets).print();
         assertTrue("Distance sorting is not correct", searchResult.getResults().get(0).getDistance() < searchResult.getResults().get(1).getDistance());
     }
@@ -1400,7 +1414,7 @@ public class ServerTest {
 
     //MBDN-430
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic, Solr})
     public void testSortableMultiValuedFields() {
 
 
@@ -1479,7 +1493,7 @@ public class ServerTest {
 
     //MBDN-483
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic,Solr})
     public void atomicUpdateComplexFieldsTest() {
         SingleValuedComplexField.NumericComplexField<Taxonomy,Integer,String> numericComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,Integer,String>()
                 .setFacet(true, tx -> Arrays.asList(tx.getId()))
@@ -1564,7 +1578,7 @@ public class ServerTest {
 
     //MDBN-486
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic, Solr})
     public void advanceFilterTest() {
 
         SingleValuedComplexField.TextComplexField<Taxonomy,String,String> textComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,String,String>()
@@ -1650,7 +1664,7 @@ public class ServerTest {
 
     //MBDN-487
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic,Solr})
     public void scopedFilterTest() {
 
         MultiValuedComplexField.TextComplexField<Taxonomy,String,String> multiComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,String,String>()
@@ -1695,7 +1709,7 @@ public class ServerTest {
 
     //MBDN-495
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic,Solr})
     public void sliceResultTest(){
         final TextFieldDescriptor textMulti = new FieldDescriptorBuilder()
                 .buildMultivaluedTextField("textMulti");
@@ -1816,9 +1830,8 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend({Solr})
+    @RunWithBackend({Solr, Elastic})
     public void queryTermWithDashCharTest(){
-
 
         SingleValueFieldDescriptor.TextFieldDescriptor internalId = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -2037,7 +2050,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Solr)
+    @RunWithBackend({Elastic, Solr})
     public void complexFieldBooleanTest() {
 
 
@@ -2388,19 +2401,15 @@ public class ServerTest {
 
         DocumentFactory assets = new DocumentFactoryBuilder("asset")
                 .addField(title)
-
                 .build();
 
         Document d1 = assets.createDoc("1")
                 .setValue(title, "Hello World")
                 ;
 
-
         Document d2 = assets.createDoc("2")
                 .setValue(title, "hello friends")
               ;
-
-
 
         SearchServer server = testBackend.getSearchServer();
 
@@ -2415,9 +2424,9 @@ public class ServerTest {
 
         assertEquals(2, result.getResults().size());
 
-         search = Search.fulltext("jello word").spellcheck(false);
+        search = Search.fulltext("jello word").spellcheck(false);
 
-         result = (PageResult)server.execute(search,assets);
+        result = (PageResult)server.execute(search,assets);
 
         assertEquals(0,  result.getResults().size());
     }

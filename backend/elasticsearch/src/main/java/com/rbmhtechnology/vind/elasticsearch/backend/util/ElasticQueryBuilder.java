@@ -18,12 +18,13 @@ import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.StringSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.UpdateOperation;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
+import com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil.Fieldname.UseCase;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.DisMaxQueryBuilder;
@@ -37,8 +38,6 @@ import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.AggregatorFactories;
-import org.elasticsearch.search.aggregations.PipelineAggregatorBuilders;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregationBuilder;
@@ -47,7 +46,6 @@ import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilde
 import org.elasticsearch.search.aggregations.bucket.terms.IncludeExclude;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.ExtendedStatsAggregationBuilder;
-import org.elasticsearch.search.aggregations.metrics.StatsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
@@ -95,7 +93,7 @@ public class ElasticQueryBuilder {
         factory.getFields().values().stream()
                 .filter(FieldDescriptor::isFullText)
                 .forEach(field -> fullTextStringQuery
-                        .field(FieldUtil.getFieldName(field, searchContext).concat(".text"), field.getBoost()));
+                        .field(FieldUtil.getFieldName(field, UseCase.Fulltext, searchContext), field.getBoost()));
 
 
         final DisMaxQueryBuilder query = QueryBuilders.disMaxQuery()
@@ -151,11 +149,11 @@ public class ElasticQueryBuilder {
                 );
             }
         }
-    searchSource.fetchSource(true);
-    baseQuery.filter(buildFilterQuery(search.getFilter(), factory, searchContext));
+        searchSource.fetchSource(true);
+        baseQuery.filter(buildFilterQuery(search.getFilter(), factory, searchContext));
 
-        //TODO if nested document search is implemented
-        // fulltext search deep search
+            //TODO if nested document search is implemented
+            // fulltext search deep search
 
         if(search.hasFacet()) {
             search.getFacets().entrySet().stream()
@@ -163,6 +161,7 @@ public class ElasticQueryBuilder {
                                         vindFacet.getKey(),
                                         vindFacet.getValue(),
                                         factory,
+                                        UseCase.Facet,//TODO : complex fields can have aggregation on non facet?
                                         searchContext,
                                         search.getFacetMinCount()))
                     .flatMap(Collection::stream)
@@ -222,25 +221,37 @@ public class ElasticQueryBuilder {
         return searchSource;
     }
 
+    public static SearchSourceBuilder buildPercolatorQueryReadiness(DocumentFactory factory) {
+
+        final SearchSourceBuilder searchSource = new SearchSourceBuilder();
+        final QueryBuilder baseQuery =  QueryBuilders.termQuery(FieldUtil.PERCOLATOR_FLAG, true);
+        searchSource.query(baseQuery);
+        searchSource.fetchSource(true);
+        return searchSource;
+    }
+
     private static void addToPivotAggs(AggregationBuilder pivotAgg, List<AggregationBuilder> aggs) {
         pivotAgg.getSubAggregations()
                 .forEach(subAgg -> addToPivotAggs(subAgg,aggs));
         aggs.forEach(pivotAgg::subAggregation);
     }
-
     public static QueryBuilder buildFilterQuery(Filter filter, DocumentFactory factory, String context) {
+        return buildFilterQuery(filter, factory, context,false);
+    }
+    public static QueryBuilder buildFilterQuery(Filter filter, DocumentFactory factory, String context, Boolean percolatorFlag) {
         final BoolQueryBuilder filterQuery = QueryBuilders.boolQuery();
         // Add base doc type filter
         filterQuery.must(QueryBuilders.termQuery(FieldUtil.TYPE, factory.getType()));
+        filterQuery.must(QueryBuilders.termQuery(FieldUtil.PERCOLATOR_FLAG, percolatorFlag));
         Optional.ofNullable(filter)
                 .ifPresent(vindFilter -> {
-                    filterQuery.must(filterMapper(vindFilter, factory, context));
+                    filterQuery.must(filterMapper(vindFilter, factory, UseCase.valueOf(filter.getFilterScope().name()), context));
                 });
         return filterQuery;
 
     }
 
-    private static QueryBuilder filterMapper(Filter filter, DocumentFactory factory, String context) {
+    private static QueryBuilder filterMapper(Filter filter, DocumentFactory factory, UseCase useCase, String context) {
 
             switch (filter.getType()) {
                 case "AndFilter":
@@ -248,7 +259,7 @@ public class ElasticQueryBuilder {
                     final BoolQueryBuilder boolMustQuery = QueryBuilders.boolQuery();
                     andFilter.getChildren()
                             .forEach(nestedFilter -> {
-                                boolMustQuery.must(filterMapper(nestedFilter, factory, context));
+                                boolMustQuery.must(filterMapper(nestedFilter, factory, useCase, context));
                             });
                     return boolMustQuery;
                 case "OrFilter":
@@ -256,109 +267,99 @@ public class ElasticQueryBuilder {
                     final BoolQueryBuilder boolShouldQuery = QueryBuilders.boolQuery();
                     orFilter.getChildren()
                             .forEach(nestedFilter -> {
-                                boolShouldQuery.should(filterMapper(nestedFilter, factory, context));
+                                boolShouldQuery.should(filterMapper(nestedFilter, factory, useCase, context));
                             });
                     return boolShouldQuery;
                 case "NotFilter":
                     final Filter.NotFilter notFilter = (Filter.NotFilter) filter;
                     final BoolQueryBuilder boolMustNotQuery = QueryBuilders.boolQuery();
-                    return boolMustNotQuery.mustNot(filterMapper(notFilter.getDelegate(), factory, context));
+                    return boolMustNotQuery.mustNot(filterMapper(notFilter.getDelegate(), factory, useCase, context));
 
                 case "TermFilter":
                     final Filter.TermFilter termFilter = (Filter.TermFilter) filter;
                     return QueryBuilders
-                            .termQuery(FieldUtil.getFieldName(factory.getField(termFilter.getField()),context),
+                            .termQuery(FieldUtil.getFieldName(factory.getField(termFilter.getField()), useCase, context),
                                     termFilter.getTerm());
                 case "TermsQueryFilter":
                     final Filter.TermsQueryFilter termsQueryFilter = (Filter.TermsQueryFilter) filter;
                     return QueryBuilders
-                            .termsQuery(FieldUtil.getFieldName(factory.getField(termsQueryFilter.getField()),context),
+                            .termsQuery(FieldUtil.getFieldName(factory.getField(termsQueryFilter.getField()), useCase,context),
                                     termsQueryFilter.getTerm());
                 case "PrefixFilter":
                     final Filter.PrefixFilter prefixFilter = (Filter.PrefixFilter) filter;
                     return QueryBuilders
-                            .prefixQuery(FieldUtil.getFieldName(factory.getField(prefixFilter.getField()),context),
+                            .prefixQuery(FieldUtil.getFieldName(factory.getField(prefixFilter.getField()), useCase,context),
                                     prefixFilter.getTerm());
                 case "DescriptorFilter":
-                    //TODO: Add scope support
                     final Filter.DescriptorFilter descriptorFilter = (Filter.DescriptorFilter) filter;
                     return QueryBuilders
-                            .termQuery(FieldUtil.getFieldName(descriptorFilter.getDescriptor(),context),
+                            .termQuery(FieldUtil.getFieldName(descriptorFilter.getDescriptor(), useCase, context),
                                     descriptorFilter.getTerm());
                 case "BetweenDatesFilter":
-                    //TODO: Add scope support
                     final Filter.BetweenDatesFilter betweenDatesFilter = (Filter.BetweenDatesFilter) filter;
                     return QueryBuilders
-                            .rangeQuery(FieldUtil.getFieldName(factory.getField(betweenDatesFilter.getField()),context))
+                            .rangeQuery(FieldUtil.getFieldName(factory.getField(betweenDatesFilter.getField()), useCase,context))
                             .from(betweenDatesFilter.getStart().toString())
                             .to(betweenDatesFilter.getEnd().toString());
                 case "BeforeFilter":
-                    //TODO: Add scope support
                     final Filter.BeforeFilter beforeFilter = (Filter.BeforeFilter) filter;
                     return QueryBuilders
-                            .rangeQuery(FieldUtil.getFieldName(factory.getField(beforeFilter.getField()),context))
+                            .rangeQuery(FieldUtil.getFieldName(factory.getField(beforeFilter.getField()), useCase,context))
                             .lte(beforeFilter.getDate().toElasticString()) ;
                 case "AfterFilter":
-                    //TODO: Add scope support
                     final Filter.AfterFilter afterFilter = (Filter.AfterFilter) filter;
                     return QueryBuilders
-                            .rangeQuery(FieldUtil.getFieldName(factory.getField(afterFilter.getField()),context))
+                            .rangeQuery(FieldUtil.getFieldName(factory.getField(afterFilter.getField()), useCase,context))
                             .gte(afterFilter.getDate().toElasticString()) ;
                 case "BetweenNumericFilter":
-                    //TODO: Add scope support
                     final Filter.BetweenNumericFilter betweenNumericFilter = (Filter.BetweenNumericFilter) filter;
                     return QueryBuilders
-                            .rangeQuery(FieldUtil.getFieldName(factory.getField(betweenNumericFilter.getField()),context))
+                            .rangeQuery(FieldUtil.getFieldName(factory.getField(betweenNumericFilter.getField()), useCase,context))
                             .from(betweenNumericFilter.getStart())
                             .to(betweenNumericFilter.getEnd());
                 case "LowerThanFilter":
-                    //TODO: Add scope support
                     final Filter.LowerThanFilter lowerThanFilter = (Filter.LowerThanFilter) filter;
                     return QueryBuilders
-                            .rangeQuery(FieldUtil.getFieldName(factory.getField(lowerThanFilter.getField()),context))
+                            .rangeQuery(FieldUtil.getFieldName(factory.getField(lowerThanFilter.getField()), useCase,context))
                             .lte(lowerThanFilter.getNumber()) ;
                 case "GreaterThanFilter":
-                    //TODO: Add scope support
                     final Filter.GreaterThanFilter greaterThanFilter = (Filter.GreaterThanFilter) filter;
                     return QueryBuilders
-                            .rangeQuery(FieldUtil.getFieldName(factory.getField(greaterThanFilter.getField()),context))
+                            .rangeQuery(FieldUtil.getFieldName(factory.getField(greaterThanFilter.getField()), useCase,context))
                             .gte(greaterThanFilter.getNumber()) ;
                 case "NotEmptyTextFilter":
-                    //TODO: Add scope support
                     final Filter.NotEmptyTextFilter notEmptyTextFilter = (Filter.NotEmptyTextFilter) filter;
-                    final String fieldName = FieldUtil.getFieldName(factory.getField(notEmptyTextFilter.getField()), context);
+                    final String fieldName = FieldUtil.getFieldName(factory.getField(notEmptyTextFilter.getField()), useCase, context);
                     return QueryBuilders.boolQuery()
                             .must(QueryBuilders.existsQuery(fieldName))
                             .mustNot(QueryBuilders.regexpQuery(fieldName , " *"))
                             ;
                 case "NotEmptyFilter":
-                    //TODO: Add scope support
                     final Filter.NotEmptyFilter notEmptyFilter = (Filter.NotEmptyFilter) filter;
                     return QueryBuilders
-                            .existsQuery(FieldUtil.getFieldName(factory.getField(notEmptyFilter.getField()), context));
+                            .existsQuery(FieldUtil.getFieldName(factory.getField(notEmptyFilter.getField()), useCase, context));
                 case "NotEmptyLocationFilter":
-                    //TODO: Add scope support
                     final Filter.NotEmptyLocationFilter notEmptyLocationFilter = (Filter.NotEmptyLocationFilter) filter;
                     return QueryBuilders
-                            .existsQuery(FieldUtil.getFieldName(factory.getField(notEmptyLocationFilter.getField()), context));
+                            .existsQuery(FieldUtil.getFieldName(factory.getField(notEmptyLocationFilter.getField()), useCase, context));
                 case "WithinBBoxFilter":
-                    //TODO: Add scope support
                     final Filter.WithinBBoxFilter withinBBoxFilter = (Filter.WithinBBoxFilter) filter;
                     return QueryBuilders
-                            .geoBoundingBoxQuery(FieldUtil.getFieldName(factory.getField(withinBBoxFilter.getField()), context))
+                            .geoBoundingBoxQuery(FieldUtil.getFieldName(factory.getField(withinBBoxFilter.getField()), null, context))
                             .setCorners(
-                                    withinBBoxFilter.getUpperLeft().getLat(),
-                                    withinBBoxFilter.getUpperLeft().getLng(),
-                                    withinBBoxFilter.getLowerRight().getLat(),
-                                    withinBBoxFilter.getLowerRight().getLng()
+                                    new GeoPoint(
+                                        withinBBoxFilter.getUpperLeft().getLat(),
+                                        withinBBoxFilter.getUpperLeft().getLng()),
+                                    new GeoPoint(
+                                        withinBBoxFilter.getLowerRight().getLat(),
+                                        withinBBoxFilter.getLowerRight().getLng())
                                     );
                 case "WithinCircleFilter":
-                    //TODO: Add scope support
                     final Filter.WithinCircleFilter withinCircleFilter = (Filter.WithinCircleFilter) filter;
                     return QueryBuilders
-                            .geoDistanceQuery(FieldUtil.getFieldName(factory.getField(withinCircleFilter.getField()), context))
+                            .geoDistanceQuery(FieldUtil.getFieldName(factory.getField(withinCircleFilter.getField()), null, context))
                             .point(withinCircleFilter.getCenter().getLat(),withinCircleFilter.getCenter().getLng())
-                            .distance(withinCircleFilter.getDistance(), DistanceUnit.METERS);
+                            .distance(withinCircleFilter.getDistance(), DistanceUnit.KILOMETERS);
                 default:
                     throw new SearchServerException(String.format("Error parsing filter to Elasticsearch query DSL: filter type not known %s", filter.getType()));
             }
@@ -370,13 +371,13 @@ public class ElasticQueryBuilder {
                 final FieldDescriptor<?> simpleSortField = factory.getField(((Sort.SimpleSort) sort).getField());
                 final String sortFieldName = Optional.ofNullable(simpleSortField)
                         .filter(FieldDescriptor::isSort)
-                        .map(descriptor -> FieldUtil.getFieldName(descriptor, searchContext))
+                        .map(descriptor -> FieldUtil.getFieldName(descriptor, UseCase.Sort, searchContext))
                         .orElse(((Sort.SimpleSort) sort).getField());
                 return SortBuilders
                         .fieldSort(sortFieldName)
                         .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
             case "DescriptorSort":
-                final String descriptorFieldName = Optional.ofNullable(FieldUtil.getFieldName(((Sort.DescriptorSort) sort).getDescriptor(), searchContext))
+                final String descriptorFieldName = Optional.ofNullable(FieldUtil.getFieldName(((Sort.DescriptorSort) sort).getDescriptor(), UseCase.Sort, searchContext))
                         .orElseThrow(() ->
                                 new RuntimeException("The field '" + ((Sort.DescriptorSort) sort).getDescriptor().getName() + "' is not set as sortable"));
                 return SortBuilders
@@ -385,7 +386,7 @@ public class ElasticQueryBuilder {
            case "DistanceSort":
                Optional.ofNullable(search.getGeoDistance())
                        .orElseThrow(() -> new SearchServerException("Sorting by distance requires a geodistance set"));
-               final String distanceFieldName = FieldUtil.getFieldName(search.getGeoDistance().getField(), searchContext);
+               final String distanceFieldName = FieldUtil.getFieldName(search.getGeoDistance().getField(), null, searchContext);
                return SortBuilders
                        .geoDistanceSort(distanceFieldName,
                                search.getGeoDistance().getLocation().getLat(),
@@ -400,7 +401,7 @@ public class ElasticQueryBuilder {
        }
     }
 
-    private static List<AggregationBuilder> buildElasticAggregations(String name, Facet vindFacet, DocumentFactory factory, String searchContext, int minCount) {
+    private static List<AggregationBuilder> buildElasticAggregations(String name, Facet vindFacet, DocumentFactory factory, UseCase  useCase, String searchContext, int minCount) {
         final String contextualizedFacetName = Stream.of(searchContext, name)
                 .filter(Objects::nonNull)
                 .collect(Collectors.joining("_"));
@@ -409,7 +410,7 @@ public class ElasticQueryBuilder {
             case "TermFacet":
                 final Facet.TermFacet termFacet = (Facet.TermFacet) vindFacet;
                 final FieldDescriptor<?> field = factory.getField(termFacet.getFieldName());
-                final String fieldName = Optional.ofNullable(FieldUtil.getFieldName(field, searchContext))
+                final String fieldName = Optional.ofNullable(FieldUtil.getFieldName(field, useCase, searchContext))
                         .orElse(termFacet.getFieldName());
 
                 final TermsAggregationBuilder termsAgg = AggregationBuilders
@@ -430,25 +431,26 @@ public class ElasticQueryBuilder {
 
             case "QueryFacet":
                 final Facet.QueryFacet queryFacet = (Facet.QueryFacet) vindFacet;
+                final Filter filter = queryFacet.getFilter();
                 return Collections.singletonList(
                         AggregationBuilders
                         .filters(
                                 contextualizedFacetName,
-                                filterMapper(queryFacet.getFilter(), factory, searchContext)));
+                                filterMapper(filter, factory, UseCase.valueOf(filter.getFilterScope().name()), searchContext)));
 
             case "NumericRangeFacet":
                 final Facet.NumericRangeFacet<?> numericRangeFacet = (Facet.NumericRangeFacet) vindFacet;
                 final HistogramAggregationBuilder rangeAggregation = AggregationBuilders
                         .histogram(name)
                         .keyed(true)
-                        .field(FieldUtil.getFieldName(numericRangeFacet.getFieldDescriptor(), searchContext))
+                        .field(FieldUtil.getFieldName(numericRangeFacet.getFieldDescriptor(), useCase, searchContext))
                         .interval(numericRangeFacet.getGap().doubleValue())
                         .minDocCount(minCount);
 
                 final RangeAggregationBuilder numericIntervalRangeAggregation = AggregationBuilders
                         .range(contextualizedFacetName)
                         .keyed(true)
-                        .field(FieldUtil.getFieldName(numericRangeFacet.getFieldDescriptor(), searchContext))
+                        .field(FieldUtil.getFieldName(numericRangeFacet.getFieldDescriptor(), useCase, searchContext))
                         .subAggregation(rangeAggregation);
 
                 numericIntervalRangeAggregation
@@ -464,7 +466,7 @@ public class ElasticQueryBuilder {
                 final DateRangeAggregationBuilder dateRangeAggregation = AggregationBuilders
                         .dateRange(contextualizedFacetName)
                         .keyed(true)
-                        .field(FieldUtil.getFieldName(zoneDateRangeFacet.getFieldDescriptor(), searchContext));
+                        .field(FieldUtil.getFieldName(zoneDateRangeFacet.getFieldDescriptor(), useCase, searchContext));
 
                 final ZonedDateTime zonedDateTimeEnd = (ZonedDateTime) zoneDateRangeFacet.getEnd();
                 final ZonedDateTime zonedDateTimeStart = (ZonedDateTime) zoneDateRangeFacet.getStart();
@@ -477,7 +479,7 @@ public class ElasticQueryBuilder {
                         .fixedInterval(DateHistogramInterval
                                 .minutes(new Long(zoneDateRangeFacet.getGapDuration().toMinutes()).intValue()))
                         .keyed(true)
-                        .field(FieldUtil.getFieldName(zoneDateRangeFacet.getFieldDescriptor(), searchContext));
+                        .field(FieldUtil.getFieldName(zoneDateRangeFacet.getFieldDescriptor(), useCase, searchContext));
 
                 dateRangeAggregation.subAggregation(histogramDateRangeAggregation);
 
@@ -488,7 +490,7 @@ public class ElasticQueryBuilder {
                 final DateRangeAggregationBuilder utilDateRangeAggregation = AggregationBuilders
                         .dateRange(contextualizedFacetName)
                         .keyed(true)
-                        .field(FieldUtil.getFieldName(utilDateRangeFacet.getFieldDescriptor(), searchContext));
+                        .field(FieldUtil.getFieldName(utilDateRangeFacet.getFieldDescriptor(), useCase, searchContext));
 
                 final ZonedDateTime dateTimeEnd = ZonedDateTime.ofInstant(((Date) utilDateRangeFacet.getEnd()).toInstant(), ZoneId.of("UTC"));
                 final ZonedDateTime dateTimeStart = ZonedDateTime.ofInstant(((Date) utilDateRangeFacet.getStart()).toInstant(), ZoneId.of("UTC"));
@@ -500,7 +502,7 @@ public class ElasticQueryBuilder {
                          .keyed(true)
                          .fixedInterval(DateHistogramInterval
                                  .minutes(new Long(utilDateRangeFacet.getGapDuration().toMinutes()).intValue()))
-                         .field(FieldUtil.getFieldName(utilDateRangeFacet.getFieldDescriptor(), searchContext));
+                         .field(FieldUtil.getFieldName(utilDateRangeFacet.getFieldDescriptor(), useCase, searchContext));
 
                  utilDateRangeAggregation.subAggregation(histogramUtilDateRangeAggregation);
 
@@ -512,7 +514,7 @@ public class ElasticQueryBuilder {
                 final DateRangeAggregationBuilder dateMathDateRangeAggregation = AggregationBuilders
                         .dateRange(contextualizedFacetName)
                         .keyed(true)
-                        .field(FieldUtil.getFieldName(dateMathRangeFacet.getFieldDescriptor(), searchContext));
+                        .field(FieldUtil.getFieldName(dateMathRangeFacet.getFieldDescriptor(), useCase, searchContext));
 
                 final ZonedDateTime dateMathEnd =
                         ZonedDateTime.ofInstant(
@@ -535,7 +537,7 @@ public class ElasticQueryBuilder {
                         .minDocCount(minCount)
                         .fixedInterval(DateHistogramInterval.minutes(minutesGap.intValue()))
                         .keyed(true)
-                        .field(FieldUtil.getFieldName(dateMathRangeFacet.getFieldDescriptor(), searchContext));
+                        .field(FieldUtil.getFieldName(dateMathRangeFacet.getFieldDescriptor(), useCase, searchContext));
                 dateMathDateRangeAggregation.subAggregation(histogramDateMathDateRangeAggregation);
 
                 return Collections.singletonList(dateMathDateRangeAggregation);
@@ -545,7 +547,7 @@ public class ElasticQueryBuilder {
                 final RangeAggregationBuilder numericIntervalAggregation = AggregationBuilders
                         .range(contextualizedFacetName)
                         .keyed(true)
-                        .field(FieldUtil.getFieldName(numericIntervalFacet.getFieldDescriptor(), searchContext));
+                        .field(FieldUtil.getFieldName(numericIntervalFacet.getFieldDescriptor(), useCase, searchContext));
 
                 numericIntervalFacet.getIntervals()
                         .forEach( interval -> intervalToRange((NumericInterval<?>) interval, numericIntervalAggregation));
@@ -557,7 +559,7 @@ public class ElasticQueryBuilder {
                 final DateRangeAggregationBuilder ZoneDateIntervalAggregation = AggregationBuilders
                         .dateRange(contextualizedFacetName)
                         .keyed(true)
-                        .field(FieldUtil.getFieldName(zoneDateTimeIntervalFacet.getFieldDescriptor(), searchContext));
+                        .field(FieldUtil.getFieldName(zoneDateTimeIntervalFacet.getFieldDescriptor(), useCase, searchContext));
 
                 zoneDateTimeIntervalFacet.getIntervals()
                         .forEach( interval -> intervalToRange((Interval.ZonedDateTimeInterval<?>) interval, ZoneDateIntervalAggregation));
@@ -569,7 +571,7 @@ public class ElasticQueryBuilder {
                 final DateRangeAggregationBuilder utilDateIntervalAggregation = AggregationBuilders
                         .dateRange(contextualizedFacetName)
                         .keyed(true)
-                        .field(FieldUtil.getFieldName(utilDateIntervalFacet.getFieldDescriptor(), searchContext));
+                        .field(FieldUtil.getFieldName(utilDateIntervalFacet.getFieldDescriptor(), useCase, searchContext));
 
                 utilDateIntervalFacet.getIntervals()
                         .forEach( interval -> intervalToRange((Interval.UtilDateInterval<?>) interval, utilDateIntervalAggregation));
@@ -582,7 +584,7 @@ public class ElasticQueryBuilder {
                 final DateRangeAggregationBuilder dateMathIntervalAggregation = AggregationBuilders
                         .dateRange(contextualizedFacetName)
                         .keyed(true)
-                        .field(FieldUtil.getFieldName(dateMathIntervalFacet.getFieldDescriptor(), searchContext));
+                        .field(FieldUtil.getFieldName(dateMathIntervalFacet.getFieldDescriptor(), useCase, searchContext));
 
                 dateMathIntervalFacet.getIntervals()
                         .forEach( interval -> intervalToRange((Interval.DateMathInterval<?>) interval, dateMathIntervalAggregation));
@@ -595,15 +597,15 @@ public class ElasticQueryBuilder {
             case "StatsNumericFacet":
                 final Facet.StatsFacet statsFacet = (Facet.StatsFacet) vindFacet;
                 if(!CharSequence.class.isAssignableFrom(((Facet.StatsFacet) vindFacet).getField().getType())) {
-                    return getStatsAggregationBuilders(searchContext, contextualizedFacetName, statsFacet);
+                    return getStatsAggregationBuilders(searchContext, contextualizedFacetName, UseCase.Facet, statsFacet);
                 }
             case "PivotFacet":
                 final Facet.PivotFacet pivotFacet = (Facet.PivotFacet) vindFacet;
                 final Optional<TermsAggregationBuilder> pivotAgg = pivotFacet.getFieldDescriptors().stream()
-                        .map(f -> FieldUtil.getFieldName(f, searchContext))
+                        .map(f -> FieldUtil.getFieldName(f, useCase, searchContext))
                         .filter(Objects::nonNull)
                         .map(n -> AggregationBuilders
-                                .terms(contextualizedFacetName)
+                                .terms(contextualizedFacetName + "-" + FieldUtil.getSourceFieldName(n, null))
                                 .field(n)
                                 .minDocCount(minCount))
                         .reduce( AbstractAggregationBuilder::subAggregation);
@@ -617,37 +619,37 @@ public class ElasticQueryBuilder {
         }
     }
 
-    private static List<AggregationBuilder> getStatsAggregationBuilders(String searchContext, String contextualizedFacetName, Facet.StatsFacet statsFacet) {
+    private static List<AggregationBuilder> getStatsAggregationBuilders(String searchContext, String contextualizedFacetName, UseCase useCase,  Facet.StatsFacet statsFacet) {
         final List<AggregationBuilder> statsAggs = new ArrayList<>();
         final ExtendedStatsAggregationBuilder statsAgg = AggregationBuilders
                 .extendedStats(contextualizedFacetName)
-                .field(FieldUtil.getFieldName(statsFacet.getField(), searchContext));
+                .field(FieldUtil.getFieldName(statsFacet.getField(), useCase, searchContext));
 
         if (ArrayUtils.isNotEmpty(statsFacet.getPercentiles())) {
             statsAggs.add(AggregationBuilders
                     .percentileRanks(contextualizedFacetName + "_percentiles", ArrayUtils.toPrimitive(statsFacet.getPercentiles()))
-                    .field(FieldUtil.getFieldName(statsFacet.getField(), searchContext))
+                    .field(FieldUtil.getFieldName(statsFacet.getField(), useCase, searchContext))
             );
         }
 
         if (statsFacet.getCardinality()) {
             statsAggs.add(AggregationBuilders
                     .cardinality(contextualizedFacetName + "_cardinality")
-                    .field(FieldUtil.getFieldName(statsFacet.getField(), searchContext))
+                    .field(FieldUtil.getFieldName(statsFacet.getField(), useCase, searchContext))
             );
         }
 
         if (statsFacet.getCountDistinct() || statsFacet.getDistinctValues()) {
             statsAggs.add(AggregationBuilders
                     .terms(contextualizedFacetName + "_values")
-                    .field(FieldUtil.getFieldName(statsFacet.getField(), searchContext))
+                    .field(FieldUtil.getFieldName(statsFacet.getField(), useCase, searchContext))
             );
         }
 
         if (statsFacet.getMissing()) {
             statsAggs.add(AggregationBuilders
                     .missing(contextualizedFacetName + "_missing")
-                    .field(FieldUtil.getFieldName(statsFacet.getField(), searchContext))
+                    .field(FieldUtil.getFieldName(statsFacet.getField(), useCase, searchContext))
             );
         }
 
@@ -855,7 +857,7 @@ public class ElasticQueryBuilder {
 
         suggestionFieldNames.stream()
                 .map(field -> AggregationBuilders
-                        .terms(FieldUtil.getSourceFieldName(field.replaceAll(".suggestion", ""), searchContext))
+                        .terms(FieldUtil.getSourceFieldName(field.replaceAll("\\.suggestion", ""), searchContext))
                         .field(field)
                         .includeExclude(
                                 new IncludeExclude(Suggester.getSuggestionRegex(search.getInput()), null))
@@ -904,16 +906,14 @@ public class ElasticQueryBuilder {
             final StringSuggestionSearch suggestionSearch =(StringSuggestionSearch) search;
             return suggestionSearch.getSuggestionFields().stream()
                     .map(factory::getField)
-                    .map(descriptor -> FieldUtil.getFieldName(descriptor, searchContext))
+                    .map(descriptor -> FieldUtil.getFieldName(descriptor, UseCase.Suggest, searchContext))
                     .filter(Objects::nonNull)
-                    .map(name ->  name.concat(".suggestion"))
                     .toArray(String[]::new);
         } else {
             final DescriptorSuggestionSearch suggestionSearch =(DescriptorSuggestionSearch) search;
             return suggestionSearch.getSuggestionFields().stream()
-                    .map(descriptor -> FieldUtil.getFieldName(descriptor, searchContext))
+                    .map(descriptor -> FieldUtil.getFieldName(descriptor, UseCase.Suggest, searchContext))
                     .filter(Objects::nonNull)
-                    .map(name ->  name.concat(".suggestion"))
                     .toArray(String[]::new);
         }
     }
@@ -921,9 +921,8 @@ public class ElasticQueryBuilder {
 
         return factory.getFields().entrySet().stream()
                 .filter( e -> e.getValue().isFullText())
-                .map(e -> FieldUtil.getFieldName(e.getValue(), searchContext))
+                .map(e -> FieldUtil.getFieldName(e.getValue(), UseCase.Fulltext, searchContext))
                 .filter(Objects::nonNull)
-                .map(name ->  name.concat(".text"))
                 .toArray(String[]::new);
 
     }
