@@ -52,17 +52,17 @@ public class FilterTest {
                 .build();
 
         Filter vindFilter = filterLuceneParser
-                        .deserialize(
+                        .parse(
                                 "+customMetadata:(\"coveragedb=true\" AND NOT \"cloudTranscoding=true\")  "
                                 , testDocFactory);
 
         vindFilter = filterLuceneParser
-                .deserialize(
+                .parse(
                         "+customMetadata:((\"meppGraph=true\" OR \"coveragedb=true\") AND NOT \"cloudTranscoding=true\")  "
                         , testDocFactory);
 
         vindFilter = filterLuceneParser
-                .deserialize(
+                .parse(
                         "+customMetadata:((\"meppGraph=true\" OR \"coveragedb=true\") AND NOT ( \"netStorage=true\" AND \"cloudTranscoding=true\"))  "
 
                         , testDocFactory);
