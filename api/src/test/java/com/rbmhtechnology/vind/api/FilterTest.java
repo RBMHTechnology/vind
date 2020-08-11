@@ -2,9 +2,15 @@ package com.rbmhtechnology.vind.api;
 
 import com.google.common.collect.ImmutableSet;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.filter.parser.FilterLuceneParser;
+import com.rbmhtechnology.vind.model.DocumentFactory;
+import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
+import com.rbmhtechnology.vind.model.FieldDescriptor;
+import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.Set;
 
 import static com.rbmhtechnology.vind.api.query.filter.Filter.eq;
@@ -32,5 +38,35 @@ public class FilterTest {
 
         Assert.assertEquals(4, ((Filter.AndFilter)filter).getChildren().size());
     }
+
+    @Test
+    public void testFilterSerializer() throws IOException {
+
+        final FilterLuceneParser filterLuceneParser = new FilterLuceneParser();
+        final FieldDescriptor<String> customMetadata = new FieldDescriptorBuilder<>()
+            .setFacet(true)
+            .buildTextField("customMetadata");
+
+        final DocumentFactory testDocFactory = new DocumentFactoryBuilder("testDoc")
+                .addField(customMetadata)
+                .build();
+
+        Filter vindFilter = filterLuceneParser
+                        .deserialize(
+                                "+customMetadata:(\"coveragedb=true\" AND NOT \"cloudTranscoding=true\")  "
+                                , testDocFactory);
+
+        vindFilter = filterLuceneParser
+                .deserialize(
+                        "+customMetadata:((\"meppGraph=true\" OR \"coveragedb=true\") AND NOT \"cloudTranscoding=true\")  "
+                        , testDocFactory);
+
+        vindFilter = filterLuceneParser
+                .deserialize(
+                        "+customMetadata:((\"meppGraph=true\" OR \"coveragedb=true\") AND NOT ( \"netStorage=true\" AND \"cloudTranscoding=true\"))  "
+
+                        , testDocFactory);
+
+     }
 
 }
