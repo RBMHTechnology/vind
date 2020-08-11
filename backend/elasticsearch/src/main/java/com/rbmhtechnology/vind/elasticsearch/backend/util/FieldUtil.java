@@ -10,10 +10,13 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil.Fieldname.UseCase;
 
@@ -23,6 +26,7 @@ public class FieldUtil {
 
     public static final String ID = "_id_";
     public static final String TYPE = "_type_";
+    public static final String PERCOLATOR_FLAG = "_percolator_flag_";
     public static final String SCORE = "score";
     public static final String DISTANCE = "_distance_";
     public static final String FACETS = "facets";
@@ -256,6 +260,21 @@ public class FieldUtil {
                 } else return null;
             }
         }
+    }
+
+    public static Boolean compareFieldLists(Collection<FieldDescriptor<?>> fields1, Collection<FieldDescriptor<?>> fields2) {
+        if(fields1.size()!= fields2.size()) {
+            return false;
+        }
+
+        final List<String> fields1Names = fields1.stream()
+                .map(FieldDescriptor::getName)
+                .collect(Collectors.toList());
+        final List<String> fields2Names = fields2.stream().map(FieldDescriptor::getName).collect(Collectors.toList());
+        if (!fields1Names.containsAll(fields2Names)) {
+            return false;
+        }
+        return true;
     }
 
 }

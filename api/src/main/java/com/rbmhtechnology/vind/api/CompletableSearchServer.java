@@ -3,12 +3,15 @@ package com.rbmhtechnology.vind.api;
 import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
+import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
+import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.*;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
+import com.rbmhtechnology.vind.model.InverseSearchQuery;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -344,6 +347,16 @@ public class CompletableSearchServer extends SearchServer {
     @Override
     public GetResult execute(RealTimeGet search, DocumentFactory assets) {
         return backend.execute(search, assets);
+    }
+
+    @Override
+    public InverseSearchResult execute(InverseSearch inverseSearch, DocumentFactory factory) {
+        return backend.execute(inverseSearch, factory);
+    }
+
+    @Override
+    public IndexResult addInverseSearchQuery(InverseSearchQuery query) {
+        return backend.addInverseSearchQuery(query);
     }
 
     @Override

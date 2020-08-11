@@ -11,8 +11,12 @@ import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearch;
+import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearchQueryFactory;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.api.result.GetResult;
+import com.rbmhtechnology.vind.api.result.IndexResult;
+import com.rbmhtechnology.vind.api.result.InverseSearchResult;
 import com.rbmhtechnology.vind.api.result.PageResult;
 import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
@@ -2397,19 +2401,15 @@ public class ServerTest {
 
         DocumentFactory assets = new DocumentFactoryBuilder("asset")
                 .addField(title)
-
                 .build();
 
         Document d1 = assets.createDoc("1")
                 .setValue(title, "Hello World")
                 ;
 
-
         Document d2 = assets.createDoc("2")
                 .setValue(title, "hello friends")
               ;
-
-
 
         SearchServer server = testBackend.getSearchServer();
 
@@ -2424,9 +2424,9 @@ public class ServerTest {
 
         assertEquals(2, result.getResults().size());
 
-         search = Search.fulltext("jello word").spellcheck(false);
+        search = Search.fulltext("jello word").spellcheck(false);
 
-         result = (PageResult)server.execute(search,assets);
+        result = (PageResult)server.execute(search,assets);
 
         assertEquals(0,  result.getResults().size());
     }

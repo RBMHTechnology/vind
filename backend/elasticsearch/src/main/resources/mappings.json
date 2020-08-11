@@ -6,6 +6,9 @@
       "_type_": {
         "type": "keyword"
       },
+      "percolator_flag_": {
+        "type" : "boolean"
+      },
       "facets": {
         "type": "keyword"
       },
@@ -15,6 +18,9 @@
       "full_text": {
         "type": "text",
         "analyzer": "vind_text"
+      },
+      "query": {
+        "type": "percolator"
       }
     },
     "dynamic_templates": [

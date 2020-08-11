@@ -1,5 +1,7 @@
 package com.rbmhtechnology.vind.api.query;
 
+import com.rbmhtechnology.vind.api.Document;
+import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearch;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
@@ -60,4 +62,12 @@ public abstract class Search {
         return new RealTimeGet().get(id);
     }
 
+    /**
+     * Instantiates a new {@link InverseSearch} query object.
+     * @param doc {@link Document} document to perform inverse search on.
+     * @return {@link InverseSearch} configuration.
+     */
+    public static InverseSearch inverseSearch(Document doc) {
+        return new InverseSearch(doc);
+    }
 }

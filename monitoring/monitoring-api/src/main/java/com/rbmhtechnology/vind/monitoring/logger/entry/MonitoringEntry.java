@@ -93,7 +93,7 @@ public abstract class MonitoringEntry {
     }
 
     public enum EntryType {
-        fulltext, suggestion, index, get, delete, update, interaction
+        fulltext, suggestion, index, get, delete, update, interaction, indexInverseSearchQuery
     }
 
     static class MyDtoNullKeySerializer extends StdSerializer<Object> {

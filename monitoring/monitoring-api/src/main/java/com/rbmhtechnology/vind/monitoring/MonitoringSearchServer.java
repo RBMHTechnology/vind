@@ -7,11 +7,13 @@ import com.rbmhtechnology.vind.api.ServiceProvider;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
+import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.*;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
+import com.rbmhtechnology.vind.model.InverseSearchQuery;
 import com.rbmhtechnology.vind.monitoring.logger.MonitoringWriter;
 import com.rbmhtechnology.vind.monitoring.logger.entry.*;
 import com.rbmhtechnology.vind.monitoring.model.application.Application;
@@ -455,6 +457,7 @@ public class MonitoringSearchServer extends SearchServer {
         return execute(search, factory, this.session);
     }
 
+
     public GetResult execute(RealTimeGet search, DocumentFactory factory, Session session) {
         final ZonedDateTime start = ZonedDateTime.now();
         log.debug("Monitoring server is executing Real time get at {}:{}:{} - {}.{}.{} ",
@@ -464,6 +467,57 @@ public class MonitoringSearchServer extends SearchServer {
 
         addRealTimeGetMonitoringEntry(search, start, end, result.getQueryTime(), result.getElapsedTime(), result.getNumOfResults(), session);
         return result;
+    }
+
+    @Override
+    public InverseSearchResult execute(InverseSearch inverseSearch, DocumentFactory factory) {
+        return execute(inverseSearch,factory, this.session);
+    }
+
+    private InverseSearchResult execute(InverseSearch inverseSearch, DocumentFactory factory, Session session) {
+        final ZonedDateTime start = ZonedDateTime.now();
+        log.debug("Monitoring server is executing inverse search at {}:{}:{} - {}.{}.{} ",
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
+        final InverseSearchResult result = server.execute(inverseSearch, factory);
+        final ZonedDateTime end = ZonedDateTime.now();
+
+        addInverseSearchMonitoringEntry(inverseSearch, start, end, result.getQueryTime(), result.getElapsedTime(), result.getNumOfResults(), session);
+        return result;
+    }
+
+    private void addInverseSearchMonitoringEntry(InverseSearch inverseSearch, ZonedDateTime start, ZonedDateTime end, Long queryTime, Long elapsedTime, long numOfResults, Session session) {
+        //TODO:
+    }
+
+    @Override
+    public IndexResult addInverseSearchQuery(InverseSearchQuery query) {
+        return this.addInverseSearchQuery(query, this.session);
+    }
+
+    private IndexResult addInverseSearchQuery(InverseSearchQuery query, Session session) {
+        final ZonedDateTime start = ZonedDateTime.now();
+        log.debug("Monitoring server is adding an inverse search query at {}:{}:{} - {}.{}.{} ",
+                start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
+        final IndexResult result = server.addInverseSearchQuery(query);
+        final ZonedDateTime end = ZonedDateTime.now();
+
+        addIndexInverseSearchQueryMonitoringEntry(query, start, end, result.getQueryTime(), result.getElapsedTime(), session);
+        return result;
+    }
+
+    private void addIndexInverseSearchQueryMonitoringEntry(InverseSearchQuery query, ZonedDateTime start, ZonedDateTime end, Long queryTime, Long elapsedTime, Session session) {
+        try {
+            final InverseSearchQueryEntry entry =
+                    new InverseSearchQueryEntry( application, start, end, queryTime, elapsedTime, session, query);
+            entry.setMetadata(this.monitoringMetadata);
+            log.debug("Monitoring is adding an Index entry");
+            logger.log(entry);
+        } catch (Exception e) {
+            log.error("Index monitoring error: {}", e.getMessage(), e);
+            if (!silent) {
+                throw e;
+            }
+        }
     }
 
     @Override
