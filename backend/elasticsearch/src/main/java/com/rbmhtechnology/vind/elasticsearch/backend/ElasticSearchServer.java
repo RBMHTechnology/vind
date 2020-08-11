@@ -481,7 +481,7 @@ public class ElasticSearchServer extends SearchServer {
         try {
             elasticClientLogger.debug(">>> query({})", query.toString());
             //TODO: inverse search support multiple docs
-            final SearchResponse response = elasticSearchClient.percolatorDocQuery(mapDocs.get(0), query);
+            final SearchResponse response = elasticSearchClient.percolatorDocQuery(mapDocs, query);
 
             if(Objects.nonNull(response)
                     && Objects.nonNull(response.getHits())

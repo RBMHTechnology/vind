@@ -22,6 +22,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -94,9 +95,9 @@ public class ElasticRequestUtils {
                 .source(query);
     }
 
-    public static SearchRequest percolateDocumentRequest(String index, XContentBuilder doc, QueryBuilder query) {
+    public static SearchRequest percolateDocumentRequest(String index, List<XContentBuilder> docs, QueryBuilder query) {
         final SearchSourceBuilder searchSource = new SearchSourceBuilder();
-        final PercolateQueryBuilder docQuery = new PercolateQueryBuilder("query", BytesReference.bytes(doc), doc.contentType());
+        final PercolateQueryBuilder docQuery = new PercolateQueryBuilder("query", docs.stream().map(BytesReference::bytes).collect(Collectors.toList()), XContentType.JSON);
         final BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
         boolQueryBuilder.must(docQuery);
         Optional.ofNullable(query).ifPresent(boolQueryBuilder::must);

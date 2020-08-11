@@ -38,10 +38,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -215,12 +217,15 @@ public  class ElasticVindClient {
         return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
     }
 
-    public SearchResponse percolatorDocQuery(Map<String, Object> mapDoc, QueryBuilder query) throws IOException {
-        final XContentBuilder doc = mapToXContentBuilder(mapDoc);
-        final SearchRequest request = ElasticRequestUtils.percolateDocumentRequest(defaultIndex, doc, query);
+    public SearchResponse percolatorDocQuery(List<Map<String, Object>> mapDocs, QueryBuilder query) throws IOException {
+        final List<XContentBuilder> xContentDocs = new ArrayList<>();
+        for (Map<String, Object> mapDoc : mapDocs) {
+            xContentDocs.add(mapToXContentBuilder(mapDoc));
+        }
+        final SearchRequest request = ElasticRequestUtils.percolateDocumentRequest(defaultIndex, xContentDocs, query);
         return client.search(request, RequestOptions.DEFAULT);
     }
-    public SearchResponse percolatorDocQuery(Map<String, Object> mapDoc) throws IOException {
+    public SearchResponse percolatorDocQuer(List<Map<String, Object>> mapDoc) throws IOException {
         return percolatorDocQuery(mapDoc, null);
     }
 
