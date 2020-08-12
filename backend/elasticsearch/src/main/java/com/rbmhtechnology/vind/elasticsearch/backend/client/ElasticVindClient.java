@@ -218,11 +218,11 @@ public abstract class ElasticVindClient {
             return this;
         }
 
-        public ElasticVindClient build(String user, String key) {
+        public ElasticVindClient buildWithBasicAuth(String user, String key) {
             return ElasticVindClientBasicAuth.build(defaultIndex, port, scheme, host, user, key);
         }
-        public ElasticVindClient build(String apiKeyAuth) {
-            return ElasticVindClientApiKeyAuth.build(defaultIndex, port, scheme, host, apiKeyAuth);
+        public ElasticVindClient buildWithApiKeyAuth(String id, String key) {
+            return ElasticVindClientApiKeyAuth.build(defaultIndex, port, scheme, host, id, key);
         }
         public ElasticVindClient build() {
             return ElasticVindClientNoAuth.build(defaultIndex, port, scheme, host);

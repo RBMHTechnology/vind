@@ -24,7 +24,7 @@ public class ElasticBaseTest {
 
         client = new ElasticVindClient.Builder("http://" + container.getHttpHostAddress())
                 .setDefaultIndex("vind")
-                .build("elastic", "changeme");
+                .buildWithBasicAuth("elastic", "changeme");
 
         client.createIndex("vind");
 

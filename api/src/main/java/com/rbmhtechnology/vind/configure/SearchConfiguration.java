@@ -37,7 +37,8 @@ public class SearchConfiguration {
     public static final String SEARCH_RESULT_FACET_LENGTH = "search.result.facet.length";
     public static final String SEARCH_AUTHENTICATION_KEY = "search.authentication.key";
     public static final String SEARCH_AUTHENTICATION_USER = "search.authentication.user";
-    public static final String SEARCH_API_KEY_AUTH = "search.api.key.auth";
+    public static final String SEARCH_API_KEY_SECRET = "search.api.key.secret";
+    public static final String SEARCH_API_KEY_ID = "search.api.key.id";
     public static final String SEARCH_AUTHENTICATION_METHOD = "search.authentication.method";
 
     private static Logger log = LoggerFactory.getLogger(SearchConfiguration.class);
