@@ -16,7 +16,7 @@ import java.util.function.Function;
  * @author Thomas Kurz (tkurz@apache.org)
  * @since 15.06.16.
  */
-public abstract class FieldDescriptor<T> {
+public abstract class FieldDescriptor<T> implements Serializable {
 
     /**
      * Class types supported as field descriptor content.
@@ -43,7 +43,7 @@ public abstract class FieldDescriptor<T> {
     private Language language;
     private float boost;
     private Map<String,String> metadata;
-    protected Function<?, T> sortFunction;
+    protected transient Function<?, T> sortFunction;
 
     //flags
     private boolean update;

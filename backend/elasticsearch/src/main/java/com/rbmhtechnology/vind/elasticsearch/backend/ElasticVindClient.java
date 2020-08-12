@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -225,7 +226,13 @@ public  class ElasticVindClient {
         final SearchRequest request = ElasticRequestUtils.percolateDocumentRequest(defaultIndex, xContentDocs, query);
         return client.search(request, RequestOptions.DEFAULT);
     }
-    public SearchResponse percolatorDocQuer(List<Map<String, Object>> mapDoc) throws IOException {
+    public SearchResponse percolatorDocQuery(Map<String, Object> mapDoc, QueryBuilder query) throws IOException {
+        return percolatorDocQuery(Collections.singletonList(mapDoc), query);
+    }
+    public SearchResponse percolatorDocQuery(Map<String, Object> matchingDoc) throws IOException {
+        return percolatorDocQuery(Collections.singletonList(matchingDoc));
+    }
+    public SearchResponse percolatorDocQuery(List<Map<String, Object>> mapDoc) throws IOException {
         return percolatorDocQuery(mapDoc, null);
     }
 
@@ -242,6 +249,7 @@ public  class ElasticVindClient {
         final SearchRequest request = ElasticRequestUtils.getSearchRequest(defaultIndex, query);
         return client.search(request,RequestOptions.DEFAULT);
     }
+
 
     public static class Builder {
         private String defaultIndex;
