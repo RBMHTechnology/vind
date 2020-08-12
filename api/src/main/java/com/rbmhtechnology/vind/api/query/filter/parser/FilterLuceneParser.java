@@ -29,7 +29,7 @@ public class FilterLuceneParser implements FilterStringParser {
                         new StreamTokenizer(new StringReader(value));
                 final Node expression = parse();
                 this.tokenizer=null;
-                return expression.eval(fieldName);
+                return expression.eval(field);
             }
         }
         this.tokenizer = null;

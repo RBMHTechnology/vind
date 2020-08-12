@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.Set;
 
 import static com.rbmhtechnology.vind.api.query.filter.Filter.eq;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Thomas Kurz (tkurz@apache.org)
@@ -28,7 +29,7 @@ public class FilterTest {
 
         Assert.assertTrue(f instanceof Filter.AndFilter);
 
-        Assert.assertEquals(3, ((Filter.AndFilter)f).getChildren().size());
+        assertEquals(3, ((Filter.AndFilter)f).getChildren().size());
 
         Set<String> values = ImmutableSet.of("a","b","c","d");
 
@@ -36,7 +37,7 @@ public class FilterTest {
 
         Assert.assertTrue(filter instanceof Filter.AndFilter);
 
-        Assert.assertEquals(4, ((Filter.AndFilter)filter).getChildren().size());
+        assertEquals(4, ((Filter.AndFilter)filter).getChildren().size());
     }
 
     @Test
@@ -55,17 +56,21 @@ public class FilterTest {
                         .parse(
                                 "+customMetadata:(\"coveragedb=true\" AND NOT \"cloudTranscoding=true\")  "
                                 , testDocFactory);
+        assertEquals("AndFilter",vindFilter.getType());
 
         vindFilter = filterLuceneParser
                 .parse(
                         "+customMetadata:((\"meppGraph=true\" OR \"coveragedb=true\") AND NOT \"cloudTranscoding=true\")  "
                         , testDocFactory);
+        assertEquals("AndFilter",vindFilter.getType());
+
 
         vindFilter = filterLuceneParser
                 .parse(
                         "+customMetadata:((\"meppGraph=true\" OR \"coveragedb=true\") AND NOT ( \"netStorage=true\" AND \"cloudTranscoding=true\"))  "
 
                         , testDocFactory);
+        assertEquals("AndFilter",vindFilter.getType());
 
      }
 

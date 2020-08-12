@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.api.query.filter.parser;
 
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.model.FieldDescriptor;
 
 public class BinaryOperationNode implements Node {
     final private Node leftClause;
@@ -14,7 +15,7 @@ public class BinaryOperationNode implements Node {
     }
 
     @Override
-    public Filter eval(String field) {
+    public Filter eval(FieldDescriptor field) {
         switch (operator){
             case OR:
                 return Filter.or(leftClause.eval(field),rightClause.eval(field));
