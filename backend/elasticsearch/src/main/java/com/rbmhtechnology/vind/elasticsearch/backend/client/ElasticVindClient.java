@@ -1,13 +1,7 @@
-package com.rbmhtechnology.vind.elasticsearch.backend;
+package com.rbmhtechnology.vind.elasticsearch.backend.client;
 
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticRequestUtils;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.PainlessScript;
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
@@ -20,8 +14,6 @@ import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
@@ -42,67 +34,21 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
-public  class ElasticVindClient {
+public abstract class ElasticVindClient {
 
     private static final Logger log = LoggerFactory.getLogger(ElasticVindClient.class);
 
-    private String defaultIndex;
-    private final RestHighLevelClient client;
-    private final int port;
-    private final String host;
-    private final String scheme;
+    protected String defaultIndex;
+    protected RestHighLevelClient client;
+    protected int port;
+    protected String host;
+    protected String scheme;
     private long connectionTimeOut = 1000;
     private long clientTimOut = 1000;
-    private final String user;
-    private final String key;
 
-    private ElasticVindClient(String defaultIndex, int port, String scheme, String host, String user, String key) {
-        this.defaultIndex = defaultIndex;
-        this.port = port;
-        this.host = host;
-        this.scheme = scheme;
-        this.user = user;
-        this.key = key;
-
-        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-
-        if(Objects.nonNull(this.user) && Objects.nonNull(this.key)) {
-            credentialsProvider.setCredentials(AuthScope.ANY,
-                    new UsernamePasswordCredentials(user, key));
-        }
-
-
-        this.client = new RestHighLevelClient(
-                RestClient.builder(
-                        new HttpHost(host, port, scheme)
-                ).setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-                    @Override
-                    public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                        return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-                    }
-                })
-        );
-    }
-
-    private ElasticVindClient(int port, String scheme, String host, String user, String key) {
-        this.port = port;
-        this.host = host;
-        this.scheme = scheme;
-        this.user = user;
-        this.key = key;
-
-        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(user, key));
-        final RestClientBuilder restClientBuilder = RestClient.builder(new HttpHost(host, port, scheme))
-                .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider));
-
-        this.client = new RestHighLevelClient(restClientBuilder);
-    }
 
     public RestHighLevelClient getClient() {
         return client;
@@ -225,7 +171,7 @@ public  class ElasticVindClient {
         final SearchRequest request = ElasticRequestUtils.percolateDocumentRequest(defaultIndex, xContentDocs, query);
         return client.search(request, RequestOptions.DEFAULT);
     }
-    public SearchResponse percolatorDocQuer(List<Map<String, Object>> mapDoc) throws IOException {
+    public SearchResponse percolatorDocQuery(List<Map<String, Object>> mapDoc) throws IOException {
         return percolatorDocQuery(mapDoc, null);
     }
 
@@ -241,6 +187,16 @@ public  class ElasticVindClient {
     public SearchResponse query(SearchSourceBuilder query) throws IOException {
         final SearchRequest request = ElasticRequestUtils.getSearchRequest(defaultIndex, query);
         return client.search(request,RequestOptions.DEFAULT);
+    }
+
+    private XContentBuilder mapToXContentBuilder(Map<String, Object> doc) throws IOException {
+        final XContentBuilder builder = jsonBuilder().startObject();
+        for (Map.Entry<String, Object> entry : doc.entrySet()) {
+            String k = entry.getKey();
+            Object value = entry.getValue();
+            builder.field(k, value);
+        }
+        return builder.endObject();
     }
 
     public static class Builder {
@@ -263,17 +219,13 @@ public  class ElasticVindClient {
         }
 
         public ElasticVindClient build(String user, String key) {
-            return new ElasticVindClient(defaultIndex, port, scheme, host, user, key);
+            return ElasticVindClientBasicAuth.build(defaultIndex, port, scheme, host, user, key);
         }
-    }
-
-    private XContentBuilder mapToXContentBuilder(Map<String, Object> doc) throws IOException {
-        final XContentBuilder builder = jsonBuilder().startObject();
-        for (Map.Entry<String, Object> entry : doc.entrySet()) {
-            String k = entry.getKey();
-            Object value = entry.getValue();
-            builder.field(k, value);
+        public ElasticVindClient build(String apiKeyAuth) {
+            return ElasticVindClientApiKeyAuth.build(defaultIndex, port, scheme, host, apiKeyAuth);
         }
-        return builder.endObject();
+        public ElasticVindClient build() {
+            return ElasticVindClientNoAuth.build(defaultIndex, port, scheme, host);
+        }
     }
 }

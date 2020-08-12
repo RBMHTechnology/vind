@@ -13,6 +13,7 @@ import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearch;
+import com.rbmhtechnology.vind.elasticsearch.backend.client.ElasticVindClient;
 import com.rbmhtechnology.vind.model.InverseSearchQuery;
 import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearchQueryFactory;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;

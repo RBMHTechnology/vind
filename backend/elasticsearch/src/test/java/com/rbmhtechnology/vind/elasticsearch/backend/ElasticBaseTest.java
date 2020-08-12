@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
 import com.rbmhtechnology.vind.api.SearchServer;
+import com.rbmhtechnology.vind.elasticsearch.backend.client.ElasticVindClient;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
