@@ -6,7 +6,7 @@ import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.api.result.facet.TermFacetResult;
 import com.rbmhtechnology.vind.elasticsearch.backend.ElasticSearchServer;
-import com.rbmhtechnology.vind.elasticsearch.backend.ElasticVindClient;
+import com.rbmhtechnology.vind.elasticsearch.backend.client.ElasticVindClient;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.apache.commons.lang3.StringUtils;

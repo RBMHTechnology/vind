@@ -13,6 +13,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -85,12 +86,12 @@ public class ElasticVindClientTest  extends ElasticBaseTest{
         matchingDoc.put(FieldUtil.TYPE, "TestDoc");
 
         SearchResponse percolatorResponse =
-                client.percolatorDocQuery(matchingDoc);
+                client.percolatorDocQuery(Collections.singletonList(matchingDoc));
         assertNotNull(percolatorResponse);
         assertEquals(2, percolatorResponse.getHits().getTotalHits().value);
 
         percolatorResponse =
-                client.percolatorDocQuery(matchingDoc, termQuery("_type_", "_percolator_query"));
+                client.percolatorDocQuery(Collections.singletonList(matchingDoc), termQuery("_type_", "_percolator_query"));
         assertNotNull(percolatorResponse);
         assertEquals(1, percolatorResponse.getHits().getTotalHits().value);
         assertEquals("testQueryMetadata", percolatorResponse.getHits().getHits()[0].getId());
@@ -98,7 +99,7 @@ public class ElasticVindClientTest  extends ElasticBaseTest{
         final Map<String, Object> notMatchingDoc = new HashMap<>();
         notMatchingDoc.put(FieldUtil.ID, "BB-2X3451");
         notMatchingDoc.put(FieldUtil.TYPE, "notMatching");
-        percolatorResponse = client.percolatorDocQuery(notMatchingDoc);
+        percolatorResponse = client.percolatorDocQuery(Collections.singletonList(notMatchingDoc));
         assertNotNull(percolatorResponse);
         assertEquals(0, percolatorResponse.getHits().getTotalHits().value);
 

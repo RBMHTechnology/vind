@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
 import com.rbmhtechnology.vind.api.SearchServer;
+import com.rbmhtechnology.vind.elasticsearch.backend.client.ElasticVindClient;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
@@ -23,7 +24,7 @@ public class ElasticBaseTest {
 
         client = new ElasticVindClient.Builder("http://" + container.getHttpHostAddress())
                 .setDefaultIndex("vind")
-                .build("elastic", "changeme");
+                .buildWithBasicAuth("elastic", "changeme");
 
         client.createIndex("vind");
 
