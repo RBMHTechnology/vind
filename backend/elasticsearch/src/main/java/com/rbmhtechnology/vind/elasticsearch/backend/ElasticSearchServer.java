@@ -46,6 +46,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.http.util.Asserts;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
@@ -73,6 +74,7 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil.createEmptyDocument;
 
@@ -634,6 +636,15 @@ public class ElasticSearchServer extends SearchServer {
             }
 
             final BulkResponse response = this.elasticSearchClient.add(document);
+            if(response.hasFailures()) {
+                final List<String> failureMessages = Stream.of(response.getItems())
+                        .filter(BulkItemResponse::isFailed)
+                        .map(BulkItemResponse::getFailureMessage)
+                        .collect(Collectors.toList());
+                log.error("Cannot index document {}: {}", document.get(FieldUtil.ID) , failureMessages.get(0));
+                throw new SearchServerException("Cannot index document " + document.get(FieldUtil.ID) + ": " + failureMessages.get(0));
+
+            }
             elapsedTime.stop();
             return new IndexResult(response.getTook().getMillis()).setElapsedTime(elapsedTime.getTime());
 
@@ -657,6 +668,15 @@ public class ElasticSearchServer extends SearchServer {
             }
 
             final BulkResponse response =this.elasticSearchClient.add(jsonDocs) ;
+            if(response.hasFailures()) {
+                final List<String> failureMessages = Stream.of(response.getItems())
+                        .filter(BulkItemResponse::isFailed)
+                        .map(BulkItemResponse::getFailureMessage)
+                        .collect(Collectors.toList());
+                log.error("Cannot index {} documents: {}",failureMessages.size() , String.join(" - ", failureMessages));
+                throw new SearchServerException("Cannot index " + failureMessages.size() + "documents: " + String.join(" - ", failureMessages));
+
+            }
             elapsedTime.stop();
             return new IndexResult(elapsedTime.getTime()).setElapsedTime(elapsedTime.getTime());
 
