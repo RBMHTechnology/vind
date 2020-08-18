@@ -130,26 +130,28 @@ public class ElasticSearchServer extends SearchServer {
                         try {
                             log.info("AutoGenerate elastic collection {}", client.getDefaultIndex());
                             client.createIndex(client.getDefaultIndex());
-                        } catch (IOException e) {
+                        } catch (Exception e) {
+                            log.error("Cannot create connection {}", client.getDefaultIndex(), e);
                             throw new SearchServerException(
                                     String.format(
                                             "Error when creating collection %s: %s", client.getDefaultIndex(), e.getMessage()
                                     ), e
                             );
                         }
-
                         log.info("Collection {} created successfully", client.getDefaultIndex());
                     } else {
+                        log.error("Index does not exists, try to enable auto-generation");
                         throw new SearchServerException("Index does not exists, try to enable auto-generation");
                     }
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
+                log.error("Cannot connect to Elasticsearch server: index check failed", e);
                 throw new SearchServerException("Cannot connect to Elasticsearch server: index check failed", e);
             }
 
             try {
                 checkVersionAndMappings();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.error("Elasticsearch server Schema validation error: {}", e.getMessage(), e);
                 throw new SearchServerException(String.format("Elastic search Schema validation error: %s", e.getMessage()), e);
             }

@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
 import com.rbmhtechnology.vind.api.SearchServer;
+import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.elasticsearch.backend.client.ElasticVindClient;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -13,9 +14,25 @@ public class ElasticBaseTest {
     protected static ElasticVindClient client;
     protected static SearchServer server;
 
-
     @BeforeClass
     public static void setUp() throws IOException {
+        setUpContainerClient();
+    }
+
+    private static void setUpApiClient() {
+        client = new ElasticVindClient.Builder("host")
+                .setDefaultIndex("indexname")
+                .buildWithApiKeyAuth(
+                        "id",
+                        "key"
+                );
+
+        SearchConfiguration.set(SearchConfiguration.SERVER_COLLECTION_AUTOCREATE, true);
+
+        server = new ElasticSearchServer(client);
+    }
+
+    private static void setUpContainerClient() throws IOException {
         // Create the elasticsearch container.
         container = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:7.6.1");
 
@@ -29,7 +46,6 @@ public class ElasticBaseTest {
         client.createIndex("vind");
 
         server = new ElasticSearchServer(client);
-
     }
 
     @AfterClass
@@ -37,7 +53,9 @@ public class ElasticBaseTest {
         //stop the client
         client.close();
         // Stop the container.
-        container.stop();
+        if(container != null) {
+            container.stop();
+        }
     }
 
 }
