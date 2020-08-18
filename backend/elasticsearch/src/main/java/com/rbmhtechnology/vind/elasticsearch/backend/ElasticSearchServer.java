@@ -259,6 +259,7 @@ public class ElasticSearchServer extends SearchServer {
     @Override
     public DeleteResult execute(Delete delete, DocumentFactory factory) {
         try {
+            createDocumentFactoryFootprint(factory);
             final StopWatch elapsedTime = StopWatch.createStarted();
             elasticClientLogger.debug(">>> delete({})", delete);
             final QueryBuilder deleteQuery = ElasticQueryBuilder.buildFilterQuery(delete.getQuery(), factory, delete.getUpdateContext());
@@ -286,6 +287,7 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
+        createDocumentFactoryFootprint(factory);
         final StopWatch elapsedtime = StopWatch.createStarted();
         final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory);
 
@@ -374,6 +376,7 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory factory) {
+        createDocumentFactoryFootprint(factory);
         final StopWatch elapsedtime = StopWatch.createStarted();
         final SearchSourceBuilder query = ElasticQueryBuilder.buildSuggestionQuery(search, factory);
         //query
@@ -529,7 +532,7 @@ public class ElasticSearchServer extends SearchServer {
         Asserts.notNull(query,"Query should not be null.");
         final StopWatch elapsedTime = StopWatch.createStarted();
 
-        preparePercolator(query.getFactory());
+        createDocumentFactoryFootprint(query.getFactory());
 
         final QueryBuilder elasticQuery =
                 ElasticQueryBuilder.buildFilterQuery(query.getQuery(), query.getFactory(), null);
@@ -701,7 +704,7 @@ public class ElasticSearchServer extends SearchServer {
         }
     }
 
-    private void preparePercolator(DocumentFactory factory) {
+    private void createDocumentFactoryFootprint(DocumentFactory factory) {
         final SearchSourceBuilder query = ElasticQueryBuilder.buildPercolatorQueryReadiness(factory);
 
         try {

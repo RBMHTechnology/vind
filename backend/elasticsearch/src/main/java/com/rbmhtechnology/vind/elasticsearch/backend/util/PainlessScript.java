@@ -9,14 +9,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.SortedSet;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -100,10 +104,18 @@ public class PainlessScript {
                         .toArray());
             }
 
-            if(String.class.isAssignableFrom(predicateType)) {
-                return "\"" + predicate + "\"";
+            final Object elasticPredicate = DocumentUtil.toElasticType(predicate);
+            if(String.class.isAssignableFrom(elasticPredicate.getClass())) {
+                return "'" + elasticPredicate + "'";
             }
-            return   predicate.toString() ;
+            if(Date.class.isAssignableFrom(elasticPredicate.getClass())) {
+                final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+                return "'" + formatter.format(elasticPredicate) + "'";
+            }
+
+
+            return   elasticPredicate.toString() ;
         }
 
         @Override
@@ -216,12 +228,12 @@ public class PainlessScript {
                         break;
                     case remove:
                         if(Objects.nonNull(op.getValue())){
-//                            if(!field.isMultiValue()) {
-//                                log.warn("Provided field cannot be removed values: field {} is not multivalued" , field.getName());
-//                                errors.add(String.format(
-//                                        "Provided field cannot be removed values: field %s is not multivalued",
-//                                        field.getName()));
-//                            }
+                            if(!field.isMultiValue()) {
+                                log.warn("Provided field cannot be removed values: field {} is not multivalued" , field.getName());
+                                errors.add(String.format(
+                                        "Provided field cannot be removed values: field %s is not multivalued",
+                                        field.getName()));
+                            }
                         }
                         break;
                     case removeregex:

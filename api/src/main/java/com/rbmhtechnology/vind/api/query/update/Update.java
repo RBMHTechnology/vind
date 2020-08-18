@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.api.query.update;
 
+import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.model.*;
 
 import java.util.*;
@@ -297,7 +298,22 @@ public class Update {
         final SortedSet<UpdateOperation> updateOperations =
                 Objects.isNull(fieldOperations.get(context)) ? new TreeSet<>() : fieldOperations.get(context);
 
-        updateOperations.add(new UpdateOperation(UpdateOperations.set, t));
+        for( Filter.Scope scope : Filter.Scope.values()) {
+            switch (scope) {
+                case Suggest:
+                    if(descriptor.isSuggest() && descriptor.getSuggestFunction() != null)
+                        updateOperations.add(new UpdateOperation(UpdateOperations.set, descriptor.getSuggestFunction().apply(t)));
+                    break;
+                case Facet:
+                    if(descriptor.isFacet() && descriptor.getFacetFunction() != null)
+                        updateOperations.add(new UpdateOperation(UpdateOperations.set, descriptor.getFacetFunction().apply(t)));
+                    break;
+                case Filter:
+                    if(descriptor.isAdvanceFilter() && descriptor.getAdvanceFilter() != null)
+                        updateOperations.add(new UpdateOperation(UpdateOperations.set, descriptor.getAdvanceFilter().apply(t)));
+                    break;
+            }
+        }
         fieldOperations.put(context,updateOperations);
         contextualizedOptions.put(descriptor,fieldOperations);
         return this;

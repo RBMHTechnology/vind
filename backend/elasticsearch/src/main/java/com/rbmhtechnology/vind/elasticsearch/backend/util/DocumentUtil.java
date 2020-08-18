@@ -107,8 +107,17 @@ public class DocumentUtil {
             addFieldToDoc( docMap, (ComplexFieldDescriptor) descriptor);
         } else {
             Optional.ofNullable(FieldUtil.getFieldName(descriptor, null))
-                    .ifPresent(fieldName ->
-                            docMap.put(fieldName.replaceAll("\\.\\w+" , ""), toElasticType("0"))
+                    .ifPresent(fieldName -> {
+                        if (ZonedDateTime.class.isAssignableFrom(descriptor.getType())) {
+                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType("00-00-0000"));
+                        }else if (Date.class.isAssignableFrom(descriptor.getType())) {
+                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType("00-00-0000"));
+                        } else if (LatLng.class.isAssignableFrom(descriptor.getType())) {
+                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType("0,0"));
+                        }else {
+                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType("0"));
+                        }
+                    }
                     );
         }
     }
@@ -143,8 +152,15 @@ public class DocumentUtil {
         Stream.of(FieldUtil.Fieldname.UseCase.values()).forEach( useCase -> {
             final String name = FieldUtil.getFieldName(descriptor, useCase, null);
             Optional.ofNullable(name)
-                    .ifPresent( fieldName ->
-                            docMap.put(fieldName.replaceAll("\\.\\w+" , ""), toElasticType("0", descriptor, useCase))
+                    .ifPresent( fieldName -> {
+                        if (ZonedDateTime.class.isAssignableFrom(descriptor.getType())) {
+                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType("00-00-0000"));
+                        } if (LatLng.class.isAssignableFrom(descriptor.getType())) {
+                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType("0,0"));
+                        }else {
+                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType("0"));
+                        }
+                    }
             );
         });
     }
@@ -161,7 +177,7 @@ public class DocumentUtil {
                         });
     }
 
-    private static Object toElasticType(Object value) {
+    protected static Object toElasticType(Object value) {
         if(value!=null) {
             if(Object[].class.isAssignableFrom(value.getClass())){
                 return toElasticType(Arrays.asList((Object[])value));
@@ -287,7 +303,6 @@ public class DocumentUtil {
     public static Document buildVindDoc(SearchHit hit , DocumentFactory factory, String searchContext) {
 
         final Document document = buildVindDoc(hit.getSourceAsMap(), factory, searchContext);
-
 
         // Setting score if present in result
         document.setScore(hit.getScore());

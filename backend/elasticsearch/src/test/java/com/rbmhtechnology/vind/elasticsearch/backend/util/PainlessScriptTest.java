@@ -11,6 +11,6 @@ public class PainlessScriptTest {
     public void testGetPredicateString() {
         final String[] predicate = {"tradition", "survival"};
         String stringPredicate = getStringPredicate(predicate, String.class);
-        assertEquals("[\"tradition\", \"survival\"]", stringPredicate);
+        assertEquals("['tradition', 'survival']", stringPredicate);
     }
 }
