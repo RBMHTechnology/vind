@@ -210,11 +210,11 @@ public class MonitoringSearchServer extends SearchServer {
     }
 
     @Override
-    public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
+    protected <T> BeanSearchResult<T> executeInternal(FulltextSearch search, Class<T> c) {
         return execute(search,c,this.session);
     }
 
-    public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c, Session session) {
+    protected <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c, Session session) {
         final ZonedDateTime start = ZonedDateTime.now();
         log.debug("Monitoring server is executing FulltextSearch at {}:{}:{} - {}.{}.{} ",
                 start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());
@@ -264,7 +264,7 @@ public class MonitoringSearchServer extends SearchServer {
     }
 
     @Override
-    public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
+    public SearchResult executeInternal(FulltextSearch search, DocumentFactory factory) {
         return execute(search,factory,this.session);
     }
 
@@ -613,5 +613,15 @@ public class MonitoringSearchServer extends SearchServer {
     public MonitoringSearchServer setSilent(boolean silent) {
         this.silent = silent;
         return this;
+    }
+
+    @Override
+    protected FulltextSearch smartParse(FulltextSearch search, DocumentFactory factory) {
+        return search;
+    }
+
+    @Override
+    protected <T> FulltextSearch smartParse(FulltextSearch search, Class<T> c) {
+        return search;
     }
 }

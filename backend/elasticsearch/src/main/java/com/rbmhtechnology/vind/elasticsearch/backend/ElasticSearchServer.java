@@ -281,14 +281,14 @@ public class ElasticSearchServer extends SearchServer {
     }
 
     @Override
-    public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
+    protected <T> BeanSearchResult<T> executeInternal(FulltextSearch search, Class<T> c) {
         final DocumentFactory factory = AnnotationUtil.createDocumentFactory(c);
         final SearchResult docResult = this.execute(search, factory);
         return docResult.toPojoResult(docResult, c);
     }
 
     @Override
-    public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
+    protected SearchResult executeInternal(FulltextSearch search, DocumentFactory factory) {
         createDocumentFactoryFootprint(factory);
         final StopWatch elapsedtime = StopWatch.createStarted();
         final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory);

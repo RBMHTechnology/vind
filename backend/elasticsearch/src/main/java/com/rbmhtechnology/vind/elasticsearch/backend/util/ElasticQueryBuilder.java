@@ -88,7 +88,9 @@ public class ElasticQueryBuilder {
 
         //build full text disMax query
         final QueryStringQueryBuilder fullTextStringQuery = QueryBuilders.queryStringQuery(search.getSearchString())
-                .minimumShouldMatch(search.getMinimumShouldMatch()); //mm
+                .minimumShouldMatch(search.getMinimumShouldMatch())
+                .escape(true)
+                ; //mm
         // Set fulltext fields
         factory.getFields().values().stream()
                 .filter(FieldDescriptor::isFullText)

@@ -290,12 +290,12 @@ public class CompletableSearchServer extends SearchServer {
     }
 
     @Override
-    public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
+    protected <T> BeanSearchResult<T> executeInternal(FulltextSearch search, Class<T> c) {
         return backend.execute(search, c);
     }
 
     @Override
-    public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
+    protected SearchResult executeInternal(FulltextSearch search, DocumentFactory factory) {
         return backend.execute(search, factory);
     }
 
@@ -387,6 +387,16 @@ public class CompletableSearchServer extends SearchServer {
     @Override
     public Class getServiceProviderClass() {
         return backend.getServiceProviderClass();
+    }
+
+    @Override
+    protected FulltextSearch smartParse(FulltextSearch search, DocumentFactory factory) {
+        return search;
+    }
+
+    @Override
+    protected <T> FulltextSearch smartParse(FulltextSearch search, Class<T> c) {
+        return search;
     }
 
 }

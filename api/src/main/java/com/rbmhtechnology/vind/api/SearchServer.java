@@ -271,7 +271,15 @@ public abstract class SearchServer implements Closeable {
      * @return {@link BeanSearchResult} storing the search results with type T
      * @throws SearchServerException if not possible to execute the full text search.
      */
-    public abstract <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c);
+    public final <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
+        if(search.isSmartParsing()) {
+            return executeInternal(smartParse(search, c), c);
+        } else {
+            return executeInternal(search, c);
+        }
+    }
+
+    protected abstract <T> BeanSearchResult<T> executeInternal(FulltextSearch search, Class<T> c);
 
     /**
      * Executes a fulltext search based on an {@link DocumentFactory}.
@@ -280,7 +288,15 @@ public abstract class SearchServer implements Closeable {
      * @return {@link SearchResult} storing the search results with type T
      * @throws SearchServerException if not possible to execute the full text search.
      */
-    public abstract SearchResult execute(FulltextSearch search, DocumentFactory factory);
+    public final SearchResult execute(FulltextSearch search, DocumentFactory factory) {
+        if(search.isSmartParsing()) {
+            return executeInternal(smartParse(search, factory), factory);
+        } else {
+            return executeInternal(search, factory);
+        }
+    }
+
+    protected abstract SearchResult executeInternal(FulltextSearch search, DocumentFactory factory);
 
     /**
      * Return the raw query sent produced by the server implementation.
@@ -400,5 +416,15 @@ public abstract class SearchServer implements Closeable {
     public abstract void close();
 
     public abstract Class<? extends ServiceProvider> getServiceProviderClass();
+
+    protected FulltextSearch smartParse(FulltextSearch search, DocumentFactory factory) {
+        log.warn("Smart Parsing is not enabled by search server {}", this.getClass().getSimpleName());
+        return search;
+    }
+
+    protected <T> FulltextSearch smartParse(FulltextSearch search, Class<T> c) {
+        log.warn("Smart Parsing for Beans is not enabled by search server {}", this.getClass().getSimpleName());
+        return search;
+    }
 
 }
