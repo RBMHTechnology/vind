@@ -103,7 +103,7 @@ public abstract class ElasticVindClient {
     }
 
     public BulkResponse add(Map<String, Object> jsonDoc) throws IOException {
-        final BulkRequest bulkIndexRequest = new BulkRequest();
+        final BulkRequest bulkIndexRequest = new BulkRequest(defaultIndex);
         bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(defaultIndex,jsonDoc));
         bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
         bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
@@ -111,7 +111,7 @@ public abstract class ElasticVindClient {
     }
 
     public BulkResponse add(List<Map<String, Object>> jsonDocs) throws IOException {
-        final BulkRequest bulkIndexRequest = new BulkRequest();
+        final BulkRequest bulkIndexRequest = new BulkRequest(defaultIndex);
         jsonDocs.forEach( jsonDoc -> bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(defaultIndex,jsonDoc)) );
         bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
         bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
@@ -157,7 +157,7 @@ public abstract class ElasticVindClient {
         metadata.put("query", query);
         final XContentBuilder queryDoc = mapToXContentBuilder(metadata);
 
-        final BulkRequest bulkIndexRequest = new BulkRequest();
+        final BulkRequest bulkIndexRequest = new BulkRequest(defaultIndex);
         bulkIndexRequest.add(ElasticRequestUtils.addPercolatorQueryRequest(defaultIndex, queryId, queryDoc));
         bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
         bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
