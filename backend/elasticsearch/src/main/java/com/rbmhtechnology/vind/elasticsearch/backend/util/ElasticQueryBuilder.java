@@ -48,6 +48,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilde
 import org.elasticsearch.search.aggregations.metrics.ExtendedStatsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.sort.ScriptSortBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -393,7 +394,25 @@ public class ElasticQueryBuilder {
                                search.getGeoDistance().getLocation().getLng())
                        .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
            case "ScoredDate":
-               throw new NotImplementedException();
+               final FieldDescriptor descriptor = ((Sort.SpecialSort.ScoredDate) sort).getDescriptor();
+               final String sortDateField = Optional.ofNullable(descriptor)
+                       .filter(FieldDescriptor::isSort)
+                       .filter( field -> Date.class.isAssignableFrom(field.getType()) || ZonedDateTime.class.isAssignableFrom(field.getType()))
+                       .map( field -> FieldUtil.getFieldName(descriptor, UseCase.Sort, searchContext))
+                       .orElse(((Sort.SpecialSort.ScoredDate) sort).getField());
+               final Map<String, Object> parameters = new HashMap<>();
+               parameters.put("field",sortDateField);
+               parameters.put("a",4);
+               parameters.put("m",1.9e-10);
+               parameters.put("b",0.1);
+               final Script painlessDateSort = new Script(
+                       ScriptType.INLINE,
+                       "painless",
+                       "_score*(params.a/(params.m*(new Date().getTime()-doc[params.field].value.millis)+params.b))",
+                       parameters);
+               return SortBuilders
+                       .scriptSort(painlessDateSort, ScriptSortBuilder.ScriptSortType.NUMBER)
+                       .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
            default:
                throw  new SearchServerException(String
                         .format("Unable to parse Vind sort '%s' to ElasticSearch sorting: sort type not supported.",
