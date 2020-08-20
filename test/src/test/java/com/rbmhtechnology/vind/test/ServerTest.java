@@ -8,6 +8,7 @@ import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
+import com.rbmhtechnology.vind.api.query.facet.Facets;
 import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
@@ -2515,4 +2516,5 @@ public class ServerTest {
         result = server.execute(search,assets);
         assertEquals("1", result.getResults().get(0).getId());
     }
+
 }

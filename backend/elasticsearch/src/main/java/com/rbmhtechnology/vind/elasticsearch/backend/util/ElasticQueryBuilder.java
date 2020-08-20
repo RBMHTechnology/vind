@@ -38,6 +38,8 @@ import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.BucketOrder;
+import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregationBuilder;
@@ -48,16 +50,11 @@ import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilde
 import org.elasticsearch.search.aggregations.metrics.ExtendedStatsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
-import org.elasticsearch.search.sort.ScriptSortBuilder;
-import org.elasticsearch.search.sort.SortBuilder;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.search.suggest.Suggest.Suggestion.Entry.Option;
 import org.elasticsearch.search.suggest.SuggestBuilder;
 import org.elasticsearch.search.suggest.SuggestBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -197,7 +194,7 @@ public class ElasticQueryBuilder {
         // sorting
         if(search.hasSorting()) {
             search.getSorting().stream()
-                    .map( sort -> buildSort(sort, search, factory, searchContext))
+                    .map( sort -> SortUtils.buildSort(sort, search, factory, searchContext))
                     .forEach(searchSource::sort);
         }
         ////boost functions
@@ -366,60 +363,6 @@ public class ElasticQueryBuilder {
             }
     }
 
-    private static SortBuilder buildSort(Sort sort, FulltextSearch search, DocumentFactory factory, String searchContext) {
-       switch (sort.getType()) {
-            case "SimpleSort":
-                final FieldDescriptor<?> simpleSortField = factory.getField(((Sort.SimpleSort) sort).getField());
-                final String sortFieldName = Optional.ofNullable(simpleSortField)
-                        .filter(FieldDescriptor::isSort)
-                        .map(descriptor -> FieldUtil.getFieldName(descriptor, UseCase.Sort, searchContext))
-                        .orElse(((Sort.SimpleSort) sort).getField());
-                return SortBuilders
-                        .fieldSort(sortFieldName)
-                        .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
-            case "DescriptorSort":
-                final String descriptorFieldName = Optional.ofNullable(FieldUtil.getFieldName(((Sort.DescriptorSort) sort).getDescriptor(), UseCase.Sort, searchContext))
-                        .orElseThrow(() ->
-                                new RuntimeException("The field '" + ((Sort.DescriptorSort) sort).getDescriptor().getName() + "' is not set as sortable"));
-                return SortBuilders
-                        .fieldSort(descriptorFieldName)
-                        .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
-           case "DistanceSort":
-               Optional.ofNullable(search.getGeoDistance())
-                       .orElseThrow(() -> new SearchServerException("Sorting by distance requires a geodistance set"));
-               final String distanceFieldName = FieldUtil.getFieldName(search.getGeoDistance().getField(), null, searchContext);
-               return SortBuilders
-                       .geoDistanceSort(distanceFieldName,
-                               search.getGeoDistance().getLocation().getLat(),
-                               search.getGeoDistance().getLocation().getLng())
-                       .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
-           case "ScoredDate":
-               final FieldDescriptor descriptor = ((Sort.SpecialSort.ScoredDate) sort).getDescriptor();
-               final String sortDateField = Optional.ofNullable(descriptor)
-                       .filter(FieldDescriptor::isSort)
-                       .filter( field -> Date.class.isAssignableFrom(field.getType()) || ZonedDateTime.class.isAssignableFrom(field.getType()))
-                       .map( field -> FieldUtil.getFieldName(descriptor, UseCase.Sort, searchContext))
-                       .orElse(((Sort.SpecialSort.ScoredDate) sort).getField());
-               final Map<String, Object> parameters = new HashMap<>();
-               parameters.put("field",sortDateField);
-               parameters.put("a",4);
-               parameters.put("m",1.9e-10);
-               parameters.put("b",0.1);
-               final Script painlessDateSort = new Script(
-                       ScriptType.INLINE,
-                       "painless",
-                       "_score*(params.a/(params.m*(new Date().getTime()-doc[params.field].value.millis)+params.b))",
-                       parameters);
-               return SortBuilders
-                       .scriptSort(painlessDateSort, ScriptSortBuilder.ScriptSortType.NUMBER)
-                       .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
-           default:
-               throw  new SearchServerException(String
-                        .format("Unable to parse Vind sort '%s' to ElasticSearch sorting: sort type not supported.",
-                                sort.getType()));
-       }
-    }
-
     private static List<AggregationBuilder> buildElasticAggregations(String name, Facet vindFacet, DocumentFactory factory, UseCase  useCase, String searchContext, int minCount) {
         final String contextualizedFacetName = Stream.of(searchContext, name)
                 .filter(Objects::nonNull)
@@ -439,23 +382,27 @@ public class ElasticQueryBuilder {
 
                 Optional.ofNullable(termFacet.getOption()).ifPresent(option -> setTermOptions(termsAgg, option));
 
+                addSortToAggregation(vindFacet, searchContext, termsAgg);
+
                 return Collections.singletonList(termsAgg);
             case "TypeFacet":
                 final Facet.TypeFacet typeFacet = (Facet.TypeFacet) vindFacet;
-                return Collections.singletonList(
-                        AggregationBuilders
+                final TermsAggregationBuilder typeAgg = AggregationBuilders
                         .terms(name)
                         .field(FieldUtil.TYPE)
-                        .minDocCount(minCount));
+                        .minDocCount(minCount);
+                addSortToAggregation(vindFacet, searchContext, typeAgg);
+                return Collections.singletonList(typeAgg);
 
             case "QueryFacet":
                 final Facet.QueryFacet queryFacet = (Facet.QueryFacet) vindFacet;
                 final Filter filter = queryFacet.getFilter();
-                return Collections.singletonList(
-                        AggregationBuilders
+                final FiltersAggregationBuilder queryAgg = AggregationBuilders
                         .filters(
                                 contextualizedFacetName,
-                                filterMapper(filter, factory, UseCase.valueOf(filter.getFilterScope().name()), searchContext)));
+                                filterMapper(filter, factory, UseCase.valueOf(filter.getFilterScope().name()), searchContext));
+
+                return Collections.singletonList(queryAgg);
 
             case "NumericRangeFacet":
                 final Facet.NumericRangeFacet<?> numericRangeFacet = (Facet.NumericRangeFacet) vindFacet;
@@ -465,6 +412,8 @@ public class ElasticQueryBuilder {
                         .field(FieldUtil.getFieldName(numericRangeFacet.getFieldDescriptor(), useCase, searchContext))
                         .interval(numericRangeFacet.getGap().doubleValue())
                         .minDocCount(minCount);
+
+                addSortToAggregation(vindFacet, searchContext, rangeAggregation);
 
                 final RangeAggregationBuilder numericIntervalRangeAggregation = AggregationBuilders
                         .range(contextualizedFacetName)
@@ -500,6 +449,8 @@ public class ElasticQueryBuilder {
                         .keyed(true)
                         .field(FieldUtil.getFieldName(zoneDateRangeFacet.getFieldDescriptor(), useCase, searchContext));
 
+                addSortToAggregation(vindFacet, searchContext, histogramDateRangeAggregation);
+
                 dateRangeAggregation.subAggregation(histogramDateRangeAggregation);
 
                 return Collections.singletonList(dateRangeAggregation);
@@ -523,7 +474,9 @@ public class ElasticQueryBuilder {
                                  .minutes(new Long(utilDateRangeFacet.getGapDuration().toMinutes()).intValue()))
                          .field(FieldUtil.getFieldName(utilDateRangeFacet.getFieldDescriptor(), useCase, searchContext));
 
-                 utilDateRangeAggregation.subAggregation(histogramUtilDateRangeAggregation);
+                 addSortToAggregation(vindFacet, searchContext, histogramUtilDateRangeAggregation);
+
+                utilDateRangeAggregation.subAggregation(histogramUtilDateRangeAggregation);
 
                 return Collections.singletonList(utilDateRangeAggregation);
 
@@ -558,6 +511,8 @@ public class ElasticQueryBuilder {
                         .keyed(true)
                         .field(FieldUtil.getFieldName(dateMathRangeFacet.getFieldDescriptor(), useCase, searchContext));
                 dateMathDateRangeAggregation.subAggregation(histogramDateMathDateRangeAggregation);
+
+                addSortToAggregation(vindFacet, searchContext, histogramDateMathDateRangeAggregation);
 
                 return Collections.singletonList(dateMathDateRangeAggregation);
 
@@ -636,6 +591,32 @@ public class ElasticQueryBuilder {
                                 "Error mapping Vind facet to Elasticsearch aggregation: Unknown facet type %s",
                                 vindFacet.getType()));
         }
+    }
+
+    private static void addSortToAggregation(Facet vindFacet, String searchContext, TermsAggregationBuilder termsAgg) {
+        Optional.ofNullable(vindFacet.getSort())
+                .ifPresent(sort -> {
+                    final AggregationBuilder sortAggregation = SortUtils.buildFacetSort(sort, searchContext);
+                    termsAgg.order(BucketOrder.aggregation(sortAggregation.getName(), Sort.Direction.Asc.equals(sort.getDirection())));
+                    termsAgg.subAggregation(sortAggregation);
+                });
+    }
+    private static void addSortToAggregation(Facet vindFacet, String searchContext, HistogramAggregationBuilder agg) {
+        Optional.ofNullable(vindFacet.getSort())
+                .ifPresent(sort -> {
+                    final AggregationBuilder sortAggregation = SortUtils.buildFacetSort(sort, searchContext);
+                    agg.order(BucketOrder.aggregation(sortAggregation.getName(), Sort.Direction.Asc.equals(sort.getDirection())));
+                    agg.subAggregation(sortAggregation);
+                });
+    }
+
+    private static void addSortToAggregation(Facet vindFacet, String searchContext, DateHistogramAggregationBuilder agg) {
+        Optional.ofNullable(vindFacet.getSort())
+                .ifPresent(sort -> {
+                    final AggregationBuilder sortAggregation = SortUtils.buildFacetSort(sort, searchContext);
+                    agg.order(BucketOrder.aggregation(sortAggregation.getName(), Sort.Direction.Asc.equals(sort.getDirection())));
+                    agg.subAggregation(sortAggregation);
+                });
     }
 
     private static List<AggregationBuilder> getStatsAggregationBuilders(String searchContext, String contextualizedFacetName, UseCase useCase,  Facet.StatsFacet statsFacet) {
