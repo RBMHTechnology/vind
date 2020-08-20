@@ -42,3 +42,4 @@ buildNumber.properties
 
 solr-5.5.1/
 testout
+.sdkmanrc
