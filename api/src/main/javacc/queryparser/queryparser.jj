@@ -1,0 +1,51 @@
+options {
+  LOOKAHEAD = 1;
+}
+
+PARSER_BEGIN(QueryParser)
+
+package com.rbmhtechnology.vind.parser.queryparser;
+
+public class QueryParser {
+    public Query run() throws ParseException {
+        return query();
+    }
+};
+
+PARSER_END(QueryParser)
+
+TOKEN :
+{
+  <AND:              "AND">
+| <OR:               "OR">
+| <NOT:              ("NOT" | "!")>
+| <PLUS:             "+">
+| <MINUS:            "-" >
+| <WS :              " " | "\t" | "\n" | "\r" >
+| <LBRACKET:         "(">
+| <RBRACKET:         ")">
+| <TERM:             ["0"-"9","A"-"Z","a"-"z","_","-","\u0080"-"\uffff"] >
+| <FIELD:             ["0"-"9","A"-"Z","a"-"z","_","-"] ":" >
+| <QUOTE:           "\"">
+}
+
+Query query() :
+{
+    Query q = new Query();}
+{
+    {q.add(clause());} ((<WS>)+ {q.add(clause());})* (<WS>)+<EOF>
+    {return q;}
+}
+
+Clause clause() :
+{Query query = null;boolean negated = false;Token field = null;Token value = null;}
+{
+    ((<PLUS> |  {negated=true;} "-") (<WS>)*)?
+    (field=<FIELD> (<WS>)*)?
+    (
+        value=<TERM> | ( <LBRACKET> (<WS>)* query=query() (<WS>)* <RBRACKET> )
+    )
+  {return value != null ?
+            new SimpleTermClause(negated, field != null ? field.image : null, value.image) :
+            new ComplexTermClause(negated, field != null ? field.image : null, query);}
+}

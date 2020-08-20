@@ -56,8 +56,8 @@ public class SmartParsingTest {
 
         server.commit();
 
-        Assert.assertEquals(3, server.execute(Search.fulltext("title"), factory).getNumOfResults());
-        Assert.assertEquals(1, server.execute(Search.fulltext("category:\"Cat 2\""), factory).getNumOfResults());
+        Assert.assertEquals(3, server.execute(Search.fulltext("title").smartParsing(true), factory).getNumOfResults());
+        Assert.assertEquals(1, server.execute(Search.fulltext("category:\"Cat 2\"").smartParsing(true), factory).getNumOfResults());
     }
 
     public Document getDoc(String id, String title, ZonedDateTime created, String ... cats) {
