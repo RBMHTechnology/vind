@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.model.*;
 
 import org.slf4j.Logger;
@@ -37,6 +38,7 @@ public abstract class Facet {
     protected String name;
     protected String[] tagedPivots = new String[0];
     protected String facetName;
+    protected Sort sort;
 
     public String getType() {
         return this.getClass().getSimpleName();
@@ -87,6 +89,23 @@ public abstract class Facet {
         return facetName;
     }
 
+    /**
+     * Gets the configured special sorting for the facet
+     * @return {@link Sort.SpecialSort} configured for the facet or null if non is set.
+     */
+    public Sort getSort() {
+        return sort;
+    }
+
+    /**
+     * Sets the sorting for the defined facet.
+     * @param sort {@link Sort.SpecialSort} added to the Facet
+     * @return the current facet with the sorting configured.
+     */
+    public Facet setSort(Sort sort) {
+        this.sort = sort;
+        return this;
+    }
 
     /**
      * This class allows to perform the basic term facet query on one field.
