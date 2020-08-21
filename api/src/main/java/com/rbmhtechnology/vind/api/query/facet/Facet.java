@@ -38,7 +38,7 @@ public abstract class Facet {
     protected String name;
     protected String[] tagedPivots = new String[0];
     protected String facetName;
-    protected Sort.SpecialSort sort;
+    protected Sort sort;
 
     public String getType() {
         return this.getClass().getSimpleName();
@@ -93,7 +93,7 @@ public abstract class Facet {
      * Gets the configured special sorting for the facet
      * @return {@link Sort.SpecialSort} configured for the facet or null if non is set.
      */
-    public Sort.SpecialSort getSort() {
+    public Sort getSort() {
         return sort;
     }
 
@@ -102,7 +102,7 @@ public abstract class Facet {
      * @param sort {@link Sort.SpecialSort} added to the Facet
      * @return the current facet with the sorting configured.
      */
-    public Facet setSort(Sort.SpecialSort sort) {
+    public Facet setSort(Sort sort) {
         this.sort = sort;
         return this;
     }

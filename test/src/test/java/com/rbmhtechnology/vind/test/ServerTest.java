@@ -2455,7 +2455,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend({Solr, Elastic})
+    @RunWithBackend({Elastic})
     public void testScoreDateSort() {
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
@@ -2515,6 +2515,63 @@ public class ServerTest {
 
         result = server.execute(search,assets);
         assertEquals("1", result.getResults().get(0).getId());
+    }
+
+    @Test
+    @RunWithBackend({Elastic})
+    public void testScoreDateFacetSort() {
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
+
+        FieldDescriptor<String> title = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("title");
+
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+        SingleValueFieldDescriptor.UtilDateFieldDescriptor<Date> modified = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildUtilDateField("modified");
+
+        NumericFieldDescriptor<Long> category = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildMultivaluedNumericField("category", Long.class);
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(title)
+                .addField(created)
+                .addField(category)
+                .addField(modified)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(title, "Hello World")
+                .setValue(created, yesterday)
+                .setValue(modified, new Date())
+                .setValues(category, Arrays.asList(1L, 2L));
+
+        Document d2 = assets.createDoc("2")
+                .setValue(title, "Hello Friends")
+                .setValue(created, now)
+                .setValue(modified, new Date())
+                .addValue(category, 4L);
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.commit();
+
+
+        FulltextSearch search = Search.fulltext("hello")
+                .facet(new Facet.TermFacet(category).setSort(desc(Sort.SpecialSort.scoredDate(created))));
+
+        SearchResult result = server.execute(search,assets);
+        assertEquals(4, result.getFacetResults().getTermFacet(category).getValues().get(0).getValue(), 0.001);
     }
 
 }

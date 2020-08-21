@@ -76,7 +76,7 @@ public class SortUtils {
         }
     }
 
-    protected static AggregationBuilder buildFacetSort(Sort.SpecialSort sort, String searchContext) {
+    protected static AggregationBuilder buildFacetSort(Sort sort, String searchContext) {
         switch (sort.getType()) {
             case "ScoredDate":
                 final FieldDescriptor descriptor = ((Sort.SpecialSort.ScoredDate) sort).getDescriptor();
