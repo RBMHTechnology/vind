@@ -6,6 +6,8 @@ PARSER_BEGIN(QueryParser)
 
 package com.rbmhtechnology.vind.parser.queryparser;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class QueryParser {
     public Query run() throws ParseException {
         return query();
@@ -24,16 +26,16 @@ TOKEN :
 | <WS :              " " | "\t" | "\n" | "\r" >
 | <LBRACKET:         "(">
 | <RBRACKET:         ")">
-| <TERM:             ["0"-"9","A"-"Z","a"-"z","_","-","\u0080"-"\uffff"] >
-| <FIELD:             ["0"-"9","A"-"Z","a"-"z","_","-"] ":" >
+| <TERM:             (["0"-"9","A"-"Z","a"-"z","_","-","\u0080"-"\uffff"])+ >
+| <FIELD:             (["0"-"9","A"-"Z","a"-"z","_","-"])+ ":" >
 | <QUOTE:           "\"">
 }
 
 Query query() :
+{Query q = new Query();Clause c;}
 {
-    Query q = new Query();}
-{
-    {q.add(clause());} ((<WS>)+ {q.add(clause());})* (<WS>)+<EOF>
+    c=clause(){q.add(c);}
+    ((<WS>)+ c=clause(){q.add(c);})* (<WS>)*<EOF>
     {return q;}
 }
 
@@ -45,7 +47,8 @@ Clause clause() :
     (
         value=<TERM> | ( <LBRACKET> (<WS>)* query=query() (<WS>)* <RBRACKET> )
     )
-  {return value != null ?
-            new SimpleTermClause(negated, field != null ? field.image : null, value.image) :
-            new ComplexTermClause(negated, field != null ? field.image : null, query);}
+  {String fieldName = field == null ? null : StringUtils.chop(field.image);}
+  {return query == null ?
+            new SimpleTermClause(negated, fieldName, value != null ? value.image : null) :
+            new ComplexTermClause(negated, fieldName, query);}
 }

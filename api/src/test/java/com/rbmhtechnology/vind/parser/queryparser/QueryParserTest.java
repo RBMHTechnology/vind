@@ -10,12 +10,13 @@ public class QueryParserTest {
 
     @Test
     public void testParsings() throws ParseException {
-        parse("some:test");
+        Query q = parse("some:test");
+        System.out.println(q);
     }
 
     private Query parse(String s) throws ParseException {
         QueryParser parser = new QueryParser(toStream(s), StandardCharsets.UTF_8);
-        return null;
+        return parser.run();
     }
 
     private InputStream toStream(String s) {

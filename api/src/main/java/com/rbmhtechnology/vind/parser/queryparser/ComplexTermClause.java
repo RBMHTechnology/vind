@@ -1,8 +1,5 @@
 package com.rbmhtechnology.vind.parser.queryparser;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class ComplexTermClause extends Clause {
 
     private Query query;
