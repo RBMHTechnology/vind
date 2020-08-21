@@ -13,6 +13,8 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.client.BulkRequestBuilder;
+import org.elasticsearch.client.Request;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexResponse;
@@ -104,18 +106,18 @@ public abstract class ElasticVindClient {
 
     public BulkResponse add(Map<String, Object> jsonDoc) throws IOException {
         final BulkRequest bulkIndexRequest = new BulkRequest(defaultIndex);
-        bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(defaultIndex,jsonDoc));
+        bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(jsonDoc));
         bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
         bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-        return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
+        return BulkRequestBuilder.executeBulk(bulkIndexRequest,RequestOptions.DEFAULT,defaultIndex,client);
     }
 
     public BulkResponse add(List<Map<String, Object>> jsonDocs) throws IOException {
         final BulkRequest bulkIndexRequest = new BulkRequest(defaultIndex);
-        jsonDocs.forEach( jsonDoc -> bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(defaultIndex,jsonDoc)) );
+        jsonDocs.forEach( jsonDoc -> bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(jsonDoc)) );
         bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
         bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-        return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
+        return BulkRequestBuilder.executeBulk(bulkIndexRequest,RequestOptions.DEFAULT,defaultIndex,client);
     }
 
     public UpdateResponse update(String id, PainlessScript.ScriptBuilder script) throws IOException {

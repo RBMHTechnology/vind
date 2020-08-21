@@ -28,6 +28,12 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class ElasticRequestUtils {
 
+    public static IndexRequest getIndexRequest(Map<String,Object> jsonMap) {
+        return new IndexRequest()
+                .id(jsonMap.get(FieldUtil.ID).toString())
+                .source(jsonMap);
+    }
+
     public static IndexRequest getIndexRequest(String index, Map<String,Object> jsonMap) {
         return new IndexRequest(index)
                 .id(jsonMap.get(FieldUtil.ID).toString())
