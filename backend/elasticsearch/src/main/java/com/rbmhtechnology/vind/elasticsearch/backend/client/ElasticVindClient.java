@@ -13,6 +13,8 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.client.BulkRequestBuilder;
+import org.elasticsearch.client.Request;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexResponse;
@@ -103,19 +105,19 @@ public abstract class ElasticVindClient {
     }
 
     public BulkResponse add(Map<String, Object> jsonDoc) throws IOException {
-        final BulkRequest bulkIndexRequest = new BulkRequest();
-        bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(defaultIndex,jsonDoc));
+        final BulkRequest bulkIndexRequest = new BulkRequest(defaultIndex);
+        bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(jsonDoc));
         bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
         bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-        return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
+        return BulkRequestBuilder.executeBulk(bulkIndexRequest,RequestOptions.DEFAULT,defaultIndex,client);
     }
 
     public BulkResponse add(List<Map<String, Object>> jsonDocs) throws IOException {
-        final BulkRequest bulkIndexRequest = new BulkRequest();
-        jsonDocs.forEach( jsonDoc -> bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(defaultIndex,jsonDoc)) );
+        final BulkRequest bulkIndexRequest = new BulkRequest(defaultIndex);
+        jsonDocs.forEach( jsonDoc -> bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(jsonDoc)) );
         bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
         bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-        return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
+        return BulkRequestBuilder.executeBulk(bulkIndexRequest,RequestOptions.DEFAULT,defaultIndex,client);
     }
 
     public UpdateResponse update(String id, PainlessScript.ScriptBuilder script) throws IOException {
@@ -157,7 +159,7 @@ public abstract class ElasticVindClient {
         metadata.put("query", query);
         final XContentBuilder queryDoc = mapToXContentBuilder(metadata);
 
-        final BulkRequest bulkIndexRequest = new BulkRequest();
+        final BulkRequest bulkIndexRequest = new BulkRequest(defaultIndex);
         bulkIndexRequest.add(ElasticRequestUtils.addPercolatorQueryRequest(defaultIndex, queryId, queryDoc));
         bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
         bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);

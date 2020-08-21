@@ -686,7 +686,7 @@ public class ElasticSearchServer extends SearchServer {
             return new IndexResult(elapsedTime.getTime()).setElapsedTime(elapsedTime.getTime());
 
         } catch (ElasticsearchException | IOException e) {
-            log.error("Cannot index documents {}", jsonDocs, e);
+            log.error("Error indexing documents", e);
             throw new SearchServerException("Cannot index documents", e);
         }
     }
