@@ -2572,10 +2572,91 @@ public class ServerTest {
 
 
         FulltextSearch search = Search.fulltext("hello")
-                .facet(new Facet.TermFacet(category).setSort(desc(Sort.SpecialSort.scoredDate(created))));
+                .facet(new Facet.TermFacet(category).addSort("popularity", desc(Sort.SpecialSort.scoredDate(created))));
 
         SearchResult result = server.execute(search,assets);
         assertEquals(4, result.getFacetResults().getTermFacet(category).getValues().get(0).getValue(), 0.001);
+    }
+
+    @Test
+    @RunWithBackend({Elastic})
+    public void testSortedPivotFacets() {
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
+
+        FieldDescriptor<String> resource = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("resource");
+
+        FieldDescriptor<String> cluster = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("cluster");
+
+        FieldDescriptor<String> group = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("group");
+
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(resource)
+                .addField(created)
+                .addField(cluster)
+                .addField(group)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(resource, "r1")
+                .setValue(created, yesterday)
+                .setValue(cluster, "c1")
+                .setValue(group, "g1");
+
+        Document d2 = assets.createDoc("2")
+                .setValue(resource, "r2")
+                .setValue(created, now)
+                .setValue(cluster, "c2")
+                .setValue(group, "g1");
+
+        Document d3 = assets.createDoc("3")
+                .setValue(resource, "r3")
+                .setValue(created, now)
+                .setValue(cluster, "c3")
+                .setValue(group, "g2");
+
+        Document d4 = assets.createDoc("4")
+                .setValue(resource, "r4")
+                .setValue(created, now)
+                .setValue(cluster, "c3")
+                .setValue(group, "g2");
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.index(d3);
+        server.index(d4);
+        server.commit();
+
+
+        FulltextSearch search = Search.fulltext()
+                .facet(pivot("bucket",group, cluster,resource)
+                        .addSort("popularity", Sort.SpecialSort.scoredDate(created)))
+                ;
+
+        SearchResult result = server.execute(search,assets);
+        assertEquals(1, result.getFacetResults().getPivotFacets().size());
+        assertEquals(2, result.getFacetResults().getPivotFacets().get("bucket").size());
+        assertEquals("g2", result.getFacetResults().getPivotFacets().get("bucket").get(0).getValue());
+        assertEquals(2, result.getFacetResults().getPivotFacets().get("bucket").get(0).getCount(),0);
+        assertEquals("c3", result.getFacetResults().getPivotFacets().get("bucket").get(0).getPivot().get(0).getValue());
+        assertEquals("g1", result.getFacetResults().getPivotFacets().get("bucket").get(1).getValue());
     }
 
 }

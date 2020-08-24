@@ -76,7 +76,7 @@ public class SortUtils {
         }
     }
 
-    protected static AggregationBuilder buildFacetSort(Sort sort, String searchContext) {
+    protected static AggregationBuilder buildFacetSort(String name, Sort sort, String searchContext) {
         switch (sort.getType()) {
             case "ScoredDate":
                 final FieldDescriptor descriptor = ((Sort.SpecialSort.ScoredDate) sort).getDescriptor();
@@ -95,7 +95,7 @@ public class SortUtils {
                         "painless",
                         "_score*(params.a/(params.m*(new Date().getTime()-doc[params.field].value.millis)+params.b))",
                         parameters);
-                return AggregationBuilders.avg("scoreDate_"+ descriptor.getName())
+                return AggregationBuilders.avg(name)
                         .script(painlessDateSort);
             default:
                 throw  new SearchServerException(String

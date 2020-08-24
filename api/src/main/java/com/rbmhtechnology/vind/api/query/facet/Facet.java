@@ -15,7 +15,9 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -38,7 +40,8 @@ public abstract class Facet {
     protected String name;
     protected String[] tagedPivots = new String[0];
     protected String facetName;
-    protected Sort sort;
+
+    protected Map<String,Sort> sortings = new HashMap<>();
 
     public String getType() {
         return this.getClass().getSimpleName();
@@ -90,20 +93,31 @@ public abstract class Facet {
     }
 
     /**
-     * Gets the configured special sorting for the facet
+     * Gets the configured special sortings for the facet
      * @return {@link Sort.SpecialSort} configured for the facet or null if non is set.
      */
-    public Sort getSort() {
-        return sort;
+    public Map<String, Sort> getSortings() {
+        return sortings;
     }
 
     /**
-     * Sets the sorting for the defined facet.
-     * @param sort {@link Sort.SpecialSort} added to the Facet
+     * Sets the sortings for the defined facet.
+     * @param sortings {@link Map<String,Sort.SpecialSort>} added to the Facet
      * @return the current facet with the sorting configured.
      */
-    public Facet setSort(Sort sort) {
-        this.sort = sort;
+    public Facet setSortings(Map<String, Sort> sortings) {
+        this.sortings = sortings;
+        return this;
+    }
+
+    /**
+     * Sets the sortings for the defined facet.
+     * @param sortName {@link String} name of the sort to add.
+     * @param sort {@link Sort.SpecialSort} added to the Facet.
+     * @return the current facet with the sorting configured.
+     */
+    public Facet addSort(String sortName, Sort sort) {
+        this.sortings.put(sortName, sort);
         return this;
     }
 

@@ -575,14 +575,19 @@ public class ElasticQueryBuilder {
                 }
             case "PivotFacet":
                 final Facet.PivotFacet pivotFacet = (Facet.PivotFacet) vindFacet;
-                final Optional<TermsAggregationBuilder> pivotAgg = pivotFacet.getFieldDescriptors().stream()
+                final List<TermsAggregationBuilder> termFacets = pivotFacet.getFieldDescriptors().stream()
                         .map(f -> FieldUtil.getFieldName(f, useCase, searchContext))
                         .filter(Objects::nonNull)
                         .map(n -> AggregationBuilders
-                                .terms(contextualizedFacetName + "-" + FieldUtil.getSourceFieldName(n, null))
+                                .terms(contextualizedFacetName)
                                 .field(n)
                                 .minDocCount(minCount))
-                        .reduce( AbstractAggregationBuilder::subAggregation);
+                        //.forEach(agg -> addSortToAggregation(vindFacet, searchContext, agg))
+                        .collect(Collectors.toList());
+                termFacets.forEach(agg -> addSortToAggregation(vindFacet, searchContext, agg));
+
+                final Optional<TermsAggregationBuilder> pivotAgg = Lists.reverse(termFacets).stream().reduce((agg1, agg2) -> agg2.subAggregation(agg1));
+
                 return Collections.singletonList(pivotAgg.orElse(null));
 
             default:
@@ -594,28 +599,34 @@ public class ElasticQueryBuilder {
     }
 
     private static void addSortToAggregation(Facet vindFacet, String searchContext, TermsAggregationBuilder termsAgg) {
-        Optional.ofNullable(vindFacet.getSort())
-                .ifPresent(sort -> {
-                    final AggregationBuilder sortAggregation = SortUtils.buildFacetSort(sort, searchContext);
-                    termsAgg.order(BucketOrder.aggregation(sortAggregation.getName(), Sort.Direction.Asc.equals(sort.getDirection())));
-                    termsAgg.subAggregation(sortAggregation);
+        Optional.ofNullable(vindFacet.getSortings())
+                .ifPresent(sortings -> {
+                    for (Map.Entry<String, Sort> sort: sortings.entrySet()) {
+                        final AggregationBuilder sortAggregation = SortUtils.buildFacetSort(sort.getKey(), sort.getValue(), searchContext);
+                        termsAgg.order(BucketOrder.aggregation(sortAggregation.getName(), Sort.Direction.Asc.equals(sort.getValue().getDirection())));
+                        termsAgg.subAggregation(sortAggregation);
+                    }
                 });
     }
     private static void addSortToAggregation(Facet vindFacet, String searchContext, HistogramAggregationBuilder agg) {
-        Optional.ofNullable(vindFacet.getSort())
-                .ifPresent(sort -> {
-                    final AggregationBuilder sortAggregation = SortUtils.buildFacetSort(sort, searchContext);
-                    agg.order(BucketOrder.aggregation(sortAggregation.getName(), Sort.Direction.Asc.equals(sort.getDirection())));
-                    agg.subAggregation(sortAggregation);
+        Optional.ofNullable(vindFacet.getSortings())
+                .ifPresent(sortings -> {
+                    for (Map.Entry<String, Sort> sort: sortings.entrySet()) {
+                        final AggregationBuilder sortAggregation = SortUtils.buildFacetSort(sort.getKey(), sort.getValue(), searchContext);
+                        agg.order(BucketOrder.aggregation(sortAggregation.getName(), Sort.Direction.Asc.equals(sort.getValue().getDirection())));
+                        agg.subAggregation(sortAggregation);
+                    }
                 });
     }
 
     private static void addSortToAggregation(Facet vindFacet, String searchContext, DateHistogramAggregationBuilder agg) {
-        Optional.ofNullable(vindFacet.getSort())
-                .ifPresent(sort -> {
-                    final AggregationBuilder sortAggregation = SortUtils.buildFacetSort(sort, searchContext);
-                    agg.order(BucketOrder.aggregation(sortAggregation.getName(), Sort.Direction.Asc.equals(sort.getDirection())));
-                    agg.subAggregation(sortAggregation);
+        Optional.ofNullable(vindFacet.getSortings())
+                .ifPresent(sortings -> {
+                    for (Map.Entry<String, Sort> sort: sortings.entrySet()) {
+                        final AggregationBuilder sortAggregation = SortUtils.buildFacetSort(sort.getKey(), sort.getValue(), searchContext);
+                        agg.order(BucketOrder.aggregation(sortAggregation.getName(), Sort.Direction.Asc.equals(sort.getValue().getDirection())));
+                        agg.subAggregation(sortAggregation);
+                    }
                 });
     }
 
