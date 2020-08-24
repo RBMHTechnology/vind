@@ -575,6 +575,10 @@ public class ServerTest {
 
         assertEquals(3, multiResult.getResults().size());
         assertEquals("1", multiResult.getResults().get(0).getId());
+
+        GetResult empty = server.execute(Search.getById("nonExistentId"), factory);
+
+        assertEquals(0, empty.getResults().size());
     }
 
 

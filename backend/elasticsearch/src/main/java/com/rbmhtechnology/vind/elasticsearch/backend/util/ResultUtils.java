@@ -65,6 +65,7 @@ public class ResultUtils {
             docResults.addAll(results.stream()
                     .map(MultiGetItemResponse::getResponse)
                     .map(GetResponse::getSourceAsMap)
+                    .filter(Objects::nonNull)
                     .map(jsonMap -> DocumentUtil.buildVindDoc(jsonMap ,factory,null))
                     .collect(Collectors.toList()));
         }
