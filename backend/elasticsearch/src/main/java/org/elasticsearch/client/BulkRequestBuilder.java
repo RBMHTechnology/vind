@@ -1,13 +1,9 @@
 package org.elasticsearch.client;
 
-import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.common.CheckedFunction;
-import org.elasticsearch.common.xcontent.XContentParser;
-import org.elasticsearch.common.xcontent.XContentType;
 
 import java.io.IOException;
 
