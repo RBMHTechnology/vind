@@ -109,12 +109,12 @@ public class DocumentUtil {
             Optional.ofNullable(FieldUtil.getFieldName(descriptor, null))
                     .ifPresent(fieldName -> {
                         if (ZonedDateTime.class.isAssignableFrom(descriptor.getType())) {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType("00-00-0000"));
-                        }else if (Date.class.isAssignableFrom(descriptor.getType())) {
-                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType("00-00-0000"));
+                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ZonedDateTime.now()));
+                        } else if (Date.class.isAssignableFrom(descriptor.getType())) {
+                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new Date()));
                         } else if (LatLng.class.isAssignableFrom(descriptor.getType())) {
                                     docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType("0,0"));
-                        }else {
+                        } else {
                             docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType("0"));
                         }
                     }
