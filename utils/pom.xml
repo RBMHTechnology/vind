@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.rbmhtechnology.vind</groupId>
         <artifactId>vind</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.0.0-RC11</version>
     </parent>
 
     <artifactId>vind-utils</artifactId>
