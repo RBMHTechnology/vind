@@ -20,6 +20,7 @@ public class PivotFacetResult<T> implements FacetResult<T> {
     private T value;
     private FieldDescriptor field;
     private Integer count;
+    private Double score;
 
     /**
      * Create a new instance of {@link PivotFacetResult}.
@@ -39,6 +40,28 @@ public class PivotFacetResult<T> implements FacetResult<T> {
         this.rangeSubfacets = rangeSubfacets;
         this.querySubfacets = queries;
         this.statsSubfacets = stats;
+    }
+
+    /**
+     * Create a new instance of {@link PivotFacetResult}.
+     * @param pivot List of {@link PivotFacetResult} combinations with this instance.
+     * @param value Value of this pivot result.
+     * @param field {@link FieldDescriptor} field on which the pivot is done.
+     * @param count {@link Integer} with the number of combinations this result has.
+     * @param queries List of {@link QueryFacetResult} combined with this pivot result.
+     * @param stats List of {@link StatsFacetResult} combined with this pivot result.
+     * @param rangeSubfacets List of {@link RangeFacetResult} combined with this pivot result.
+     * @param score {@link Double} value used for sorting the result.
+     */
+    public PivotFacetResult(List<PivotFacetResult<?>> pivot, T value, FieldDescriptor<T> field, Integer count, Map<String,QueryFacetResult<?>> queries, Map<String,StatsFacetResult<?>> stats,Map<String,RangeFacetResult<?>> rangeSubfacets, Double score) {
+        this.pivot = pivot;
+        this.value = value;
+        this.field = field;
+        this.count = count;
+        this.rangeSubfacets = rangeSubfacets;
+        this.querySubfacets = queries;
+        this.statsSubfacets = stats;
+        this.score = score;
     }
 
     /**
@@ -92,5 +115,13 @@ public class PivotFacetResult<T> implements FacetResult<T> {
      */
     public Integer getCount() {
         return count;
+    }
+
+    /**
+     * Gets the number of {@link PivotFacetResult} combined with this instance.
+     * @return {@link Integer} count of combinations this result has.
+     */
+    public Double getScore() {
+        return score;
     }
 }

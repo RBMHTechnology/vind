@@ -1161,10 +1161,12 @@ public class SolrSearchServer extends SearchServer {
                 log.warn("Specified class {} is not in classpath",providerClassName, e);
                 //throw new RuntimeException("Specified class " + providerClassName + " is not in classpath");
             }
-            log.info("No server provider of type class {} found in classpath for server {}", providerClassName, SolrSearchServer.class.getCanonicalName());
-            //if(serverProvider == null) throw new RuntimeException("No server provider found for class " + providerClassName);
-        }
 
+            if(Objects.isNull(serverProvider)) {
+                log.info("No server provider of type class {} found in classpath for server {}", providerClassName, SolrSearchServer.class.getCanonicalName());
+                //throw new RuntimeException("No server provider found for class " + providerClassName);
+            }
+        }
         return serverProvider;
     }
 

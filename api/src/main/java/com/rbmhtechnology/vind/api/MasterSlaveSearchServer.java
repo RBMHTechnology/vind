@@ -2,7 +2,6 @@ package com.rbmhtechnology.vind.api;
 
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
-import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
@@ -38,7 +37,7 @@ public class MasterSlaveSearchServer extends SearchServer {
 
     @Override
     public Object getBackend() {
-        return this.backend;
+        return this.backend.getBackend();
     }
 
     @Override

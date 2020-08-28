@@ -8,6 +8,7 @@ import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
+import com.rbmhtechnology.vind.api.query.facet.Facets;
 import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
@@ -574,6 +575,10 @@ public class ServerTest {
 
         assertEquals(3, multiResult.getResults().size());
         assertEquals("1", multiResult.getResults().get(0).getId());
+
+        GetResult empty = server.execute(Search.getById("nonExistentId"), factory);
+
+        assertEquals(0, empty.getResults().size());
     }
 
 
@@ -2454,7 +2459,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend({Solr, Elastic})
+    @RunWithBackend({Elastic})
     public void testScoreDateSort() {
 
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
@@ -2515,4 +2520,143 @@ public class ServerTest {
         result = server.execute(search,assets);
         assertEquals("1", result.getResults().get(0).getId());
     }
+
+    @Test
+    @RunWithBackend({Elastic})
+    public void testScoreDateFacetSort() {
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
+
+        FieldDescriptor<String> title = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("title");
+
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+        SingleValueFieldDescriptor.UtilDateFieldDescriptor<Date> modified = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildUtilDateField("modified");
+
+        NumericFieldDescriptor<Long> category = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildMultivaluedNumericField("category", Long.class);
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(title)
+                .addField(created)
+                .addField(category)
+                .addField(modified)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(title, "Hello World")
+                .setValue(created, yesterday)
+                .setValue(modified, new Date())
+                .setValues(category, Arrays.asList(1L, 2L));
+
+        Document d2 = assets.createDoc("2")
+                .setValue(title, "Hello Friends")
+                .setValue(created, now)
+                .setValue(modified, new Date())
+                .addValue(category, 4L);
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.commit();
+
+
+        FulltextSearch search = Search.fulltext("hello")
+                .facet(new Facet.TermFacet(category).addSort("popularity", desc(Sort.SpecialSort.scoredDate(created))));
+
+        SearchResult result = server.execute(search,assets);
+        assertEquals(4, result.getFacetResults().getTermFacet(category).getValues().get(0).getValue(), 0.001);
+    }
+
+    @Test
+    @RunWithBackend({Elastic})
+    public void testSortedPivotFacets() {
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
+
+        FieldDescriptor<String> resource = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("resource");
+
+        FieldDescriptor<String> cluster = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("cluster");
+
+        FieldDescriptor<String> group = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("group");
+
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(resource)
+                .addField(created)
+                .addField(cluster)
+                .addField(group)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(resource, "r1")
+                .setValue(created, yesterday)
+                .setValue(cluster, "c1")
+                .setValue(group, "g1");
+
+        Document d2 = assets.createDoc("2")
+                .setValue(resource, "r2")
+                .setValue(created, now)
+                .setValue(cluster, "c2")
+                .setValue(group, "g1");
+
+        Document d3 = assets.createDoc("3")
+                .setValue(resource, "r3")
+                .setValue(created, now)
+                .setValue(cluster, "c3")
+                .setValue(group, "g2");
+
+        Document d4 = assets.createDoc("4")
+                .setValue(resource, "r4")
+                .setValue(created, now)
+                .setValue(cluster, "c3")
+                .setValue(group, "g2");
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.index(d3);
+        server.index(d4);
+        server.commit();
+
+
+        FulltextSearch search = Search.fulltext()
+                .facet(pivot("bucket",group, cluster,resource)
+                        .addSort("popularity", Sort.SpecialSort.scoredDate(created)))
+                ;
+
+        SearchResult result = server.execute(search,assets);
+        assertEquals(1, result.getFacetResults().getPivotFacets().size());
+        assertEquals(2, result.getFacetResults().getPivotFacets().get("bucket").size());
+        assertEquals("g2", result.getFacetResults().getPivotFacets().get("bucket").get(0).getValue());
+        assertEquals(2, result.getFacetResults().getPivotFacets().get("bucket").get(0).getCount(),0);
+        assertEquals("c3", result.getFacetResults().getPivotFacets().get("bucket").get(0).getPivot().get(0).getValue());
+        assertEquals("g1", result.getFacetResults().getPivotFacets().get("bucket").get(1).getValue());
+    }
+
 }

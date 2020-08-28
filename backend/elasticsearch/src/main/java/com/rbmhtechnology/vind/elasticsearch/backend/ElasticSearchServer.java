@@ -300,8 +300,6 @@ public class ElasticSearchServer extends SearchServer {
             if(Objects.nonNull(response)
                     && Objects.nonNull(response.getHits())
                     && Objects.nonNull(response.getHits().getHits())){
-                //TODO: if nested doc search is implemented
-                //final Map<String,Integer> childCounts = SolrUtils.getChildCounts(response);
 
                 final List<Document> documents = Arrays.stream(response.getHits().getHits())
                         .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))

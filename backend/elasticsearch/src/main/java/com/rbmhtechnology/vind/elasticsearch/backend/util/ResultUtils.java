@@ -40,6 +40,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.ParsedTerms;
 import org.elasticsearch.search.aggregations.metrics.ParsedCardinality;
 import org.elasticsearch.search.aggregations.metrics.ParsedExtendedStats;
 import org.elasticsearch.search.aggregations.metrics.ParsedPercentiles;
+import org.elasticsearch.search.aggregations.metrics.ParsedSingleValueNumericMetricsAggregation;
 import org.elasticsearch.search.aggregations.metrics.Percentile;
 
 import java.util.ArrayList;
@@ -65,6 +66,7 @@ public class ResultUtils {
             docResults.addAll(results.stream()
                     .map(MultiGetItemResponse::getResponse)
                     .map(GetResponse::getSourceAsMap)
+                    .filter(Objects::nonNull)
                     .map(jsonMap -> DocumentUtil.buildVindDoc(jsonMap ,factory,null))
                     .collect(Collectors.toList()));
         }
@@ -131,19 +133,7 @@ public class ResultUtils {
                 .map(pivotFacet -> getPivotFacetResults(aggregationsMap.get(Stream.of(searchContext,pivotFacet.getFacetName()).filter(Objects::nonNull).collect(Collectors.joining("_"))), (Facet.PivotFacet)pivotFacet, vindFacets))
                 .forEach(pair -> pivotFacetResults.put(pair.getKey(), (List)pair.getValue()));
 
-//        if(response.getFacetPivot()!=null) {
-//
-//            final Stream<Map.Entry<String, List<PivotField>>> pivotFacets = StreamSupport.stream(
-//                    Spliterators.spliteratorUnknownSize(response.getFacetPivot().iterator(), Spliterator.ORDERED),
-//                    false);
-//            pivotFacets.forEach(pivotFacet -> {
-//                final List<PivotFacetResult<?>> facet = pivotFacet.getValue().stream()
-//                        .map(pivotField -> getPivotFacetResult(pivotField, response, factory,facetsQuery,searchContext))
-//                        .collect(Collectors.toList());
-//
-//                pivotFacetResults.put(pivotFacet.getKey(), facet);
-//            });
-//        }
+
 //
 //        final Map<Integer, Integer> childCounts =  getSubdocumentCounts(response);
         final Collection<SubdocumentFacetResult> subDocumentFacet = Collections.emptyList();
@@ -180,6 +170,13 @@ public class ResultUtils {
                         final Map<String, RangeFacetResult<?>> rangeSubfacets = new HashMap<>();
                         final Map<String, QueryFacetResult<?>> querySubfacets = new HashMap<>();
                         final Map<String, StatsFacetResult<?>> statsSubfacets = new HashMap<>();
+                        Double score = null;
+                        if(!pivotFacet.getSortings().isEmpty()) {
+                            score = pivotFacet.getSortings().keySet().stream()
+                                    .map(aggMap::get)
+                                    .mapToDouble(sortAgg -> ((ParsedSingleValueNumericMetricsAggregation)sortAgg).value())
+                                    .sum();
+                        }
 
                         aggMap.values().forEach(agg -> {
                             if (ParsedExtendedStats.class.isAssignableFrom(agg.getClass())) {
@@ -210,7 +207,8 @@ public class ResultUtils {
                                 Long.valueOf(bucket.getDocCount()).intValue(),
                                 rangeSubfacets,
                                 querySubfacets,
-                                statsSubfacets);
+                                statsSubfacets,
+                                score);
                     })
                     .collect(Collectors.toList());
 
