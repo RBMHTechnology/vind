@@ -896,13 +896,13 @@ public class ElasticQueryBuilder {
                                         .map(o -> Pair.of(o.getText().string(),o.getScore()))
                                         .findFirst()
                                         .orElse(Pair.of(word.getText().string(),0f))
-                        ).collect(Collectors.toMap( Pair::getKey,Pair::getValue)))
+                        ).collect(Collectors.toList()))
                 )
                 .collect(Collectors.toMap(
                         Pair::getKey,
                         p -> Pair.of(
-                                String.join(" ", p.getValue().keySet()),
-                                p.getValue().values().stream().mapToDouble(Float::floatValue).sum())));
+                                p.getRight().stream().map(Pair::getKey).collect(Collectors.joining(" ")),
+                                p.getValue().stream().mapToDouble(Pair::getValue).sum())));
 
         return spellcheck.values().stream()
                 .filter( v -> v.getValue() > 0.0)
