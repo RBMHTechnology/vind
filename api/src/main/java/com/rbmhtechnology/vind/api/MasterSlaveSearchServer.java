@@ -40,6 +40,14 @@ public class MasterSlaveSearchServer extends SearchServer {
         return this.backend.getBackend();
     }
 
+    public SearchServer getMasterSearchServer() {
+        return this.backend;
+    }
+
+    public SearchServer getSlaveSearchServer() {
+        return this.slaveBackend;
+    }
+
     @Override
     public StatusResult getBackendStatus() {
         final StatusResult masterStatus = this.backend.getBackendStatus();
@@ -196,4 +204,6 @@ public class MasterSlaveSearchServer extends SearchServer {
     public Class<? extends ServiceProvider> getServiceProviderClass() {
         return backend.getServiceProviderClass();
     }
+
+
 }
