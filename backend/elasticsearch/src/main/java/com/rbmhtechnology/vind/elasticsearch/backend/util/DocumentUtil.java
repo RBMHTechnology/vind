@@ -111,11 +111,15 @@ public class DocumentUtil {
                         if (ZonedDateTime.class.isAssignableFrom(descriptor.getType())) {
                             docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ZonedDateTime.now()));
                         } else if (Date.class.isAssignableFrom(descriptor.getType())) {
-                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new Date()));
+                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new Date()));
                         } else if (LatLng.class.isAssignableFrom(descriptor.getType())) {
-                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType("0,0"));
+                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new LatLng(0,0)));
+                        } else if (ByteBuffer.class.isAssignableFrom(descriptor.getType())) {
+                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ByteBuffer.wrap(" ".getBytes())));
+                        } else if (Number.class.isAssignableFrom(descriptor.getType())) {
+                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(0));
                         } else {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType("0"));
+                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(""));
                         }
                     }
                     );

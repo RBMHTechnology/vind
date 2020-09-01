@@ -209,7 +209,7 @@ public class ElasticSearchServer extends SearchServer {
     @Override
     public IndexResult indexWithin(Document doc, int withinMs) {
         Asserts.notNull(doc,"Document to index should not be null.");
-        log.warn("Parameter 'within' not in use in elastic search backend");
+        log.debug("Parameter 'within' not in use in elastic search backend");
         return indexMultipleDocuments(Collections.singletonList(doc), withinMs);
     }
 
@@ -217,7 +217,7 @@ public class ElasticSearchServer extends SearchServer {
     public IndexResult indexWithin(List<Document> docs, int withinMs) {
         Asserts.notNull(docs,"Document to index should not be null.");
         Asserts.check(!docs.isEmpty(), "Should be at least one document to index.");
-        log.warn("Parameter 'within' not in use in elastic search backend");
+        log.debug("Parameter 'within' not in use in elastic search backend");
         return  indexMultipleDocuments(docs, withinMs);
     }
 
@@ -228,7 +228,7 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public DeleteResult deleteWithin(Document doc, int withinMs) {
-        log.warn("Parameter 'within' not in use in elastic search backend");
+        log.debug("Parameter 'within' not in use in elastic search backend");
         try {
             final StopWatch elapsedTime = StopWatch.createStarted();
             elasticClientLogger.debug(">>> delete({})", doc.getId());
@@ -244,7 +244,7 @@ public class ElasticSearchServer extends SearchServer {
     @Override
     public boolean execute(Update update, DocumentFactory factory) {
         try {
-            log.warn("Update script builder does not check for script injection. Ensure values provided are script safe.");
+            log.debug("Update script builder does not check for script injection. Ensure values provided are script safe.");
             final StopWatch elapsedTime = StopWatch.createStarted();
             elasticClientLogger.debug(">>> delete({})", update);
             final PainlessScript.ScriptBuilder updateScript = ElasticQueryBuilder.buildUpdateScript(update.getOptions(), factory, update.getUpdateContext());
@@ -277,7 +277,7 @@ public class ElasticSearchServer extends SearchServer {
 
     @Override
     public void commit(boolean optimize) {
-        log.warn("Commit does not have any effect on elastic search backend");
+        log.debug("Commit does not have any effect on elastic search backend");
     }
 
     @Override
@@ -600,7 +600,7 @@ public class ElasticSearchServer extends SearchServer {
                 serverProvider = it.next();
             }
             if (it.hasNext()) {
-                log.warn("Multiple bindings for ElasticServerProvider found: {}", loader.iterator());
+                log.debug("Multiple bindings for ElasticServerProvider found: {}", loader.iterator());
             }
         } else {
             try {
@@ -627,7 +627,7 @@ public class ElasticSearchServer extends SearchServer {
     }
 
     private IndexResult indexSingleDocument(Document doc, int withinMs) {
-        log.warn("Parameter 'within' not in use in elastic search backend");
+        log.debug("Parameter 'within' not in use in elastic search backend");
         final StopWatch elapsedTime = StopWatch.createStarted();
         final Map<String,Object> document = DocumentUtil.createInputDocument(doc);
 
@@ -658,7 +658,7 @@ public class ElasticSearchServer extends SearchServer {
     }
 
     private IndexResult indexMultipleDocuments(List<Document> docs, int withinMs) {
-        log.warn("Parameter 'within' not in use in elastic search backend");
+        log.debug("Parameter 'within' not in use in elastic search backend");
         final StopWatch elapsedTime = StopWatch.createStarted();
         final List<Map<String,Object>> jsonDocs = docs.parallelStream()
                 .map(DocumentUtil::createInputDocument)

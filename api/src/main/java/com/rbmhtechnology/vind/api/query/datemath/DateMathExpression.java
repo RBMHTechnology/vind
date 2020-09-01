@@ -3,16 +3,27 @@ package com.rbmhtechnology.vind.api.query.datemath;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.*;
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.DAY;
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.DAYS;
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.HOUR;
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.HOURS;
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.MILLI;
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.MILLIS;
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.MILLISECOND;
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.MILLISECONDS;
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.MINUTE;
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.MINUTES;
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.MONTH;
 import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.MONTHS;
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.SECOND;
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.SECONDS;
 import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.YEAR;
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.YEARS;
 
 /**
  * Created by fonso on 02.02.17.
