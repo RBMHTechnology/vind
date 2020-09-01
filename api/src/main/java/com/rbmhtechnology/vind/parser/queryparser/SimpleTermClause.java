@@ -1,6 +1,6 @@
 package com.rbmhtechnology.vind.parser.queryparser;
 
-public class SimpleTermClause extends Clause {
+public class SimpleTermClause extends FieldClause {
     Literal value;
 
     public SimpleTermClause(boolean negated, String field, Literal value) {

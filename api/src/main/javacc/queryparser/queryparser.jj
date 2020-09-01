@@ -37,19 +37,15 @@ TOKEN :
 Query query() :
 {Query q = new Query();Clause c;}
 {
-    c=clause(){q.add(c);}
-    (c=clause(){q.add(c);})*<EOF>
-    {return q;}
+    ((c=fieldClause(){q.add(c);})+ | c=booleanClause(){q.add(c);})
+    { return q;}
 }
 
-Clause clause() :
-{Query query = null;boolean negated = false;Token field = null;Literal value = null;}
+FieldClause fieldClause() :
+{BooleanClause query = null;boolean negated = false;Token field = null;Literal value = null;}
 {
-    ((<PLUS> |  {negated=true;} <MINUS> ))?
-    (field=<FIELD>)?
-    (
-        value=literal() | ( <LBRACKET> query=query() <RBRACKET> )
-    )
+    ((<PLUS> | <MINUS>{negated=true;})? field=<FIELD> value=literal())
+     //| ( <LBRACKET> query=booleanClause() <RBRACKET> )
   {
     String fieldName = field == null ? null : StringUtils.chop(field.image);
     return query == null ?
@@ -62,4 +58,25 @@ Literal literal() :
 {
     (value=<TERM>{l.add(value.image);} | value=<QUOTED_STRING>{l.add(value.image);})+
     {return l;}
+}
+
+BooleanClause binaryBooleanClause() :
+{Clause left;Clause right;Token op;}
+{
+    <LBRACKET> (left=fieldClause()|left=booleanClause()) ( op=<AND> | op=<OR> ) (right=fieldClause()|right=booleanClause()) <RBRACKET>
+    { return new BinaryBooleanClause(op.image, left, right);}
+}
+
+BooleanClause unaryBooleanClause() :
+{FieldClause clause;Token op;}
+{
+    (op=<NOT>) <LBRACKET> clause=fieldClause() <RBRACKET>
+    { return new UnaryBooleanClause(op.image, clause);}
+}
+
+BooleanClause booleanClause() :
+{BooleanClause clause;}
+{
+    (clause=unaryBooleanClause() | clause=binaryBooleanClause())
+    {return clause;}
 }

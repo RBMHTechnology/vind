@@ -1,4 +1,4 @@
 package com.rbmhtechnology.vind.parser.queryparser;
 
-public interface Clause {
+public abstract class BooleanClause implements Clause{
 }
