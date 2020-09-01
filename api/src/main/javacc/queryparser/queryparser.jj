@@ -15,7 +15,9 @@ public class QueryParser {
 };
 
 PARSER_END(QueryParser)
-
+SKIP : {
+    <" " | "\t" | "\n" | "\r" >
+}
 TOKEN :
 {
   <AND:              "AND">
@@ -23,32 +25,41 @@ TOKEN :
 | <NOT:              ("NOT" | "!")>
 | <PLUS:             "+">
 | <MINUS:            "-" >
-| <WS :              " " | "\t" | "\n" | "\r" >
+//| <WS :              " " | "\t" | "\n" | "\r" >
 | <LBRACKET:         "(">
 | <RBRACKET:         ")">
 | <TERM:             (["0"-"9","A"-"Z","a"-"z","_","-","\u0080"-"\uffff"])+ >
 | <FIELD:             (["0"-"9","A"-"Z","a"-"z","_","-"])+ ":" >
 | <QUOTE:           "\"">
+| <QUOTED_STRING:   <QUOTE> (~["\""])+ <QUOTE> >
 }
 
 Query query() :
 {Query q = new Query();Clause c;}
 {
     c=clause(){q.add(c);}
-    ((<WS>)+ c=clause(){q.add(c);})* (<WS>)*<EOF>
+    (c=clause(){q.add(c);})*<EOF>
     {return q;}
 }
 
 Clause clause() :
-{Query query = null;boolean negated = false;Token field = null;Token value = null;}
+{Query query = null;boolean negated = false;Token field = null;Literal value = null;}
 {
-    ((<PLUS> |  {negated=true;} "-") (<WS>)*)?
-    (field=<FIELD> (<WS>)*)?
+    ((<PLUS> |  {negated=true;} <MINUS> ))?
+    (field=<FIELD>)?
     (
-        value=<TERM> | ( <LBRACKET> (<WS>)* query=query() (<WS>)* <RBRACKET> )
+        value=literal() | ( <LBRACKET> query=query() <RBRACKET> )
     )
-  {String fieldName = field == null ? null : StringUtils.chop(field.image);}
-  {return query == null ?
-            new SimpleTermClause(negated, fieldName, value != null ? value.image : null) :
-            new ComplexTermClause(negated, fieldName, query);}
+  {
+    String fieldName = field == null ? null : StringUtils.chop(field.image);
+    return query == null ?
+        new SimpleTermClause(negated, fieldName, value != null ? value : null) :
+        new ComplexTermClause(negated, fieldName, query);}
+}
+
+Literal literal() :
+{Literal l = new Literal();Token value;}
+{
+    (value=<TERM>{l.add(value.image);} | value=<QUOTED_STRING>{l.add(value.image);})+
+    {return l;}
 }

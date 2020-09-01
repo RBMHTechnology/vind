@@ -1,18 +1,18 @@
 package com.rbmhtechnology.vind.parser.queryparser;
 
 public class SimpleTermClause extends Clause {
-    String value;
+    Literal value;
 
-    public SimpleTermClause(boolean negated, String field, String value) {
+    public SimpleTermClause(boolean negated, String field, Literal value) {
         super(negated, field);
         this.value = value;
     }
 
-    public String getValue() {
+    public Literal getValue() {
         return value;
     }
 
-    public SimpleTermClause setValue(String value) {
+    public SimpleTermClause setValue(Literal value) {
         this.value = value;
         return this;
     }
