@@ -1,14 +1,18 @@
 package com.rbmhtechnology.vind.api.query.filter.parser;
 
+import com.google.common.collect.Streams;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.filter.parser.BinaryOperationNode.Operator;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 
 import java.io.IOException;
 import java.io.StreamTokenizer;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class FilterLuceneParser implements FilterStringParser {
     private StreamTokenizer tokenizer;
@@ -37,7 +41,6 @@ public class FilterLuceneParser implements FilterStringParser {
     }
 
     private Node parse() throws IOException {
-
         tokenizer.nextToken();
         Node result = parseExpression();
         return result;
@@ -47,10 +50,14 @@ public class FilterLuceneParser implements FilterStringParser {
         if(tokenizer.sval == null){
             Node left = parse();
             tokenizer.nextToken();
-            BinaryOperationNode.Operator op = BinaryOperationNode.Operator.valueOf(tokenizer.sval);
-            Node right = parse();
-            tokenizer.nextToken();
-            return new BinaryOperationNode(left, right, op);
+            if (Stream.of(Operator.values())
+                    .anyMatch(op -> op.name().equals(tokenizer.sval))){
+                Operator op = Operator.valueOf(tokenizer.sval);
+                Node right = parse();
+                tokenizer.nextToken();
+                return new BinaryOperationNode(left, right, op);
+            }
+            return left;
         }
         if (tokenizer.sval.equals("NOT")) {
             return new NotNode(parse());
