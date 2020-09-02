@@ -23,8 +23,14 @@ public class VindQueryParser {
 
         try {
             final Query luceneQueryModel = parse(luceneQuery);
+            luceneQueryModel.forEach(q -> {
+                try {
+                    vindQuery.filter(q.toVindFilter(factory));
+                }catch (SearchServerException e) {
+                    luceneQueryModel.addText(q.toString());
+                }
+            });
             Optional.ofNullable(luceneQueryModel.getText()).ifPresent(vindQuery::text);
-            luceneQueryModel.forEach(q -> vindQuery.filter(q.toVindFilter(factory)));
         } catch (ParseException e) {
             log.error("Error parsing lucene query [{}] to Vind query: {}", e.getMessage(), luceneQuery);
             throw new SearchServerException("Error parsing lucene query ["+luceneQuery+"] to Vind query: " + e.getMessage(),e);

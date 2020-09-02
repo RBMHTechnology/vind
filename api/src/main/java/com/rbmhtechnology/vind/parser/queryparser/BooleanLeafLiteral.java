@@ -20,4 +20,9 @@ public class BooleanLeafLiteral extends BooleanLiteral {
         //TODO casting to descriptor type
         return Filter.eq(descriptor, value);
     }
+
+    @Override
+    public String toString() {
+        return this.value;
+    }
 }

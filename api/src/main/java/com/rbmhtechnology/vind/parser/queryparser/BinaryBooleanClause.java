@@ -38,4 +38,9 @@ public class BinaryBooleanClause extends BooleanClause{
             throw new SearchServerException("Unsuported binary boolean operation '"+op+"' on fields");
         }
     }
+
+    @Override
+    public String toString() {
+        return "(" + this.leftClause.toString()+ " " + this.op + " " + this.rightClause.toString() + ")";
+    }
 }

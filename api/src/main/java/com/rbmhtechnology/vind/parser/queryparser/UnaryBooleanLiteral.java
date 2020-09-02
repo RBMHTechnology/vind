@@ -27,4 +27,9 @@ public class UnaryBooleanLiteral extends BooleanLiteral{
            return Filter.not(literal.toVindFilter(descriptor));
         } else throw new SearchServerException("Unsuported unary boolean operation '"+op+"' on field values");
     }
+
+    @Override
+    public String toString() {
+        return this.op + " " +this.literal.toString();
+    }
 }

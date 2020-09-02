@@ -24,4 +24,9 @@ public class UnaryBooleanClause extends BooleanClause{
     public Filter toVindFilter(DocumentFactory factory) {
         return Filter.not(clause.toVindFilter(factory));
     }
+
+    @Override
+    public String toString() {
+        return this.op + " " +this.clause.toString();
+    }
 }
