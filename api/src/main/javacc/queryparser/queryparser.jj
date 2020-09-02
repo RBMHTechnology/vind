@@ -1,5 +1,5 @@
 options {
-  LOOKAHEAD = 1;
+  LOOKAHEAD = 3;
 }
 
 PARSER_BEGIN(QueryParser)
@@ -37,15 +37,15 @@ TOKEN :
 Query query() :
 {Query q = new Query();Clause c;}
 {
-    ((c=fieldClause(){q.add(c);})+ | c=booleanClause(){q.add(c);})
+    (( c=booleanClause(){q.add(c);} ) | ( c=fieldClause(){q.add(c);} )+ )
     { return q;}
 }
 
 FieldClause fieldClause() :
-{BooleanClause query = null;boolean negated = false;Token field = null;Literal value = null;}
+{BooleanLiteral query = null;boolean negated = false;Token field = null;TermsLiteral value = null;}
 {
-    ((<PLUS> | <MINUS>{negated=true;})? field=<FIELD> value=literal())
-     //| ( <LBRACKET> query=booleanClause() <RBRACKET> )
+    ((<PLUS> | <MINUS>{negated=true;})? field=<FIELD>
+    (value=termsLiteral() | (  query=booleanLiteral()  )))
   {
     String fieldName = field == null ? null : StringUtils.chop(field.image);
     return query == null ?
@@ -53,24 +53,18 @@ FieldClause fieldClause() :
         new ComplexTermClause(negated, fieldName, query);}
 }
 
-Literal literal() :
-{Literal l = new Literal();Token value;}
-{
-    (value=<TERM>{l.add(value.image);} | value=<QUOTED_STRING>{l.add(value.image);})+
-    {return l;}
-}
 
 BooleanClause binaryBooleanClause() :
 {Clause left;Clause right;Token op;}
 {
-    <LBRACKET> (left=fieldClause()|left=booleanClause()) ( op=<AND> | op=<OR> ) (right=fieldClause()|right=booleanClause()) <RBRACKET>
+    <LBRACKET> ( left=clause() ) ( op=<AND> | op=<OR> ) ( right=clause()) <RBRACKET>
     { return new BinaryBooleanClause(op.image, left, right);}
 }
 
 BooleanClause unaryBooleanClause() :
-{FieldClause clause;Token op;}
+{Clause clause;Token op;}
 {
-    (op=<NOT>) <LBRACKET> clause=fieldClause() <RBRACKET>
+    (op=<NOT>) <LBRACKET> (clause=clause()) <RBRACKET>
     { return new UnaryBooleanClause(op.image, clause);}
 }
 
@@ -79,4 +73,49 @@ BooleanClause booleanClause() :
 {
     (clause=unaryBooleanClause() | clause=binaryBooleanClause())
     {return clause;}
+}
+
+Clause clause() :
+{Clause clause;}
+{
+    (clause=fieldClause() | clause=booleanClause())
+    {return clause;}
+}
+
+
+TermsLiteral termsLiteral() :
+{TermsLiteral l = new TermsLiteral();Token value;}
+{
+    ( value=<TERM>{l.add(value.image);}
+    | value=<QUOTED_STRING>{l.add(value.image);}
+    | ( <LBRACKET> (value=<TERM>{l.add(value.image);} | value=<QUOTED_STRING>{l.add(value.image);})+ <RBRACKET> ))
+
+    { return l;}
+}
+
+BooleanLiteral booleanLiteral() :
+{BooleanLiteral literal;}
+{   (literal=unaryBooleanLiteral() | literal=binaryBooleanLiteral() | literal=booleanLeafValue())
+    {return literal;}
+}
+
+BooleanLiteral booleanLeafValue():
+{Token value;}
+{
+    ( value=<TERM> | value=<QUOTED_STRING>)
+    {return new BooleanLeafLiteral(value.image);}
+}
+
+BooleanLiteral binaryBooleanLiteral() :
+{BooleanLiteral left;BooleanLiteral right;Token op;}
+{
+    (<LBRACKET> (left=booleanLiteral() ) ( op=<AND> | op=<OR> ) (right=booleanLiteral() ) <RBRACKET>)
+    { return new BinaryBooleanLiteral(op.image, left, right);}
+}
+
+BooleanLiteral unaryBooleanLiteral() :
+{BooleanLiteral literal;Token op;}
+{
+    (op=<NOT> | op=<MINUS> ) <LBRACKET> (literal=booleanLiteral() )<RBRACKET>
+    { return new UnaryBooleanLiteral(op.image, literal);}
 }

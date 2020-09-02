@@ -20,17 +20,17 @@ public class QueryParserTest {
         assertEquals(1,q.size());
         assertEquals("\"simple quoted test\"",((SimpleTermClause)q.get(0)).getValue().getValues().get(0));
 
-        q = parse("topic: sports assettype: video image");
+        q = parse("topic: sports assettype: (video image)");
         assertEquals(2, q.size());
         assertEquals("sports",((SimpleTermClause)q.get(0)).getValue().getValues().get(0));
         assertEquals("video",((SimpleTermClause)q.get(1)).getValue().getValues().get(0));
 
-        q = parse("topic: \"water sports\" \"formula 1\"");
+        q = parse("topic:( \"water sports\" \"formula 1\")");
         assertEquals(1, q.size());
         assertEquals("\"water sports\"",((SimpleTermClause)q.get(0)).getValue().getValues().get(0));
         assertEquals("\"formula 1\"",((SimpleTermClause)q.get(0)).getValue().getValues().get(1));
 
-        q = parse("topic: water sports \"formula 1\"");
+        q = parse("topic:( water sports \"formula 1\")");
         assertEquals(1, q.size());
         assertEquals("water",((SimpleTermClause)q.get(0)).getValue().getValues().get(0));
         assertEquals("sports",((SimpleTermClause)q.get(0)).getValue().getValues().get(1));
@@ -53,6 +53,19 @@ public class QueryParserTest {
         assertEquals("OR",((BinaryBooleanClause)q.get(0)).getOp());
         assertEquals("NOT",((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getOp());
         assertEquals("video",((SimpleTermClause)((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getClause()).getValue().getValues().get(0));
+
+        q = parse("some:(test OR sample)");
+        assertEquals(1, q.size());
+        assertEquals("OR",((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOp());
+        assertEquals("test",((BooleanLeafLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getLeftClause()).getValue());
+        assertEquals("sample",((BooleanLeafLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getRightClause()).getValue());
+
+        q = parse("some:(test OR ( sample AND fake)))");
+        assertEquals(1, q.size());
+        assertEquals("OR",((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOp());
+        assertEquals("test",((BooleanLeafLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getLeftClause()).getValue());
+        assertEquals("sample",((BooleanLeafLiteral)((BinaryBooleanLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getRightClause()).getLeftClause()).getValue());
+
     }
 
     private Query parse(String s) throws ParseException {
