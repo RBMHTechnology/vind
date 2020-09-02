@@ -35,9 +35,10 @@ TOKEN :
 }
 
 Query query() :
-{Query q = new Query();Clause c;}
+{Query q = new Query();Clause c;Token value;}
 {
-    (( c=booleanClause(){q.add(c);} ) | ( c=fieldClause(){q.add(c);} )+ )
+    (( c=booleanClause(){q.add(c);} ) | ( c=fieldClause(){q.add(c);} )+ )?
+    (value=<TERM>{q.addText(value.image);} | value=<QUOTED_STRING>{q.addText(value.image);})*
     { return q;}
 }
 

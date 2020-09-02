@@ -24,6 +24,14 @@ public class QueryParserTest {
         assertEquals(1, q.size());
         assertEquals("test",((SimpleTermClause)q.get(0)).getValue().getValues().get(0));
 
+        q = parse("some:test text");
+        assertEquals(1, q.size());
+        assertEquals("text", q.getText());
+        assertEquals("test",((SimpleTermClause)q.get(0)).getValue().getValues().get(0));
+
+        q = parse("some:test \"fulltext text\"");
+        assertEquals("\"fulltext text\"", q.getText());
+
         q = parse("some:\"simple quoted test\"");
         assertEquals(1,q.size());
         assertEquals("\"simple quoted test\"",((SimpleTermClause)q.get(0)).getValue().getValues().get(0));
@@ -38,8 +46,9 @@ public class QueryParserTest {
         assertEquals("\"water sports\"",((SimpleTermClause)q.get(0)).getValue().getValues().get(0));
         assertEquals("\"formula 1\"",((SimpleTermClause)q.get(0)).getValue().getValues().get(1));
 
-        q = parse("topic:( water sports \"formula 1\")");
+        q = parse("topic:( water sports \"formula 1\") text \"full Text\"");
         assertEquals(1, q.size());
+        assertEquals("text \"full Text\"", q.getText());
         assertEquals("water",((SimpleTermClause)q.get(0)).getValue().getValues().get(0));
         assertEquals("sports",((SimpleTermClause)q.get(0)).getValue().getValues().get(1));
         assertEquals("\"formula 1\"",((SimpleTermClause)q.get(0)).getValue().getValues().get(2));
@@ -56,8 +65,9 @@ public class QueryParserTest {
         assertEquals("NOT",((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getOp());
         assertEquals("video",((SimpleTermClause)((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getClause()).getValue().getValues().get(0));
 
-        q = parse("((topic: water AND athlete:\"Adam Ondra\") OR NOT(assettype: video))");
+        q = parse("((topic: water AND athlete:\"Adam Ondra\") OR NOT(assettype: video)) \"fulltext text\"");
         assertEquals(1, q.size());
+        assertEquals("\"fulltext text\"", q.getText());
         assertEquals("OR",((BinaryBooleanClause)q.get(0)).getOp());
         assertEquals("NOT",((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getOp());
         assertEquals("video",((SimpleTermClause)((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getClause()).getValue().getValues().get(0));
@@ -122,7 +132,7 @@ public class QueryParserTest {
                         "((customMetadata: water AND athlete:\"Adam Ondra\") OR NOT(assettype: video))"
 
                         , testDocFactory);
-        assertEquals("AndFilter",vindFilter.getFilter().getType());
+        assertEquals("OrFilter",vindFilter.getFilter().getType());
 
     }
 
