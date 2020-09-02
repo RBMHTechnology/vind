@@ -116,6 +116,6 @@ BooleanLiteral binaryBooleanLiteral() :
 BooleanLiteral unaryBooleanLiteral() :
 {BooleanLiteral literal;Token op;}
 {
-    (op=<NOT> | op=<MINUS> ) <LBRACKET> (literal=booleanLiteral() )<RBRACKET>
+    (op=<NOT> | op=<MINUS> ) (literal=booleanLiteral() )
     { return new UnaryBooleanLiteral(op.image, literal);}
 }
