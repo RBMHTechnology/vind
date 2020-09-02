@@ -1,8 +1,16 @@
 package com.rbmhtechnology.vind.parser.queryparser;
 
+import com.rbmhtechnology.vind.api.query.FulltextSearch;
+import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.filter.parser.FilterLuceneParser;
+import com.rbmhtechnology.vind.model.DocumentFactory;
+import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
+import com.rbmhtechnology.vind.model.FieldDescriptor;
+import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
@@ -68,6 +76,56 @@ public class QueryParserTest {
 
     }
 
+
+    @Test
+    public void testFilterSerializer() throws IOException {
+
+        final VindQueryParser filterLuceneParser = new VindQueryParser();
+        final FieldDescriptor<String> customMetadata = new FieldDescriptorBuilder<>()
+                .setFacet(true)
+                .buildTextField("customMetadata");
+
+        final FieldDescriptor<String> athlete = new FieldDescriptorBuilder<>()
+                .setFacet(true)
+                .buildTextField("athlete");
+
+        final FieldDescriptor<String> assetType = new FieldDescriptorBuilder<>()
+                .setFacet(true)
+                .buildTextField("assettype");
+
+        final DocumentFactory testDocFactory = new DocumentFactoryBuilder("testDoc")
+                .addField(customMetadata, assetType, athlete)
+                .build();
+
+        FulltextSearch vindFilter = filterLuceneParser
+                .parse(
+                        "+customMetadata:(\"coveragedb=true\" AND NOT \"cloudTranscoding=true\")  "
+                        , testDocFactory);
+        assertEquals("AndFilter",vindFilter.getFilter().getType());
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "+customMetadata:((\"meppGraph=true\" OR \"coveragedb=true\") AND NOT \"cloudTranscoding=true\")  "
+                        , testDocFactory);
+        assertEquals("AndFilter",vindFilter.getFilter().getType());
+
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "+customMetadata:((\"meppGraph=true\" OR \"coveragedb=true\") AND NOT ( \"netStorage=true\" AND \"cloudTranscoding=true\"))  "
+
+                        , testDocFactory);
+        assertEquals("AndFilter",vindFilter.getFilter().getType());
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "((customMetadata: water AND athlete:\"Adam Ondra\") OR NOT(assettype: video))"
+
+                        , testDocFactory);
+        assertEquals("AndFilter",vindFilter.getFilter().getType());
+
+    }
+
     private Query parse(String s) throws ParseException {
         QueryParser parser = new QueryParser(toStream(s), StandardCharsets.UTF_8);
         return parser.run();
@@ -76,6 +134,5 @@ public class QueryParserTest {
     private InputStream toStream(String s) {
         return new ByteArrayInputStream(s.getBytes());
     }
-
 
 }

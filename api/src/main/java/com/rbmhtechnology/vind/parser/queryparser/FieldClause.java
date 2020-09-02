@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.parser.queryparser;
 
+
 public abstract class FieldClause  implements Clause{
 
     private boolean negated = false;
@@ -19,4 +20,9 @@ public abstract class FieldClause  implements Clause{
         this.negated = negated;
         return this;
     }
+
+    public String getField() {
+        return field;
+    }
+
 }

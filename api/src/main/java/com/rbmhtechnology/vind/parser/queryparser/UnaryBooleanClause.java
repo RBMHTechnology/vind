@@ -1,5 +1,8 @@
 package com.rbmhtechnology.vind.parser.queryparser;
 
+import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.model.DocumentFactory;
+
 public class UnaryBooleanClause extends BooleanClause{
     private final String op;
     private final Clause clause;
@@ -15,5 +18,10 @@ public class UnaryBooleanClause extends BooleanClause{
 
     public Clause getClause() {
         return clause;
+    }
+
+    @Override
+    public Filter toVindFilter(DocumentFactory factory) {
+        return Filter.not(clause.toVindFilter(factory));
     }
 }

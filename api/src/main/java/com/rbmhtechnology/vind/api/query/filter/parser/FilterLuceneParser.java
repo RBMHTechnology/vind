@@ -3,10 +3,16 @@ package com.rbmhtechnology.vind.api.query.filter.parser;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
+import com.rbmhtechnology.vind.parser.queryparser.ParseException;
+import com.rbmhtechnology.vind.parser.queryparser.Query;
+import com.rbmhtechnology.vind.parser.queryparser.QueryParser;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StreamTokenizer;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,5 +65,13 @@ public class FilterLuceneParser implements FilterStringParser {
         return new LiteralNode(tokenizer.sval);
     }
 
+    private Query parse(String s) throws ParseException {
+        QueryParser parser = new QueryParser(toStream(s), StandardCharsets.UTF_8);
+        return parser.run();
+    }
+
+    private InputStream toStream(String s) {
+        return new ByteArrayInputStream(s.getBytes());
+    }
 }
 
