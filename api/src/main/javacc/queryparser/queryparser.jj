@@ -25,7 +25,6 @@ TOKEN :
 | <NOT:              ("NOT" | "!")>
 | <PLUS:             "+">
 | <MINUS:            "-" >
-//| <WS :              " " | "\t" | "\n" | "\r" >
 | <LBRACKET:         "(">
 | <RBRACKET:         ")">
 | <TERM:             (["0"-"9","A"-"Z","a"-"z","_","-","\u0080"-"\uffff"])+ >
@@ -97,7 +96,7 @@ TermsLiteral termsLiteral() :
 BooleanLiteral booleanLiteral() :
 {BooleanLiteral literal;}
 {   (literal=unaryBooleanLiteral() | literal=binaryBooleanLiteral() | literal=booleanLeafValue())
-    {return literal;}
+    { return literal; }
 }
 
 BooleanLiteral booleanLeafValue():

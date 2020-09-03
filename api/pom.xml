@@ -59,6 +59,7 @@
                     <phase>generate-sources</phase>
                     <goals>
                         <goal>javacc</goal>
+                        <goal>jjdoc</goal>
                     </goals>
                     <configuration>
                         <jdkVersion>1.8</jdkVersion>
