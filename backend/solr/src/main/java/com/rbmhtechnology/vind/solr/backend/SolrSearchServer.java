@@ -370,8 +370,12 @@ public class SolrSearchServer extends SearchServer {
     }
 
     @Override
-    protected <T> BeanSearchResult<T> executeInternal(FulltextSearch search, Class<T> c) {
+    public  <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
         final DocumentFactory factory = AnnotationUtil.createDocumentFactory(c);
+
+        if(search.isSmartParsing()) {
+            search = smartParse(search, factory);
+        }
 
         final SearchResult docResult = this.execute(search, factory);
 
@@ -405,7 +409,10 @@ public class SolrSearchServer extends SearchServer {
     }
 
     @Override
-    protected SearchResult executeInternal(FulltextSearch search, DocumentFactory factory) {
+    public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
+        if(search.isSmartParsing()) {
+            search = smartParse(search, factory);
+        }
         final SolrQuery query = buildSolrQuery(search, factory);
         //query
         try {

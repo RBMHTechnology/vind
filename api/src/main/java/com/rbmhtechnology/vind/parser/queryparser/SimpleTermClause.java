@@ -33,7 +33,7 @@ public class SimpleTermClause extends FieldClause {
             throw new SearchServerException("Field [" + this.getField() + "] is not part of document factory " + factory.getType());
         }
         final Filter termFilter = (Filter)this.getValue().getValues().stream()
-                .map(val -> Filter.eq(descriptor, val))
+                .map(val -> Filter.eq(descriptor, val.replaceAll("\\\"", "")))
                 .collect(Filter.OrCollector);
         if (isNegated()) {
             return Filter.not(termFilter);

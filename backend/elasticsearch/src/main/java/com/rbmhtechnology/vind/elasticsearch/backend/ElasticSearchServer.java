@@ -281,14 +281,22 @@ public class ElasticSearchServer extends SearchServer {
     }
 
     @Override
-    protected <T> BeanSearchResult<T> executeInternal(FulltextSearch search, Class<T> c) {
+    public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
         final DocumentFactory factory = AnnotationUtil.createDocumentFactory(c);
+        createDocumentFactoryFootprint(factory);
+        if(search.isSmartParsing()) {
+            search = smartParse(search, factory);
+        }
         final SearchResult docResult = this.execute(search, factory);
         return docResult.toPojoResult(docResult, c);
     }
 
     @Override
-    protected SearchResult executeInternal(FulltextSearch search, DocumentFactory factory) {
+    public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
+        if(search.isSmartParsing()) {
+            search = smartParse(search, factory);
+        }
+        final FulltextSearch ftext = search;
         createDocumentFactoryFootprint(factory);
         final StopWatch elapsedtime = StopWatch.createStarted();
         final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory);
@@ -302,7 +310,7 @@ public class ElasticSearchServer extends SearchServer {
                     && Objects.nonNull(response.getHits().getHits())){
 
                 final List<Document> documents = Arrays.stream(response.getHits().getHits())
-                        .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))
+                        .map(hit -> DocumentUtil.buildVindDoc(hit, factory, ftext.getSearchContext()))
                         .collect(Collectors.toList());
 
                 if ( search.isSpellcheck()
@@ -322,7 +330,7 @@ public class ElasticSearchServer extends SearchServer {
                                     ElasticQueryBuilder.buildQuery(spellcheckSearch, factory);
                             final SearchResponse spellcheckResponse = elasticSearchClient.query(spellcheckQuery);
                             documents.addAll(Arrays.stream(spellcheckResponse.getHits().getHits())
-                                    .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))
+                                    .map(hit -> DocumentUtil.buildVindDoc(hit, factory, ftext.getSearchContext()))
                                     .collect(Collectors.toList()));
                         }
                     }
@@ -434,7 +442,7 @@ public class ElasticSearchServer extends SearchServer {
     @Override
     public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
         //TODO implement for monitoring search server;
-        return "";
+        throw new NotImplementedException();
     }
 
     @Override
@@ -450,6 +458,7 @@ public class ElasticSearchServer extends SearchServer {
     @Override
     public <T> BeanGetResult<T> execute(RealTimeGet search, Class<T> c) {
         final DocumentFactory documentFactory = AnnotationUtil.createDocumentFactory(c);
+        createDocumentFactoryFootprint(documentFactory);
         final GetResult result = this.execute(search, documentFactory);
         return result.toPojoResult(result,c);
     }
@@ -458,6 +467,7 @@ public class ElasticSearchServer extends SearchServer {
     public GetResult execute(RealTimeGet search, DocumentFactory assets) {
         try {
             final StopWatch elapsedTime = StopWatch.createStarted();
+            createDocumentFactoryFootprint(assets);
             final MultiGetResponse response = elasticSearchClient.realTimeGet(search.getValues());
             elapsedTime.stop();
 
@@ -480,7 +490,6 @@ public class ElasticSearchServer extends SearchServer {
         final List<Map<String,Object>> mapDocs = inverseSearch.getDocs().parallelStream()
                 .map(DocumentUtil::createInputDocument)
                 .collect(Collectors.toList());
-        final FulltextSearch fullTextSearch = Search.fulltext().filter(inverseSearch.getQueryFilter());
         final QueryBuilder query =
                 ElasticQueryBuilder.buildFilterQuery(inverseSearch.getQueryFilter(), documentFactory, null);
         //query

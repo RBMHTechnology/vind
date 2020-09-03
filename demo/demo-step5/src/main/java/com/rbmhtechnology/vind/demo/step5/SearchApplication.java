@@ -15,7 +15,7 @@ public class SearchApplication {
 
 			get("/index", (req, res) -> search.index());
 
-			Spark.get("/search", (req, res) -> search.search(req.queryParams("q"), req.queryParamsValues("filter")), new ResultTransformer());
+			Spark.get("/search", (req, res) -> search.search(req.queryParams("q"), Boolean.parseBoolean(req.queryParamOrDefault("smart", "false")), req.queryParamsValues("filter")), new ResultTransformer());
 
 			get("/news", (req, res) -> search.search(
 							req.queryParams("q"),

@@ -20,6 +20,7 @@ import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.InverseSearchQuery;
+import com.rbmhtechnology.vind.parser.queryparser.VindQueryParser;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -277,15 +278,7 @@ public abstract class SearchServer implements Closeable {
      * @return {@link BeanSearchResult} storing the search results with type T
      * @throws SearchServerException if not possible to execute the full text search.
      */
-    public final <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
-        if(search.isSmartParsing()) {
-            return executeInternal(smartParse(search, c), c);
-        } else {
-            return executeInternal(search, c);
-        }
-    }
-
-    protected abstract <T> BeanSearchResult<T> executeInternal(FulltextSearch search, Class<T> c);
+    public abstract <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c);
 
     /**
      * Executes a fulltext search based on an {@link DocumentFactory}.
@@ -294,15 +287,7 @@ public abstract class SearchServer implements Closeable {
      * @return {@link SearchResult} storing the search results with type T
      * @throws SearchServerException if not possible to execute the full text search.
      */
-    public final SearchResult execute(FulltextSearch search, DocumentFactory factory) {
-        if(search.isSmartParsing()) {
-            return executeInternal(smartParse(search, factory), factory);
-        } else {
-            return executeInternal(search, factory);
-        }
-    }
-
-    protected abstract SearchResult executeInternal(FulltextSearch search, DocumentFactory factory);
+    public abstract SearchResult execute(FulltextSearch search, DocumentFactory factory) ;
 
     /**
      * Return the raw query sent produced by the server implementation.
@@ -424,13 +409,17 @@ public abstract class SearchServer implements Closeable {
     public abstract Class<? extends ServiceProvider> getServiceProviderClass();
 
     protected FulltextSearch smartParse(FulltextSearch search, DocumentFactory factory) {
-        log.warn("Smart Parsing is not enabled by search server {}", this.getClass().getSimpleName());
+        final VindQueryParser parser = new VindQueryParser();
+
+        final FulltextSearch smartSearch = parser.parse(search.getSearchString(), factory);
+        search.text(smartSearch.getSearchString());
+        search.filter(smartSearch.getFilter());
         return search;
     }
 
     protected <T> FulltextSearch smartParse(FulltextSearch search, Class<T> c) {
-        log.warn("Smart Parsing for Beans is not enabled by search server {}", this.getClass().getSimpleName());
-        return search;
+        final DocumentFactory factory = AnnotationUtil.createDocumentFactory(c);
+        return smartParse(search, factory);
     }
 
 }
