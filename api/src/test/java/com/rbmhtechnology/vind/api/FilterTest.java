@@ -72,6 +72,9 @@ public class FilterTest {
                         , testDocFactory);
         assertEquals("AndFilter",vindFilter.getType());
 
+        vindFilter = filterLuceneParser
+                .parse("+customMetadata:(\"meppGraph=true\" )", testDocFactory);
+        assertEquals("DescriptorFilter",vindFilter.getType());
      }
 
 }
