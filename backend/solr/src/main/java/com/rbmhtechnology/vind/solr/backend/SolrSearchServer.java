@@ -370,15 +370,9 @@ public class SolrSearchServer extends SearchServer {
     }
 
     @Override
-    public  <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
+    protected <T> BeanSearchResult<T> doExecute(FulltextSearch search, Class<T> c) {
         final DocumentFactory factory = AnnotationUtil.createDocumentFactory(c);
-
-        if(search.isSmartParsing()) {
-            search = smartParse(search, factory);
-        }
-
         final SearchResult docResult = this.execute(search, factory);
-
         return docResult.toPojoResult(docResult, c);
     }
 
@@ -409,10 +403,7 @@ public class SolrSearchServer extends SearchServer {
     }
 
     @Override
-    public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
-        if(search.isSmartParsing()) {
-            search = smartParse(search, factory);
-        }
+    protected SearchResult doExecute(FulltextSearch search, DocumentFactory factory) {
         final SolrQuery query = buildSolrQuery(search, factory);
         //query
         try {

@@ -8,7 +8,6 @@ import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.ServiceProvider;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
-import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
@@ -281,21 +280,16 @@ public class ElasticSearchServer extends SearchServer {
     }
 
     @Override
-    public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
+    protected  <T> BeanSearchResult<T> doExecute(FulltextSearch search, Class<T> c) {
         final DocumentFactory factory = AnnotationUtil.createDocumentFactory(c);
         createDocumentFactoryFootprint(factory);
-        if(search.isSmartParsing()) {
-            search = smartParse(search, factory);
-        }
+
         final SearchResult docResult = this.execute(search, factory);
         return docResult.toPojoResult(docResult, c);
     }
 
     @Override
-    public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
-        if(search.isSmartParsing()) {
-            search = smartParse(search, factory);
-        }
+    protected SearchResult doExecute(FulltextSearch search, DocumentFactory factory) {
         final FulltextSearch ftext = search;
         createDocumentFactoryFootprint(factory);
         final StopWatch elapsedtime = StopWatch.createStarted();

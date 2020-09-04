@@ -346,10 +346,6 @@
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
             </plugin>
-            <plugin>
-                <groupId>com.helger.maven</groupId>
-                <artifactId>ph-javacc-maven-plugin</artifactId>
-            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
