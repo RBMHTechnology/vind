@@ -6,6 +6,7 @@ import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.SearchServer;
+import com.rbmhtechnology.vind.api.SearchServerBase;
 import com.rbmhtechnology.vind.api.ServiceProvider;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
@@ -77,7 +78,7 @@ import java.util.stream.Stream;
 
 import static com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil.createEmptyDocument;
 
-public class ElasticSearchServer extends SearchServer {
+public class ElasticSearchServer extends SearchServerBase {
 
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchServer.class);
     private static final Logger elasticClientLogger = LoggerFactory.getLogger(log.getName() + "#elasticSearchClient");

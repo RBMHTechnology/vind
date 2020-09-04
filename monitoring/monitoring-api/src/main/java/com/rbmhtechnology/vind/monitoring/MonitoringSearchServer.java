@@ -210,7 +210,7 @@ public class MonitoringSearchServer extends SearchServer {
     }
 
     @Override
-    protected   <T> BeanSearchResult<T> doExecute(FulltextSearch search, Class<T> c) {
+    public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
         return execute(search,c,this.session);
     }
 
@@ -264,7 +264,7 @@ public class MonitoringSearchServer extends SearchServer {
     }
 
     @Override
-    protected SearchResult doExecute(FulltextSearch search, DocumentFactory factory) {
+    public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
         return execute(search,factory,this.session);
     }
 

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.Document;
-import com.rbmhtechnology.vind.api.SearchServer;
+import com.rbmhtechnology.vind.api.SearchServerBase;
 import com.rbmhtechnology.vind.api.ServiceProvider;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
@@ -12,7 +12,6 @@ import com.rbmhtechnology.vind.api.query.division.Page;
 import com.rbmhtechnology.vind.api.query.division.Slice;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.facet.Interval;
-import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.DescriptorSuggestionSearch;
@@ -99,7 +98,7 @@ import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.getFieldn
  * @author Thomas Kurz (tkurz@apache.org)
  * @since 21.06.16.
  */
-public class SolrSearchServer extends SearchServer {
+public class SolrSearchServer extends SearchServerBase {
 
     private static final Logger log = LoggerFactory.getLogger(SolrSearchServer.class);
     private static final Logger solrClientLogger = LoggerFactory.getLogger(log.getName() + "#solrClient");

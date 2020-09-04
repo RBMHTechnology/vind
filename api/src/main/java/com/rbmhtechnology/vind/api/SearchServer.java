@@ -278,14 +278,7 @@ public abstract class SearchServer implements Closeable {
      * @return {@link BeanSearchResult} storing the search results with type T
      * @throws SearchServerException if not possible to execute the full text search.
      */
-    public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
-        if(search.isSmartParsing()) {
-            return doExecute(smartParse(search, c),c);
-        } else {
-            return doExecute(search, c);
-        }
-    }
-    protected abstract <T> BeanSearchResult<T> doExecute(FulltextSearch search, Class<T> c);
+    public abstract <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c);
 
     /**
      * Executes a fulltext search based on an {@link DocumentFactory}.
@@ -294,15 +287,7 @@ public abstract class SearchServer implements Closeable {
      * @return {@link SearchResult} storing the search results with type T
      * @throws SearchServerException if not possible to execute the full text search.
      */
-    public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
-        if(search.isSmartParsing()) {
-            return doExecute(smartParse(search, factory),factory);
-        } else {
-            return doExecute(search, factory);
-        }
-    }
-
-    protected abstract SearchResult doExecute(FulltextSearch search, DocumentFactory factory);
+    public  abstract SearchResult execute(FulltextSearch search, DocumentFactory factory);
 
     /**
      * Return the raw query sent produced by the server implementation.
@@ -422,19 +407,4 @@ public abstract class SearchServer implements Closeable {
     public abstract void close();
 
     public abstract Class<? extends ServiceProvider> getServiceProviderClass();
-
-    protected FulltextSearch smartParse(FulltextSearch search, DocumentFactory factory) {
-        final VindQueryParser parser = new VindQueryParser();
-
-        final FulltextSearch smartSearch = parser.parse(search.getSearchString(), factory);
-        search.text(smartSearch.getSearchString());
-        search.filter(smartSearch.getFilter());
-        return search;
-    }
-
-    protected <T> FulltextSearch smartParse(FulltextSearch search, Class<T> c) {
-        final DocumentFactory factory = AnnotationUtil.createDocumentFactory(c);
-        return smartParse(search, factory);
-    }
-
 }
