@@ -214,7 +214,7 @@ public class MonitoringSearchServer extends SearchServer {
         return execute(search,c,this.session);
     }
 
-    protected <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c, Session session) {
+    public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c, Session session) {
         final ZonedDateTime start = ZonedDateTime.now();
         log.debug("Monitoring server is executing FulltextSearch at {}:{}:{} - {}.{}.{} ",
                 start.getHour(),start.getMinute(),start.getSecond(),start.getDayOfMonth(),start.getMonth(),start.getYear());

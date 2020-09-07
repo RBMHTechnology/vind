@@ -5,8 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.Document;
-import com.rbmhtechnology.vind.api.SearchServer;
-import com.rbmhtechnology.vind.api.SearchServerBase;
+import com.rbmhtechnology.vind.api.SmartSearchServerBase;
 import com.rbmhtechnology.vind.api.ServiceProvider;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
@@ -78,7 +77,7 @@ import java.util.stream.Stream;
 
 import static com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil.createEmptyDocument;
 
-public class ElasticSearchServer extends SearchServerBase {
+public class ElasticSearchServer extends SmartSearchServerBase {
 
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchServer.class);
     private static final Logger elasticClientLogger = LoggerFactory.getLogger(log.getName() + "#elasticSearchClient");
@@ -291,7 +290,6 @@ public class ElasticSearchServer extends SearchServerBase {
 
     @Override
     protected SearchResult doExecute(FulltextSearch search, DocumentFactory factory) {
-        final FulltextSearch ftext = search;
         createDocumentFactoryFootprint(factory);
         final StopWatch elapsedtime = StopWatch.createStarted();
         final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory);
@@ -305,7 +303,7 @@ public class ElasticSearchServer extends SearchServerBase {
                     && Objects.nonNull(response.getHits().getHits())){
 
                 final List<Document> documents = Arrays.stream(response.getHits().getHits())
-                        .map(hit -> DocumentUtil.buildVindDoc(hit, factory, ftext.getSearchContext()))
+                        .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))
                         .collect(Collectors.toList());
 
                 if ( search.isSpellcheck()
@@ -325,7 +323,7 @@ public class ElasticSearchServer extends SearchServerBase {
                                     ElasticQueryBuilder.buildQuery(spellcheckSearch, factory);
                             final SearchResponse spellcheckResponse = elasticSearchClient.query(spellcheckQuery);
                             documents.addAll(Arrays.stream(spellcheckResponse.getHits().getHits())
-                                    .map(hit -> DocumentUtil.buildVindDoc(hit, factory, ftext.getSearchContext()))
+                                    .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))
                                     .collect(Collectors.toList()));
                         }
                     }

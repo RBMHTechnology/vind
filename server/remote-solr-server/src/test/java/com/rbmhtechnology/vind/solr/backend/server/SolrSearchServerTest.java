@@ -64,7 +64,7 @@ public class SolrSearchServerTest {
      * Class extending SolrSearchServer to ve able to use
      *
      */
-    private class SolrSearchServerTestClass extends SolrSearchServer{
+    private class SolrSearchServerTestClass extends SolrSearchServer {
         public SolrSearchServerTestClass(SolrClient solrClient){
             super(solrClient, false);
         }

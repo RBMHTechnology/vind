@@ -20,7 +20,6 @@ import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.InverseSearchQuery;
-import com.rbmhtechnology.vind.parser.queryparser.VindQueryParser;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -287,7 +286,7 @@ public abstract class SearchServer implements Closeable {
      * @return {@link SearchResult} storing the search results with type T
      * @throws SearchServerException if not possible to execute the full text search.
      */
-    public  abstract SearchResult execute(FulltextSearch search, DocumentFactory factory);
+    public abstract SearchResult execute(FulltextSearch search, DocumentFactory factory);
 
     /**
      * Return the raw query sent produced by the server implementation.

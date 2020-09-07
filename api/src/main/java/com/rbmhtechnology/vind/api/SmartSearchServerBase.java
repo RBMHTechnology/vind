@@ -1,6 +1,5 @@
 package com.rbmhtechnology.vind.api;
 
-import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.result.BeanSearchResult;
@@ -8,7 +7,7 @@ import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.parser.queryparser.VindQueryParser;
 
-public abstract class SearchServerBase extends SearchServer {
+public abstract class SmartSearchServerBase extends SearchServer {
 
     @Override
     public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {

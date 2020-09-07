@@ -118,7 +118,7 @@ public class MasterSlaveSearchServer extends SearchServer {
     }
 
     @Override
-    public  <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
+    public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
         return backend.execute(search, c);
     }
 

@@ -17,8 +17,6 @@ import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.SolrInputField;
-import org.apache.solr.common.params.CommonParams;
-import org.apache.solr.common.params.SolrParams;
 import org.hamcrest.*;
 import org.junit.Before;
 import org.junit.Test;
