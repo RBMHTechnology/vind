@@ -42,4 +42,28 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+            <groupId>com.helger.maven</groupId>
+            <artifactId>ph-javacc-maven-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>jjc-query</id>
+                    <phase>generate-sources</phase>
+                    <goals>
+                        <goal>javacc</goal>
+                        <goal>jjdoc</goal>
+                    </goals>
+                    <configuration>
+                        <jdkVersion>1.8</jdkVersion>
+                        <sourceDirectory>src/main/javacc/queryparser</sourceDirectory>
+                        <outputDirectory>${project.build.directory}/generated-sources/queryparser</outputDirectory>
+                    </configuration>
+                </execution>
+            </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

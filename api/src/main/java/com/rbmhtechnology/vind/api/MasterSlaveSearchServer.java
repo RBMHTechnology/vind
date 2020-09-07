@@ -204,6 +204,4 @@ public class MasterSlaveSearchServer extends SearchServer {
     public Class<? extends ServiceProvider> getServiceProviderClass() {
         return backend.getServiceProviderClass();
     }
-
-
 }

@@ -5,10 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.Document;
-import com.rbmhtechnology.vind.api.SearchServer;
+import com.rbmhtechnology.vind.api.SmartSearchServerBase;
 import com.rbmhtechnology.vind.api.ServiceProvider;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
-import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
@@ -78,7 +77,7 @@ import java.util.stream.Stream;
 
 import static com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil.createEmptyDocument;
 
-public class ElasticSearchServer extends SearchServer {
+public class ElasticSearchServer extends SmartSearchServerBase {
 
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchServer.class);
     private static final Logger elasticClientLogger = LoggerFactory.getLogger(log.getName() + "#elasticSearchClient");
@@ -281,14 +280,16 @@ public class ElasticSearchServer extends SearchServer {
     }
 
     @Override
-    public <T> BeanSearchResult<T> execute(FulltextSearch search, Class<T> c) {
+    protected  <T> BeanSearchResult<T> doExecute(FulltextSearch search, Class<T> c) {
         final DocumentFactory factory = AnnotationUtil.createDocumentFactory(c);
+        createDocumentFactoryFootprint(factory);
+
         final SearchResult docResult = this.execute(search, factory);
         return docResult.toPojoResult(docResult, c);
     }
 
     @Override
-    public SearchResult execute(FulltextSearch search, DocumentFactory factory) {
+    protected SearchResult doExecute(FulltextSearch search, DocumentFactory factory) {
         createDocumentFactoryFootprint(factory);
         final StopWatch elapsedtime = StopWatch.createStarted();
         final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory);
@@ -434,7 +435,7 @@ public class ElasticSearchServer extends SearchServer {
     @Override
     public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
         //TODO implement for monitoring search server;
-        return "";
+        throw new NotImplementedException();
     }
 
     @Override
@@ -450,6 +451,7 @@ public class ElasticSearchServer extends SearchServer {
     @Override
     public <T> BeanGetResult<T> execute(RealTimeGet search, Class<T> c) {
         final DocumentFactory documentFactory = AnnotationUtil.createDocumentFactory(c);
+        createDocumentFactoryFootprint(documentFactory);
         final GetResult result = this.execute(search, documentFactory);
         return result.toPojoResult(result,c);
     }
@@ -458,6 +460,7 @@ public class ElasticSearchServer extends SearchServer {
     public GetResult execute(RealTimeGet search, DocumentFactory assets) {
         try {
             final StopWatch elapsedTime = StopWatch.createStarted();
+            createDocumentFactoryFootprint(assets);
             final MultiGetResponse response = elasticSearchClient.realTimeGet(search.getValues());
             elapsedTime.stop();
 
@@ -480,7 +483,6 @@ public class ElasticSearchServer extends SearchServer {
         final List<Map<String,Object>> mapDocs = inverseSearch.getDocs().parallelStream()
                 .map(DocumentUtil::createInputDocument)
                 .collect(Collectors.toList());
-        final FulltextSearch fullTextSearch = Search.fulltext().filter(inverseSearch.getQueryFilter());
         final QueryBuilder query =
                 ElasticQueryBuilder.buildFilterQuery(inverseSearch.getQueryFilter(), documentFactory, null);
         //query

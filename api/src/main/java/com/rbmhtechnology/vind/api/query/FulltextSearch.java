@@ -46,6 +46,7 @@ public class FulltextSearch {
     private String searchContext = null;
     private boolean strict = true;
     private boolean spellcheck = false;
+    private boolean smartParsing = false;
 
     /**
      * Creates a new basic full text search query object.
@@ -671,6 +672,15 @@ public class FulltextSearch {
         return this.spellcheck;
     }
 
+    public boolean isSmartParsing() {
+        return smartParsing;
+    }
+
+    public FulltextSearch smartParsing(boolean smartParsing) {
+        this.smartParsing = smartParsing;
+        return this;
+    }
+
     @Override
     public String toString(){
         String searchString = "" +
@@ -691,6 +701,7 @@ public class FulltextSearch {
                 "\"geoDistance\":%s," +
                 "\"searchContext\":\"%s\"," +
                 "\"strictFlag\":%s" +
+                "\"smartParsing\":%s" +
                 "}";
 
         return String.format(searchString,
@@ -709,7 +720,9 @@ public class FulltextSearch {
                 this.facets.entrySet().stream().map(e -> e.getValue().toString()).collect(Collectors.joining(",")),
                 this.geoDistance,
                 this.searchContext,
-                this.strict);
+                this.strict,
+                this.isSmartParsing()
+        );
     }
     public enum Operators {
         AND, OR

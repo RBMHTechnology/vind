@@ -1,0 +1,121 @@
+options {
+  LOOKAHEAD = 3;
+}
+
+PARSER_BEGIN(QueryParser)
+
+package com.rbmhtechnology.vind.parser.queryparser;
+
+import org.apache.commons.lang3.StringUtils;
+
+public class QueryParser {
+    public Query run() throws ParseException {
+        return query();
+    }
+};
+
+PARSER_END(QueryParser)
+SKIP : {
+    <" " | "\t" | "\n" | "\r" >
+}
+TOKEN :
+{
+  <AND:              "AND">
+| <OR:               "OR">
+| <NOT:              ("NOT" | "!")>
+| <PLUS:             "+">
+| <MINUS:            "-" >
+| <LBRACKET:         "(">
+| <RBRACKET:         ")">
+| <TERM:             (["0"-"9","A"-"Z","a"-"z","_","-","\u0080"-"\uffff"])+ >
+| <FIELD:             (["0"-"9","A"-"Z","a"-"z","_","-"])+ ":" >
+| <QUOTE:           "\"">
+| <QUOTED_STRING:   <QUOTE> (~["\""])+ <QUOTE> >
+}
+
+Query query() :
+{Query q = new Query();Clause c;Token value;}
+{
+    (( c=booleanClause(){q.add(c);} ) | ( c=fieldClause(){q.add(c);} )+ )?
+    (value=<TERM>{q.addText(value.image);} | value=<QUOTED_STRING>{q.addText(value.image);})*
+    { return q;}
+}
+
+FieldClause fieldClause() :
+{BooleanLiteral query = null;boolean negated = false;Token field = null;TermsLiteral value = null;}
+{
+    ((<PLUS> | <MINUS>{negated=true;})? field=<FIELD>
+    (value=termsLiteral() | (  query=booleanLiteral()  )))
+  {
+    String fieldName = field == null ? null : StringUtils.chop(field.image);
+    return query == null ?
+        new SimpleTermClause(negated, fieldName, value != null ? value : null) :
+        new ComplexTermClause(negated, fieldName, query);}
+}
+
+
+BooleanClause binaryBooleanClause() :
+{Clause left;Clause right;Token op;}
+{
+    <LBRACKET> ( left=clause() ) ( op=<AND> | op=<OR> ) ( right=clause()) <RBRACKET>
+    { return new BinaryBooleanClause(op.image, left, right);}
+}
+
+BooleanClause unaryBooleanClause() :
+{Clause clause;Token op;}
+{
+    (op=<NOT>) <LBRACKET> (clause=clause()) <RBRACKET>
+    { return new UnaryBooleanClause(op.image, clause);}
+}
+
+BooleanClause booleanClause() :
+{BooleanClause clause;}
+{
+    (clause=unaryBooleanClause() | clause=binaryBooleanClause())
+    {return clause;}
+}
+
+Clause clause() :
+{Clause clause;}
+{
+    (clause=fieldClause() | clause=booleanClause())
+    {return clause;}
+}
+
+
+TermsLiteral termsLiteral() :
+{TermsLiteral l = new TermsLiteral();Token value;}
+{
+    ( value=<TERM>{l.add(value.image);}
+    | value=<QUOTED_STRING>{l.add(value.image);}
+    | ( <LBRACKET> (value=<TERM>{l.add(value.image);} | value=<QUOTED_STRING>{l.add(value.image);})+ <RBRACKET> ))
+
+    { return l;}
+}
+
+BooleanLiteral booleanLiteral() :
+{BooleanLiteral literal;}
+{   (literal=unaryBooleanLiteral() | literal=binaryBooleanLiteral() | literal=booleanLeafValue())
+    { return literal; }
+}
+
+BooleanLiteral booleanLeafValue():
+{Token value;}
+{
+    ( value=<TERM> | value=<QUOTED_STRING>)
+    {return new BooleanLeafLiteral(value.image);}
+}
+
+BooleanLiteral binaryBooleanLiteral() :
+{BooleanLiteral left;BooleanLiteral right;Token op;}
+{
+    (<LBRACKET> (left=booleanLiteral() ) ( op=<AND> | op=<OR> ) (right=booleanLiteral() ) <RBRACKET>)
+    { return new BinaryBooleanLiteral(op.image, left, right);}
+}
+
+BooleanLiteral unaryBooleanLiteral() :
+{BooleanLiteral literal;Token op;}
+{
+    (op=<NOT> | op=<MINUS> ) (literal=booleanLiteral() )
+    { return new UnaryBooleanLiteral(op.image, literal);}
+}

@@ -142,10 +142,10 @@ public class SearchService implements AutoCloseable {
         return true;
     }
 
-    public Object search(String query, String... categories) {
+    public Object search(String query, boolean smart, String... categories) {
 
 
-        FulltextSearch search = Search.fulltext(query);
+        FulltextSearch search = Search.fulltext(query).smartParsing(smart);
 
         if (categories != null) Arrays.stream(categories).map(c -> eq(category, c)).forEach(search::filter);
 

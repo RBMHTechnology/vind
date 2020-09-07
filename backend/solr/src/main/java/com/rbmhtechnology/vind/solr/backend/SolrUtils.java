@@ -19,7 +19,6 @@ import com.rbmhtechnology.vind.model.value.LatLng;
 import com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.UseCase;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.solr.client.solrj.SolrQuery;
