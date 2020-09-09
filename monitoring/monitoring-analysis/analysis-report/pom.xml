@@ -3,7 +3,7 @@
     <parent>
         <artifactId>vind</artifactId>
         <groupId>com.rbmhtechnology.vind</groupId>
-        <version>3.0.0-RC18</version>
+        <version>3.0.0-SNAPSHOT</version>
         <relativePath>../../../</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
