@@ -150,3 +150,11 @@ documents matching the delete filters.
 # 2.5.0
 * Fix: Possible IllegalArgumentException in DocumentFactory (#106)
 * Fix: Added base Match all clause to NOT filter serialization (#110)
+
+# 3.0.0
+* Feature: Implemented Elasticsearch backend (7.6.1)
+* Feature: Smart parse of fulltext search input
+* Feature: Reverse search (Only Elasticsearch)
+* Feature: Facet sorting
+* Improvement: Support basic and ApiKey backend authorization
+* Feature: MasterSlaveBackend for parallel indexing 
