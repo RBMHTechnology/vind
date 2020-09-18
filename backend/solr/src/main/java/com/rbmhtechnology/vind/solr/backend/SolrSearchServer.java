@@ -412,6 +412,7 @@ public class SolrSearchServer extends SmartSearchServerBase {
                 final SolrDocumentList responseResults = response.getResults();
                 if (search.isSpellcheck()
                         && responseResults.getNumFound() <= 0
+                        && response.getSpellCheckResponse() != null
                         && !response.getSpellCheckResponse().isCorrectlySpelled()
                         && CollectionUtils.isNotEmpty(response.getSpellCheckResponse().getCollatedResults())) {
                     final FulltextSearch spellcheckSearch = search.copy().spellcheck(false).text(response.getSpellCheckResponse().getCollatedResult());
