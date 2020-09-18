@@ -27,10 +27,14 @@ TOKEN :
 | <MINUS:            "-" >
 | <LBRACKET:         "(">
 | <RBRACKET:         ")">
+| <LSQBRACKET:         "[">
+| <RSQBRACKET:         "]">
 | <TERM:             (["0"-"9","A"-"Z","a"-"z","_","-","\u0080"-"\uffff"])+ >
 | <FIELD:             (["0"-"9","A"-"Z","a"-"z","_","-"])+ ":" >
 | <QUOTE:           "\"">
 | <QUOTED_STRING:   <QUOTE> (~["\""])+ <QUOTE> >
+| <WILDCARD:        "*">
+| <TO:              "TO">
 }
 
 Query query() :
@@ -42,15 +46,16 @@ Query query() :
 }
 
 FieldClause fieldClause() :
-{BooleanLiteral query = null;boolean negated = false;Token field = null;TermsLiteral value = null;}
+{BooleanLiteral query = null;boolean negated = false;Token field = null;SimpleLiteral value = null;}
 {
     ((<PLUS> | <MINUS>{negated=true;})? field=<FIELD>
-    (value=termsLiteral() | (  query=booleanLiteral()  )))
+    (value=simpleLiteral() | (  query=booleanLiteral() )))
   {
     String fieldName = field == null ? null : StringUtils.chop(field.image);
     return query == null ?
         new SimpleTermClause(negated, fieldName, value != null ? value : null) :
-        new ComplexTermClause(negated, fieldName, query);}
+        new ComplexTermClause(negated, fieldName, query);
+    }
 }
 
 
@@ -82,7 +87,12 @@ Clause clause() :
     {return clause;}
 }
 
-
+SimpleLiteral simpleLiteral() :
+{SimpleLiteral literal;}
+{
+    ( literal=termsLiteral() | literal=rangeLiteral() )
+    {return literal;}
+}
 TermsLiteral termsLiteral() :
 {TermsLiteral l = new TermsLiteral();Token value;}
 {
@@ -118,4 +128,11 @@ BooleanLiteral unaryBooleanLiteral() :
 {
     (op=<NOT> | op=<MINUS> ) (literal=booleanLiteral() )
     { return new UnaryBooleanLiteral(op.image, literal);}
+}
+
+RangeLiteral rangeLiteral() :
+{Token from;Token to;}
+{
+    <LSQBRACKET> ( from=<TERM> | from=<WILDCARD> ) <TO> ( to=<TERM> | to=<WILDCARD> ) <RSQBRACKET>
+    {return new RangeLiteral(from.image, to.image);}
 }

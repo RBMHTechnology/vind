@@ -22,55 +22,55 @@ public class QueryParserTest {
     public void testParsings() throws ParseException {
         Query q = parse("some:test");
         assertEquals(1, q.size());
-        assertEquals("test",((SimpleTermClause)q.get(0)).getValue().getValues().get(0));
+        assertEquals("test",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(0));
 
         q = parse("some:test text");
         assertEquals(1, q.size());
         assertEquals("text", q.getText());
-        assertEquals("test",((SimpleTermClause)q.get(0)).getValue().getValues().get(0));
+        assertEquals("test",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(0));
 
         q = parse("some:test \"fulltext text\"");
         assertEquals("\"fulltext text\"", q.getText());
 
         q = parse("some:\"simple quoted test\"");
         assertEquals(1,q.size());
-        assertEquals("\"simple quoted test\"",((SimpleTermClause)q.get(0)).getValue().getValues().get(0));
+        assertEquals("\"simple quoted test\"",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(0));
 
         q = parse("topic: sports assettype: (video image)");
         assertEquals(2, q.size());
-        assertEquals("sports",((SimpleTermClause)q.get(0)).getValue().getValues().get(0));
-        assertEquals("video",((SimpleTermClause)q.get(1)).getValue().getValues().get(0));
+        assertEquals("sports",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(0));
+        assertEquals("video",((TermsLiteral)((SimpleTermClause)q.get(1)).getValue()).getValues().get(0));
 
         q = parse("topic:( \"water sports\" \"formula 1\")");
         assertEquals(1, q.size());
-        assertEquals("\"water sports\"",((SimpleTermClause)q.get(0)).getValue().getValues().get(0));
-        assertEquals("\"formula 1\"",((SimpleTermClause)q.get(0)).getValue().getValues().get(1));
+        assertEquals("\"water sports\"",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(0));
+        assertEquals("\"formula 1\"",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(1));
 
         q = parse("topic:( water sports \"formula 1\") text \"full Text\"");
         assertEquals(1, q.size());
         assertEquals("text \"full Text\"", q.getText());
-        assertEquals("water",((SimpleTermClause)q.get(0)).getValue().getValues().get(0));
-        assertEquals("sports",((SimpleTermClause)q.get(0)).getValue().getValues().get(1));
-        assertEquals("\"formula 1\"",((SimpleTermClause)q.get(0)).getValue().getValues().get(2));
+        assertEquals("water",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(0));
+        assertEquals("sports",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(1));
+        assertEquals("\"formula 1\"",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(2));
 
         q = parse("(topic: water OR assettype: video)");
         assertEquals(1, q.size());
         assertEquals("OR",((BinaryBooleanClause)q.get(0)).getOp());
-        assertEquals("water",((SimpleTermClause)((BinaryBooleanClause)q.get(0)).getLeftClause()).getValue().getValues().get(0));
+        assertEquals("water",((TermsLiteral)((SimpleTermClause)((BinaryBooleanClause)q.get(0)).getLeftClause()).getValue()).getValues().get(0));
 
         q = parse("(topic: water OR NOT(assettype: video))");
         assertEquals(1, q.size());
         assertEquals("OR",((BinaryBooleanClause)q.get(0)).getOp());
-        assertEquals("water",((SimpleTermClause)((BinaryBooleanClause)q.get(0)).getLeftClause()).getValue().getValues().get(0));
+        assertEquals("water",((TermsLiteral)((SimpleTermClause)((BinaryBooleanClause)q.get(0)).getLeftClause()).getValue()).getValues().get(0));
         assertEquals("NOT",((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getOp());
-        assertEquals("video",((SimpleTermClause)((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getClause()).getValue().getValues().get(0));
+        assertEquals("video",((TermsLiteral)((SimpleTermClause)((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getClause()).getValue()).getValues().get(0));
 
         q = parse("((topic: water AND athlete:\"Adam Ondra\") OR NOT(assettype: video)) \"fulltext text\"");
         assertEquals(1, q.size());
         assertEquals("\"fulltext text\"", q.getText());
         assertEquals("OR",((BinaryBooleanClause)q.get(0)).getOp());
         assertEquals("NOT",((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getOp());
-        assertEquals("video",((SimpleTermClause)((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getClause()).getValue().getValues().get(0));
+        assertEquals("video",((TermsLiteral)((SimpleTermClause)((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getClause()).getValue()).getValues().get(0));
 
         q = parse("some:(test OR sample)");
         assertEquals(1, q.size());
@@ -84,6 +84,10 @@ public class QueryParserTest {
         assertEquals("NOT",((UnaryBooleanLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getLeftClause()).getOp());
         assertEquals("sample",((BooleanLeafLiteral)((BinaryBooleanLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getRightClause()).getLeftClause()).getValue());
 
+        q = parse("some: [ 23 TO 56 ]");
+        assertEquals(1, q.size());
+        assertEquals("23",((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getFrom());
+        assertEquals("56",((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getTo());
     }
 
 
