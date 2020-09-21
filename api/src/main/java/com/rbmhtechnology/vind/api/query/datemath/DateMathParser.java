@@ -1,12 +1,13 @@
 package com.rbmhtechnology.vind.api.query.datemath;
 
 import com.rbmhtechnology.vind.SearchServerException;
+import org.apache.commons.lang3.math.NumberUtils;
 
-import java.text.ParseException;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -23,6 +24,7 @@ public class DateMathParser {
     public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
     public static final TimeZone DEFAULT_MATH_TZ;
     public static final DateTimeFormatter PARSER;
+    public static final DateTimeFormatter STRING_DATE_PARSER;
     public static final Map<String, ChronoUnit> CALENDAR_UNITS;
     private TimeZone zone;
     private Locale loc;
@@ -81,7 +83,14 @@ public class DateMathParser {
     }
 
     private static ZonedDateTime parseNoMath(String val) {
-        return  ZonedDateTime.ofInstant(((Instant)PARSER.parse(val, Instant::from)), ZoneId.of(UTC.getID()));
+       try {
+           final Instant instant = PARSER.parse(val, Instant::from);
+           return  ZonedDateTime.ofInstant(instant, ZoneId.of(UTC.getID()));
+       } catch (Exception e) {
+           final LocalDate date = LocalDate.parse(val, STRING_DATE_PARSER);
+           return date.atStartOfDay(ZoneOffset.UTC);
+       }
+
     }
 
     public TimeZone getTimeZone() {
@@ -107,13 +116,18 @@ public class DateMathParser {
             int pos = 0;
 
             DateMathExpression expression = new DateMathExpression();
-            if (ops[0].length() > 1) {
-                if (!ops[0].equals("NOW")) {
-                    expression = new DateMathExpression(parseNoMath(ops[0]));
+            if (ops[0].length() > 1 ) {
+                if (!ops[0].equals("NOW") ) {
+                    if(isDate(ops,pos)){
+                        expression = new DateMathExpression(parseNoMath(ops[0] + ops[1] + ops[2]+ ops[3]+ ops[4]));
+                        pos = 5;
+                    } else {
+                        expression = new DateMathExpression(parseNoMath(ops[0]));
+                        pos++;
+                    }
                 }
-                pos++;
 
-                if (ops[pos].equals("/")) {
+                if (pos<ops.length && ops[pos].equals("/")) {
                     pos++;
                     expression.setRootUnit(DateMathExpression.TimeUnit.valueOf(ops[pos++]));
                 }
@@ -218,8 +232,36 @@ public class DateMathParser {
 
     static {
         DEFAULT_MATH_TZ = UTC;
-        PARSER = (new DateTimeFormatterBuilder()).parseCaseInsensitive().parseLenient().appendInstant().toFormatter(Locale.ROOT);
+        PARSER = new DateTimeFormatterBuilder().parseCaseInsensitive().parseLenient().appendInstant().toFormatter(Locale.ROOT);
+        STRING_DATE_PARSER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
         CALENDAR_UNITS = makeUnitsMap();
-        splitter = Pattern.compile("\\b|(?<=\\d)(?=\\D)");
+        splitter = Pattern.compile("\\b|(?<=[\\d-])(?=\\D)");
+    }
+    private boolean isDate(String[] ops, int pos) {
+        if(ops[pos+1].equals("-") && ops[pos+3].equals("-")){
+            if(NumberUtils.isDigits(ops[pos])) {
+                final Integer day = Integer.valueOf(ops[pos]);
+                if (!(day>0) || !(day<32)) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+
+            if(NumberUtils.isDigits(ops[pos+2])) {
+                final Number day = NumberUtils.createNumber(ops[pos+2]);
+                if (!(day.intValue()>0) || !(day.intValue()<13)) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+
+            if(!NumberUtils.isDigits(ops[pos+2])) {
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 }

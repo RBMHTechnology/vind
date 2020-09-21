@@ -1,6 +1,8 @@
 package com.rbmhtechnology.vind.parser.queryparser;
 
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
+import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
+import com.rbmhtechnology.vind.api.query.datemath.DateMathParser;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.filter.parser.FilterLuceneParser;
 import com.rbmhtechnology.vind.model.DocumentFactory;
@@ -13,6 +15,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
 
 import static org.junit.Assert.assertEquals;
 
@@ -83,11 +86,41 @@ public class QueryParserTest {
         assertEquals("OR",((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOp());
         assertEquals("NOT",((UnaryBooleanLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getLeftClause()).getOp());
         assertEquals("sample",((BooleanLeafLiteral)((BinaryBooleanLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getRightClause()).getLeftClause()).getValue());
+    }
 
-        q = parse("some: [ 23 TO 56 ]");
+    @Test
+    public void testRangeParsings() throws ParseException {
+        Query q = parse("field: [23 TO 56 ]");
         assertEquals(1, q.size());
-        assertEquals("23",((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getFrom());
-        assertEquals("56",((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getTo());
+        assertEquals(23,((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getFrom());
+        assertEquals(56,((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getTo());
+
+        q = parse("field: [23.0 TO 56.45 ]");
+        assertEquals(1, q.size());
+        assertEquals(23.0F,((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getFrom());
+        assertEquals(56.45F,((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getTo());
+
+        q = parse("field: [03-02-1999 TO 09-12-2060 ]");
+        assertEquals(1, q.size());
+        assertEquals(new DateMathParser().parseMath("03-02-1999").toString(),((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getFrom().toString());
+        assertEquals(new DateMathParser().parseMath("09-12-2060").toString(),((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getTo().toString());
+
+        q = parse("field: [03-02-1999 TO * ]");
+        assertEquals(1, q.size());
+        assertEquals(new DateMathParser().parseMath("03-02-1999").toString(),((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getFrom().toString());
+        assertEquals(null,((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getTo());
+
+        q = parse("field: [* TO 56 ]");
+        assertEquals(1, q.size());
+        assertEquals(null,((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getFrom());
+        assertEquals(56,((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getTo());
+    }
+
+    @Test
+    public void testDotFieldNameParsings() throws ParseException {
+        Query q = parse("some.field:test");
+        assertEquals(1, q.size());
+        assertEquals("test",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(0));
     }
 
 

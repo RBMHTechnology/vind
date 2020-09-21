@@ -1,13 +1,11 @@
 package com.rbmhtechnology.vind.parser.queryparser;
 
 import com.rbmhtechnology.vind.SearchServerException;
-import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class SimpleTermClause extends FieldClause {
      private SimpleLiteral value;
