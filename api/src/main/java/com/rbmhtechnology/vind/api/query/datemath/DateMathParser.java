@@ -120,13 +120,13 @@ public class DateMathParser {
                 if (!ops[0].equals("NOW") ) {
                     if(isDate(ops,pos)){
                         expression = new DateMathExpression(parseNoMath(ops[0] + ops[1] + ops[2]+ ops[3]+ ops[4]));
-                        pos = 5;
+                        pos = 4;
                     } else {
                         expression = new DateMathExpression(parseNoMath(ops[0]));
-                        pos++;
+
                     }
                 }
-
+                pos++;
                 if (pos<ops.length && ops[pos].equals("/")) {
                     pos++;
                     expression.setRootUnit(DateMathExpression.TimeUnit.valueOf(ops[pos++]));
