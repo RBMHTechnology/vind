@@ -6,15 +6,18 @@ package com.rbmhtechnology.vind.test;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
 import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import static com.rbmhtechnology.vind.api.query.filter.Filter.eq;
 import static com.rbmhtechnology.vind.test.Backend.Elastic;
 import static com.rbmhtechnology.vind.test.Backend.Solr;
 import static org.junit.Assert.assertEquals;
@@ -171,4 +174,23 @@ public class SuggestionSearchIT {
         server.delete(parent.createDoc("P_SPEC_CHAR"));
         server.commit();
     }
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testMultiWordSuggestion() {
+
+
+        server.index(
+                parent.createDoc("multi1").setValue(parent_value, "León city"));
+        server.index(
+                parent.createDoc("multi2").setValue(parent_value, "Lerida"));
+        server.index(
+                parent.createDoc("multi3").setValue(parent_value, "Oviedo city"));
+        server.commit();
+
+        SuggestionResult suggestionResult = server.execute(Search.suggest("le ci").addField(parent_value), parent);
+
+        Assert.assertEquals(3, suggestionResult.size());
+
+    }
+
 }

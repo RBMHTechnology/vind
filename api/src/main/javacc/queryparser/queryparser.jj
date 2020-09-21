@@ -27,10 +27,17 @@ TOKEN :
 | <MINUS:            "-" >
 | <LBRACKET:         "(">
 | <RBRACKET:         ")">
-| <TERM:             (["0"-"9","A"-"Z","a"-"z","_","-","\u0080"-"\uffff"])+ >
-| <FIELD:             (["0"-"9","A"-"Z","a"-"z","_","-"])+ ":" >
+| <LSQBRACKET:       "[">
+| <RSQBRACKET:       "]">
+//| <DATE_TERM:        ((["0"-"2"]<NUMBER>)|("3"["0","1"]))"-"("0"["1"-"9"]|"1"["0"-"2"])"-"(<NUMBER>){4}  >
+| <NUMBER_TERM:      (["+","-"])? ( (<NUMBER>)+ ("."(<NUMBER>)*)? ) (["e","E"](<NUMBER>)+)? >
+| <FIELD:            (["0"-"9","A"-"Z","a"-"z","_","-","."])+ ":" >
 | <QUOTE:           "\"">
 | <QUOTED_STRING:   <QUOTE> (~["\""])+ <QUOTE> >
+| <WILDCARD:        "*">
+| <TO:              "TO">
+| <TERM:             (["0"-"9","A"-"Z","a"-"z","_","-","\u0080"-"\uffff"])+ >
+| <NUMBER:           ["0"-"9"]>
 }
 
 Query query() :
@@ -42,15 +49,16 @@ Query query() :
 }
 
 FieldClause fieldClause() :
-{BooleanLiteral query = null;boolean negated = false;Token field = null;TermsLiteral value = null;}
+{BooleanLiteral query = null;boolean negated = false;Token field = null;SimpleLiteral value = null;}
 {
     ((<PLUS> | <MINUS>{negated=true;})? field=<FIELD>
-    (value=termsLiteral() | (  query=booleanLiteral()  )))
+    (value=simpleLiteral() | (  query=booleanLiteral() )))
   {
-    String fieldName = field == null ? null : StringUtils.chop(field.image);
-    return query == null ?
-        new SimpleTermClause(negated, fieldName, value != null ? value : null) :
-        new ComplexTermClause(negated, fieldName, query);}
+String fieldName = field == null ? null : StringUtils.chop(field.image);
+return query == null ?
+    new SimpleTermClause(negated, fieldName, value) :
+    new ComplexTermClause(negated, fieldName, query);
+}
 }
 
 
@@ -82,7 +90,12 @@ Clause clause() :
     {return clause;}
 }
 
-
+SimpleLiteral simpleLiteral() :
+{SimpleLiteral literal;}
+{
+    ( literal=termsLiteral() | literal=rangeLiteral() )
+    {return literal;}
+}
 TermsLiteral termsLiteral() :
 {TermsLiteral l = new TermsLiteral();Token value;}
 {
@@ -119,3 +132,27 @@ BooleanLiteral unaryBooleanLiteral() :
     (op=<NOT> | op=<MINUS> ) (literal=booleanLiteral() )
     { return new UnaryBooleanLiteral(op.image, literal);}
 }
+
+RangeLiteral rangeLiteral() :
+{RangeLiteral range;}
+{
+   (range=numericRangeLiteral() | range=dateRangeLiteral() )
+    {return range;}
+}
+
+NumericRangeLiteral numericRangeLiteral() :
+{Token from;Token to;}
+{
+    (<LSQBRACKET> ( from=<NUMBER_TERM> | from=<WILDCARD> ) <TO> ( to=<NUMBER_TERM> | to=<WILDCARD> ) <RSQBRACKET>)
+    {return new NumericRangeLiteral(from.image, to.image);}
+}
+
+DateRangeLiteral dateRangeLiteral() :
+{Token from;Token to;}
+{
+    (<LSQBRACKET> ( from=<TERM> | from=<WILDCARD> ) <TO> ( to=<TERM> | to=<WILDCARD> ) <RSQBRACKET>)
+    {return new DateRangeLiteral(from.image, to.image);}
+}
+
+
+
