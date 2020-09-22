@@ -105,7 +105,7 @@ public class ServerTest {
         FieldDescriptor<String> title = new FieldDescriptorBuilder()
                 .setFullText(true)
                 .setFacet(true)
-                .buildTextField("title");
+                .buildTextField("title.test.test");
 
         SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
                 .setFacet(true)

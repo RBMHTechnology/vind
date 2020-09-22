@@ -338,7 +338,7 @@ public class DocumentUtil {
                     final Matcher internalPrefixMatcher = Pattern.compile(pattern).matcher(name);
                     final String contextualizedName = internalPrefixMatcher.replaceFirst("");
                     final boolean contextualized = Objects.nonNull(searchContext) && contextualizedName.contains(contextPrefix);
-                    final String fieldRawName = contextualizedName.replace(contextPrefix, "");
+                    final String fieldRawName = contextualizedName.replace(contextPrefix, "").replace(FieldUtil.DOT,".");
                     if (factory.hasField(fieldRawName)) {
                         final FieldDescriptor<?> field = factory.getField(fieldRawName);
                         Class<?> type;
