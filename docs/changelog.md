@@ -158,3 +158,7 @@ documents matching the delete filters.
 * Feature: Facet sorting
 * Improvement: Support basic and ApiKey backend authorization
 * Feature: MasterSlaveBackend for parallel indexing 
+
+# 3.1.0
+* Improvement: Add support to '.' on field names for elasticsearch backend.
+* Improvement: Extended smart parser to support range filters on numeric and date fields.
