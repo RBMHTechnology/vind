@@ -140,8 +140,12 @@ public class QueryParserTest {
                 .setFacet(true)
                 .buildTextField("assettype");
 
+        final FieldDescriptor<Number> yearName = new FieldDescriptorBuilder<>()
+                .setFacet(true)
+                .buildNumericField("year.name");
+
         final DocumentFactory testDocFactory = new DocumentFactoryBuilder("testDoc")
-                .addField(customMetadata, assetType, athlete)
+                .addField(customMetadata, assetType, athlete, yearName)
                 .build();
 
         FulltextSearch vindFilter = filterLuceneParser
@@ -170,6 +174,13 @@ public class QueryParserTest {
 
                         , testDocFactory);
         assertEquals("OrFilter",vindFilter.getFilter().getType());
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "(assettype:Season AND year.name:2017)"
+
+                        , testDocFactory);
+        assertEquals("AndFilter",vindFilter.getFilter().getType());
 
     }
 

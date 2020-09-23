@@ -101,7 +101,8 @@ TermsLiteral termsLiteral() :
 {
     ( value=<TERM>{l.add(value.image);}
     | value=<QUOTED_STRING>{l.add(value.image);}
-    | ( <LBRACKET> (value=<TERM>{l.add(value.image);} | value=<QUOTED_STRING>{l.add(value.image);})+ <RBRACKET> ))
+    | value=<NUMBER_TERM> {l.add(value.image);}
+    | ( <LBRACKET> (value=<TERM>{l.add(value.image);} | value=<QUOTED_STRING>{l.add(value.image);} | value=<NUMBER_TERM> {l.add(value.image);})+ <RBRACKET> ))
 
     { return l;}
 }
