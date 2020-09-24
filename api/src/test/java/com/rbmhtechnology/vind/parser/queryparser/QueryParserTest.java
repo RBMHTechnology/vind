@@ -77,15 +77,20 @@ public class QueryParserTest {
 
         q = parse("some:(test OR sample)");
         assertEquals(1, q.size());
-        assertEquals("OR",((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOp());
-        assertEquals("test",((BooleanLeafLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getLeftClause()).getValue());
-        assertEquals("sample",((BooleanLeafLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getRightClause()).getValue());
+        assertEquals("OR",((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOps().get(0));
+        assertEquals("test",((BooleanLeafLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(0)).getValue());
+        assertEquals("sample",((BooleanLeafLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(1)).getValue());
 
         q = parse("some:(NOT test OR ( sample AND fake)))");
         assertEquals(1, q.size());
-        assertEquals("OR",((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOp());
-        assertEquals("NOT",((UnaryBooleanLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getLeftClause()).getOp());
-        assertEquals("sample",((BooleanLeafLiteral)((BinaryBooleanLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getRightClause()).getLeftClause()).getValue());
+        assertEquals("OR",((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOps().get(0));
+        assertEquals("NOT",((UnaryBooleanLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(0)).getOp());
+        assertEquals("sample",((BooleanLeafLiteral)((BinaryBooleanLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(1)).getClauses().get(0)).getValue());
+
+        q = parse("some:(NOT test OR sample AND fake)");
+        assertEquals(1, q.size());
+        assertEquals("OR",((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOps().get(0));
+        assertEquals("NOT",((UnaryBooleanLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(0)).getOp());
     }
 
     @Test
@@ -199,11 +204,23 @@ public class QueryParserTest {
 
         vindFilter = filterLuceneParser
                 .parse(
+                        "(customMetadata: water AND (athlete:\"Adam Ondra\" OR NOT(assettype: video)))"
+
+                        , testDocFactory);
+        assertEquals("AndFilter",vindFilter.getFilter().getType());
+
+        vindFilter = filterLuceneParser
+                .parse(
                         "(fromDate:[01-01-2010 TO 10-03-2020] AND toDate:[* TO 01-01-2020])"
 
                         , testDocFactory);
         assertEquals("AndFilter",vindFilter.getFilter().getType());
 
+        vindFilter = filterLuceneParser
+                .parse(
+                        "customMetadata:(\"resourceType=derivative\" OR \"resourceGroup=other\" AND \"contentType=video\" AND \"videri=true\")"
+                        , testDocFactory);
+        assertEquals("OrFilter",vindFilter.getFilter().getType());
 
     }
 

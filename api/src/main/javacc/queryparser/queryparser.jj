@@ -122,10 +122,14 @@ BooleanLiteral booleanLeafValue():
 }
 
 BooleanLiteral binaryBooleanLiteral() :
-{BooleanLiteral left;BooleanLiteral right;Token op;}
+{BooleanLiteral left;BooleanLiteral right;Token op;BinaryBooleanLiteral baseClause;}
 {
-    (<LBRACKET> (left=booleanLiteral() ) ( op=<AND> | op=<OR> ) (right=booleanLiteral() ) <RBRACKET>)
-    { return new BinaryBooleanLiteral(op.image, left, right);}
+    <LBRACKET>
+     (left=booleanLiteral() ) ( op=<AND> | op=<OR> ) (right=booleanLiteral() )
+     {baseClause = new BinaryBooleanLiteral(op.image, left, right);}
+     (( op=<AND> | op=<OR> ) ( right=booleanLiteral() ) {baseClause.addClause(op.image, right);})*
+     <RBRACKET>
+    { return baseClause; }
 }
 
 BooleanLiteral unaryBooleanLiteral() :

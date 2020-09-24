@@ -35,41 +35,27 @@ public class BinaryBooleanClause extends BooleanClause{
 
     @Override
     public Filter toVindFilter(DocumentFactory factory) {
-
-        Filter baseFilter = null;
-        for (int i = 0 ; i < ops.size();i++ ) {
+        final List<Filter> sortedFilters = new ArrayList<>();
+        for (int i = 0; i < ops.size(); i++) {
             final String op = ops.get(i);
             if (op.equals("AND")) {
-                if ( i == 0) {
-                    baseFilter  = new Filter.AndFilter(clauses.get(i).toVindFilter(factory), clauses.get(i+1).toVindFilter(factory));
+                if (i == 0) {
+                    sortedFilters.add(new Filter.AndFilter(clauses.get(i).toVindFilter(factory), clauses.get(i + 1).toVindFilter(factory)));
                 } else {
-                    if ("AndFilter".equals(baseFilter.getType())){
-                        ((Filter.AndFilter) baseFilter).getChildren().add(clauses.get(i+1).toVindFilter(factory));
-
-                    } else {
-                        final HashSet<Filter> orChildren = (HashSet<Filter>) ((Filter.OrFilter) baseFilter).getChildren();
-                        orChildren.remove(clauses.get(i).toVindFilter(factory));
-                        orChildren.add(new Filter.AndFilter(clauses.get(i).toVindFilter(factory), clauses.get(i+1).toVindFilter(factory)));
-                    }
+                    final Filter lasClause = sortedFilters.toArray(new Filter[sortedFilters.size()])[sortedFilters.size()-1];
+                    sortedFilters.remove(lasClause);
+                    sortedFilters.add(new Filter.AndFilter(lasClause, clauses.get(i + 1).toVindFilter(factory)));
                 }
-
-            }else if (op.equals("OR")) {
-                if ( i == 0) {
-                    baseFilter =  new Filter.OrFilter(clauses.get(i).toVindFilter(factory), clauses.get(i+1).toVindFilter(factory));
-                } else {
-                    if ("OrFilter".equals(baseFilter.getType())) {
-                        ((Filter.OrFilter) baseFilter).getChildren().add(clauses.get(i + 1).toVindFilter(factory));
-
-                    } else {
-                        final Filter.AndFilter leftClause = (Filter.AndFilter) baseFilter;
-                        baseFilter = new Filter.OrFilter(leftClause, clauses.get(i + 1).toVindFilter(factory));
-                    }
+            } else if (op.equals("OR")) {
+                if (i == 0) {
+                    sortedFilters.add(clauses.get(i).toVindFilter(factory));
                 }
+                sortedFilters.add(clauses.get(i + 1).toVindFilter(factory));
             } else {
-                throw new SearchServerException("Unsuported binary boolean operation '"+op+"' on fields");
+                throw new SearchServerException("Unsuported binary boolean operation '" + op + "' on fields");
             }
         }
-        return baseFilter;
+        return sortedFilters.stream().collect(Filter.OrCollector);
     }
 
     @Override
