@@ -222,6 +222,12 @@ public class QueryParserTest {
                         , testDocFactory);
         assertEquals("OrFilter",vindFilter.getFilter().getType());
 
+        vindFilter = filterLuceneParser
+                .parse(
+                        "full text search AND some OR \"quoted string\""
+                        , testDocFactory);
+        assertEquals("full text search AND some OR \"quoted string\"",vindFilter.getSearchString());
+
     }
 
     private Query parse(String s) throws ParseException {

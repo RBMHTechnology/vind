@@ -44,21 +44,31 @@ Query query() :
 {Query q = new Query();Clause c;Token value;}
 {
     (( c=booleanClause(){q.add(c);} ) | ( c=fieldClause(){q.add(c);} )+ )?
-    (value=<TERM>{q.addText(value.image);} | value=<QUOTED_STRING>{q.addText(value.image);})*
+    (value=<TERM>{q.addText(value.image);}
+    | value=<QUOTED_STRING>{q.addText(value.image);}
+    | value=<AND>{q.addText(value.image);}
+    | value=<OR>{q.addText(value.image);}
+    | value=<NOT>{q.addText(value.image);}
+    | value=<MINUS> {q.addText(value.image);}
+    | value=<PLUS> {q.addText(value.image);}
+    | value=<WILDCARD> {q.addText(value.image);}
+    | value=<NUMBER_TERM> {q.addText(value.image);}
+    )*
     { return q;}
 }
 
 FieldClause fieldClause() :
 {BooleanLiteral query = null;boolean negated = false;Token field = null;SimpleLiteral value = null;}
 {
-    ((<PLUS> | <MINUS>{negated=true;})? field=<FIELD>
-    (value=simpleLiteral() | (  query=booleanLiteral() )))
-  {
-String fieldName = field == null ? null : StringUtils.chop(field.image);
-return query == null ?
-    new SimpleTermClause(negated, fieldName, value) :
-    new ComplexTermClause(negated, fieldName, query);
-}
+    (<PLUS> | <MINUS>{negated=true;})?
+    field=<FIELD>
+    (value=simpleLiteral() | (  query=booleanLiteral() ))
+      {
+        String fieldName = field == null ? null : StringUtils.chop(field.image);
+        return query == null ?
+            new SimpleTermClause(negated, fieldName, value) :
+            new ComplexTermClause(negated, fieldName, query);
+      }
 }
 
 
