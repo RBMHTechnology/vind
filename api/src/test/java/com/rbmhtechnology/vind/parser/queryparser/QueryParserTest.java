@@ -58,22 +58,22 @@ public class QueryParserTest {
 
         q = parse("(topic: water OR assettype: video)");
         assertEquals(1, q.size());
-        assertEquals("OR",((BinaryBooleanClause)q.get(0)).getOp());
-        assertEquals("water",((TermsLiteral)((SimpleTermClause)((BinaryBooleanClause)q.get(0)).getLeftClause()).getValue()).getValues().get(0));
+        assertEquals("OR",((BinaryBooleanClause)q.get(0)).getOps().get(0));
+        assertEquals("water",((TermsLiteral)((SimpleTermClause)((BinaryBooleanClause)q.get(0)).getClauses().get(0)).getValue()).getValues().get(0));
 
         q = parse("(topic: water OR NOT(assettype: video))");
         assertEquals(1, q.size());
-        assertEquals("OR",((BinaryBooleanClause)q.get(0)).getOp());
-        assertEquals("water",((TermsLiteral)((SimpleTermClause)((BinaryBooleanClause)q.get(0)).getLeftClause()).getValue()).getValues().get(0));
-        assertEquals("NOT",((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getOp());
-        assertEquals("video",((TermsLiteral)((SimpleTermClause)((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getClause()).getValue()).getValues().get(0));
+        assertEquals("OR",((BinaryBooleanClause)q.get(0)).getOps().get(0));
+        assertEquals("water",((TermsLiteral)((SimpleTermClause)((BinaryBooleanClause)q.get(0)).getClauses().get(0)).getValue()).getValues().get(0));
+        assertEquals("NOT",((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getClauses().get(1)).getOp());
+        assertEquals("video",((TermsLiteral)((SimpleTermClause)((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getClauses().get(1)).getClause()).getValue()).getValues().get(0));
 
         q = parse("((topic: water AND athlete:\"Adam Ondra\") OR NOT(assettype: video)) \"fulltext text\"");
         assertEquals(1, q.size());
         assertEquals("\"fulltext text\"", q.getText());
-        assertEquals("OR",((BinaryBooleanClause)q.get(0)).getOp());
-        assertEquals("NOT",((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getOp());
-        assertEquals("video",((TermsLiteral)((SimpleTermClause)((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getClause()).getValue()).getValues().get(0));
+        assertEquals("OR",((BinaryBooleanClause)q.get(0)).getOps().get(0));
+        assertEquals("NOT",((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getClauses().get(1)).getOp());
+        assertEquals("video",((TermsLiteral)((SimpleTermClause)((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getClauses().get(1)).getClause()).getValue()).getValues().get(0));
 
         q = parse("some:(test OR sample)");
         assertEquals(1, q.size());
@@ -144,8 +144,16 @@ public class QueryParserTest {
                 .setFacet(true)
                 .buildNumericField("year.name");
 
+        final FieldDescriptor<ZonedDateTime> fromDate = new FieldDescriptorBuilder<>()
+                .setFacet(true)
+                .buildDateField("fromDate");
+
+        final FieldDescriptor<ZonedDateTime> toDate = new FieldDescriptorBuilder<>()
+                .setFacet(true)
+                .buildDateField("toDate");
+
         final DocumentFactory testDocFactory = new DocumentFactoryBuilder("testDoc")
-                .addField(customMetadata, assetType, athlete, yearName)
+                .addField(customMetadata, assetType, athlete, yearName, fromDate, toDate)
                 .build();
 
         FulltextSearch vindFilter = filterLuceneParser
@@ -181,6 +189,21 @@ public class QueryParserTest {
 
                         , testDocFactory);
         assertEquals("AndFilter",vindFilter.getFilter().getType());
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "(customMetadata: water AND athlete:\"Adam Ondra\" OR NOT(assettype: video))"
+
+                        , testDocFactory);
+        assertEquals("OrFilter",vindFilter.getFilter().getType());
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "(fromDate:[01-01-2010 TO 10-03-2020] AND toDate:[* TO 01-01-2020])"
+
+                        , testDocFactory);
+        assertEquals("AndFilter",vindFilter.getFilter().getType());
+
 
     }
 

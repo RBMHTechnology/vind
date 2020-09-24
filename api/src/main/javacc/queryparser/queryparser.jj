@@ -1,5 +1,5 @@
 options {
-  LOOKAHEAD = 3;
+  LOOKAHEAD = 5;
 }
 
 PARSER_BEGIN(QueryParser)
@@ -63,10 +63,11 @@ return query == null ?
 
 
 BooleanClause binaryBooleanClause() :
-{Clause left;Clause right;Token op;}
+{Clause left;Clause right;Token op;BinaryBooleanClause mainClause;}
 {
-    <LBRACKET> ( left=clause() ) ( op=<AND> | op=<OR> ) ( right=clause()) <RBRACKET>
-    { return new BinaryBooleanClause(op.image, left, right);}
+    <LBRACKET> (( left=clause() ) ( op=<AND> | op=<OR> ) ( right=clause())) {mainClause=new BinaryBooleanClause(op.image, left, right);}
+    (( op=<AND> | op=<OR> ) ( right=clause()) {mainClause.addClause(op.image, right);})* <RBRACKET>
+    { return mainClause;}
 }
 
 BooleanClause unaryBooleanClause() :

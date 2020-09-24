@@ -11,9 +11,6 @@ import java.util.Date;
 
 public class DateRangeLiteral extends RangeLiteral{
 
-    private DateMathExpression from;
-    private DateMathExpression to;
-
     public DateRangeLiteral(String from, String to) {
         final DateMathParser dateMathParser = new DateMathParser();
         if (!from.equals(WILDCARD)) {
@@ -26,27 +23,27 @@ public class DateRangeLiteral extends RangeLiteral{
 
     @Override
     public DateMathExpression getFrom() {
-        return from;
+        return (DateMathExpression) from;
     }
 
     @Override
     public DateMathExpression getTo() {
-        return to;
+        return (DateMathExpression) to;
     }
 
     @Override
     public Filter toVindFilter(FieldDescriptor descriptor) {
-        final DateMathParser dateMathParser = new DateMathParser();
+
 
         if (ZonedDateTime.class.isAssignableFrom(descriptor.getType()) | Date.class.isAssignableFrom(descriptor.getType())) {
             if(from!=null && to!=null) {
-                return Filter.between(descriptor.getName(),from, to);
+                return Filter.between(descriptor.getName(),(DateMathExpression) from, (DateMathExpression) to);
             }
             if(from!=null && to==null) {
-                return Filter.after(descriptor.getName(),from);
+                return Filter.after(descriptor.getName(),(DateMathExpression) from);
             }
             if(from==null && to!=null) {
-                return Filter.before(descriptor.getName(),to);
+                return Filter.before(descriptor.getName(),(DateMathExpression) to);
             }
             throw new SearchServerException("Error parsingRange filter: range should have defined at least upper or lower limit" );
 

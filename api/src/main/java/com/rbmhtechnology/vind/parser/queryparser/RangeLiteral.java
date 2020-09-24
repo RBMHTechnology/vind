@@ -2,8 +2,8 @@ package com.rbmhtechnology.vind.parser.queryparser;
 
 public abstract class RangeLiteral extends SimpleLiteral{
     public static final String WILDCARD = "*";
-    private Object from;
-    private Object to;
+    protected Object from;
+    protected Object to;
 
     public abstract Object getFrom();
 
