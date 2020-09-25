@@ -11,6 +11,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
@@ -263,5 +264,21 @@ public class DateMathParser {
             return true;
         }
         return false;
+    }
+    static public class DateValidatorUsingLocalDate {
+        private DateTimeFormatter dateFormatter;
+
+        public DateValidatorUsingLocalDate(DateTimeFormatter dateFormatter) {
+            this.dateFormatter = dateFormatter;
+        }
+
+        public boolean isValid(String dateStr) {
+            try {
+                LocalDate.parse(dateStr, this.dateFormatter);
+            } catch (DateTimeParseException e) {
+                return false;
+            }
+            return true;
+        }
     }
 }

@@ -1,5 +1,5 @@
 options {
-  LOOKAHEAD = 5;
+  LOOKAHEAD = 20;
 }
 
 PARSER_BEGIN(QueryParser)
@@ -20,15 +20,15 @@ SKIP : {
 }
 TOKEN :
 {
-  <AND:              "AND">
-| <OR:               "OR">
-| <NOT:              ("NOT" | "!")>
+  <AND:              (("a" | "A")("n" | "N")("d" | "D")) | "&">
+| <OR:               (("o"|"O")("r" | "R")) | "|">
+| <NOT:              (("n"|"N")("o"|"O")("t"|"T")) | "!">
 | <PLUS:             "+">
 | <MINUS:            "-" >
-| <LBRACKET:         "(">
-| <RBRACKET:         ")">
-| <LSQBRACKET:       "[">
-| <RSQBRACKET:       "]">
+| <LPAREN:           "(">
+| <RPAREN:           ")">
+| <LBRACKET:         "[">
+| <RBRACKET:         "]">
 //| <DATE_TERM:        ((["0"-"2"]<NUMBER>)|("3"["0","1"]))"-"("0"["1"-"9"]|"1"["0"-"2"])"-"(<NUMBER>){4}  >
 | <NUMBER_TERM:      (["+","-"])? ( (<NUMBER>)+ ("."(<NUMBER>)*)? ) (["e","E"](<NUMBER>)+)? >
 | <FIELD:            (["0"-"9","A"-"Z","a"-"z","_","-","."])+ ":" >
@@ -43,7 +43,7 @@ TOKEN :
 Query query() :
 {Query q = new Query();Clause c;Token value;}
 {
-    (( c=booleanClause(){q.add(c);} ) | ( c=fieldClause(){q.add(c);} )+ )?
+    ((<LPAREN> c=clause(){q.add(c);}<RPAREN>) | c=clause(){q.add(c);})*
     (value=<TERM>{q.addText(value.image);}
     | value=<QUOTED_STRING>{q.addText(value.image);}
     | value=<AND>{q.addText(value.image);}
@@ -57,12 +57,19 @@ Query query() :
     { return q;}
 }
 
+Clause clause() :
+{Clause clause;}
+{
+    ( clause=booleanClause() | clause=fieldClause() )
+    {return clause;}
+}
+
 FieldClause fieldClause() :
 {BooleanLiteral query = null;boolean negated = false;Token field = null;SimpleLiteral value = null;}
 {
     (<PLUS> | <MINUS>{negated=true;})?
     field=<FIELD>
-    (value=simpleLiteral() | (  query=booleanLiteral() ))
+    (value=simpleLiteral() | ( query=booleanLiteral() ))
       {
         String fieldName = field == null ? null : StringUtils.chop(field.image);
         return query == null ?
@@ -70,41 +77,10 @@ FieldClause fieldClause() :
             new ComplexTermClause(negated, fieldName, query);
       }
 }
-
-
-BooleanClause binaryBooleanClause() :
-{Clause left;Clause right;Token op;BinaryBooleanClause mainClause;}
-{
-    <LBRACKET> (( left=clause() ) ( op=<AND> | op=<OR> ) ( right=clause())) {mainClause=new BinaryBooleanClause(op.image, left, right);}
-    (( op=<AND> | op=<OR> ) ( right=clause()) {mainClause.addClause(op.image, right);})* <RBRACKET>
-    { return mainClause;}
-}
-
-BooleanClause unaryBooleanClause() :
-{Clause clause;Token op;}
-{
-    (op=<NOT>) <LBRACKET> (clause=clause()) <RBRACKET>
-    { return new UnaryBooleanClause(op.image, clause);}
-}
-
-BooleanClause booleanClause() :
-{BooleanClause clause;}
-{
-    (clause=unaryBooleanClause() | clause=binaryBooleanClause())
-    {return clause;}
-}
-
-Clause clause() :
-{Clause clause;}
-{
-    (clause=fieldClause() | clause=booleanClause())
-    {return clause;}
-}
-
 SimpleLiteral simpleLiteral() :
 {SimpleLiteral literal;}
 {
-    ( literal=termsLiteral() | literal=rangeLiteral() )
+    ( literal=rangeLiteral() | literal=termsLiteral() )
     {return literal;}
 }
 TermsLiteral termsLiteral() :
@@ -113,7 +89,11 @@ TermsLiteral termsLiteral() :
     ( value=<TERM>{l.add(value.image);}
     | value=<QUOTED_STRING>{l.add(value.image);}
     | value=<NUMBER_TERM> {l.add(value.image);}
-    | ( <LBRACKET> (value=<TERM>{l.add(value.image);} | value=<QUOTED_STRING>{l.add(value.image);} | value=<NUMBER_TERM> {l.add(value.image);})+ <RBRACKET> ))
+    | ( <LPAREN>
+        (value=<TERM>{l.add(value.image);} |
+         value=<QUOTED_STRING>{l.add(value.image);} |
+         value=<NUMBER_TERM> {l.add(value.image);})+ <RPAREN>
+        ))
 
     { return l;}
 }
@@ -124,29 +104,29 @@ BooleanLiteral booleanLiteral() :
     { return literal; }
 }
 
-BooleanLiteral booleanLeafValue():
-{Token value;}
-{
-    ( value=<TERM> | value=<QUOTED_STRING>)
-    {return new BooleanLeafLiteral(value.image);}
-}
-
-BooleanLiteral binaryBooleanLiteral() :
-{BooleanLiteral left;BooleanLiteral right;Token op;BinaryBooleanLiteral baseClause;}
-{
-    <LBRACKET>
-     (left=booleanLiteral() ) ( op=<AND> | op=<OR> ) (right=booleanLiteral() )
-     {baseClause = new BinaryBooleanLiteral(op.image, left, right);}
-     (( op=<AND> | op=<OR> ) ( right=booleanLiteral() ) {baseClause.addClause(op.image, right);})*
-     <RBRACKET>
-    { return baseClause; }
-}
-
 BooleanLiteral unaryBooleanLiteral() :
 {BooleanLiteral literal;Token op;}
 {
     (op=<NOT> | op=<MINUS> ) (literal=booleanLiteral() )
     { return new UnaryBooleanLiteral(op.image, literal);}
+}
+
+BooleanLiteral binaryBooleanLiteral() :
+{BooleanLiteral left;BooleanLiteral right;Token op;BinaryBooleanLiteral baseClause;}
+{
+    <LPAREN>
+     (left=booleanLiteral() ) ( op=<AND> | op=<OR> ) (right=booleanLiteral() )
+     {baseClause = new BinaryBooleanLiteral(op.image, left, right);}
+     (( op=<AND> | op=<OR> ) ( right=booleanLiteral() ) {baseClause.addClause(op.image, right);})*
+     <RPAREN>
+    { return baseClause; }
+}
+
+BooleanLiteral booleanLeafValue():
+{Token value;}
+{
+    ( value=<TERM> | value=<QUOTED_STRING>)
+    {return new BooleanLeafLiteral(value.image);}
 }
 
 RangeLiteral rangeLiteral() :
@@ -159,16 +139,40 @@ RangeLiteral rangeLiteral() :
 NumericRangeLiteral numericRangeLiteral() :
 {Token from;Token to;}
 {
-    (<LSQBRACKET> ( from=<NUMBER_TERM> | from=<WILDCARD> ) <TO> ( to=<NUMBER_TERM> | to=<WILDCARD> ) <RSQBRACKET>)
+    <LBRACKET> ( from=<NUMBER_TERM> | from=<WILDCARD> ) <TO> ( to=<NUMBER_TERM> | to=<WILDCARD> ) <RBRACKET>
     {return new NumericRangeLiteral(from.image, to.image);}
 }
 
 DateRangeLiteral dateRangeLiteral() :
 {Token from;Token to;}
 {
-    (<LSQBRACKET> ( from=<TERM> | from=<WILDCARD> ) <TO> ( to=<TERM> | to=<WILDCARD> ) <RSQBRACKET>)
+    <LBRACKET> ( from=<TERM> | from=<WILDCARD> ) <TO> ( to=<TERM> | to=<WILDCARD> ) <RBRACKET>
     {return new DateRangeLiteral(from.image, to.image);}
 }
 
+BooleanClause booleanClause() :
+{BooleanClause clause;}
+{
+    (clause=unaryBooleanClause() | clause=binaryBooleanClause())
+    {return clause;}
+}
 
+BooleanClause unaryBooleanClause() :
+{Clause clause;Token op;}
+{
+    (op=<NOT>) ((clause=clause())|(<LPAREN> clause=clause() <RPAREN> ))
+    { return new UnaryBooleanClause(op.image, clause);}
+}
+
+BooleanClause binaryBooleanClause() :
+{Clause left;Clause right;Token op;BinaryBooleanClause mainClause;}
+{
+    ((left=fieldClause() | left=unaryBooleanClause() |<LPAREN> left=binaryBooleanClause()<RPAREN> )
+    (op=<AND> | op=<OR> )
+    (right=fieldClause() | right=unaryBooleanClause() |<LPAREN> right=binaryBooleanClause()<RPAREN> )
+    {mainClause=new BinaryBooleanClause(op.image, left, right);}
+    (( op=<AND> | op=<OR> ) ( right=clause())
+    {mainClause.addClause(op.image, right);})*)
+    { return mainClause;}
+}
 
