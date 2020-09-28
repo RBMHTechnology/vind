@@ -5,15 +5,13 @@ import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-public class BinaryBooleanClause extends BooleanClause{
+public class MultiBooleanClause extends BooleanClause{
     private final List<String> ops = new ArrayList<>();
     private final List<Clause> clauses = new ArrayList<>();
 
-    public BinaryBooleanClause(String op, Clause leftClause, Clause rightClause){
+    public MultiBooleanClause(String op, Clause leftClause, Clause rightClause){
         this.ops.add(op) ;
         this.clauses.add(leftClause);
         this.clauses.add(rightClause);

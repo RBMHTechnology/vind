@@ -1,5 +1,5 @@
 options {
-  LOOKAHEAD = 20;
+  LOOKAHEAD = 100;
 }
 
 PARSER_BEGIN(QueryParser)
@@ -60,7 +60,7 @@ Query query() :
 Clause clause() :
 {Clause clause;}
 {
-    ( clause=booleanClause() | clause=fieldClause() )
+    ( clause=booleanClause() |<LPAREN> clause=fieldClause() <RPAREN> | clause=fieldClause() )
     {return clause;}
 }
 
@@ -100,7 +100,7 @@ TermsLiteral termsLiteral() :
 
 BooleanLiteral booleanLiteral() :
 {BooleanLiteral literal;}
-{   (literal=unaryBooleanLiteral() | literal=binaryBooleanLiteral() | literal=booleanLeafValue())
+{   (literal=unaryBooleanLiteral() | literal=multiBooleanLiteral() | literal=booleanLeafValue())
     { return literal; }
 }
 
@@ -111,12 +111,12 @@ BooleanLiteral unaryBooleanLiteral() :
     { return new UnaryBooleanLiteral(op.image, literal);}
 }
 
-BooleanLiteral binaryBooleanLiteral() :
-{BooleanLiteral left;BooleanLiteral right;Token op;BinaryBooleanLiteral baseClause;}
+BooleanLiteral multiBooleanLiteral() :
+{BooleanLiteral left;BooleanLiteral right;Token op;MultiBooleanLiteral baseClause;}
 {
     <LPAREN>
      (left=booleanLiteral() ) ( op=<AND> | op=<OR> ) (right=booleanLiteral() )
-     {baseClause = new BinaryBooleanLiteral(op.image, left, right);}
+     {baseClause = new MultiBooleanLiteral(op.image, left, right);}
      (( op=<AND> | op=<OR> ) ( right=booleanLiteral() ) {baseClause.addClause(op.image, right);})*
      <RPAREN>
     { return baseClause; }
@@ -153,7 +153,7 @@ DateRangeLiteral dateRangeLiteral() :
 BooleanClause booleanClause() :
 {BooleanClause clause;}
 {
-    (clause=unaryBooleanClause() | clause=binaryBooleanClause())
+    (clause=unaryBooleanClause() | clause=multiBooleanClause())
     {return clause;}
 }
 
@@ -164,13 +164,13 @@ BooleanClause unaryBooleanClause() :
     { return new UnaryBooleanClause(op.image, clause);}
 }
 
-BooleanClause binaryBooleanClause() :
-{Clause left;Clause right;Token op;BinaryBooleanClause mainClause;}
+BooleanClause multiBooleanClause() :
+{Clause left;Clause right;Token op;MultiBooleanClause mainClause;}
 {
-    ((left=fieldClause() | left=unaryBooleanClause() |<LPAREN> left=binaryBooleanClause()<RPAREN> )
+    ((left=fieldClause() | left=unaryBooleanClause() |<LPAREN> left=multiBooleanClause()<RPAREN> )
     (op=<AND> | op=<OR> )
-    (right=fieldClause() | right=unaryBooleanClause() |<LPAREN> right=binaryBooleanClause()<RPAREN> )
-    {mainClause=new BinaryBooleanClause(op.image, left, right);}
+    (right=fieldClause() | right=unaryBooleanClause() |<LPAREN> right=multiBooleanClause()<RPAREN> )
+    {mainClause=new MultiBooleanClause(op.image, left, right);}
     (( op=<AND> | op=<OR> ) ( right=clause())
     {mainClause.addClause(op.image, right);})*)
     { return mainClause;}

@@ -5,14 +5,13 @@ import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
-public class BinaryBooleanLiteral extends BooleanLiteral{
+public class MultiBooleanLiteral extends BooleanLiteral{
     private final List<String> ops = new ArrayList<>();
     private final List<BooleanLiteral> clauses = new ArrayList<>();
 
-    public BinaryBooleanLiteral(String op, BooleanLiteral leftClause, BooleanLiteral rightClause){
+    public MultiBooleanLiteral(String op, BooleanLiteral leftClause, BooleanLiteral rightClause){
         this.ops.add(op);
         this.clauses.add(leftClause);
         this.clauses.add(rightClause);
