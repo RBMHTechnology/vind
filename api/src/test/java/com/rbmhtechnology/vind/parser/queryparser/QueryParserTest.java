@@ -208,7 +208,7 @@ public class QueryParserTest {
 
         vindFilter = filterLuceneParser
                 .parse(
-                        "(fromDate:[01-01-2010 TO 10-03-2020] AND toDate:[* TO 01-01-2020])"
+                        "(fromDate:[01-01-2010 TO 10-03-2020] AND toDate:[* TO 2020-01-01])"
 
                         , testDocFactory);
         assertEquals("AndFilter",vindFilter.getFilter().getType());

@@ -1,5 +1,5 @@
 options {
-  LOOKAHEAD = 100;
+  LOOKAHEAD = 20;
 }
 
 PARSER_BEGIN(QueryParser)
