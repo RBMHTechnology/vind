@@ -47,7 +47,20 @@ public class DateRangeLiteral extends RangeLiteral{
             }
             throw new SearchServerException("Error parsingRange filter: range should have defined at least upper or lower limit" );
 
-        }  else {
+        } else if (Number.class.isAssignableFrom(descriptor.getType())) {
+            if(from!=null && to!=null) {
+                return Filter.between(descriptor.getName(),((DateMathExpression) from).getTimeStamp(), ((DateMathExpression) to).getTimeStamp());
+            }
+            if(from!=null && to==null) {
+                return Filter.greaterThan(descriptor.getName(),((DateMathExpression) from).getTimeStamp());
+            }
+            if(from==null && to!=null) {
+                return Filter.lesserThan(descriptor.getName(),((DateMathExpression) to).getTimeStamp());
+            }
+            throw new SearchServerException("Error parsingRange filter: range should have defined at least upper or lower limit" );
+
+        }
+        else {
             throw new SearchServerException("Error parsingRange filter: descriptor type ["+descriptor.getType().getSimpleName()+"] does not support ranges" );
         }
 

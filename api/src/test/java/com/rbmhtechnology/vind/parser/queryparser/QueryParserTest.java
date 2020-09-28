@@ -234,6 +234,14 @@ public class QueryParserTest {
                         , testDocFactory);
         assertEquals("*",vindFilter.getSearchString());
 
+        vindFilter = filterLuceneParser
+                .parse(
+                        "(customMetadata:CoverageDBProject AND year.name:[01-08-2020 TO 01-08-2020]) fulltext"
+                        , testDocFactory);
+        assertEquals("fulltext",vindFilter.getSearchString());
+
+        //(type:CoverageDBProject AND fromDate:[01-08-2020 TO 01-08-2020]) fulltext
+
     }
 
     private Query parse(String s) throws ParseException {
