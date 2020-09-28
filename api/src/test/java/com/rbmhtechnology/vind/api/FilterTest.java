@@ -75,6 +75,13 @@ public class FilterTest {
         vindFilter = filterLuceneParser
                 .parse("+customMetadata:(\"meppGraph=true\" )", testDocFactory);
         assertEquals("DescriptorFilter",vindFilter.getType());
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "customMetadata:(\"resourceType=derivative\" OR \"resourceGroup=other\" AND \"contentType=video\" AND \"videri=true\")"
+
+                        , testDocFactory);
+        assertEquals("OrFilter",vindFilter.getType());
      }
 
 }

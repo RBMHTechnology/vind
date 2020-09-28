@@ -6,8 +6,6 @@ import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.apache.commons.lang3.math.NumberUtils;
 
 public class NumericRangeLiteral extends RangeLiteral{
-    private Number from;
-    private Number to;
 
     public NumericRangeLiteral(String from, String to) {
         if (!from.equals(WILDCARD)) {
@@ -20,12 +18,12 @@ public class NumericRangeLiteral extends RangeLiteral{
 
     @Override
     public Number getFrom() {
-        return from;
+        return (Number)from;
     }
 
     @Override
     public Number getTo() {
-        return to;
+        return (Number)to;
     }
 
     @Override
@@ -33,13 +31,13 @@ public class NumericRangeLiteral extends RangeLiteral{
 
         if (Number.class.isAssignableFrom(descriptor.getType())) {
             if(from!=null && to!=null) {
-                return Filter.between(descriptor.getName(),from, to);
+                return Filter.between(descriptor.getName(),(Number)from, (Number)to);
             }
             if(from!=null && to==null) {
-                return Filter.greaterThan(descriptor.getName(),from);
+                return Filter.greaterThan(descriptor.getName(),(Number)from);
             }
             if(from==null && to!=null) {
-                return Filter.lesserThan(descriptor.getName(),to);
+                return Filter.lesserThan(descriptor.getName(),(Number)to);
             }
             throw new SearchServerException("Error parsingRange filter: range should have defined at least upper or lower limit" );
         } else {

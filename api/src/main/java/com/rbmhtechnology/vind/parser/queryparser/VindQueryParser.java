@@ -14,6 +14,7 @@ import java.util.Optional;
 
 public class VindQueryParser {
     private static final Logger log = LoggerFactory.getLogger(VindQueryParser.class);
+    private boolean strict = true;
 
     public FulltextSearch parse(String luceneQuery, DocumentFactory factory) {
         final FulltextSearch vindQuery = Search.fulltext();
@@ -24,6 +25,14 @@ public class VindQueryParser {
                 try {
                     vindQuery.filter(q.toVindFilter(factory));
                 }catch (SearchServerException e) {
+                    if (strict) {
+                        log.error("Error parsing lucene query [{}] to Vind query: Unable to create Vind filter out of" +
+                                " input clause [{}]" , luceneQuery, e.getMessage(),e);
+                        throw new SearchServerException("Error parsing lucene query ["+luceneQuery+"] to Vind query: " +
+                                e.getMessage(), e);
+                    } else {
+                        log.info("Unable to create Vind filter out of input clause [{}]", e.getMessage());
+                    }
                     luceneQueryModel.addText(q.toString());
                 }
             });
@@ -44,4 +53,11 @@ public class VindQueryParser {
         return new ByteArrayInputStream(s.getBytes());
     }
 
+    public static Logger getLog() {
+        return log;
+    }
+
+    public void setStrict(boolean strict) {
+        this.strict = strict;
+    }
 }
