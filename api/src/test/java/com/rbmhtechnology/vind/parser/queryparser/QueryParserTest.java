@@ -1,10 +1,7 @@
 package com.rbmhtechnology.vind.parser.queryparser;
 
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
-import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathParser;
-import com.rbmhtechnology.vind.api.query.filter.Filter;
-import com.rbmhtechnology.vind.api.query.filter.parser.FilterLuceneParser;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
@@ -58,34 +55,39 @@ public class QueryParserTest {
 
         q = parse("(topic: water OR assettype: video)");
         assertEquals(1, q.size());
-        assertEquals("OR",((BinaryBooleanClause)q.get(0)).getOp());
-        assertEquals("water",((TermsLiteral)((SimpleTermClause)((BinaryBooleanClause)q.get(0)).getLeftClause()).getValue()).getValues().get(0));
+        assertEquals("OR",((MultiBooleanClause)q.get(0)).getOps().get(0));
+        assertEquals("water",((TermsLiteral)((SimpleTermClause)((MultiBooleanClause)q.get(0)).getClauses().get(0)).getValue()).getValues().get(0));
 
         q = parse("(topic: water OR NOT(assettype: video))");
         assertEquals(1, q.size());
-        assertEquals("OR",((BinaryBooleanClause)q.get(0)).getOp());
-        assertEquals("water",((TermsLiteral)((SimpleTermClause)((BinaryBooleanClause)q.get(0)).getLeftClause()).getValue()).getValues().get(0));
-        assertEquals("NOT",((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getOp());
-        assertEquals("video",((TermsLiteral)((SimpleTermClause)((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getClause()).getValue()).getValues().get(0));
+        assertEquals("OR",((MultiBooleanClause)q.get(0)).getOps().get(0));
+        assertEquals("water",((TermsLiteral)((SimpleTermClause)((MultiBooleanClause)q.get(0)).getClauses().get(0)).getValue()).getValues().get(0));
+        assertEquals("NOT",((UnaryBooleanClause)((MultiBooleanClause)q.get(0)).getClauses().get(1)).getOp());
+        assertEquals("video",((TermsLiteral)((SimpleTermClause)((UnaryBooleanClause)((MultiBooleanClause)q.get(0)).getClauses().get(1)).getClause()).getValue()).getValues().get(0));
 
         q = parse("((topic: water AND athlete:\"Adam Ondra\") OR NOT(assettype: video)) \"fulltext text\"");
         assertEquals(1, q.size());
         assertEquals("\"fulltext text\"", q.getText());
-        assertEquals("OR",((BinaryBooleanClause)q.get(0)).getOp());
-        assertEquals("NOT",((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getOp());
-        assertEquals("video",((TermsLiteral)((SimpleTermClause)((UnaryBooleanClause)((BinaryBooleanClause)q.get(0)).getRightClause()).getClause()).getValue()).getValues().get(0));
+        assertEquals("OR",((MultiBooleanClause)q.get(0)).getOps().get(0));
+        assertEquals("NOT",((UnaryBooleanClause)((MultiBooleanClause)q.get(0)).getClauses().get(1)).getOp());
+        assertEquals("video",((TermsLiteral)((SimpleTermClause)((UnaryBooleanClause)((MultiBooleanClause)q.get(0)).getClauses().get(1)).getClause()).getValue()).getValues().get(0));
 
         q = parse("some:(test OR sample)");
         assertEquals(1, q.size());
-        assertEquals("OR",((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOp());
-        assertEquals("test",((BooleanLeafLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getLeftClause()).getValue());
-        assertEquals("sample",((BooleanLeafLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getRightClause()).getValue());
+        assertEquals("OR",((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOps().get(0));
+        assertEquals("test",((BooleanLeafLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(0)).getValue());
+        assertEquals("sample",((BooleanLeafLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(1)).getValue());
 
         q = parse("some:(NOT test OR ( sample AND fake)))");
         assertEquals(1, q.size());
-        assertEquals("OR",((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOp());
-        assertEquals("NOT",((UnaryBooleanLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getLeftClause()).getOp());
-        assertEquals("sample",((BooleanLeafLiteral)((BinaryBooleanLiteral)((BinaryBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getRightClause()).getLeftClause()).getValue());
+        assertEquals("OR",((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOps().get(0));
+        assertEquals("NOT",((UnaryBooleanLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(0)).getOp());
+        assertEquals("sample",((BooleanLeafLiteral)((MultiBooleanLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(1)).getClauses().get(0)).getValue());
+
+        q = parse("some:(NOT test OR sample AND fake)");
+        assertEquals(1, q.size());
+        assertEquals("OR",((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOps().get(0));
+        assertEquals("NOT",((UnaryBooleanLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(0)).getOp());
     }
 
     @Test
@@ -144,8 +146,16 @@ public class QueryParserTest {
                 .setFacet(true)
                 .buildNumericField("year.name");
 
+        final FieldDescriptor<ZonedDateTime> fromDate = new FieldDescriptorBuilder<>()
+                .setFacet(true)
+                .buildDateField("fromDate");
+
+        final FieldDescriptor<ZonedDateTime> toDate = new FieldDescriptorBuilder<>()
+                .setFacet(true)
+                .buildDateField("toDate");
+
         final DocumentFactory testDocFactory = new DocumentFactoryBuilder("testDoc")
-                .addField(customMetadata, assetType, athlete, yearName)
+                .addField(customMetadata, assetType, athlete, yearName, fromDate, toDate)
                 .build();
 
         FulltextSearch vindFilter = filterLuceneParser
@@ -181,6 +191,54 @@ public class QueryParserTest {
 
                         , testDocFactory);
         assertEquals("AndFilter",vindFilter.getFilter().getType());
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "(customMetadata: water AND athlete:\"Adam Ondra\" OR NOT(assettype: video))"
+
+                        , testDocFactory);
+        assertEquals("OrFilter",vindFilter.getFilter().getType());
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "(customMetadata: water AND (athlete:\"Adam Ondra\" OR NOT(assettype: video)))"
+
+                        , testDocFactory);
+        assertEquals("AndFilter",vindFilter.getFilter().getType());
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "(fromDate:[01-01-2010 TO 10-03-2020] AND toDate:[* TO 2020-01-01])"
+
+                        , testDocFactory);
+        assertEquals("AndFilter",vindFilter.getFilter().getType());
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "customMetadata:(\"resourceType=derivative\" OR \"resourceGroup=other\" AND \"contentType=video\" AND \"videri=true\")"
+                        , testDocFactory);
+        assertEquals("OrFilter",vindFilter.getFilter().getType());
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "full text search AND some OR \"quoted string\""
+                        , testDocFactory);
+        assertEquals("full text search AND some OR \"quoted string\"",vindFilter.getSearchString());
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "customMetadata:" +
+                                "(\"resourceType=derivative\" AND \"contentType=video\" AND (" +
+                                    "(\"resourceGroup=other\" AND NOT \"derivativeType=AX-1N9BK55DD1111\") " +
+                                    "OR \"derivativeType=AX-23JPRQ73S1W11\"))"
+                        , testDocFactory);
+        assertEquals("*",vindFilter.getSearchString());
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "(customMetadata:CoverageDBProject AND year.name:[01-08-2020 TO 01-08-2020]) fulltext"
+                        , testDocFactory);
+        assertEquals("fulltext",vindFilter.getSearchString());
 
     }
 

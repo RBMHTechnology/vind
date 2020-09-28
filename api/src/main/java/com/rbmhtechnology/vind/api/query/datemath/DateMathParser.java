@@ -6,14 +6,18 @@ import org.apache.commons.lang3.math.NumberUtils;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -30,6 +34,17 @@ public class DateMathParser {
     private Locale loc;
     private Date now;
     private static Pattern splitter;
+    private DateValidator dateValidator =
+            new DateValidator(Arrays.asList(
+                    DateTimeFormatter.BASIC_ISO_DATE,
+                    DateTimeFormatter.ISO_LOCAL_DATE,
+                    DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                    DateTimeFormatter.ofPattern("dd/MM/yy"),
+                    DateTimeFormatter.ofPattern("dd.MM.yyyy"),
+                    DateTimeFormatter.ofPattern("dd.MM.yy"),
+                    DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+                    DateTimeFormatter.ofPattern("dd-MM-yy")
+                    ));
 
     private static Map<String, ChronoUnit> makeUnitsMap() {
         Map<String, ChronoUnit> units = new HashMap(13);
@@ -118,8 +133,9 @@ public class DateMathParser {
             DateMathExpression expression = new DateMathExpression();
             if (ops[0].length() > 1 ) {
                 if (!ops[0].equals("NOW") ) {
-                    if(isDate(ops,pos)){
-                        expression = new DateMathExpression(parseNoMath(ops[0] + ops[1] + ops[2]+ ops[3]+ ops[4]));
+                    final String possibleDate = ops[0] + ops[1] + ops[2] + ops[3] + ops[4];
+                    if(dateValidator.isValid(possibleDate)){
+                        expression = new DateMathExpression(dateValidator.parseDate(possibleDate));
                         pos = 4;
                     } else {
                         expression = new DateMathExpression(parseNoMath(ops[0]));
@@ -263,5 +279,48 @@ public class DateMathParser {
             return true;
         }
         return false;
+    }
+    static public class DateValidator {
+        private List<DateTimeFormatter> dateFormatters;
+
+        public DateValidator( List<DateTimeFormatter> dateFormatters) {
+            this.dateFormatters = dateFormatters;
+        }
+
+        public DateValidator addDateFormater(DateTimeFormatter dateFormatter) {
+            this.dateFormatters.add(dateFormatter);
+            return this;
+        }
+
+        public boolean isValid(String dateStr) {
+            return this.dateFormatters.stream()
+                    .anyMatch( formatter -> {
+                        try {
+                            LocalDate.parse(dateStr, formatter);
+                            return true;
+                        } catch (DateTimeParseException e) {
+                            return false;
+                        }
+                    }
+                    );
+        }
+        public ZonedDateTime parseDate(String dateStr) {
+            if(isValid(dateStr)){
+               return this.dateFormatters.stream()
+                        .filter(formatter -> {
+                            try {
+                                LocalDate.parse(dateStr, formatter);
+                                return true;
+                            } catch (DateTimeParseException e) {
+                                return false;
+                            }
+                        })
+                        .map(formatter ->
+                                LocalDate.parse(dateStr, formatter)
+                                        .atStartOfDay(ZoneId.of("UTC")))
+                       .findFirst().orElseThrow(() -> new SearchServerException("Error parsing date "+dateStr+": Date format not supported"));
+            }
+            throw new SearchServerException("Error parsing date "+dateStr+": Date format not supported");
+        }
     }
 }
