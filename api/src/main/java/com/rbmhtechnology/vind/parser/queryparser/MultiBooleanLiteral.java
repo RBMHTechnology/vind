@@ -34,7 +34,7 @@ public class MultiBooleanLiteral extends BooleanLiteral{
         final List<Filter> sortedFilters = new ArrayList<>();
         for (int i = 0; i < ops.size(); i++) {
             final String op = ops.get(i);
-            if (op.equals("AND")) {
+            if (op.equalsIgnoreCase("AND")) {
                 if (i == 0) {
                     sortedFilters.add(new Filter.AndFilter(clauses.get(i).toVindFilter(descriptor), clauses.get(i + 1).toVindFilter(descriptor)));
                 } else {
@@ -43,7 +43,7 @@ public class MultiBooleanLiteral extends BooleanLiteral{
                     sortedFilters.add(new Filter.AndFilter(lasClause, clauses.get(i + 1).toVindFilter(descriptor)));
                 }
 
-            } else if (op.equals("OR")) {
+            } else if (op.equalsIgnoreCase("OR")) {
                 if (i == 0) {
                     sortedFilters.add(clauses.get(i).toVindFilter(descriptor));
                 }

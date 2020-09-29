@@ -227,10 +227,7 @@ public class QueryParserTest {
 
         vindFilter = filterLuceneParser
                 .parse(
-                        "customMetadata:" +
-                                "(\"resourceType=derivative\" AND \"contentType=video\" AND (" +
-                                    "(\"resourceGroup=other\" AND NOT \"derivativeType=AX-1N9BK55DD1111\") " +
-                                    "OR \"derivativeType=AX-23JPRQ73S1W11\"))"
+                        "customMetadata:(\"resourceType=derivative\" AND \"contentType=video\" AND ((\"resourceGroup=other\" AND NOT \"derivativeType=AX-1N9BK55DD1111\") OR (\"derivativeType=AX-23JPRQ73S1W11\")))"
                         , testDocFactory);
         assertEquals("*",vindFilter.getSearchString());
 
@@ -239,6 +236,15 @@ public class QueryParserTest {
                         "(customMetadata:CoverageDBProject AND year.name:[01-08-2020 TO 01-08-2020]) fulltext"
                         , testDocFactory);
         assertEquals("fulltext",vindFilter.getSearchString());
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "(customMetadata:MediaPlanetProject or customMetadata:Event)"
+                        , testDocFactory);
+        assertEquals("*",vindFilter.getSearchString());
+
+        //(type:MediaPlanetProject or type:Event)
+        //type:(MediaPlanetProject or Event)
 
     }
 
