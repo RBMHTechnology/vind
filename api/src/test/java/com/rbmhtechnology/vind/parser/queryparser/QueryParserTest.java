@@ -240,6 +240,15 @@ public class QueryParserTest {
                         , testDocFactory);
         assertEquals("fulltext",vindFilter.getSearchString());
 
+        vindFilter = filterLuceneParser
+                .parse(
+                        "(customMetadata:MediaPlanetProject or customMetadata:Event)"
+                        , testDocFactory);
+        assertEquals("*",vindFilter.getSearchString());
+
+        //(type:MediaPlanetProject or type:Event)
+        //type:(MediaPlanetProject or Event)
+
     }
 
     private Query parse(String s) throws ParseException {
