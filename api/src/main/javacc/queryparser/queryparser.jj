@@ -1,5 +1,5 @@
 options {
-  LOOKAHEAD = 20;
+  LOOKAHEAD = 5;
 }
 
 PARSER_BEGIN(QueryParser)
@@ -7,6 +7,7 @@ PARSER_BEGIN(QueryParser)
 package com.rbmhtechnology.vind.parser.queryparser;
 
 import org.apache.commons.lang3.StringUtils;
+import java.util.ArrayList;
 
 public class QueryParser {
     public Query run() throws ParseException {
@@ -29,13 +30,13 @@ TOKEN :
 | <RPAREN:           ")">
 | <LBRACKET:         "[">
 | <RBRACKET:         "]">
-//| <DATE_TERM:        ((["0"-"2"]<NUMBER>)|("3"["0","1"]))"-"("0"["1"-"9"]|"1"["0"-"2"])"-"(<NUMBER>){4}  >
+| <DATE_TERM:        (<NUMBER><NUMBER>(<NUMBER><NUMBER>)?["/","-","."]<NUMBER><NUMBER>["/","-","."]<NUMBER><NUMBER>(<NUMBER><NUMBER>)?)  >
 | <NUMBER_TERM:      (["+","-"])? ( (<NUMBER>)+ ("."(<NUMBER>)*)? ) (["e","E"](<NUMBER>)+)? >
 | <FIELD:            (["0"-"9","A"-"Z","a"-"z","_","-","."])+ ":" >
 | <QUOTE:           "\"">
 | <QUOTED_STRING:   <QUOTE> (~["\""])+ <QUOTE> >
 | <WILDCARD:        "*">
-| <TO:              "TO">
+| <TO:              ("t"|"T")("o"|"O")>
 | <TERM:             (["0"-"9","A"-"Z","a"-"z","_","-","\u0080"-"\uffff"])+ >
 | <NUMBER:           ["0"-"9"]>
 }
@@ -43,7 +44,7 @@ TOKEN :
 Query query() :
 {Query q = new Query();Clause c;Token value;}
 {
-    ((<LPAREN> c=clause(){q.add(c);}<RPAREN>) | c=clause(){q.add(c);})*
+    ( c=expresion() {q.add(c);})*
     (value=<TERM>{q.addText(value.image);}
     | value=<QUOTED_STRING>{q.addText(value.image);}
     | value=<AND>{q.addText(value.image);}
@@ -55,13 +56,6 @@ Query query() :
     | value=<NUMBER_TERM> {q.addText(value.image);}
     )*
     { return q;}
-}
-
-Clause clause() :
-{Clause clause;}
-{
-    ( clause=booleanClause() |<LPAREN> clause=fieldClause() <RPAREN> | clause=fieldClause() )
-    {return clause;}
 }
 
 FieldClause fieldClause() :
@@ -100,7 +94,7 @@ TermsLiteral termsLiteral() :
 
 BooleanLiteral booleanLiteral() :
 {BooleanLiteral literal;}
-{   (literal=unaryBooleanLiteral() | literal=multiBooleanLiteral() | literal=booleanLeafValue())
+{   (literal=unaryBooleanLiteral() | literal=multiBooleanLiteral() |<LPAREN> literal=booleanLeafValue() <RPAREN> | literal=booleanLeafValue() )
     { return literal; }
 }
 
@@ -146,33 +140,53 @@ NumericRangeLiteral numericRangeLiteral() :
 DateRangeLiteral dateRangeLiteral() :
 {Token from;Token to;}
 {
-    <LBRACKET> ( from=<TERM> | from=<WILDCARD> ) <TO> ( to=<TERM> | to=<WILDCARD> ) <RBRACKET>
+    <LBRACKET> ( from=<DATE_TERM> | from=<WILDCARD> ) <TO> ( to=<DATE_TERM> | to=<WILDCARD> ) <RBRACKET>
     {return new DateRangeLiteral(from.image, to.image);}
 }
 
-BooleanClause booleanClause() :
-{BooleanClause clause;}
-{
-    (clause=unaryBooleanClause() | clause=multiBooleanClause())
-    {return clause;}
-}
 
 BooleanClause unaryBooleanClause() :
 {Clause clause;Token op;}
 {
-    (op=<NOT>) ((clause=clause())|(<LPAREN> clause=clause() <RPAREN> ))
+    (op=<NOT>) (clause=expresion())
     { return new UnaryBooleanClause(op.image, clause);}
 }
 
-BooleanClause multiBooleanClause() :
-{Clause left;Clause right;Token op;MultiBooleanClause mainClause;}
-{
-    ((left=fieldClause() | left=unaryBooleanClause() |<LPAREN> left=multiBooleanClause()<RPAREN> )
-    (op=<AND> | op=<OR> )
-    (right=fieldClause() | right=unaryBooleanClause() |<LPAREN> right=multiBooleanClause()<RPAREN> )
-    {mainClause=new MultiBooleanClause(op.image, left, right);}
-    (( op=<AND> | op=<OR> ) ( right=clause())
-    {mainClause.addClause(op.image, right);})*)
-    { return mainClause;}
+Clause expresion() :
+{Clause clause;ArrayList<Clause> clauses=new ArrayList();MultiBooleanClause boolClause;Token op=null;}
+{  clause=clause(){clauses.add(clause);} (op=<OR> clause=clause(){clauses.add(clause);})*
+    {
+        if( clauses.size()==1) {
+            return clause;
+        } else {
+            boolClause = new MultiBooleanClause(op.image,clauses.get(0),clauses.get(1));
+            for (int i = 2; i<clauses.size();i++) {
+                boolClause.addClause(op.image, clauses.get(i));
+            }
+            return boolClause;
+        }
+    }
 }
 
+Clause clause() :
+{Clause clause;ArrayList<Clause> clauses=new ArrayList();MultiBooleanClause boolClause;Token op=null;}
+{  clause=baseClause(){clauses.add(clause);} (op=<AND> clause=baseClause(){clauses.add(clause);})*
+    {
+        if( clauses.size()==1) {
+            return clause;
+        } else {
+            boolClause = new MultiBooleanClause(op.image,clauses.get(0),clauses.get(1));
+            for (int i = 2; i<clauses.size();i++) {
+                boolClause.addClause(op.image, clauses.get(i));
+            }
+            return boolClause;
+        }
+    }
+}
+
+Clause baseClause() :
+{Clause clause;}
+{
+    (<LPAREN> clause=expresion() <RPAREN> | clause=fieldClause() | clause=unaryBooleanClause() )
+    {return clause;}
+}

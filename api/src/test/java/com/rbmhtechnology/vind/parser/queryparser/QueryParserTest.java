@@ -227,10 +227,7 @@ public class QueryParserTest {
 
         vindFilter = filterLuceneParser
                 .parse(
-                        "customMetadata:" +
-                                "(\"resourceType=derivative\" AND \"contentType=video\" AND (" +
-                                    "(\"resourceGroup=other\" AND NOT \"derivativeType=AX-1N9BK55DD1111\") " +
-                                    "OR \"derivativeType=AX-23JPRQ73S1W11\"))"
+                        "customMetadata:(\"resourceType=derivative\" AND \"contentType=video\" AND ((\"resourceGroup=other\" AND NOT \"derivativeType=AX-1N9BK55DD1111\") OR (\"derivativeType=AX-23JPRQ73S1W11\")))"
                         , testDocFactory);
         assertEquals("*",vindFilter.getSearchString());
 
