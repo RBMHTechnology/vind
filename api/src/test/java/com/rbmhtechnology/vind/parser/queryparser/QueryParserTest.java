@@ -37,6 +37,11 @@ public class QueryParserTest {
         assertEquals(1,q.size());
         assertEquals("\"simple quoted test\"",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(0));
 
+        q = parse("assettype: (video image)");
+        assertEquals(1, q.size());
+        assertEquals("video",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(0));
+        assertEquals("image",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(1));
+
         q = parse("topic: sports assettype: (video image)");
         assertEquals(2, q.size());
         assertEquals("sports",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(0));
@@ -76,14 +81,14 @@ public class QueryParserTest {
         q = parse("some:(test OR sample)");
         assertEquals(1, q.size());
         assertEquals("OR",((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOps().get(0));
-        assertEquals("test",((BooleanLeafLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(0)).getValue());
-        assertEquals("sample",((BooleanLeafLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(1)).getValue());
+        assertEquals("test",((TermsLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(0)).getValues().get(0));
+        assertEquals("sample",((TermsLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(1)).getValues().get(0));
 
         q = parse("some:(NOT test OR ( sample AND fake)))");
         assertEquals(1, q.size());
         assertEquals("OR",((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOps().get(0));
         assertEquals("NOT",((UnaryBooleanLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(0)).getOp());
-        assertEquals("sample",((BooleanLeafLiteral)((MultiBooleanLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(1)).getClauses().get(0)).getValue());
+        assertEquals("sample",((TermsLiteral)((MultiBooleanLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(1)).getClauses().get(0)).getValues().get(0));
 
         q = parse("some:(NOT test OR sample AND fake)");
         assertEquals(1, q.size());
@@ -250,7 +255,6 @@ public class QueryParserTest {
                         , testDocFactory);
         assertEquals("*",vindFilter.getSearchString());
         assertEquals(2,((Filter.AndFilter)vindFilter.getFilter()).getChildren().size());
-        assertEquals("cloudTranscoding_normal=true",((Filter.DescriptorFilter)((Filter.AndFilter)vindFilter.getFilter()).getChildren().toArray()[1]).getTerm());
 
 
         //(type:MediaPlanetProject or type:Event)

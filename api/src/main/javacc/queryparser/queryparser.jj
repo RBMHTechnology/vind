@@ -100,8 +100,8 @@ Literal baseLiteral():
 {
     (
     <LPAREN> literal=literal() <RPAREN> |
-    literal=unaryBooleanLiteral() |
-    literal=simpleLiteral()
+    literal=simpleLiteral() |
+    literal=unaryBooleanLiteral()
     )
     {return literal;}
 }
@@ -118,14 +118,19 @@ TermsLiteral termsLiteral() :
     ( value=<TERM>{l.add(value.image);}
     | value=<QUOTED_STRING>{l.add(value.image);}
     | value=<NUMBER_TERM> {l.add(value.image);}
-    )
+    | ( <LPAREN>
+        (value=<TERM>{l.add(value.image);} |
+         value=<QUOTED_STRING>{l.add(value.image);} |
+         value=<NUMBER_TERM> {l.add(value.image);})+ <RPAREN>
+        ))
+
     { return l;}
 }
 
 Literal unaryBooleanLiteral() :
 {Literal literal;Token op;}
 {
-    (op=<NOT> | op=<MINUS> ) (literal=literal() )
+    (op=<NOT> | op=<MINUS> ) (literal= baseLiteral())
     { return new UnaryBooleanLiteral(op.image, literal);}
 }
 
@@ -205,6 +210,6 @@ FieldClause fieldClause() :
 BooleanClause unaryBooleanClause() :
 {Clause clause;Token op;}
 {
-    (op=<NOT>) (clause=expresion())
+    (op=<NOT>) (clause=baseClause())
     { return new UnaryBooleanClause(op.image, clause);}
 }
