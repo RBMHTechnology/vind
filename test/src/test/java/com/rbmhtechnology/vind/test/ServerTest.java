@@ -2659,4 +2659,71 @@ public class ServerTest {
         assertEquals("g1", result.getFacetResults().getPivotFacets().get("bucket").get(1).getValue());
     }
 
+    @Test
+    @RunWithBackend({Solr,Elastic})
+    public void testEmptySearch() {
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
+
+        FieldDescriptor<String> resource = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildTextField("resource");
+
+        FieldDescriptor<String> cluster = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildTextField("cluster");
+
+        FieldDescriptor<String> group = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("group");
+
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(resource)
+                .addField(created)
+                .addField(cluster)
+                .addField(group)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(resource, "r1")
+                .setValue(created, yesterday)
+                .setValue(cluster, "c1");
+
+        Document d2 = assets.createDoc("2")
+                .setValue(resource, "r2")
+                .setValue(created, now)
+                .setValue(cluster, "c2");
+
+        Document d3 = assets.createDoc("3")
+                .setValue(resource, "r3")
+                .setValue(created, now)
+                .setValue(cluster, "c3");
+
+        Document d4 = assets.createDoc("4")
+                .setValue(resource, "r4")
+                .setValue(created, now)
+                .setValue(cluster, "c3");
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.index(d3);
+        server.index(d4);
+        server.commit();
+
+
+        FulltextSearch search = Search.fulltext();
+
+        SearchResult result = server.execute(search,assets);
+        assertEquals(4, result.getNumOfResults());
+    }
+
 }
