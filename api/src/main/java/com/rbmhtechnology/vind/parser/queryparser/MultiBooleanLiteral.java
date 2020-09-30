@@ -9,15 +9,15 @@ import java.util.List;
 
 public class MultiBooleanLiteral extends BooleanLiteral{
     private final List<String> ops = new ArrayList<>();
-    private final List<BooleanLiteral> clauses = new ArrayList<>();
+    private final List<Literal> clauses = new ArrayList<>();
 
-    public MultiBooleanLiteral(String op, BooleanLiteral leftClause, BooleanLiteral rightClause){
+    public MultiBooleanLiteral(String op, Literal leftClause, Literal rightClause){
         this.ops.add(op);
         this.clauses.add(leftClause);
         this.clauses.add(rightClause);
     }
 
-    public void addClause(String op, BooleanLiteral rightClause) {
+    public void addClause(String op, Literal rightClause) {
         this.ops.add(op) ;
         this.clauses.add(rightClause);
     }
@@ -25,7 +25,7 @@ public class MultiBooleanLiteral extends BooleanLiteral{
     public List<String> getOps() {
         return ops;
     }
-    public List<BooleanLiteral> getClauses() {
+    public List<Literal> getClauses() {
         return clauses;
     }
 

@@ -243,8 +243,15 @@ public class QueryParserTest {
                         , testDocFactory);
         assertEquals("*",vindFilter.getSearchString());
 
+        vindFilter = filterLuceneParser
+                .parse(
+                        "customMetadata:((\"resourceType=mezzanine\" OR \"resourceType=essence\") AND \"cloudTranscoding_normal=true\")"
+                        , testDocFactory);
+        assertEquals("*",vindFilter.getSearchString());
+
+
         //(type:MediaPlanetProject or type:Event)
-        //type:(MediaPlanetProject or Event)
+        //customMetadata:((\"resourceType=mezzanine\" OR \"resourceType=essence\") AND \"cloudTranscoding_normal=true\")
 
     }
 

@@ -58,19 +58,54 @@ Query query() :
     { return q;}
 }
 
-FieldClause fieldClause() :
-{BooleanLiteral query = null;boolean negated = false;Token field = null;SimpleLiteral value = null;}
+
+/********************** Literals **************************************************/
+
+Literal literal() :
+{Literal literal;ArrayList<Literal> literals = new ArrayList(); Token op=null;MultiBooleanLiteral boolLiteral;}
 {
-    (<PLUS> | <MINUS>{negated=true;})?
-    field=<FIELD>
-    (value=simpleLiteral() | ( query=booleanLiteral() ))
-      {
-        String fieldName = field == null ? null : StringUtils.chop(field.image);
-        return query == null ?
-            new SimpleTermClause(negated, fieldName, value) :
-            new ComplexTermClause(negated, fieldName, query);
-      }
+    literal=literalClause(){literals.add(literal);} (op=<OR> literal=literalClause(){literals.add(literal);})*
+    {
+        if( literals.size()==1) {
+            return literal;
+        } else {
+            boolLiteral = new MultiBooleanLiteral(op.image,literals.get(0),literals.get(1));
+            for (int i = 2; i<literals.size();i++) {
+                boolLiteral.addClause(op.image, literals.get(i));
+            }
+            return boolLiteral;
+        }
+    }
 }
+
+Literal literalClause() :
+{Literal literal;ArrayList<Literal> literals = new ArrayList(); Token op=null;MultiBooleanLiteral boolLiteral;}
+{
+    literal=baseLiteral(){literals.add(literal);} (op=<AND> literal=baseLiteral(){literals.add(literal);})*
+    {
+        if( literals.size()==1) {
+            return literal;
+        } else {
+            boolLiteral = new MultiBooleanLiteral(op.image,literals.get(0),literals.get(1));
+            for (int i = 2; i<literals.size();i++) {
+                boolLiteral.addClause(op.image, literals.get(i));
+            }
+            return boolLiteral;
+        }
+    }
+}
+
+Literal baseLiteral():
+{Literal literal;}
+{
+    (
+    <LPAREN> literal=literal() <RPAREN> |
+    literal=unaryBooleanLiteral() |
+    literal=simpleLiteral()
+    )
+    {return literal;}
+}
+
 SimpleLiteral simpleLiteral() :
 {SimpleLiteral literal;}
 {
@@ -92,35 +127,11 @@ TermsLiteral termsLiteral() :
     { return l;}
 }
 
-BooleanLiteral booleanLiteral() :
-{BooleanLiteral literal;}
-{   (literal=unaryBooleanLiteral() | literal=multiBooleanLiteral() |<LPAREN> literal=booleanLeafValue() <RPAREN> | literal=booleanLeafValue() )
-    { return literal; }
-}
-
-BooleanLiteral unaryBooleanLiteral() :
-{BooleanLiteral literal;Token op;}
+Literal unaryBooleanLiteral() :
+{Literal literal;Token op;}
 {
-    (op=<NOT> | op=<MINUS> ) (literal=booleanLiteral() )
+    (op=<NOT> | op=<MINUS> ) (literal=literal() )
     { return new UnaryBooleanLiteral(op.image, literal);}
-}
-
-BooleanLiteral multiBooleanLiteral() :
-{BooleanLiteral left;BooleanLiteral right;Token op;MultiBooleanLiteral baseClause;}
-{
-    <LPAREN>
-     (left=booleanLiteral() ) ( op=<AND> | op=<OR> ) (right=booleanLiteral() )
-     {baseClause = new MultiBooleanLiteral(op.image, left, right);}
-     (( op=<AND> | op=<OR> ) ( right=booleanLiteral() ) {baseClause.addClause(op.image, right);})*
-     <RPAREN>
-    { return baseClause; }
-}
-
-BooleanLiteral booleanLeafValue():
-{Token value;}
-{
-    ( value=<TERM> | value=<QUOTED_STRING>)
-    {return new BooleanLeafLiteral(value.image);}
 }
 
 RangeLiteral rangeLiteral() :
@@ -144,14 +155,7 @@ DateRangeLiteral dateRangeLiteral() :
     {return new DateRangeLiteral(from.image, to.image);}
 }
 
-
-BooleanClause unaryBooleanClause() :
-{Clause clause;Token op;}
-{
-    (op=<NOT>) (clause=expresion())
-    { return new UnaryBooleanClause(op.image, clause);}
-}
-
+/***************************Expresions******************************************/
 Clause expresion() :
 {Clause clause;ArrayList<Clause> clauses=new ArrayList();MultiBooleanClause boolClause;Token op=null;}
 {  clause=clause(){clauses.add(clause);} (op=<OR> clause=clause(){clauses.add(clause);})*
@@ -189,4 +193,23 @@ Clause baseClause() :
 {
     (<LPAREN> clause=expresion() <RPAREN> | clause=fieldClause() | clause=unaryBooleanClause() )
     {return clause;}
+}
+
+FieldClause fieldClause() :
+{boolean negated = false;Token field = null;Literal literal = null;}
+{
+    (<PLUS> | <MINUS>{negated=true;})? field=<FIELD> literal=literal()
+      {
+        final String fieldName = StringUtils.chop(field.image);
+        return SimpleLiteral.class.isAssignableFrom(literal.getClass()) ?
+            new SimpleTermClause(negated, fieldName, (SimpleLiteral) literal) :
+            new ComplexTermClause(negated, fieldName, (BooleanLiteral) literal);
+      }
+}
+
+BooleanClause unaryBooleanClause() :
+{Clause clause;Token op;}
+{
+    (op=<NOT>) (clause=expresion())
+    { return new UnaryBooleanClause(op.image, clause);}
 }
