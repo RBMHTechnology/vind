@@ -2,6 +2,7 @@ package com.rbmhtechnology.vind.parser.queryparser;
 
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathParser;
+import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
@@ -248,6 +249,8 @@ public class QueryParserTest {
                         "customMetadata:((\"resourceType=mezzanine\" OR \"resourceType=essence\") AND \"cloudTranscoding_normal=true\")"
                         , testDocFactory);
         assertEquals("*",vindFilter.getSearchString());
+        assertEquals(2,((Filter.AndFilter)vindFilter.getFilter()).getChildren().size());
+        assertEquals("cloudTranscoding_normal=true",((Filter.DescriptorFilter)((Filter.AndFilter)vindFilter.getFilter()).getChildren().toArray()[1]).getTerm());
 
 
         //(type:MediaPlanetProject or type:Event)
