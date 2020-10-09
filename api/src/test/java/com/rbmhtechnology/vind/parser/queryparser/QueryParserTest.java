@@ -2,6 +2,7 @@ package com.rbmhtechnology.vind.parser.queryparser;
 
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathParser;
+import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
@@ -35,6 +36,11 @@ public class QueryParserTest {
         q = parse("some:\"simple quoted test\"");
         assertEquals(1,q.size());
         assertEquals("\"simple quoted test\"",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(0));
+
+        q = parse("assettype: (video image)");
+        assertEquals(1, q.size());
+        assertEquals("video",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(0));
+        assertEquals("image",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(1));
 
         q = parse("topic: sports assettype: (video image)");
         assertEquals(2, q.size());
@@ -75,14 +81,14 @@ public class QueryParserTest {
         q = parse("some:(test OR sample)");
         assertEquals(1, q.size());
         assertEquals("OR",((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOps().get(0));
-        assertEquals("test",((BooleanLeafLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(0)).getValue());
-        assertEquals("sample",((BooleanLeafLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(1)).getValue());
+        assertEquals("test",((TermsLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(0)).getValues().get(0));
+        assertEquals("sample",((TermsLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(1)).getValues().get(0));
 
         q = parse("some:(NOT test OR ( sample AND fake)))");
         assertEquals(1, q.size());
         assertEquals("OR",((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getOps().get(0));
         assertEquals("NOT",((UnaryBooleanLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(0)).getOp());
-        assertEquals("sample",((BooleanLeafLiteral)((MultiBooleanLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(1)).getClauses().get(0)).getValue());
+        assertEquals("sample",((TermsLiteral)((MultiBooleanLiteral)((MultiBooleanLiteral)((ComplexTermClause)q.get(0)).getQuery()).getClauses().get(1)).getClauses().get(0)).getValues().get(0));
 
         q = parse("some:(NOT test OR sample AND fake)");
         assertEquals(1, q.size());
@@ -227,10 +233,7 @@ public class QueryParserTest {
 
         vindFilter = filterLuceneParser
                 .parse(
-                        "customMetadata:" +
-                                "(\"resourceType=derivative\" AND \"contentType=video\" AND (" +
-                                    "(\"resourceGroup=other\" AND NOT \"derivativeType=AX-1N9BK55DD1111\") " +
-                                    "OR \"derivativeType=AX-23JPRQ73S1W11\"))"
+                        "customMetadata:(\"resourceType=derivative\" AND \"contentType=video\" AND ((\"resourceGroup=other\" AND NOT \"derivativeType=AX-1N9BK55DD1111\") OR (\"derivativeType=AX-23JPRQ73S1W11\")))"
                         , testDocFactory);
         assertEquals("*",vindFilter.getSearchString());
 
@@ -239,6 +242,23 @@ public class QueryParserTest {
                         "(customMetadata:CoverageDBProject AND year.name:[01-08-2020 TO 01-08-2020]) fulltext"
                         , testDocFactory);
         assertEquals("fulltext",vindFilter.getSearchString());
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "(customMetadata:MediaPlanetProject or customMetadata:Event)"
+                        , testDocFactory);
+        assertEquals("*",vindFilter.getSearchString());
+
+        vindFilter = filterLuceneParser
+                .parse(
+                        "customMetadata:((\"resourceType=mezzanine\" OR \"resourceType=essence\") AND \"cloudTranscoding_normal=true\")"
+                        , testDocFactory);
+        assertEquals("*",vindFilter.getSearchString());
+        assertEquals(2,((Filter.AndFilter)vindFilter.getFilter()).getChildren().size());
+
+
+        //(type:MediaPlanetProject or type:Event)
+        //customMetadata:((\"resourceType=mezzanine\" OR \"resourceType=essence\") AND \"cloudTranscoding_normal=true\")
 
     }
 

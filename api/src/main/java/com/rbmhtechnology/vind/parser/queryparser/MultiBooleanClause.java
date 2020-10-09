@@ -36,7 +36,7 @@ public class MultiBooleanClause extends BooleanClause{
         final List<Filter> sortedFilters = new ArrayList<>();
         for (int i = 0; i < ops.size(); i++) {
             final String op = ops.get(i);
-            if (op.equals("AND")) {
+            if (op.equalsIgnoreCase("AND")) {
                 if (i == 0) {
                     sortedFilters.add(new Filter.AndFilter(clauses.get(i).toVindFilter(factory), clauses.get(i + 1).toVindFilter(factory)));
                 } else {
@@ -44,7 +44,7 @@ public class MultiBooleanClause extends BooleanClause{
                     sortedFilters.remove(lasClause);
                     sortedFilters.add(new Filter.AndFilter(lasClause, clauses.get(i + 1).toVindFilter(factory)));
                 }
-            } else if (op.equals("OR")) {
+            } else if (op.equalsIgnoreCase("OR")) {
                 if (i == 0) {
                     sortedFilters.add(clauses.get(i).toVindFilter(factory));
                 }
