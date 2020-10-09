@@ -79,9 +79,15 @@ public class ElasticQueryBuilder {
 
     public static SearchSourceBuilder buildQuery(FulltextSearch search, DocumentFactory factory) {
 
+
         final String searchContext = search.getSearchContext();
         final SearchSourceBuilder searchSource = new SearchSourceBuilder();
         final BoolQueryBuilder baseQuery = QueryBuilders.boolQuery();
+
+        // Set total hits count
+        final boolean trackTotalHits = Boolean.parseBoolean(
+                SearchConfiguration.get(SearchConfiguration.TRACK_TOTAL_HITS, "true"));
+        searchSource.trackTotalHits(trackTotalHits);
 
         //build full text disMax query
         final String searchString = "*".equals(search.getSearchString())? "*:*" : search.getSearchString();
