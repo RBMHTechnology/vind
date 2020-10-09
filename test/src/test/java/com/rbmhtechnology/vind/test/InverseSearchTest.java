@@ -92,11 +92,11 @@ public class InverseSearchTest {
         Document resource2 = testDocsFactory.createDoc("2")
                 .setValues(metadata, "meta2=data2", "meta3=data3");
         final FilterLuceneParser filterLuceneParser = new FilterLuceneParser();
-        Filter ruleFilter = filterLuceneParser.parse("customMetadata:{\"meta=data\" OR \"meta2=data2\"}", testDocsFactory);
+        Filter ruleFilter = filterLuceneParser.parse("customMetadata:(\"meta=data\" OR \"meta2=data2\")", testDocsFactory);
         final InverseSearchQuery rule1 =
                 testDocsFactory.createInverseSearchQuery("rule1", ruleFilter).setValue(tenant,"t1");
         server.addInverseSearchQuery(rule1);
-        Filter ruleFilter2 = filterLuceneParser.parse("customMetadata:{\"meta=data\" AND \"meta2=data2\"}", testDocsFactory);
+        Filter ruleFilter2 = filterLuceneParser.parse("customMetadata:(\"meta=data\" AND \"meta2=data2\")", testDocsFactory);
         final InverseSearchQuery rule2 =
                 testDocsFactory.createInverseSearchQuery("rule2", ruleFilter2).setValue(tenant,"t1");
         server.addInverseSearchQuery(rule2);
