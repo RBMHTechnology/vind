@@ -159,6 +159,22 @@ documents matching the delete filters.
 * Improvement: Support basic and ApiKey backend authorization
 * Feature: MasterSlaveBackend for parallel indexing 
 
-# 3.1.0
+# 3.0.1
 * Improvement: Add support to '.' on field names for elasticsearch backend.
-* Improvement: Extended smart parser to support range filters on numeric and date fields.
+* Improvement: Extended smart parser to support range filters on numeric and date fields.(#158)
+
+# 3.0.2
+* Improvement: Added strict parse mode.(#158)
+* Bugfix: Fixed Smart parser issues regarding multi clauses and external parentheses.
+
+# 3.0.3
+* Bugfix: Refactor smart parser grammar to fix issues on boolean operations within filter values.
+
+# 3.0.4
+* Bugfix: Fix quoted literal issues.
+* Bugfix: Fixed priority on unary operator grammar.
+
+# 3.0.5
+* Improvement: change default search string on elastic backend from * to \*:* in oder to avoid empty results when no fulltext values are indexed.(#163)
+* BugFix: Added track_total_hits default to true and configurable in elastic searches to get real number of results over 10000.(#162)
+* BugFix: Escape single quotes on painles script literal to avoid errors updating.(#165)
