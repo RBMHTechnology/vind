@@ -2707,6 +2707,7 @@ public class ServerTest {
 
         SearchResult result = server.execute(search,assets);
         assertEquals(1, result.getNumOfResults());
+        assertEquals("Robert's dog", result.getResults().get(0).getValue(resource));
 
         final String id = result.getResults().get(0).getId();
         final Update update = Search.update(id)
@@ -2717,5 +2718,6 @@ public class ServerTest {
         final GetResult getResult = server.execute(Search.getById(id), assets);
 
         assertEquals(1, getResult.getNumOfResults());
+        assertEquals("Robert's dog had an awesome day", getResult.getResults().get(0).getValue(resource));
     }
 }
