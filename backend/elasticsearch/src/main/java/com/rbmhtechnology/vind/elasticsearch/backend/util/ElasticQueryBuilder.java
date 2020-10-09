@@ -35,7 +35,6 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
-import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.BucketOrder;
@@ -85,7 +84,8 @@ public class ElasticQueryBuilder {
         final BoolQueryBuilder baseQuery = QueryBuilders.boolQuery();
 
         //build full text disMax query
-        final QueryStringQueryBuilder fullTextStringQuery = QueryBuilders.queryStringQuery(search.getSearchString())
+        final String searchString = "*".equals(search.getSearchString())? "*:*" : search.getSearchString();
+        final QueryStringQueryBuilder fullTextStringQuery = QueryBuilders.queryStringQuery(searchString)
                 .minimumShouldMatch(search.getMinimumShouldMatch()); //mm
         // Set fulltext fields
         factory.getFields().values().stream()
