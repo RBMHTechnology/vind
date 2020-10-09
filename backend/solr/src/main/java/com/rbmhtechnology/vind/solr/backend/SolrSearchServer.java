@@ -1136,12 +1136,9 @@ public class SolrSearchServer extends SmartSearchServerBase {
         if(providerClassName == null) {
             if (!it.hasNext()) {
                 log.error("No SolrServerProvider in classpath");
-                throw new RuntimeException("No SolrServerProvider in classpath");
+                throw new SearchServerException("No SolrServerProvider in classpath");
             } else {
                 serverProvider = it.next();
-            }
-            if (it.hasNext()) {
-                log.warn("Multiple bindings for SolrServerProvider found: {}", loader.iterator());
             }
         } else {
             try {
@@ -1154,15 +1151,13 @@ public class SolrSearchServer extends SmartSearchServerBase {
                         break;
                     }
                 }
-
+                if(Objects.isNull(serverProvider)) {
+                    log.debug("No Solr server provider of type class {} found in classpath for server {}", providerClassName, SolrSearchServer.class.getCanonicalName());
+                    //throw new RuntimeException("No server provider found for class " + providerClassName);
+                }
             } catch (ClassNotFoundException e) {
                 log.warn("Specified class {} is not in classpath",providerClassName, e);
                 //throw new RuntimeException("Specified class " + providerClassName + " is not in classpath");
-            }
-
-            if(Objects.isNull(serverProvider)) {
-                log.info("No server provider of type class {} found in classpath for server {}", providerClassName, SolrSearchServer.class.getCanonicalName());
-                //throw new RuntimeException("No server provider found for class " + providerClassName);
             }
         }
         return serverProvider;

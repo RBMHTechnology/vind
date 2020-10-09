@@ -3,6 +3,7 @@ package com.rbmhtechnology.vind.elasticsearch.backend;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rbmhtechnology.vind.SearchServerException;
+import com.rbmhtechnology.vind.SearchServerProviderLoaderException;
 import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.SmartSearchServerBase;
@@ -41,6 +42,7 @@ import com.rbmhtechnology.vind.elasticsearch.backend.util.PainlessScript;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ResultUtils;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
+import com.sun.org.apache.bcel.internal.generic.ATHROW;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.http.util.Asserts;
@@ -109,53 +111,59 @@ public class ElasticSearchServer extends SmartSearchServerBase {
         elasticSearchClient = client;
 
         //In order to perform unit tests with mocked ElasticClient, we do not need to do the schema check.
-        if(check && client != null) {
-            try {
-                if (elasticSearchClient.ping()) {
-                    log.debug("Successful ping to Elasticsearch server");
-                } else {
-                    log.error("Cannot connect to Elasticsearch server: ping failed");
-                    throw new SearchServerException("Cannot connect to Elasticsearch server: ping failed");
-                }
-            } catch ( IOException e) {
-                log.error("Cannot connect to Elasticsearch server: ping failed");
-                throw new SearchServerException("Cannot connect to Elasticsearch server: ping failed", e);
-            }
-            log.info("Connection to Elastic server successful");
-
-            try {
-                if(!client.indexExists()) {
-                    if(SearchConfiguration.get(SearchConfiguration.SERVER_COLLECTION_AUTOCREATE, false)) {
-                        try {
-                            log.info("AutoGenerate elastic collection {}", client.getDefaultIndex());
-                            client.createIndex(client.getDefaultIndex());
-                        } catch (Exception e) {
-                            log.error("Cannot create connection {}", client.getDefaultIndex(), e);
-                            throw new SearchServerException(
-                                    String.format(
-                                            "Error when creating collection %s: %s", client.getDefaultIndex(), e.getMessage()
-                                    ), e
-                            );
-                        }
-                        log.info("Collection {} created successfully", client.getDefaultIndex());
+        if(check){
+            if(client != null) {
+                try {
+                    if (elasticSearchClient.ping()) {
+                        log.debug("Successful ping to Elasticsearch server");
                     } else {
-                        log.error("Index does not exists, try to enable auto-generation");
-                        throw new SearchServerException("Index does not exists, try to enable auto-generation");
+                        log.error("Cannot connect to Elasticsearch server: ping failed");
+                        throw new SearchServerException("Cannot connect to Elasticsearch server: ping failed");
                     }
+                } catch ( IOException e) {
+                    log.error("Cannot connect to Elasticsearch server: ping failed");
+                    throw new SearchServerException("Cannot connect to Elasticsearch server: ping failed", e);
                 }
-            } catch (Exception e) {
-                log.error("Cannot connect to Elasticsearch server: index check failed", e);
-                throw new SearchServerException("Cannot connect to Elasticsearch server: index check failed", e);
-            }
+                log.info("Ping to Elastic server successful");
 
-            try {
-                checkVersionAndMappings();
-            } catch (Exception e) {
-                log.error("Elasticsearch server Schema validation error: {}", e.getMessage(), e);
-                throw new SearchServerException(String.format("Elastic search Schema validation error: %s", e.getMessage()), e);
-            }
+                try {
+                    if(!client.indexExists()) {
+                        if(SearchConfiguration.get(SearchConfiguration.SERVER_COLLECTION_AUTOCREATE, false)) {
+                            log.debug("Collection {} does not exist in elasticsearch host: trying to auto-create.", client.getDefaultIndex());
+                            try {
+                                log.info("Creating elastic collection {}", client.getDefaultIndex());
+                                client.createIndex(client.getDefaultIndex());
+                            } catch (Exception e) {
+                                log.error("Error creating collection {}: {}", client.getDefaultIndex(), e.getMessage(), e);
+                                throw new SearchServerException(
+                                        String.format(
+                                                "Error when creating collection %s: %s", client.getDefaultIndex(), e.getMessage()
+                                        ), e
+                                );
+                            }
+                            log.info("Collection {} created successfully", client.getDefaultIndex());
+                        } else {
+                            log.error("Index does not exists: try to enable auto-creation");
+                            throw new SearchServerException("Index does not exists: try to enable auto-creation");
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("Cannot connect to Elasticsearch server: index check failed - {}",e.getMessage(), e);
+                    throw new SearchServerException(
+                            "Cannot connect to Elasticsearch server: index check failed - " + e.getMessage(), e);
+                }
 
-        } else {
+                try {
+                    checkVersionAndMappings();
+                } catch (Exception e) {
+                    log.error("Elasticsearch server Schema validation error: {}", e.getMessage(), e);
+                    throw new SearchServerException(String.format("Elastic search Schema validation error: %s", e.getMessage()), e);
+                }
+            } else {
+                log.error("Error running Elasticsearch Search Server: search server instance is null");
+                throw new SearchServerException("Error running Elasticsearch Search Server: search server instance is null");
+            }
+          } else {
             log.warn("Elastic ping and schema validity check has been deactivated.");
         }
     }
@@ -597,30 +605,36 @@ public class ElasticSearchServer extends SmartSearchServerBase {
         if(providerClassName == null) {
             if (!it.hasNext()) {
                 log.error("No ElasticServerProvider in classpath");
-                throw new RuntimeException("No ElasticServerProvider in classpath");
+                throw new SearchServerException("No ElasticServerProvider in classpath");
             } else {
                 serverProvider = it.next();
-            }
-            if (it.hasNext()) {
-                log.debug("Multiple bindings for ElasticServerProvider found: {}", loader.iterator());
             }
         } else {
             try {
                 final Class<?> providerClass = Class.forName(providerClassName);
-
-                while(it.hasNext()) {
-                    final ElasticServerProvider p = it.next();
-                    if(providerClass.isAssignableFrom(p.getClass())) {
-                        serverProvider = p;
-                        break;
+                if (ElasticServerProvider.class.isAssignableFrom(providerClass)){
+                    while(it.hasNext()) {
+                        final ElasticServerProvider p = it.next();
+                        if(providerClass.isAssignableFrom(p.getClass())) {
+                            serverProvider = p;
+                            break;
+                        }
                     }
-                }
-                if(Objects.isNull(serverProvider)) {
-                    log.info("No server provider of type class {} found in classpath for server {}",
+                    if(Objects.isNull(serverProvider)) {
+                        log.debug("No Elastic server provider of type class {} found in classpath for server {}",
+                                providerClassName, ElasticSearchServer.class.getCanonicalName());
+                    }
+
+                } else {
+                    log.debug("Search server provider class {} configured is not assignable to {}",
                             providerClassName, ElasticServerProvider.class.getCanonicalName());
+                    throw new SearchServerProviderLoaderException(
+                            String.format("Search server provider class %s configured is not assignable to %s",providerClassName, ElasticServerProvider.class.getCanonicalName()),
+                            ElasticServerProvider.class
+                    );
                 }
             } catch (ClassNotFoundException e) {
-                log.warn("Specified class {} is not in classpath",providerClassName, e);
+                log.warn("Specified Vind Provider class {} is not in classpath",providerClassName, e);
                 //throw new RuntimeException("Specified class " + providerClassName + " is not in classpath");
             }
         }

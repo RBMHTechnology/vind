@@ -21,7 +21,7 @@ public class RemoteSolrServerProvider implements SolrServerProvider {
     @Override
     public SolrClient getInstance() {
 
-        Logger log = LoggerFactory.getLogger(SolrServerProvider.class);
+        Logger log = LoggerFactory.getLogger(RemoteSolrServerProvider.class);
 
         String host = SearchConfiguration.get(SearchConfiguration.SERVER_HOST);
         //Backwards compatibility
@@ -73,7 +73,6 @@ public class RemoteSolrServerProvider implements SolrServerProvider {
             }
             log.info("Instantiating solr http client: {}", host);
             return new HttpSolrClient.Builder(host).build();
-
         }
 
     }
