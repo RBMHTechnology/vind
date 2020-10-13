@@ -388,7 +388,7 @@ public class ResultUtils {
                                         DocumentUtil.castForDescriptor(p.getKey(), field, useCase), p.getValue()))
                                 .forEach(result::addFacetValue));
 
-        return Pair.of(termFacet.getFieldDescriptor(), result);
+        return Pair.of(field, result);
     }
 
     private static Pair<String ,RangeFacetResult<?>> getRangeFacetResults(Aggregation aggregation, Facet rangeFacet) {
