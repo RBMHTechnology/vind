@@ -35,7 +35,6 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
-import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.BucketOrder;
@@ -80,12 +79,19 @@ public class ElasticQueryBuilder {
 
     public static SearchSourceBuilder buildQuery(FulltextSearch search, DocumentFactory factory) {
 
+
         final String searchContext = search.getSearchContext();
         final SearchSourceBuilder searchSource = new SearchSourceBuilder();
         final BoolQueryBuilder baseQuery = QueryBuilders.boolQuery();
 
+        // Set total hits count
+        final boolean trackTotalHits = Boolean.parseBoolean(
+                SearchConfiguration.get(SearchConfiguration.TRACK_TOTAL_HITS, "true"));
+        searchSource.trackTotalHits(trackTotalHits);
+
         //build full text disMax query
-        final QueryStringQueryBuilder fullTextStringQuery = QueryBuilders.queryStringQuery(search.getSearchString())
+        final String searchString = "*".equals(search.getSearchString())? "*:*" : search.getSearchString();
+        final QueryStringQueryBuilder fullTextStringQuery = QueryBuilders.queryStringQuery(searchString)
                 .minimumShouldMatch(search.getMinimumShouldMatch()); //mm
         // Set fulltext fields
         factory.getFields().values().stream()
@@ -161,7 +167,8 @@ public class ElasticQueryBuilder {
                                         factory,
                                         UseCase.Facet,//TODO : complex fields can have aggregation on non facet?
                                         searchContext,
-                                        search.getFacetMinCount()))
+                                        search.getFacetMinCount(),
+                                        search.getFacetLimit()))
                     .flatMap(Collection::stream)
                     .filter(Objects::nonNull)
                     .forEach(searchSource::aggregation);
@@ -363,7 +370,7 @@ public class ElasticQueryBuilder {
             }
     }
 
-    private static List<AggregationBuilder> buildElasticAggregations(String name, Facet vindFacet, DocumentFactory factory, UseCase  useCase, String searchContext, int minCount) {
+    private static List<AggregationBuilder> buildElasticAggregations(String name, Facet vindFacet, DocumentFactory factory, UseCase  useCase, String searchContext, int minCount, int facetLimit) {
         final String contextualizedFacetName = Stream.of(searchContext, name)
                 .filter(Objects::nonNull)
                 .collect(Collectors.joining("_"));
@@ -378,7 +385,8 @@ public class ElasticQueryBuilder {
                 final TermsAggregationBuilder termsAgg = AggregationBuilders
                         .terms(contextualizedFacetName)
                         .field(fieldName)
-                        .minDocCount(minCount);
+                        .minDocCount(minCount)
+                        .size(facetLimit);
 
                 Optional.ofNullable(termFacet.getOption()).ifPresent(option -> setTermOptions(termsAgg, option));
 
@@ -390,7 +398,8 @@ public class ElasticQueryBuilder {
                 final TermsAggregationBuilder typeAgg = AggregationBuilders
                         .terms(name)
                         .field(FieldUtil.TYPE)
-                        .minDocCount(minCount);
+                        .minDocCount(minCount)
+                        .size(facetLimit);
                 addSortToAggregation(vindFacet, searchContext, typeAgg);
                 return Collections.singletonList(typeAgg);
 
@@ -581,7 +590,8 @@ public class ElasticQueryBuilder {
                         .map(n -> AggregationBuilders
                                 .terms(contextualizedFacetName)
                                 .field(n)
-                                .minDocCount(minCount))
+                                .minDocCount(minCount)
+                                .size(facetLimit))
                         //.forEach(agg -> addSortToAggregation(vindFacet, searchContext, agg))
                         .collect(Collectors.toList());
                 termFacets.forEach(agg -> addSortToAggregation(vindFacet, searchContext, agg));

@@ -13,6 +13,7 @@ import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
+import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.PageResult;
 import com.rbmhtechnology.vind.api.result.SearchResult;
@@ -2659,4 +2660,125 @@ public class ServerTest {
         assertEquals("g1", result.getFacetResults().getPivotFacets().get("bucket").get(1).getValue());
     }
 
+    @Test
+    @RunWithBackend({Solr,Elastic})
+    public void testEmptySearch() {
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
+
+        FieldDescriptor<String> resource = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildTextField("resource");
+
+        FieldDescriptor<String> cluster = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildTextField("cluster");
+
+        FieldDescriptor<String> group = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("group");
+
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(resource)
+                .addField(created)
+                .addField(cluster)
+                .addField(group)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(resource, "r1")
+                .setValue(created, yesterday)
+                .setValue(cluster, "c1");
+
+        Document d2 = assets.createDoc("2")
+                .setValue(resource, "r2")
+                .setValue(created, now)
+                .setValue(cluster, "c2");
+
+        Document d3 = assets.createDoc("3")
+                .setValue(resource, "r3")
+                .setValue(created, now)
+                .setValue(cluster, "c3");
+
+        Document d4 = assets.createDoc("4")
+                .setValue(resource, "r4")
+                .setValue(created, now)
+                .setValue(cluster, "c3");
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.index(d3);
+        server.index(d4);
+        server.commit();
+
+
+        FulltextSearch search = Search.fulltext();
+
+        SearchResult result = server.execute(search,assets);
+        assertEquals(4, result.getNumOfResults());
+    }
+
+    @Test
+    @RunWithBackend({Solr,Elastic})
+    public void testApostophreError() {
+
+        SingleValueFieldDescriptor<String> resource = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setFullText(true)
+                .buildTextField("resource");
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .setUpdatable(true)
+                .addField(resource)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(resource, "Robert's dog");
+
+        Document d2 = assets.createDoc("2")
+                .setValue(resource, "r2")
+                ;
+
+        Document d3 = assets.createDoc("3")
+                .setValue(resource, "r3")
+                ;
+
+        Document d4 = assets.createDoc("4")
+                .setValue(resource, "r4")
+                ;
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.index(d3);
+        server.index(d4);
+        server.commit();
+
+        FulltextSearch search = Search.fulltext("Robert's dog");
+
+        SearchResult result = server.execute(search,assets);
+        assertEquals(1, result.getNumOfResults());
+        assertEquals("Robert's dog", result.getResults().get(0).getValue(resource));
+
+        final String id = result.getResults().get(0).getId();
+        final Update update = Search.update(id)
+                .set(resource, "Robert's dog had an awesome day");
+
+        server.execute(update, assets);
+        server.commit();
+
+        final GetResult getResult = server.execute(Search.getById(id), assets);
+
+        assertEquals(1, getResult.getNumOfResults());
+        assertEquals("Robert's dog had an awesome day", getResult.getResults().get(0).getValue(resource));
+    }
 }

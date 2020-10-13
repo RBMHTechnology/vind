@@ -1,7 +1,6 @@
 package com.rbmhtechnology.vind.configure;
 
 import com.google.common.io.Resources;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +39,7 @@ public class SearchConfiguration {
     public static final String SEARCH_API_KEY_SECRET = "search.api.key.secret";
     public static final String SEARCH_API_KEY_ID = "search.api.key.id";
     public static final String SEARCH_AUTHENTICATION_METHOD = "search.authentication.method";
+    public static final String TRACK_TOTAL_HITS = "search.track.total.hits";
 
     private static Logger log = LoggerFactory.getLogger(SearchConfiguration.class);
 
