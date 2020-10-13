@@ -1,18 +1,17 @@
 package com.rbmhtechnology.vind;
 
-
 /**
  */
-public class SearchServerProviderLoaderException extends SearchServerException {
+public class SearchServerInstantiateException extends SearchServerException {
 
     private  Class serverClass;
 
-    public SearchServerProviderLoaderException(String m, Class serverClass) {
+    public SearchServerInstantiateException(String m, Class serverClass) {
         super(m);
         this.serverClass = serverClass;
     }
 
-    public SearchServerProviderLoaderException(String m, Class serverClass, Throwable t) {
+    public SearchServerInstantiateException(String m, Class serverClass, Throwable t) {
         super(m,t);
         this.serverClass = serverClass;
     }

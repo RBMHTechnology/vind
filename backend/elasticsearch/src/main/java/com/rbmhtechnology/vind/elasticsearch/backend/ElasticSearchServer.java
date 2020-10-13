@@ -3,6 +3,7 @@ package com.rbmhtechnology.vind.elasticsearch.backend;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rbmhtechnology.vind.SearchServerException;
+import com.rbmhtechnology.vind.SearchServerInstantiateException;
 import com.rbmhtechnology.vind.SearchServerProviderLoaderException;
 import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.Document;
@@ -42,12 +43,12 @@ import com.rbmhtechnology.vind.elasticsearch.backend.util.PainlessScript;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ResultUtils;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
-import com.sun.org.apache.bcel.internal.generic.ATHROW;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.http.util.Asserts;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkItemResponse.Failure;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.MultiGetResponse;
@@ -118,11 +119,11 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                         log.debug("Successful ping to Elasticsearch server");
                     } else {
                         log.error("Cannot connect to Elasticsearch server: ping failed");
-                        throw new SearchServerException("Cannot connect to Elasticsearch server: ping failed");
+                        throw new SearchServerInstantiateException("Cannot connect to Elasticsearch server: ping failed", this.getClass());
                     }
                 } catch ( IOException e) {
                     log.error("Cannot connect to Elasticsearch server: ping failed");
-                    throw new SearchServerException("Cannot connect to Elasticsearch server: ping failed", e);
+                    throw new SearchServerInstantiateException("Cannot connect to Elasticsearch server: ping failed", this.getClass(), e);
                 }
                 log.info("Ping to Elastic server successful");
 
@@ -135,33 +136,45 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                                 client.createIndex(client.getDefaultIndex());
                             } catch (Exception e) {
                                 log.error("Error creating collection {}: {}", client.getDefaultIndex(), e.getMessage(), e);
-                                throw new SearchServerException(
+                                throw new SearchServerInstantiateException(
                                         String.format(
-                                                "Error when creating collection %s: %s", client.getDefaultIndex(), e.getMessage()
-                                        ), e
+                                                "Error when creating collection %s: %s",
+                                                client.getDefaultIndex(), e.getMessage()
+                                        ),
+                                        this.getClass(),
+                                        e
                                 );
                             }
                             log.info("Collection {} created successfully", client.getDefaultIndex());
                         } else {
-                            log.error("Index does not exists: try to enable auto-creation");
-                            throw new SearchServerException("Index does not exists: try to enable auto-creation");
+                            log.error("Index does not exist: try to enable auto-creation");
+                            throw new SearchServerInstantiateException(
+                                    "Index does not exist: try to enable auto-creation",
+                                    this.getClass());
                         }
                     }
                 } catch (Exception e) {
                     log.error("Cannot connect to Elasticsearch server: index check failed - {}",e.getMessage(), e);
-                    throw new SearchServerException(
-                            "Cannot connect to Elasticsearch server: index check failed - " + e.getMessage(), e);
+                    throw new SearchServerInstantiateException(
+                            "Cannot connect to Elasticsearch server: index check failed - " + e.getMessage(),
+                            this.getClass(),
+                            e);
                 }
 
                 try {
                     checkVersionAndMappings();
                 } catch (Exception e) {
                     log.error("Elasticsearch server Schema validation error: {}", e.getMessage(), e);
-                    throw new SearchServerException(String.format("Elastic search Schema validation error: %s", e.getMessage()), e);
+                    throw new SearchServerInstantiateException(
+                            String.format("Elastic search Schema validation error: %s", e.getMessage()),
+                            this.getClass(),
+                            e);
                 }
             } else {
                 log.error("Error running Elasticsearch Search Server: search server instance is null");
-                throw new SearchServerException("Error running Elasticsearch Search Server: search server instance is null");
+                throw new SearchServerInstantiateException(
+                        "Error running Elasticsearch Search Server: Elasticsearch client is null",
+                        this.getClass());
             }
           } else {
             log.warn("Elastic ping and schema validity check has been deactivated.");
@@ -240,11 +253,15 @@ public class ElasticSearchServer extends SmartSearchServerBase {
             final StopWatch elapsedTime = StopWatch.createStarted();
             elasticClientLogger.debug(">>> delete({})", doc.getId());
             final DeleteResponse deleteResponse = elasticSearchClient.deleteById(doc.getId());
+            if(deleteResponse.status().getStatus() >= 400) {
+                log.error("Cannot delete document {}: {} - {} ", doc.getId(), deleteResponse.status().getStatus(),deleteResponse.status().name());
+                throw new SearchServerException("Cannot  delete document " + doc.getId() + ": " + deleteResponse.status().getStatus() +" - "+ deleteResponse.status().name());
+            }
             elapsedTime.stop();
             return new DeleteResult(elapsedTime.getTime()).setElapsedTime(elapsedTime.getTime());
         } catch (ElasticsearchException | IOException e) {
             log.error("Cannot delete document {}", doc.getId() , e);
-            throw new SearchServerException("Cannot delete document", e);
+            throw new SearchServerException("Cannot delete document "+ doc.getId(), e);
         }
     }
 
@@ -256,6 +273,10 @@ public class ElasticSearchServer extends SmartSearchServerBase {
             elasticClientLogger.debug(">>> delete({})", update);
             final PainlessScript.ScriptBuilder updateScript = ElasticQueryBuilder.buildUpdateScript(update.getOptions(), factory, update.getUpdateContext());
             final UpdateResponse response = elasticSearchClient.update(update.getId(), updateScript);
+            if(response.status().getStatus() >= 400) {
+                log.error("Cannot update document {}: {} - {} ", update.getId(), response.status().getStatus(),response.status().name());
+                throw new SearchServerException("Cannot  update document " + update.getId() + ": " + response.status().getStatus() +" - "+ response.status().name());
+            }
             elapsedTime.stop();
             return true;
         } catch (ElasticsearchException | IOException e) {
@@ -273,6 +294,14 @@ public class ElasticSearchServer extends SmartSearchServerBase {
             elasticClientLogger.debug(">>> delete({})", delete);
             final QueryBuilder deleteQuery = ElasticQueryBuilder.buildFilterQuery(delete.getQuery(), factory, delete.getUpdateContext());
             final BulkByScrollResponse response = elasticSearchClient.deleteByQuery(deleteQuery);
+            if(response.getBulkFailures().size() > 0) {
+                final List<String> failureMessages = response.getBulkFailures().stream()
+                        .map(Failure::getMessage)
+                        .collect(Collectors.toList());
+                log.error("Cannot delete {} documents: {}",failureMessages.size() , String.join(" - ", failureMessages));
+                throw new SearchServerException("Cannot delete " + failureMessages.size() + "documents: " + String.join(" - ", failureMessages));
+
+            }
             elapsedTime.stop();
             return new DeleteResult(response.getTook().getMillis()).setElapsedTime(elapsedTime.getTime());
         } catch (ElasticsearchException | IOException e) {
@@ -635,7 +664,10 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                 }
             } catch (ClassNotFoundException e) {
                 log.warn("Specified Vind Provider class {} is not in classpath",providerClassName, e);
-                //throw new RuntimeException("Specified class " + providerClassName + " is not in classpath");
+                throw new SearchServerProviderLoaderException(
+                        String.format("Specified class %s is not in classpath", providerClassName),
+                        ElasticServerProvider.class
+                );
             }
         }
 

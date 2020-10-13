@@ -2,6 +2,7 @@ package com.rbmhtechnology.vind.solr.backend;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.rbmhtechnology.vind.SearchServerException;
+import com.rbmhtechnology.vind.SearchServerProviderLoaderException;
 import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.SmartSearchServerBase;
@@ -1136,28 +1137,41 @@ public class SolrSearchServer extends SmartSearchServerBase {
         if(providerClassName == null) {
             if (!it.hasNext()) {
                 log.error("No SolrServerProvider in classpath");
-                throw new SearchServerException("No SolrServerProvider in classpath");
+                throw new SearchServerProviderLoaderException(
+                        "No SolrServerProvider in classpath",
+                        serverProvider.getClass());
             } else {
                 serverProvider = it.next();
             }
         } else {
             try {
                 final Class<?> providerClass = Class.forName(providerClassName);
-
-                while(it.hasNext()) {
-                    final SolrServerProvider p = it.next();
-                    if(providerClass.isAssignableFrom(p.getClass())) {
-                        serverProvider = p;
-                        break;
+                if (SolrServerProvider.class.isAssignableFrom(providerClass)) {
+                    while (it.hasNext()) {
+                        final SolrServerProvider p = it.next();
+                        if (providerClass.isAssignableFrom(p.getClass())) {
+                            serverProvider = p;
+                            break;
+                        }
                     }
-                }
-                if(Objects.isNull(serverProvider)) {
-                    log.debug("No Solr server provider of type class {} found in classpath for server {}", providerClassName, SolrSearchServer.class.getCanonicalName());
-                    //throw new RuntimeException("No server provider found for class " + providerClassName);
+                    if (Objects.isNull(serverProvider)) {
+                        log.debug("No Solr server provider of type class {} found in classpath for server {}", providerClassName, SolrSearchServer.class.getCanonicalName());
+                        //throw new RuntimeException("No server provider found for class " + providerClassName);
+                    }
+                } else {
+                    log.debug("Search server provider class {} configured is not assignable to {}",
+                            providerClassName, SolrServerProvider.class.getCanonicalName());
+                    throw new SearchServerProviderLoaderException(
+                            String.format("Search server provider class %s configured is not assignable to %s",providerClassName, SolrServerProvider.class.getCanonicalName()),
+                            SolrServerProvider.class
+                    );
                 }
             } catch (ClassNotFoundException e) {
                 log.warn("Specified class {} is not in classpath",providerClassName, e);
-                //throw new RuntimeException("Specified class " + providerClassName + " is not in classpath");
+                throw new SearchServerProviderLoaderException(
+                        String.format("Specified class %s is not in classpath",providerClassName),
+                        SolrServerProvider.class
+                );
             }
         }
         return serverProvider;

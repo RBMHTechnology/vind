@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.api;
 
 import com.rbmhtechnology.vind.SearchServerException;
+import com.rbmhtechnology.vind.SearchServerInstantiateException;
 import com.rbmhtechnology.vind.SearchServerProviderLoaderException;
 import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
@@ -29,6 +30,7 @@ import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 /**
@@ -57,6 +59,7 @@ public abstract class SearchServer implements Closeable {
             providerClassName = solrProviderClassName;
         }
 
+        final List<Exception> errorMessages = new ArrayList<>();
         final ServiceLoader<SearchServer> loader = ServiceLoader.load(SearchServer.class);
         final Iterator<SearchServer> it = loader.iterator();
         SearchServer server = null;
@@ -73,20 +76,30 @@ public abstract class SearchServer implements Closeable {
                     final Class<?> providerClass = Class.forName(providerClassName);
                     while (it.hasNext() && server == null) {
                         try {
-
                             server = it.next();
                             if (server == null
                                     || server.getServiceProviderClass() == null
                                     || !server.getServiceProviderClass().getCanonicalName().equals(providerClassName)) {
                                 server = null;
                             }
-                        } catch (SearchServerProviderLoaderException e) {
-                            if (e.getServerClass().isAssignableFrom(providerClass)) {
-                                log.info(e.getMessage(),e);
-                            }
-
-                        }catch (Error | Exception e) {
+                        } catch (ServiceConfigurationError e) {
+                            final Throwable cause = e.getCause();
+                            log.debug(cause.getMessage(), cause);
+                            if(SearchServerProviderLoaderException.class.isAssignableFrom(cause.getClass())){
+                                final SearchServerProviderLoaderException loaderException = (SearchServerProviderLoaderException) cause;
+                                if (loaderException.getServerClass().isAssignableFrom(providerClass)) {
+                                    errorMessages.add(loaderException);
+                                 }
+                             } else if (SearchServerInstantiateException.class.isAssignableFrom(cause.getClass())){
+                                final SearchServerInstantiateException instanceException = (SearchServerInstantiateException) cause;
+                                errorMessages.add(instanceException);
+                             }
+                        } catch ( Exception e) {
                             log.debug("Cannot instantiate search server: {}", e.getMessage(), e);
+                            throw new SearchServerProviderLoaderException(
+                                    String.format("Specified class %s is not in classpath", providerClassName),
+                                    ServiceProvider.class
+                            );
                         }
                     }
                 } catch (ClassNotFoundException e) {
@@ -96,7 +109,10 @@ public abstract class SearchServer implements Closeable {
         }
         if (server == null) {
             log.error("Unable to found/instantiate SearchServer of class [{}] in classpath", providerClassName);
-            throw new SearchServerException("Unable to found/instantiate SearchServer of class ["+ providerClassName +"] in classpath");
+            final SearchServerException searchServerException = new SearchServerException(
+                    "Unable to found/instantiate SearchServer of class [" + providerClassName + "] in classpath");
+            errorMessages.forEach(searchServerException::addSuppressed);
+            throw searchServerException;
         }
         return server;
     }
