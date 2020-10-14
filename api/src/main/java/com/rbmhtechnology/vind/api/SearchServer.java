@@ -96,14 +96,14 @@ public abstract class SearchServer implements Closeable {
                              }
                         } catch ( Exception e) {
                             log.debug("Cannot instantiate search server: {}", e.getMessage(), e);
-                            throw new SearchServerProviderLoaderException(
-                                    String.format("Specified class %s is not in classpath", providerClassName),
-                                    ServiceProvider.class
-                            );
                         }
                     }
                 } catch (ClassNotFoundException e) {
                     log.warn("Specified Vind Provider class {} is not in classpath",providerClassName, e);
+                    throw new SearchServerProviderLoaderException(
+                            String.format("Specified class %s is not in classpath", providerClassName),
+                            ServiceProvider.class
+                    );
                 }
             }
         }
