@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.solr.backend;
 
+import com.rbmhtechnology.vind.SearchServerInstantiateException;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.solr.backend.SolrServerProvider;
 import org.apache.commons.lang3.StringUtils;
@@ -21,7 +22,7 @@ public class RemoteSolrServerProvider implements SolrServerProvider {
     @Override
     public SolrClient getInstance() {
 
-        Logger log = LoggerFactory.getLogger(SolrServerProvider.class);
+        Logger log = LoggerFactory.getLogger(RemoteSolrServerProvider.class);
 
         String host = SearchConfiguration.get(SearchConfiguration.SERVER_HOST);
         //Backwards compatibility
@@ -32,7 +33,9 @@ public class RemoteSolrServerProvider implements SolrServerProvider {
 
         if(host == null) {
             log.error("{} has to be set", SearchConfiguration.SERVER_HOST);
-            throw new RuntimeException(SearchConfiguration.SERVER_HOST + " has to be set");
+            throw new SearchServerInstantiateException(
+                    SearchConfiguration.SERVER_HOST + " has to be set",
+                    this.getClass());
         }
 
         String collection = SearchConfiguration.get(SearchConfiguration.SERVER_COLLECTION);
@@ -63,7 +66,10 @@ public class RemoteSolrServerProvider implements SolrServerProvider {
                 return client;
             } else {
                 log.error(SearchConfiguration.SERVER_COLLECTION + " has to be set");
-                throw new RuntimeException(SearchConfiguration.SERVER_COLLECTION + " has to be set");
+                throw new SearchServerInstantiateException(
+                        SearchConfiguration.SERVER_COLLECTION + " has to be set",
+                        this.getClass()
+                );
             }
 
         } else {
@@ -73,7 +79,6 @@ public class RemoteSolrServerProvider implements SolrServerProvider {
             }
             log.info("Instantiating solr http client: {}", host);
             return new HttpSolrClient.Builder(host).build();
-
         }
 
     }

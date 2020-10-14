@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.solr.backend;
 
+import com.rbmhtechnology.vind.SearchServerInstantiateException;
 import com.rbmhtechnology.vind.utils.FileSystemUtils;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
@@ -55,7 +56,7 @@ public class EmbeddedSolrServerProvider implements SolrServerProvider {
             return new SolrClientWrapper(container, CORE_NAME, tmpSolrHome);
 
         } catch (URISyntaxException | IOException e) {
-            throw new RuntimeException(e);
+            throw new SearchServerInstantiateException(e.getMessage(), this.getClass(), e);
         }
     }
 
