@@ -64,7 +64,7 @@ public class SearchService implements AutoCloseable {
 
         this.guardianApiKey = guardianApiKey;
 
-        this.server = getElasticServer();
+        this.server = getCombinedServer();
 
         //this.monitoringSearchServer = new MonitoringSearchServer(server, writer);
 
@@ -104,7 +104,7 @@ public class SearchService implements AutoCloseable {
     private SearchServer getSolrServer() {
         SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.solr.backend.RemoteSolrServerProvider");
         SearchConfiguration.set(SearchConfiguration.SERVER_HOST, "http://localhost:8983/solr");
-        SearchConfiguration.set(SearchConfiguration.SERVER_COLLECTION, "vind");
+        SearchConfiguration.set(SearchConfiguration.SERVER_COLLECTION, "vind_demo");
         SearchConfiguration.set(SearchConfiguration.SERVER_SOLR_CLOUD, false);
         return SearchServer.getInstance();
     }
@@ -117,7 +117,7 @@ public class SearchService implements AutoCloseable {
         SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.elasticsearch.backend.ElasticServerProvider");
         SearchConfiguration.set(SearchConfiguration.SERVER_HOST, "http://localhost:9200");
         SearchConfiguration.set(SearchConfiguration.SERVER_COLLECTION_AUTOCREATE, true);
-        SearchConfiguration.set(SearchConfiguration.SERVER_COLLECTION, "vind");
+        SearchConfiguration.set(SearchConfiguration.SERVER_COLLECTION, "vind_demo");
         return SearchServer.getInstance();
     }
 

@@ -1,6 +1,8 @@
 package com.rbmhtechnology.vind.api;
 
 import com.rbmhtechnology.vind.SearchServerException;
+import com.rbmhtechnology.vind.SearchServerInstantiateException;
+import com.rbmhtechnology.vind.SearchServerProviderLoaderException;
 import com.rbmhtechnology.vind.annotations.AnnotationUtil;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
@@ -28,6 +30,7 @@ import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 /**
@@ -56,6 +59,7 @@ public abstract class SearchServer implements Closeable {
             providerClassName = solrProviderClassName;
         }
 
+        final List<Exception> errorMessages = new ArrayList<>();
         final ServiceLoader<SearchServer> loader = ServiceLoader.load(SearchServer.class);
         final Iterator<SearchServer> it = loader.iterator();
         SearchServer server = null;
@@ -68,24 +72,47 @@ public abstract class SearchServer implements Closeable {
             if (providerClassName == null) {
                 server = it.next();
             } else {
-                while (it.hasNext() && server == null) {
-                    try {
-                        server = it.next();
-                        if (server.getServiceProviderClass() == null || !server.getServiceProviderClass().getCanonicalName().equals(providerClassName)) {
-                            server = null;
+                try {
+                    final Class<?> providerClass = Class.forName(providerClassName);
+                    while (it.hasNext() && server == null) {
+                        try {
+                            server = it.next();
+                            if (server == null
+                                    || server.getServiceProviderClass() == null
+                                    || !server.getServiceProviderClass().getCanonicalName().equals(providerClassName)) {
+                                server = null;
+                            }
+                        } catch (ServiceConfigurationError e) {
+                            final Throwable cause = e.getCause();
+                            log.debug(cause.getMessage(), cause);
+                            if(SearchServerProviderLoaderException.class.isAssignableFrom(cause.getClass())){
+                                final SearchServerProviderLoaderException loaderException = (SearchServerProviderLoaderException) cause;
+                                if (loaderException.getServerClass().isAssignableFrom(providerClass)) {
+                                    errorMessages.add(loaderException);
+                                 }
+                             } else if (SearchServerInstantiateException.class.isAssignableFrom(cause.getClass())){
+                                final SearchServerInstantiateException instanceException = (SearchServerInstantiateException) cause;
+                                errorMessages.add(instanceException);
+                             }
+                        } catch ( Exception e) {
+                            log.debug("Cannot instantiate search server: {}", e.getMessage(), e);
                         }
-                    } catch (Error | Exception e) {
-                        log.debug("Cannot instantiate search server: {}", e.getMessage());
                     }
+                } catch (ClassNotFoundException e) {
+                    log.warn("Specified Vind Provider class {} is not in classpath",providerClassName, e);
+                    throw new SearchServerProviderLoaderException(
+                            String.format("Specified class %s is not in classpath", providerClassName),
+                            ServiceProvider.class
+                    );
                 }
             }
         }
         if (server == null) {
-            log.error("No SearchServer of class [{}] in classpath", providerClassName);
-            throw new RuntimeException("No SearchServer of class ["+ providerClassName +"] in classpath");
-        }
-        if (it.hasNext()) {
-            log.warn("Multiple bindings for SearchServer found: {}", loader.iterator());
+            log.error("Unable to found/instantiate SearchServer of class [{}] in classpath", providerClassName);
+            final SearchServerException searchServerException = new SearchServerException(
+                    "Unable to found/instantiate SearchServer of class [" + providerClassName + "] in classpath");
+            errorMessages.forEach(searchServerException::addSuppressed);
+            throw searchServerException;
         }
         return server;
     }

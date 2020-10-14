@@ -22,7 +22,7 @@ public abstract class MonitoringWriter { //TODO could be an interface
             server = it.next();
         }
         if (it.hasNext()) {
-            LoggerFactory.getLogger(MonitoringWriter.class).warn("Multiple bindings for ReportWriter found: {}", loader.iterator());
+            LoggerFactory.getLogger(MonitoringWriter.class).info("Multiple bindings for ReportWriter found: {}", loader.iterator());
         }
         return server;
     }
