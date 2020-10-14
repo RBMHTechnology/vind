@@ -732,8 +732,16 @@ public class ElasticSearchServer extends SmartSearchServerBase {
             return new IndexResult(elapsedTime.getTime()).setElapsedTime(elapsedTime.getTime());
 
         } catch (ElasticsearchException | IOException e) {
-            log.error("Error indexing documents", e);
-            throw new SearchServerException("Cannot index documents", e);
+            log.error("Error indexing {} documents [{}]: {}",
+                    docs.size(),
+                    docs.stream().map(Document::getId).collect(Collectors.joining(", ")),
+                    e.getMessage(), e);
+            throw new SearchServerException(
+                    String.format(
+                            "Error indexing %s documents [%s]: %s",
+                                docs.size(),
+                                docs.stream().map(Document::getId).collect(Collectors.joining(", ")),
+                                e.getMessage()), e);
         }
     }
 

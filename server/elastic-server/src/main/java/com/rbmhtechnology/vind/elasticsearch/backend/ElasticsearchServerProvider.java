@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.elasticsearch.backend;
 
+import com.rbmhtechnology.vind.SearchServerInstantiateException;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.elasticsearch.backend.client.ElasticVindClient;
 import org.apache.commons.lang3.StringUtils;
@@ -18,7 +19,9 @@ public class ElasticsearchServerProvider implements ElasticServerProvider {
 
         if(host == null) {
             log.error("{} has to be set", SearchConfiguration.SERVER_HOST);
-            throw new RuntimeException(SearchConfiguration.SERVER_HOST + " has to be set");
+            throw new SearchServerInstantiateException(
+                    SearchConfiguration.SERVER_HOST + " has to be set",
+                    this.getClass());
         }
 
         final String collection = SearchConfiguration.get(SearchConfiguration.SERVER_COLLECTION);
@@ -37,7 +40,9 @@ public class ElasticsearchServerProvider implements ElasticServerProvider {
                     final String key = SearchConfiguration.get(SearchConfiguration.SEARCH_API_KEY_SECRET);
                     if(Objects.isNull(id) || Objects.isNull(key)) {
                         log.error("Missing API id or secret to authenticate with Elasticsearch backend");
-                        throw new RuntimeException("Missing API id or secret to authenticate with Elasticsearch backend");
+                        throw new SearchServerInstantiateException(
+                                "Missing API id or secret to authenticate with Elasticsearch backend",
+                                this.getClass());
                     }
                     client = new ElasticVindClient.Builder(host)
                             .setDefaultIndex(collection)
@@ -48,7 +53,9 @@ public class ElasticsearchServerProvider implements ElasticServerProvider {
                     final String pssw = SearchConfiguration.get(SearchConfiguration.SEARCH_AUTHENTICATION_KEY);
                     if(Objects.isNull(user) || Objects.isNull(pssw)) {
                         log.error("Missing API user or password to authenticate with Elasticsearch backend");
-                        throw new RuntimeException("Missing API user or password to authenticate with Elasticsearch backend");
+                        throw new SearchServerInstantiateException(
+                                "Missing API user or password to authenticate with Elasticsearch backend",
+                                this.getClass());
                     }
                     client = new ElasticVindClient.Builder(host)
                                 .setDefaultIndex(collection)
@@ -72,7 +79,9 @@ public class ElasticsearchServerProvider implements ElasticServerProvider {
             return client;
         } else {
             log.error(SearchConfiguration.SERVER_COLLECTION + " has to be set");
-            throw new RuntimeException(SearchConfiguration.SERVER_COLLECTION + " has to be set");
+            throw new SearchServerInstantiateException(
+                    SearchConfiguration.SERVER_COLLECTION + " has to be set",
+                    this.getClass());
         }
     }
 }
