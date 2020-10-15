@@ -156,19 +156,25 @@ public class ElasticQueryBuilder {
         searchSource.fetchSource(true);
         baseQuery.filter(buildFilterQuery(search.getFilter(), factory, searchContext));
 
-            //TODO if nested document search is implemented
-            // fulltext search deep search
-
-        if(search.hasFacet()) {
+        if(search.hasFacet() && search.getFacetLimit() !=0) {
+            final int facetLimit = search.getFacetLimit() < 0 ? Integer.MAX_VALUE : search.getFacetLimit();
+            if( search.getFacetLimit() < 0) {
+                log.info("Facet limit has been set to {}: " +
+                                "Elastic search does not support unlimited facet results, setting it to Integer.MAX_VALUE ({})",
+                        search.getFacetLimit(),
+                        facetLimit);
+            }
             search.getFacets().entrySet().stream()
-                    .map(vindFacet -> buildElasticAggregations(
-                                        vindFacet.getKey(),
-                                        vindFacet.getValue(),
-                                        factory,
-                                        UseCase.Facet,//TODO : complex fields can have aggregation on non facet?
-                                        searchContext,
-                                        search.getFacetMinCount(),
-                                        search.getFacetLimit()))
+                    .map(vindFacet -> {
+                        return buildElasticAggregations(
+                                            vindFacet.getKey(),
+                                            vindFacet.getValue(),
+                                            factory,
+                                            UseCase.Facet,//TODO : complex fields can have aggregation on non facet?
+                                            searchContext,
+                                            search.getFacetMinCount() ,
+                                facetLimit);
+                    })
                     .flatMap(Collection::stream)
                     .filter(Objects::nonNull)
                     .forEach(searchSource::aggregation);
