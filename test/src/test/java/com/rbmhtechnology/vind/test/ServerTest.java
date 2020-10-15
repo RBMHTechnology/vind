@@ -2781,4 +2781,59 @@ public class ServerTest {
         assertEquals(1, getResult.getNumOfResults());
         assertEquals("Robert's dog had an awesome day", getResult.getResults().get(0).getValue(resource));
     }
+
+    @Test
+    @RunWithBackend({Solr,Elastic})
+    public void testBooleanFilterScopedSearch() {
+
+        FieldDescriptor<String> resource = new FieldDescriptorBuilder()
+                .setSuggest(true)
+                .buildTextField("resource");
+
+        FieldDescriptor<String> cluster = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildTextField("cluster");
+
+        FieldDescriptor<String> group = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("group");
+
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(resource)
+                .addField(cluster)
+                .addField(group)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(resource, "r1")
+                .setValue(cluster, "c1");
+
+        Document d2 = assets.createDoc("2")
+                .setValue(resource, "r2")
+                .setValue(cluster, "c2");
+
+        Document d3 = assets.createDoc("3")
+                .setValue(resource, "r3")
+                .setValue(cluster, "c3");
+
+        Document d4 = assets.createDoc("4")
+                .setValue(resource, "r4")
+                .setValue(cluster, "c3");
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.index(d3);
+        server.index(d4);
+        server.commit();
+
+
+        FulltextSearch search = Search.fulltext().filter(or(eq(resource,"r2",Scope.Suggest), eq(resource,"r1", Scope.Suggest)));
+
+        SearchResult result = server.execute(search,assets);
+        assertEquals(2, result.getNumOfResults());
+    }
 }
