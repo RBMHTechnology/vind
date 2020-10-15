@@ -250,124 +250,125 @@ public class ElasticQueryBuilder {
         filterQuery.must(QueryBuilders.termQuery(FieldUtil.PERCOLATOR_FLAG, percolatorFlag));
         Optional.ofNullable(filter)
                 .ifPresent(vindFilter -> {
-                    filterQuery.must(filterMapper(vindFilter, factory, UseCase.valueOf(filter.getFilterScope().name()), context));
+                    filterQuery.must(filterMapper(vindFilter, factory, context));
                 });
         return filterQuery;
 
     }
 
-    private static QueryBuilder filterMapper(Filter filter, DocumentFactory factory, UseCase useCase, String context) {
+    private static QueryBuilder filterMapper(Filter filter, DocumentFactory factory, String context) {
+        final UseCase useCase = UseCase.valueOf(filter.getFilterScope().name());
 
-            switch (filter.getType()) {
-                case "AndFilter":
-                    final Filter.AndFilter andFilter = (Filter.AndFilter) filter;
-                    final BoolQueryBuilder boolMustQuery = QueryBuilders.boolQuery();
-                    andFilter.getChildren()
-                            .forEach(nestedFilter -> {
-                                boolMustQuery.must(filterMapper(nestedFilter, factory, useCase, context));
-                            });
-                    return boolMustQuery;
-                case "OrFilter":
-                    final Filter.OrFilter orFilter = (Filter.OrFilter) filter;
-                    final BoolQueryBuilder boolShouldQuery = QueryBuilders.boolQuery();
-                    orFilter.getChildren()
-                            .forEach(nestedFilter -> {
-                                boolShouldQuery.should(filterMapper(nestedFilter, factory, useCase, context));
-                            });
-                    return boolShouldQuery;
-                case "NotFilter":
-                    final Filter.NotFilter notFilter = (Filter.NotFilter) filter;
-                    final BoolQueryBuilder boolMustNotQuery = QueryBuilders.boolQuery();
-                    return boolMustNotQuery.mustNot(filterMapper(notFilter.getDelegate(), factory, useCase, context));
+        switch (filter.getType()) {
+            case "AndFilter":
+                final Filter.AndFilter andFilter = (Filter.AndFilter) filter;
+                final BoolQueryBuilder boolMustQuery = QueryBuilders.boolQuery();
+                andFilter.getChildren()
+                        .forEach(nestedFilter -> {
+                            boolMustQuery.must(filterMapper(nestedFilter, factory, context));
+                        });
+                return boolMustQuery;
+            case "OrFilter":
+                final Filter.OrFilter orFilter = (Filter.OrFilter) filter;
+                final BoolQueryBuilder boolShouldQuery = QueryBuilders.boolQuery();
+                orFilter.getChildren()
+                        .forEach(nestedFilter -> {
+                            boolShouldQuery.should(filterMapper(nestedFilter, factory, context));
+                        });
+                return boolShouldQuery;
+            case "NotFilter":
+                final Filter.NotFilter notFilter = (Filter.NotFilter) filter;
+                final BoolQueryBuilder boolMustNotQuery = QueryBuilders.boolQuery();
+                return boolMustNotQuery.mustNot(filterMapper(notFilter.getDelegate(), factory, context));
 
-                case "TermFilter":
-                    final Filter.TermFilter termFilter = (Filter.TermFilter) filter;
-                    return QueryBuilders
-                            .termQuery(FieldUtil.getFieldName(factory.getField(termFilter.getField()), useCase, context),
-                                    termFilter.getTerm());
-                case "TermsQueryFilter":
-                    final Filter.TermsQueryFilter termsQueryFilter = (Filter.TermsQueryFilter) filter;
-                    return QueryBuilders
-                            .termsQuery(FieldUtil.getFieldName(factory.getField(termsQueryFilter.getField()), useCase,context),
-                                    termsQueryFilter.getTerm());
-                case "PrefixFilter":
-                    final Filter.PrefixFilter prefixFilter = (Filter.PrefixFilter) filter;
-                    return QueryBuilders
-                            .prefixQuery(FieldUtil.getFieldName(factory.getField(prefixFilter.getField()), useCase,context),
-                                    prefixFilter.getTerm());
-                case "DescriptorFilter":
-                    final Filter.DescriptorFilter descriptorFilter = (Filter.DescriptorFilter) filter;
-                    return QueryBuilders
-                            .termQuery(FieldUtil.getFieldName(descriptorFilter.getDescriptor(), useCase, context),
-                                    descriptorFilter.getTerm());
-                case "BetweenDatesFilter":
-                    final Filter.BetweenDatesFilter betweenDatesFilter = (Filter.BetweenDatesFilter) filter;
-                    return QueryBuilders
-                            .rangeQuery(FieldUtil.getFieldName(factory.getField(betweenDatesFilter.getField()), useCase,context))
-                            .from(betweenDatesFilter.getStart().toString())
-                            .to(betweenDatesFilter.getEnd().toString());
-                case "BeforeFilter":
-                    final Filter.BeforeFilter beforeFilter = (Filter.BeforeFilter) filter;
-                    return QueryBuilders
-                            .rangeQuery(FieldUtil.getFieldName(factory.getField(beforeFilter.getField()), useCase,context))
-                            .lte(beforeFilter.getDate().toElasticString()) ;
-                case "AfterFilter":
-                    final Filter.AfterFilter afterFilter = (Filter.AfterFilter) filter;
-                    return QueryBuilders
-                            .rangeQuery(FieldUtil.getFieldName(factory.getField(afterFilter.getField()), useCase,context))
-                            .gte(afterFilter.getDate().toElasticString()) ;
-                case "BetweenNumericFilter":
-                    final Filter.BetweenNumericFilter betweenNumericFilter = (Filter.BetweenNumericFilter) filter;
-                    return QueryBuilders
-                            .rangeQuery(FieldUtil.getFieldName(factory.getField(betweenNumericFilter.getField()), useCase,context))
-                            .from(betweenNumericFilter.getStart())
-                            .to(betweenNumericFilter.getEnd());
-                case "LowerThanFilter":
-                    final Filter.LowerThanFilter lowerThanFilter = (Filter.LowerThanFilter) filter;
-                    return QueryBuilders
-                            .rangeQuery(FieldUtil.getFieldName(factory.getField(lowerThanFilter.getField()), useCase,context))
-                            .lte(lowerThanFilter.getNumber()) ;
-                case "GreaterThanFilter":
-                    final Filter.GreaterThanFilter greaterThanFilter = (Filter.GreaterThanFilter) filter;
-                    return QueryBuilders
-                            .rangeQuery(FieldUtil.getFieldName(factory.getField(greaterThanFilter.getField()), useCase,context))
-                            .gte(greaterThanFilter.getNumber()) ;
-                case "NotEmptyTextFilter":
-                    final Filter.NotEmptyTextFilter notEmptyTextFilter = (Filter.NotEmptyTextFilter) filter;
-                    final String fieldName = FieldUtil.getFieldName(factory.getField(notEmptyTextFilter.getField()), useCase, context);
-                    return QueryBuilders.boolQuery()
-                            .must(QueryBuilders.existsQuery(fieldName))
-                            .mustNot(QueryBuilders.regexpQuery(fieldName , " *"))
-                            ;
-                case "NotEmptyFilter":
-                    final Filter.NotEmptyFilter notEmptyFilter = (Filter.NotEmptyFilter) filter;
-                    return QueryBuilders
-                            .existsQuery(FieldUtil.getFieldName(factory.getField(notEmptyFilter.getField()), useCase, context));
-                case "NotEmptyLocationFilter":
-                    final Filter.NotEmptyLocationFilter notEmptyLocationFilter = (Filter.NotEmptyLocationFilter) filter;
-                    return QueryBuilders
-                            .existsQuery(FieldUtil.getFieldName(factory.getField(notEmptyLocationFilter.getField()), useCase, context));
-                case "WithinBBoxFilter":
-                    final Filter.WithinBBoxFilter withinBBoxFilter = (Filter.WithinBBoxFilter) filter;
-                    return QueryBuilders
-                            .geoBoundingBoxQuery(FieldUtil.getFieldName(factory.getField(withinBBoxFilter.getField()), null, context))
-                            .setCorners(
-                                    new GeoPoint(
-                                        withinBBoxFilter.getUpperLeft().getLat(),
-                                        withinBBoxFilter.getUpperLeft().getLng()),
-                                    new GeoPoint(
-                                        withinBBoxFilter.getLowerRight().getLat(),
-                                        withinBBoxFilter.getLowerRight().getLng())
-                                    );
-                case "WithinCircleFilter":
-                    final Filter.WithinCircleFilter withinCircleFilter = (Filter.WithinCircleFilter) filter;
-                    return QueryBuilders
-                            .geoDistanceQuery(FieldUtil.getFieldName(factory.getField(withinCircleFilter.getField()), null, context))
-                            .point(withinCircleFilter.getCenter().getLat(),withinCircleFilter.getCenter().getLng())
-                            .distance(withinCircleFilter.getDistance(), DistanceUnit.KILOMETERS);
-                default:
-                    throw new SearchServerException(String.format("Error parsing filter to Elasticsearch query DSL: filter type not known %s", filter.getType()));
-            }
+            case "TermFilter":
+                final Filter.TermFilter termFilter = (Filter.TermFilter) filter;
+                return QueryBuilders
+                        .termQuery(FieldUtil.getFieldName(factory.getField(termFilter.getField()), useCase, context),
+                                termFilter.getTerm());
+            case "TermsQueryFilter":
+                final Filter.TermsQueryFilter termsQueryFilter = (Filter.TermsQueryFilter) filter;
+                return QueryBuilders
+                        .termsQuery(FieldUtil.getFieldName(factory.getField(termsQueryFilter.getField()), useCase,context),
+                                termsQueryFilter.getTerm());
+            case "PrefixFilter":
+                final Filter.PrefixFilter prefixFilter = (Filter.PrefixFilter) filter;
+                return QueryBuilders
+                        .prefixQuery(FieldUtil.getFieldName(factory.getField(prefixFilter.getField()), useCase,context),
+                                prefixFilter.getTerm());
+            case "DescriptorFilter":
+                final Filter.DescriptorFilter descriptorFilter = (Filter.DescriptorFilter) filter;
+                return QueryBuilders
+                        .termQuery(FieldUtil.getFieldName(descriptorFilter.getDescriptor(), useCase, context),
+                                descriptorFilter.getTerm());
+            case "BetweenDatesFilter":
+                final Filter.BetweenDatesFilter betweenDatesFilter = (Filter.BetweenDatesFilter) filter;
+                return QueryBuilders
+                        .rangeQuery(FieldUtil.getFieldName(factory.getField(betweenDatesFilter.getField()), useCase,context))
+                        .from(betweenDatesFilter.getStart().toString())
+                        .to(betweenDatesFilter.getEnd().toString());
+            case "BeforeFilter":
+                final Filter.BeforeFilter beforeFilter = (Filter.BeforeFilter) filter;
+                return QueryBuilders
+                        .rangeQuery(FieldUtil.getFieldName(factory.getField(beforeFilter.getField()), useCase,context))
+                        .lte(beforeFilter.getDate().toElasticString()) ;
+            case "AfterFilter":
+                final Filter.AfterFilter afterFilter = (Filter.AfterFilter) filter;
+                return QueryBuilders
+                        .rangeQuery(FieldUtil.getFieldName(factory.getField(afterFilter.getField()), useCase,context))
+                        .gte(afterFilter.getDate().toElasticString()) ;
+            case "BetweenNumericFilter":
+                final Filter.BetweenNumericFilter betweenNumericFilter = (Filter.BetweenNumericFilter) filter;
+                return QueryBuilders
+                        .rangeQuery(FieldUtil.getFieldName(factory.getField(betweenNumericFilter.getField()), useCase,context))
+                        .from(betweenNumericFilter.getStart())
+                        .to(betweenNumericFilter.getEnd());
+            case "LowerThanFilter":
+                final Filter.LowerThanFilter lowerThanFilter = (Filter.LowerThanFilter) filter;
+                return QueryBuilders
+                        .rangeQuery(FieldUtil.getFieldName(factory.getField(lowerThanFilter.getField()), useCase,context))
+                        .lte(lowerThanFilter.getNumber()) ;
+            case "GreaterThanFilter":
+                final Filter.GreaterThanFilter greaterThanFilter = (Filter.GreaterThanFilter) filter;
+                return QueryBuilders
+                        .rangeQuery(FieldUtil.getFieldName(factory.getField(greaterThanFilter.getField()), useCase,context))
+                        .gte(greaterThanFilter.getNumber()) ;
+            case "NotEmptyTextFilter":
+                final Filter.NotEmptyTextFilter notEmptyTextFilter = (Filter.NotEmptyTextFilter) filter;
+                final String fieldName = FieldUtil.getFieldName(factory.getField(notEmptyTextFilter.getField()), useCase, context);
+                return QueryBuilders.boolQuery()
+                        .must(QueryBuilders.existsQuery(fieldName))
+                        .mustNot(QueryBuilders.regexpQuery(fieldName , " *"))
+                        ;
+            case "NotEmptyFilter":
+                final Filter.NotEmptyFilter notEmptyFilter = (Filter.NotEmptyFilter) filter;
+                return QueryBuilders
+                        .existsQuery(FieldUtil.getFieldName(factory.getField(notEmptyFilter.getField()), useCase, context));
+            case "NotEmptyLocationFilter":
+                final Filter.NotEmptyLocationFilter notEmptyLocationFilter = (Filter.NotEmptyLocationFilter) filter;
+                return QueryBuilders
+                        .existsQuery(FieldUtil.getFieldName(factory.getField(notEmptyLocationFilter.getField()), useCase, context));
+            case "WithinBBoxFilter":
+                final Filter.WithinBBoxFilter withinBBoxFilter = (Filter.WithinBBoxFilter) filter;
+                return QueryBuilders
+                        .geoBoundingBoxQuery(FieldUtil.getFieldName(factory.getField(withinBBoxFilter.getField()), null, context))
+                        .setCorners(
+                                new GeoPoint(
+                                    withinBBoxFilter.getUpperLeft().getLat(),
+                                    withinBBoxFilter.getUpperLeft().getLng()),
+                                new GeoPoint(
+                                    withinBBoxFilter.getLowerRight().getLat(),
+                                    withinBBoxFilter.getLowerRight().getLng())
+                                );
+            case "WithinCircleFilter":
+                final Filter.WithinCircleFilter withinCircleFilter = (Filter.WithinCircleFilter) filter;
+                return QueryBuilders
+                        .geoDistanceQuery(FieldUtil.getFieldName(factory.getField(withinCircleFilter.getField()), null, context))
+                        .point(withinCircleFilter.getCenter().getLat(),withinCircleFilter.getCenter().getLng())
+                        .distance(withinCircleFilter.getDistance(), DistanceUnit.KILOMETERS);
+            default:
+                throw new SearchServerException(String.format("Error parsing filter to Elasticsearch query DSL: filter type not known %s", filter.getType()));
+        }
     }
 
     private static List<AggregationBuilder> buildElasticAggregations(String name, Facet vindFacet, DocumentFactory factory, UseCase  useCase, String searchContext, int minCount, int facetLimit) {
@@ -409,7 +410,7 @@ public class ElasticQueryBuilder {
                 final FiltersAggregationBuilder queryAgg = AggregationBuilders
                         .filters(
                                 contextualizedFacetName,
-                                filterMapper(filter, factory, UseCase.valueOf(filter.getFilterScope().name()), searchContext));
+                                filterMapper(filter, factory, searchContext));
 
                 return Collections.singletonList(queryAgg);
 
