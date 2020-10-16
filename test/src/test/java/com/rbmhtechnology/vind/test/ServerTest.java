@@ -2836,4 +2836,58 @@ public class ServerTest {
         SearchResult result = server.execute(search,assets);
         assertEquals(2, result.getNumOfResults());
     }
+    @Test
+    @RunWithBackend({Solr,Elastic})
+    public void testFacetLimitLessThanZeroSearch() {
+
+        FieldDescriptor<String> resource = new FieldDescriptorBuilder()
+                .setSuggest(true)
+                .buildTextField("resource");
+
+        FieldDescriptor<String> cluster = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildTextField("cluster");
+
+        FieldDescriptor<String> group = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("group");
+
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(resource)
+                .addField(cluster)
+                .addField(group)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(resource, "r1")
+                .setValue(cluster, "c1");
+
+        Document d2 = assets.createDoc("2")
+                .setValue(resource, "r2")
+                .setValue(cluster, "c2");
+
+        Document d3 = assets.createDoc("3")
+                .setValue(resource, "r3")
+                .setValue(cluster, "c3");
+
+        Document d4 = assets.createDoc("4")
+                .setValue(resource, "r4")
+                .setValue(cluster, "c3");
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.index(d3);
+        server.index(d4);
+        server.commit();
+
+
+        FulltextSearch search = Search.fulltext().setFacetLimit(0).facet(cluster);
+
+        SearchResult result = server.execute(search,assets);
+        assertEquals(3, result.getFacetResults().getTermFacet(cluster).getValues().size());
+    }
 }
