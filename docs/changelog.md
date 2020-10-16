@@ -185,3 +185,6 @@ documents matching the delete filters.
 
 # 3.0.7
 * BugFix: Fixed nested filer scopes on boolean operation filter (AND, OR, NOT).
+
+# 3.0.8
+* BugFix: Facet limit <0 is translated to aggregation size Integer.MAX_VALUE on elastic backend.
