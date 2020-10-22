@@ -2890,4 +2890,25 @@ public class ServerTest {
         SearchResult result = server.execute(search,assets);
         assertEquals(3, result.getFacetResults().getTermFacet(cluster).getValues().size());
     }
+
+    @Test
+    @RunWithBackend({Elastic})
+    public void sortOnComplexFieldsTest() {
+        SingleValuedComplexField.UtilDateComplexField<Taxonomy,Date,Boolean> dateComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,Date,Boolean>()
+                .setFacet(true, tx -> Arrays.asList(tx.getUtilDate()))
+                .setStored(true, tx -> true)
+                .setFullText(true, tx -> Arrays.asList(tx.getTerm()))
+                .setSuggest(true, tx -> Arrays.asList(tx.getLabel()))
+                .buildSortableUtilDateComplexField("sortableComplexField", Taxonomy.class, Date.class, Boolean.class, Taxonomy::getUtilDate);
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(dateComplexField)
+                .build();
+
+        FulltextSearch search = Search.fulltext().sort(Sort.field(dateComplexField, Sort.Direction.Asc));
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.execute(search, assets);
+    }
 }
