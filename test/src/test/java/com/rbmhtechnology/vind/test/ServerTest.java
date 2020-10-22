@@ -2890,4 +2890,29 @@ public class ServerTest {
         SearchResult result = server.execute(search,assets);
         assertEquals(3, result.getFacetResults().getTermFacet(cluster).getValues().size());
     }
+
+    @Test
+    @RunWithBackend({Elastic})
+    public void indexNonStoredFields() throws InterruptedException {
+        MultiValuedComplexField.TextComplexField<Taxonomy,String,String> nonStoredField = new ComplexFieldDescriptorBuilder<Taxonomy,String,String>()
+                .setFullText(true, tx -> Arrays.asList(tx.getLabel()))
+                .setIndexed(true)
+                .setStored(false, tx -> null)
+                .buildMultivaluedTextComplexField("multiTextTaxonomy", Taxonomy.class, String.class, String.class);
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(nonStoredField)
+                .build();
+
+        Document doc = assets.createDoc("1")
+                .setValues(nonStoredField, new Taxonomy("uno", 1, "Label", ZonedDateTime.now()), new Taxonomy("dos", 1, "Label", ZonedDateTime.now()));
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.indexWithin(doc, 10);
+
+        Thread.sleep(1001);
+
+        Assert.assertEquals(server.execute(Search.fulltext(), assets).getNumOfResults(), 1);
+    }
 }
