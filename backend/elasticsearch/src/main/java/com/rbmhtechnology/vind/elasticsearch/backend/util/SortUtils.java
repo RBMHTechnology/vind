@@ -32,6 +32,7 @@ public class SortUtils {
                         .orElse(((Sort.SimpleSort) sort).getField());
                 return SortBuilders
                         .fieldSort(sortFieldName)
+                        .unmappedType("boolean") //TODO should be set correctly for cross index search usecase
                         .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
             case "DescriptorSort":
                 final String descriptorFieldName = Optional.ofNullable(FieldUtil.getFieldName(((Sort.DescriptorSort) sort).getDescriptor(), FieldUtil.Fieldname.UseCase.Sort, searchContext))
@@ -39,6 +40,7 @@ public class SortUtils {
                                 new RuntimeException("The field '" + ((Sort.DescriptorSort) sort).getDescriptor().getName() + "' is not set as sortable"));
                 return SortBuilders
                         .fieldSort(descriptorFieldName)
+                        .unmappedType("boolean") //TODO should be set correctly for cross index search usecase
                         .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
             case "DistanceSort":
                 Optional.ofNullable(search.getGeoDistance())
@@ -48,6 +50,7 @@ public class SortUtils {
                         .geoDistanceSort(distanceFieldName,
                                 search.getGeoDistance().getLocation().getLat(),
                                 search.getGeoDistance().getLocation().getLng())
+                        .ignoreUnmapped(true)
                         .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
             case "ScoredDate":
                 final FieldDescriptor descriptor = ((Sort.SpecialSort.ScoredDate) sort).getDescriptor();

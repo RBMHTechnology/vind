@@ -2894,12 +2894,12 @@ public class ServerTest {
     @Test
     @RunWithBackend({Elastic})
     public void sortOnComplexFieldsTest() {
-        SingleValuedComplexField.UtilDateComplexField<Taxonomy,Date,Boolean> dateComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,Date,Boolean>()
+        SingleValuedComplexField.UtilDateComplexField<Taxonomy,Date,Date> dateComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,Date,Date>()
                 .setFacet(true, tx -> Arrays.asList(tx.getUtilDate()))
-                .setStored(true, tx -> true)
+                .setStored(true, tx -> tx.getUtilDate())
                 .setFullText(true, tx -> Arrays.asList(tx.getTerm()))
                 .setSuggest(true, tx -> Arrays.asList(tx.getLabel()))
-                .buildSortableUtilDateComplexField("sortableComplexField", Taxonomy.class, Date.class, Boolean.class, Taxonomy::getUtilDate);
+                .buildSortableUtilDateComplexField("sortableComplexField", Taxonomy.class, Date.class, Date.class, Taxonomy::getUtilDate);
 
         DocumentFactory assets = new DocumentFactoryBuilder("asset")
                 .addField(dateComplexField)
