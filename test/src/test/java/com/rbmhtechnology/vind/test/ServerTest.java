@@ -2892,7 +2892,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend({Elastic})
+    @RunWithBackend({Elastic, Solr})
     public void indexNonStoredFields() throws InterruptedException {
         MultiValuedComplexField.TextComplexField<Taxonomy,String,String> nonStoredField = new ComplexFieldDescriptorBuilder<Taxonomy,String,String>()
                 .setFullText(true, tx -> Arrays.asList(tx.getLabel()))
