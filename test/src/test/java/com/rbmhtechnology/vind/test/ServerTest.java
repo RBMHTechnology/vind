@@ -8,12 +8,12 @@ import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
-import com.rbmhtechnology.vind.api.query.facet.Facets;
 import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.api.query.update.Update;
+import com.rbmhtechnology.vind.api.result.DeleteResult;
 import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.PageResult;
 import com.rbmhtechnology.vind.api.result.SearchResult;
@@ -2885,7 +2885,7 @@ public class ServerTest {
         server.commit();
 
 
-        FulltextSearch search = Search.fulltext().setFacetLimit(0).facet(cluster);
+        FulltextSearch search = Search.fulltext().setFacetLimit(-1).facet(cluster);
 
         SearchResult result = server.execute(search,assets);
         assertEquals(3, result.getFacetResults().getTermFacet(cluster).getValues().size());
@@ -2893,26 +2893,33 @@ public class ServerTest {
 
     @Test
     @RunWithBackend({Elastic, Solr})
-    public void indexNonStoredFields() throws InterruptedException {
-        MultiValuedComplexField.TextComplexField<Taxonomy,String,String> nonStoredField = new ComplexFieldDescriptorBuilder<Taxonomy,String,String>()
-                .setFullText(true, tx -> Arrays.asList(tx.getLabel()))
-                .setIndexed(true)
-                .setStored(false, tx -> null)
-                .buildMultivaluedTextComplexField("multiTextTaxonomy", Taxonomy.class, String.class, String.class);
+    public void sortOnComplexFieldsTest() {
+        SingleValuedComplexField.UtilDateComplexField<Taxonomy,Date,Date> dateComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,Date,Date>()
+                .setFacet(true, tx -> Arrays.asList(tx.getUtilDate()))
+                .setStored(true, tx -> tx.getUtilDate())
+                .setFullText(true, tx -> Arrays.asList(tx.getTerm()))
+                .setSuggest(true, tx -> Arrays.asList(tx.getLabel()))
+                .buildSortableUtilDateComplexField("sortableComplexField", Taxonomy.class, Date.class, Date.class, Taxonomy::getUtilDate);
 
         DocumentFactory assets = new DocumentFactoryBuilder("asset")
-                .addField(nonStoredField)
+                .addField(dateComplexField)
                 .build();
 
-        Document doc = assets.createDoc("1")
-                .setValues(nonStoredField, new Taxonomy("uno", 1, "Label", ZonedDateTime.now()), new Taxonomy("dos", 1, "Label", ZonedDateTime.now()));
+        FulltextSearch search = Search.fulltext().sort(Sort.field(dateComplexField, Sort.Direction.Asc));
 
         SearchServer server = testBackend.getSearchServer();
 
-        server.indexWithin(doc, 10);
+        server.execute(search, assets);
+    }
 
-        Thread.sleep(1001);
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testDeleteNonExistingDoc() {
+        DocumentFactory assets = new DocumentFactoryBuilder("asset").build();
 
-        Assert.assertEquals(server.execute(Search.fulltext(), assets).getNumOfResults(), 1);
+        SearchServer server = testBackend.getSearchServer();
+        DeleteResult result = server.delete(assets.createDoc("1"));
+
+        Assert.assertNotNull(result);
     }
 }
