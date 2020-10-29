@@ -8,7 +8,6 @@ import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
-import com.rbmhtechnology.vind.api.query.facet.Facets;
 import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
@@ -2885,14 +2884,14 @@ public class ServerTest {
         server.commit();
 
 
-        FulltextSearch search = Search.fulltext().setFacetLimit(0).facet(cluster);
+        FulltextSearch search = Search.fulltext().setFacetLimit(-1).facet(cluster);
 
         SearchResult result = server.execute(search,assets);
         assertEquals(3, result.getFacetResults().getTermFacet(cluster).getValues().size());
     }
 
     @Test
-    @RunWithBackend({Elastic})
+    @RunWithBackend({Elastic, Solr})
     public void sortOnComplexFieldsTest() {
         SingleValuedComplexField.UtilDateComplexField<Taxonomy,Date,Date> dateComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,Date,Date>()
                 .setFacet(true, tx -> Arrays.asList(tx.getUtilDate()))
