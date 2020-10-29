@@ -253,7 +253,9 @@ public class ElasticSearchServer extends SmartSearchServerBase {
             final StopWatch elapsedTime = StopWatch.createStarted();
             elasticClientLogger.debug(">>> delete({})", doc.getId());
             final DeleteResponse deleteResponse = elasticSearchClient.deleteById(doc.getId());
-            if(deleteResponse.status().getStatus() >= 400) {
+            if(deleteResponse.status().getStatus() == 404) {
+                log.warn("Document which should be deleted does not exist");
+            } else if(deleteResponse.status().getStatus() >= 400) {
                 log.error("Cannot delete document {}: {} - {} ", doc.getId(), deleteResponse.status().getStatus(),deleteResponse.status().name());
                 throw new SearchServerException("Cannot  delete document " + doc.getId() + ": " + deleteResponse.status().getStatus() +" - "+ deleteResponse.status().name());
             }
