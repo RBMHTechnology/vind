@@ -14,6 +14,7 @@ import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.api.query.update.Update;
+import com.rbmhtechnology.vind.api.result.DeleteResult;
 import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.PageResult;
 import com.rbmhtechnology.vind.api.result.SearchResult;
@@ -2889,5 +2890,16 @@ public class ServerTest {
 
         SearchResult result = server.execute(search,assets);
         assertEquals(3, result.getFacetResults().getTermFacet(cluster).getValues().size());
+    }
+
+    @Test
+    @RunWithBackend(Elastic)
+    public void testDeleteNonExistingDoc() {
+        DocumentFactory assets = new DocumentFactoryBuilder("asset").build();
+
+        SearchServer server = testBackend.getSearchServer();
+        DeleteResult result = server.delete(assets.createDoc("1"));
+
+        Assert.assertNotNull(result);
     }
 }
