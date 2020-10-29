@@ -2893,7 +2893,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend(Elastic)
+    @RunWithBackend({Solr, Elastic})
     public void testDeleteNonExistingDoc() {
         DocumentFactory assets = new DocumentFactoryBuilder("asset").build();
 
