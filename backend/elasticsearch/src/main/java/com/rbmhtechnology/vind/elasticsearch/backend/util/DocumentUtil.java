@@ -10,6 +10,7 @@ import com.rbmhtechnology.vind.model.MultiValueFieldDescriptor;
 import com.rbmhtechnology.vind.model.MultiValuedComplexField;
 import com.rbmhtechnology.vind.model.SingleValuedComplexField;
 import com.rbmhtechnology.vind.model.value.LatLng;
+import javafx.beans.binding.ObjectExpression;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.elasticsearch.search.SearchHit;
 import org.slf4j.Logger;
@@ -230,8 +231,8 @@ public class DocumentUtil {
                         .map(v -> toElasticType(v, descriptor, useCase))
                         .collect(Collectors.toList());
 
-                if (objs.stream().allMatch( o -> Collection.class.isAssignableFrom(o.getClass()))) {
-                    objs =  objs.stream()
+                if (objs.stream().filter(Objects::nonNull).allMatch(o -> Collection.class.isAssignableFrom(o.getClass()))) {
+                    objs =  objs.stream().filter(Objects::nonNull)
                             .map(o -> (List<Collection<Object>>)o)
                             .flatMap(Collection::stream)
                             .collect(Collectors.toList());

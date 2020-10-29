@@ -178,3 +178,13 @@ documents matching the delete filters.
 * Improvement: change default search string on elastic backend from * to \*:* in oder to avoid empty results when no fulltext values are indexed.(#163)
 * BugFix: Added track_total_hits default to true and configurable in elastic searches to get real number of results over 10000.(#162)
 * BugFix: Escape single quotes on painles script literal to avoid errors updating.(#165)
+
+# 3.0.6
+* Improvement: produce significant error messages on search server instantiation.(#168)
+* BugFix: Term facets results are properly build now.
+
+# 3.0.7
+* BugFix: Fixed nested filer scopes on boolean operation filter (AND, OR, NOT).
+
+# 3.0.8
+* BugFix: Facet limit <0 is translated to aggregation size Integer.MAX_VALUE on elastic backend.

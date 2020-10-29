@@ -93,6 +93,13 @@ search.facet(
 //pivot facets allows facetting on facets
 search.facet(pivot("catsCreated", category, created));             
 ```
+Every fulltext search created can set its own facet limit to specify the maximum number of results a facet can give back (default value is 10).
+```
+Search.fulltext().setFacetLimit(15).facet(title);
+```
+Although it is not the recommended usecase (normally facet resuts should be reduced to the most relevant terms), it is also possible to set the limit to '-1' in order to get all the results in the response.
+
+**Note:** Elasticsearch does not allow to get unlimited number of aggregations so instead Vind uses Integer.MAX_VALUE
 
 It is also supported by the library the combination of pivots with the other kind of facets.
 
