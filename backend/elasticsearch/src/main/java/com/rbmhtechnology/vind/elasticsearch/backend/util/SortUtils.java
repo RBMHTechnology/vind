@@ -32,6 +32,7 @@ public class SortUtils {
                         .orElse(((Sort.SimpleSort) sort).getField());
                 return SortBuilders
                         .fieldSort(sortFieldName)
+                        .unmappedType(getUnmappedType(sortFieldName)) //TODO should be set correctly for cross index search usecase
                         .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
             case "DescriptorSort":
                 final String descriptorFieldName = Optional.ofNullable(FieldUtil.getFieldName(((Sort.DescriptorSort) sort).getDescriptor(), FieldUtil.Fieldname.UseCase.Sort, searchContext))
@@ -39,6 +40,7 @@ public class SortUtils {
                                 new RuntimeException("The field '" + ((Sort.DescriptorSort) sort).getDescriptor().getName() + "' is not set as sortable"));
                 return SortBuilders
                         .fieldSort(descriptorFieldName)
+                        .unmappedType(getUnmappedType(descriptorFieldName)) //TODO should be set correctly for cross index search usecase
                         .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
             case "DistanceSort":
                 Optional.ofNullable(search.getGeoDistance())
@@ -48,6 +50,7 @@ public class SortUtils {
                         .geoDistanceSort(distanceFieldName,
                                 search.getGeoDistance().getLocation().getLat(),
                                 search.getGeoDistance().getLocation().getLng())
+                        .ignoreUnmapped(true)
                         .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
             case "ScoredDate":
                 final FieldDescriptor descriptor = ((Sort.SpecialSort.ScoredDate) sort).getDescriptor();
@@ -73,6 +76,23 @@ public class SortUtils {
                 throw  new SearchServerException(String
                         .format("Unable to parse Vind sort '%s' to ElasticSearch sorting: sort type not supported.",
                                 sort.getType()));
+        }
+    }
+
+    private static String getUnmappedType(String fieldName) {
+        String type = fieldName.split("_")[1];
+        switch (type) {
+            case "int": return "integer";
+            case "long": return "long";
+            case "float": return "float";
+            case "string":
+            case "path":
+                return "keyword";
+            case "boolean": return "boolean";
+            case "date": return "date";
+            case "location": return "geo_point";
+            case "binary": return "binary";
+            default:throw new RuntimeException("Cannot get type for fieldName '" + fieldName + "'");
         }
     }
 
