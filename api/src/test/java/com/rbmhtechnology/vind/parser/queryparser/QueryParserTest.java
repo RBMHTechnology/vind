@@ -7,6 +7,7 @@ import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -260,6 +261,13 @@ public class QueryParserTest {
         //(type:MediaPlanetProject or type:Event)
         //customMetadata:((\"resourceType=mezzanine\" OR \"resourceType=essence\") AND \"cloudTranscoding_normal=true\")
 
+    }
+
+    @Test
+    public void testBracketsInText() throws ParseException {
+        Query query = parse("some:test Formula One (AUT)");
+        Assert.assertEquals(1, query.size());
+        Assert.assertEquals("Formula One (AUT)", query.getText());
     }
 
     private Query parse(String s) throws ParseException {
