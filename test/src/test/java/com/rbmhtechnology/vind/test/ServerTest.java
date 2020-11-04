@@ -32,6 +32,7 @@ import com.rbmhtechnology.vind.model.MultiValuedComplexField;
 import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
 import com.rbmhtechnology.vind.model.SingleValuedComplexField;
 import com.rbmhtechnology.vind.model.value.LatLng;
+import org.apache.solr.client.solrj.io.comp.SingleValueComparator;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -2947,5 +2948,30 @@ public class ServerTest {
         DeleteResult result = server.delete(assets.createDoc("1"));
 
         Assert.assertNotNull(result);
+    }
+
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testPartialUpdateIssue() {
+        SearchServer server = testBackend.getSearchServer();
+
+        final SingleValuedComplexField.UtilDateComplexField<Taxonomy,Date,Date> dateSingle = new ComplexFieldDescriptorBuilder<Taxonomy,Date,Date>()
+                .setStored(true, tx -> tx.getUtilDate())
+                .buildUtilDateComplexField("singleDate", Taxonomy.class, Date.class, Date.class);
+
+        DocumentFactory documentFactory = new DocumentFactoryBuilder("doc")
+                .setUpdatable(true)
+                .addField(dateSingle)
+                .build();
+
+        Document doc = documentFactory.createDoc("1")
+                .setValue(dateSingle, new Taxonomy("today", 2, "todays date", ZonedDateTime.now()));
+
+        server.index(doc);
+        server.commit();
+
+        server.execute(Search.update("id").set(dateSingle, new Taxonomy("yesterday", 3, "yesterdays date", ZonedDateTime.now())), documentFactory);
+
+
     }
 }
