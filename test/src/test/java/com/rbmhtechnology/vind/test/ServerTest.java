@@ -2952,7 +2952,7 @@ public class ServerTest {
 
     @Test
     @RunWithBackend({Solr, Elastic})
-    public void testPartialUpdateIssue() {
+    public void testPartialUpdateIssue() throws InterruptedException {
         SearchServer server = testBackend.getSearchServer();
 
         final SingleValuedComplexField.UtilDateComplexField<Taxonomy,Date,Date> dateSingle = new ComplexFieldDescriptorBuilder<Taxonomy,Date,Date>()
@@ -2964,14 +2964,12 @@ public class ServerTest {
                 .addField(dateSingle)
                 .build();
 
-        Document doc = documentFactory.createDoc("1")
+        Document doc = documentFactory.createDoc("id")
                 .setValue(dateSingle, new Taxonomy("today", 2, "todays date", ZonedDateTime.now()));
 
         server.index(doc);
         server.commit();
 
         server.execute(Search.update("id").set(dateSingle, new Taxonomy("yesterday", 3, "yesterdays date", ZonedDateTime.now())), documentFactory);
-
-
     }
 }
