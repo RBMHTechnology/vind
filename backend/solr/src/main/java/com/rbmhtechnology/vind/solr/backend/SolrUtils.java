@@ -16,7 +16,6 @@ import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.api.result.facet.*;
 import com.rbmhtechnology.vind.model.*;
 import com.rbmhtechnology.vind.model.value.LatLng;
-import com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.UseCase;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -54,7 +53,7 @@ import java.util.stream.StreamSupport;
 
 import static com.rbmhtechnology.vind.api.query.facet.Facet.*;
 import static com.rbmhtechnology.vind.api.query.filter.Filter.*;
-import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.UseCase.*;
+import static com.rbmhtechnology.vind.model.FieldDescriptor.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 
@@ -212,7 +211,7 @@ public class SolrUtils {
                             log.error("Cannot sort on field '{}'. The field is not defined as sortable.", ssort.getField());
                             throw new RuntimeException("Cannot sort on field " + ssort.getField());
                         }
-                        return Fieldname.getFieldname(descriptor, Sort, search.getSearchContext()) + " " + ssort.getDirection();
+                        return Fieldname.getFieldname(descriptor, UseCase.Sort, search.getSearchContext()) + " " + ssort.getDirection();
 
                     } else {
                         return ssort.getField() + " " + ssort.getDirection();
@@ -228,7 +227,7 @@ public class SolrUtils {
                     return "geodist() " + ssort.getDirection();
                 } else {
                     final Sort.DescriptorSort s = (Sort.DescriptorSort) sort;
-                    final String fieldname = Fieldname.getFieldname(s.getDescriptor(), Sort, search.getSearchContext());
+                    final String fieldname = Fieldname.getFieldname(s.getDescriptor(), UseCase.Sort, search.getSearchContext());
                     if (fieldname == null) {
                         throw new RuntimeException("The field '"+ s.getDescriptor().getName()+"' is not set as sortable");
                     }
@@ -244,7 +243,7 @@ public class SolrUtils {
             return sortList.stream().map(sort -> {
                 if (sort instanceof Sort.SpecialSort.ScoredDate) {
                     Sort.SpecialSort.ScoredDate ssort = (Sort.SpecialSort.ScoredDate) sort;
-                    return String.format("recip(abs(ms(NOW/HOUR,%s)),3.16e-11,1,.1)", Fieldname.getFieldname(ssort.getDescriptor(), Stored, searchContext));
+                    return String.format("recip(abs(ms(NOW/HOUR,%s)),3.16e-11,1,.1)", Fieldname.getFieldname(ssort.getDescriptor(), UseCase.Stored, searchContext));
                 } else return null;
             }).filter(Objects::nonNull).collect(Collectors.joining(" "));
         }
@@ -252,7 +251,7 @@ public class SolrUtils {
         public static String buildQueryFieldString(Collection<FieldDescriptor<?>> fulltext, String searchContext) {
             return fulltext.stream()
                     .map(descriptor ->
-                                    SolrUtils.Fieldname.getFieldname(descriptor, Fulltext, searchContext) +
+                                    SolrUtils.Fieldname.getFieldname(descriptor, UseCase.Fulltext, searchContext) +
                                             "^" +
                                             descriptor.getBoost()
                     )
@@ -578,7 +577,7 @@ public class SolrUtils {
                     if(Object[].class.isAssignableFrom(value.getClass())){
                         return getFieldCaseValue(Arrays.asList((Object[]) value), descriptor, useCase);
                     }
-                    if(Collection.class.isAssignableFrom(value.getClass()) && !useCase.equals(Sort)){
+                    if(Collection.class.isAssignableFrom(value.getClass()) && !useCase.equals(UseCase.Sort)){
                          List<Object> values = (List<Object>) ((Collection) value).stream()
                                 .map(o -> getFieldCaseValue(o, descriptor, useCase))
                                 .collect(Collectors.toList());
@@ -635,7 +634,7 @@ public class SolrUtils {
                                     return singleField.getSortFunction().apply(value);
                                 } else {
                                     if (singleField.isStored()) {
-                                        return getFieldCaseValue(value, singleField, Stored);
+                                        return getFieldCaseValue(value, singleField, UseCase.Stored);
                                     }
                                     return null;
                                 }
@@ -670,7 +669,7 @@ public class SolrUtils {
                     return value; //TODO: Throw exception?
                 }
             } else {
-                if (value != null && useCase.equals(Sort) && descriptor.isSort() && descriptor.isMultiValue()
+                if (value != null && useCase.equals(UseCase.Sort) && descriptor.isSort() && descriptor.isMultiValue()
                     && (Collection.class.isAssignableFrom(value.getClass()) || value instanceof Object[] )) {
                     return  ((MultiValueFieldDescriptor)descriptor).getsortFunction().apply(value);
                 } else {
@@ -693,16 +692,6 @@ public class SolrUtils {
 
 
     public static final class Fieldname {
-
-
-        public enum UseCase {
-            Facet,
-            Fulltext,
-            Stored,
-            Suggest,
-            Sort,
-            Filter
-        }
 
         private enum Type {
             DATE("date_"),
@@ -982,7 +971,7 @@ public class SolrUtils {
                                         } else if (LatLng.class.isAssignableFrom(type)) {
                                             solrValue = LatLng.parseLatLng(o.toString());
                                         } else {
-                                            solrValue = castForDescriptor(o, field, Stored);
+                                            solrValue = castForDescriptor(o, field, UseCase.Stored);
                                         }
                                         if (contextualized) {
                                             document.setContextualizedValue((FieldDescriptor<Object>) field, searchContext, solrValue);

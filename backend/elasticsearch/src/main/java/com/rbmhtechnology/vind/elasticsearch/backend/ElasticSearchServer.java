@@ -272,7 +272,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
         try {
             log.debug("Update script builder does not check for script injection. Ensure values provided are script safe.");
             final StopWatch elapsedTime = StopWatch.createStarted();
-            elasticClientLogger.debug(">>> delete({})", update);
+            elasticClientLogger.debug(">>> update({})", update);
             final PainlessScript.ScriptBuilder updateScript = ElasticQueryBuilder.buildUpdateScript(update.getOptions(), factory, update.getUpdateContext());
             final UpdateResponse response = elasticSearchClient.update(update.getId(), updateScript);
             if(response.status().getStatus() >= 400) {

@@ -243,11 +243,11 @@ public class ResultUtils {
         }
 
         if(statsFacet.getMin()) {
-            min = DocumentUtil.castForDescriptor(statsAggregation.getMin(),field, FieldUtil.Fieldname.UseCase.Facet);
+            min = DocumentUtil.castForDescriptor(statsAggregation.getMin(),field, FieldDescriptor.UseCase.Facet);
         }
 
         if(statsFacet.getMax()) {
-            max = DocumentUtil.castForDescriptor(statsAggregation.getMax(),field, FieldUtil.Fieldname.UseCase.Facet);
+            max = DocumentUtil.castForDescriptor(statsAggregation.getMax(),field, FieldDescriptor.UseCase.Facet);
         }
 
         if(statsFacet.getCount()) {
@@ -270,7 +270,7 @@ public class ResultUtils {
         }
 
         if(statsFacet.getMean()) {
-            mean = DocumentUtil.castForDescriptor(statsAggregation.getAvg(),field, FieldUtil.Fieldname.UseCase.Facet);
+            mean = DocumentUtil.castForDescriptor(statsAggregation.getAvg(),field, FieldDescriptor.UseCase.Facet);
         }
 
         if(statsFacet.getStddev()) {
@@ -301,7 +301,7 @@ public class ResultUtils {
                 distinctValues = ((ParsedTerms) statsValuesAggregation.get()).getBuckets().stream()
                         .filter(bucket -> bucket.getDocCount() > 0)
                         .map(MultiBucketsAggregation.Bucket::getKey)
-                        .map( o -> DocumentUtil.castForDescriptor(o, field, FieldUtil.Fieldname.UseCase.Facet))
+                        .map( o -> DocumentUtil.castForDescriptor(o, field, FieldDescriptor.UseCase.Facet))
                         .collect(Collectors.toList());
             }
 
@@ -370,11 +370,16 @@ public class ResultUtils {
         return result;
     }
 
-    private static Pair<FieldDescriptor<?> ,TermFacetResult<?>> getTermFacetResults(Aggregation aggregation, Facet.TermFacet termFacet, DocumentFactory factory) {
-        return getTermFacetResults(aggregation, termFacet, factory, FieldUtil.Fieldname.UseCase.Facet);
+    private static Pair<FieldDescriptor<?> ,TermFacetResult<?>> getTermFacetResults(Aggregation aggregation,
+                                                                                    Facet.TermFacet termFacet,
+                                                                                    DocumentFactory factory) {
+        return getTermFacetResults(aggregation, termFacet, factory, FieldDescriptor.UseCase.Facet);
     }
 
-    private static Pair<FieldDescriptor<?> ,TermFacetResult<?>> getTermFacetResults(Aggregation aggregation, Facet.TermFacet termFacet, DocumentFactory factory, FieldUtil.Fieldname.UseCase useCase) {
+    private static Pair<FieldDescriptor<?> ,TermFacetResult<?>> getTermFacetResults(Aggregation aggregation,
+                                                                                    Facet.TermFacet termFacet,
+                                                                                    DocumentFactory factory,
+                                                                                    FieldDescriptor.UseCase useCase) {
         final TermFacetResult<?> result = new TermFacetResult<>();
         final FieldDescriptor<?> field = factory.getField(termFacet.getFieldName());
         Optional.ofNullable(aggregation)
@@ -402,7 +407,10 @@ public class ResultUtils {
                     Optional.ofNullable(aggregation)
                             .ifPresent(agg -> ((ParsedHistogram)((ParsedRange) agg).getBuckets().get(0).getAggregations().getAsMap().get(rangeFacet.getFacetName())).getBuckets().stream()
                                 .map(rangeBucket -> new FacetValue(
-                                        DocumentUtil.castForDescriptor(rangeBucket.getKey(), numericRangeFacet.getFieldDescriptor(), FieldUtil.Fieldname.UseCase.Facet),
+                                        DocumentUtil.castForDescriptor(
+                                                rangeBucket.getKey(),
+                                                numericRangeFacet.getFieldDescriptor(),
+                                                FieldDescriptor.UseCase.Facet),
                                         rangeBucket.getDocCount()))
                                 .forEach(numericValues::add));
                     return Pair.of(
@@ -416,7 +424,10 @@ public class ResultUtils {
                     Optional.ofNullable(aggregation)
                             .ifPresent(agg -> ((ParsedDateHistogram)((ParsedDateRange) agg).getBuckets().get(0).getAggregations().getAsMap().get(dateRangeFacet.getFacetName())).getBuckets().stream()
                                     .map(rangeBucket -> new FacetValue(
-                                            DocumentUtil.castForDescriptor(rangeBucket.getKey(), dateRangeFacet.getFieldDescriptor(), FieldUtil.Fieldname.UseCase.Facet),
+                                            DocumentUtil.castForDescriptor(
+                                                    rangeBucket.getKey(),
+                                                    dateRangeFacet.getFieldDescriptor(),
+                                                    FieldDescriptor.UseCase.Facet),
                                             rangeBucket.getDocCount()))
                                     .forEach(dateValues::add));
                     return Pair.of(
@@ -451,7 +462,7 @@ public class ResultUtils {
             final Aggregations aggregations = response.getAggregations();
             if (Objects.nonNull(aggregations)) {
                 aggregations.asList().stream()
-                        .map(aggregation -> getTermFacetResults(aggregation, new Facet.TermFacet(factory.getField(aggregation.getName())), factory, FieldUtil.Fieldname.UseCase.Suggest))
+                        .map(aggregation -> getTermFacetResults(aggregation, new Facet.TermFacet(factory.getField(aggregation.getName())), factory, FieldDescriptor.UseCase.Suggest))
                         .filter(pair -> CollectionUtils.isNotEmpty(pair.getValue().getValues()))
                         .forEach(pair -> suggestionValues.put(pair.getKey(), pair.getValue()));
             }

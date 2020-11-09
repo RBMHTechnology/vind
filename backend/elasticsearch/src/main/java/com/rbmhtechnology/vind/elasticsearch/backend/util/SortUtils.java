@@ -28,14 +28,14 @@ public class SortUtils {
                 final FieldDescriptor<?> simpleSortField = factory.getField(((Sort.SimpleSort) sort).getField());
                 final String sortFieldName = Optional.ofNullable(simpleSortField)
                         .filter(FieldDescriptor::isSort)
-                        .map(descriptor -> FieldUtil.getFieldName(descriptor, FieldUtil.Fieldname.UseCase.Sort, searchContext))
+                        .map(descriptor -> FieldUtil.getFieldName(descriptor, FieldDescriptor.UseCase.Sort, searchContext))
                         .orElse(((Sort.SimpleSort) sort).getField());
                 return SortBuilders
                         .fieldSort(sortFieldName)
                         .unmappedType(getUnmappedType(sortFieldName)) //TODO should be set correctly for cross index search usecase
                         .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
             case "DescriptorSort":
-                final String descriptorFieldName = Optional.ofNullable(FieldUtil.getFieldName(((Sort.DescriptorSort) sort).getDescriptor(), FieldUtil.Fieldname.UseCase.Sort, searchContext))
+                final String descriptorFieldName = Optional.ofNullable(FieldUtil.getFieldName(((Sort.DescriptorSort) sort).getDescriptor(), FieldDescriptor.UseCase.Sort, searchContext))
                         .orElseThrow(() ->
                                 new RuntimeException("The field '" + ((Sort.DescriptorSort) sort).getDescriptor().getName() + "' is not set as sortable"));
                 return SortBuilders
@@ -57,7 +57,7 @@ public class SortUtils {
                 final String sortDateField = Optional.ofNullable(descriptor)
                         .filter(FieldDescriptor::isSort)
                         .filter( field -> Date.class.isAssignableFrom(field.getType()) || ZonedDateTime.class.isAssignableFrom(field.getType()))
-                        .map( field -> FieldUtil.getFieldName(descriptor, FieldUtil.Fieldname.UseCase.Sort, searchContext))
+                        .map( field -> FieldUtil.getFieldName(descriptor, FieldDescriptor.UseCase.Sort, searchContext))
                         .orElse(((Sort.SpecialSort.ScoredDate) sort).getField());
                 final Map<String, Object> parameters = new HashMap<>();
                 parameters.put("field",sortDateField);
@@ -103,7 +103,7 @@ public class SortUtils {
                 final String sortDateField = Optional.ofNullable(descriptor)
                         .filter(FieldDescriptor::isSort)
                         .filter( field -> Date.class.isAssignableFrom(field.getType()) || ZonedDateTime.class.isAssignableFrom(field.getType()))
-                        .map( field -> FieldUtil.getFieldName(descriptor, FieldUtil.Fieldname.UseCase.Sort, searchContext))
+                        .map( field -> FieldUtil.getFieldName(descriptor, FieldDescriptor.UseCase.Sort, searchContext))
                         .orElse(((Sort.SpecialSort.ScoredDate) sort).getField());
                 final Map<String, Object> parameters = new HashMap<>();
                 parameters.put("field",sortDateField);
