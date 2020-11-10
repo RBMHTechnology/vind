@@ -196,3 +196,8 @@ documents matching the delete filters.
 
 # 3.0.10
 * BugFix: Fix indexing of non-stored complex fields (#175)
+
+# 3.0.11
+* BugFix: Fix atomic updates for complex fields (#183)
+* Improvement: Add special sorting by score (#184)
+* BugFix: Support open parentheses within fulltext smart parser section (#186)
