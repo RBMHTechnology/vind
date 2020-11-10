@@ -10,7 +10,6 @@ import com.rbmhtechnology.vind.model.MultiValueFieldDescriptor;
 import com.rbmhtechnology.vind.model.MultiValuedComplexField;
 import com.rbmhtechnology.vind.model.SingleValuedComplexField;
 import com.rbmhtechnology.vind.model.value.LatLng;
-import javafx.beans.binding.ObjectExpression;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.elasticsearch.search.SearchHit;
 import org.slf4j.Logger;

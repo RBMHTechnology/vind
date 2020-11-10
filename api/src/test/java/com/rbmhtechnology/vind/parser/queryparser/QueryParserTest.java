@@ -272,6 +272,14 @@ public class QueryParserTest {
         query = parse("type:(CoverageDBProject OR Event) Formula 1 (AUT)");
         Assert.assertEquals(1, query.size());
         Assert.assertEquals("Formula 1 (AUT)", query.getText());
+
+        query = parse("type:(CoverageDBProject OR Event) Formula 1 (AUT");
+        Assert.assertEquals(1, query.size());
+        Assert.assertEquals("Formula 1 (AUT", query.getText());
+
+        query = parse("type:(CoverageDBProject OR Event) Formula 1 AUT)");
+        Assert.assertEquals(1, query.size());
+        Assert.assertEquals("Formula 1 AUT)", query.getText());
     }
 
     private Query parse(String s) throws ParseException {
