@@ -18,7 +18,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil.Fieldname.UseCase;
+import static com.rbmhtechnology.vind.model.FieldDescriptor.UseCase;
 
 public class FieldUtil {
 
@@ -140,16 +140,17 @@ public class FieldUtil {
                 fieldName = fieldName + type.getName();
                 if (isComplexField) {
                     type = Fieldname.Type.getFromClass(((ComplexFieldDescriptor) descriptor).getStoreType());
-                    fieldName = _COMPLEX + type.getName() + "sort_";
+                    fieldName = _COMPLEX + type.getName() + "sort_" + descriptorName;
                 }
-                if (descriptor.isSort() && Objects.nonNull(type)){
-                    return fieldName + contextPrefix + descriptorName + _SORT;
-                } else if(isComplexField && descriptor.isStored() && !descriptor.isMultiValue() && Objects.nonNull(type)){
-                    return fieldName + contextPrefix + descriptorName + _SORT ;
-                } else {
-                    log.debug("Descriptor {} is not configured for sorting.", descriptorName);
-                    return null; //TODO: throw runtime exception?
-                }
+                else
+                    if (descriptor.isSort() && Objects.nonNull(type)){
+                        return fieldName + contextPrefix + descriptorName + _SORT;
+                    } else if(isComplexField && descriptor.isStored() && !descriptor.isMultiValue() && Objects.nonNull(type)){
+                        return fieldName + contextPrefix + descriptorName + _SORT ;
+                    } else {
+                        log.debug("Descriptor {} is not configured for sorting.", descriptorName);
+                        return null; //TODO: throw runtime exception?
+                    }
             }
             case Filter: {
                 if(isComplexField && ((ComplexFieldDescriptor)descriptor).isAdvanceFilter() && Objects.nonNull(((ComplexFieldDescriptor)descriptor).getFacetType())) {
@@ -178,14 +179,6 @@ public class FieldUtil {
     }
 
     public static final class Fieldname {
-        public enum UseCase {
-            Facet,
-            Fulltext,
-            Stored,
-            Suggest,
-            Sort,
-            Filter
-        }
 
         private enum Type {
             DATE("date_"),

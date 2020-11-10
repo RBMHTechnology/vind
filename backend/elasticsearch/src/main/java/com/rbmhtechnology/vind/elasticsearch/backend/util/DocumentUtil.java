@@ -140,7 +140,7 @@ public class DocumentUtil {
     private static void addFieldToDoc(Document doc, Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor) {
         doc.getFieldContexts(descriptor)
                 .forEach(context ->
-                    Stream.of(FieldUtil.Fieldname.UseCase.values()).forEach( useCase -> {
+                    Stream.of(FieldDescriptor.UseCase.values()).forEach( useCase -> {
                         final String name = FieldUtil.getFieldName(descriptor, useCase, context);
                         Optional.ofNullable(name).ifPresent( fieldName ->
                             Optional.ofNullable( doc.getContextualizedValue(descriptor, context)).ifPresent(
@@ -153,7 +153,7 @@ public class DocumentUtil {
 
     private static void addFieldToDoc( Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor) {
 
-        Stream.of(FieldUtil.Fieldname.UseCase.values()).forEach( useCase -> {
+        Stream.of(FieldDescriptor.UseCase.values()).forEach( useCase -> {
             final String name = FieldUtil.getFieldName(descriptor, useCase, null);
             Optional.ofNullable(name)
                     .ifPresent( fieldName -> {
@@ -177,7 +177,7 @@ public class DocumentUtil {
 
     private static void addFieldToDoc(InverseSearchQuery doc, Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor) {
 
-                        Stream.of(FieldUtil.Fieldname.UseCase.values()).forEach( useCase -> {
+                        Stream.of(FieldDescriptor.UseCase.values()).forEach( useCase -> {
                             final String name = FieldUtil.getFieldName(descriptor, useCase, null);
                             Optional.ofNullable(name).ifPresent( fieldName ->
                                     Optional.ofNullable( doc.getValue(descriptor)).ifPresent(
@@ -219,7 +219,7 @@ public class DocumentUtil {
     /*
      * Returns the value of a complex field for a given use case applying the defined function to the original field type
      */
-    private static Object toElasticType(Object value, ComplexFieldDescriptor descriptor, FieldUtil.Fieldname.UseCase useCase) {
+    private static Object toElasticType(Object value, ComplexFieldDescriptor descriptor, FieldDescriptor.UseCase useCase) {
         if(value!=null) {
             if (Object[].class.isAssignableFrom(value.getClass())) {
                 return toElasticType(Arrays.asList((Object[]) value, descriptor, useCase));
@@ -276,7 +276,7 @@ public class DocumentUtil {
                             return singleField.getSortFunction().apply(value);
                         } else {
                             if (singleField.isStored()) {
-                                return toElasticType(value, singleField, FieldUtil.Fieldname.UseCase.Stored);
+                                return toElasticType(value, singleField, FieldDescriptor.UseCase.Stored);
                             }
                             return null;                        }
                     }
@@ -407,7 +407,7 @@ public class DocumentUtil {
                                 } else if (LatLng.class.isAssignableFrom(type)) {
                                     storedValue = LatLng.parseLatLng(val.toString());
                                 } else {
-                                    storedValue = castForDescriptor(val, field, FieldUtil.Fieldname.UseCase.Stored);
+                                    storedValue = castForDescriptor(val, field, FieldDescriptor.UseCase.Stored);
                                 }
                                 if (contextualized) {
                                     document.setContextualizedValue((FieldDescriptor<Object>) field, searchContext, storedValue);
@@ -425,7 +425,7 @@ public class DocumentUtil {
         return document;
     }
 
-    private static Object castForDescriptor(String s, FieldDescriptor<?> descriptor, FieldUtil.Fieldname.UseCase useCase) {
+    private static Object castForDescriptor(String s, FieldDescriptor<?> descriptor, FieldDescriptor.UseCase useCase) {
 
         Class<?> type;
         if(Objects.nonNull(descriptor)) {
@@ -487,7 +487,7 @@ public class DocumentUtil {
         return s;
     }
 
-    protected static Object castForDescriptor(Object o, FieldDescriptor<?> descriptor, FieldUtil.Fieldname.UseCase useCase) {
+    protected static Object castForDescriptor(Object o, FieldDescriptor<?> descriptor, FieldDescriptor.UseCase useCase) {
 
         Class<?> type = descriptor.getType();
 

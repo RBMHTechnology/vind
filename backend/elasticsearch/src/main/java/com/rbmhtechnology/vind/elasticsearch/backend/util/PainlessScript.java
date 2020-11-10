@@ -2,7 +2,10 @@ package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.api.query.update.UpdateOperation;
+import com.rbmhtechnology.vind.model.ComplexFieldDescriptor;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
+import com.rbmhtechnology.vind.model.MultiValuedComplexField;
+import com.rbmhtechnology.vind.model.SingleValuedComplexField;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.slf4j.Logger;
@@ -20,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TimeZone;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -152,17 +156,92 @@ public class PainlessScript {
         }
 
         public ScriptBuilder addOperations(FieldDescriptor<?> field, Map<String, SortedSet<UpdateOperation>> ops) {
+           if(ComplexFieldDescriptor.class.isAssignableFrom(field.getClass())) {
+               return addComplexFieldOperations((ComplexFieldDescriptor<? extends Object, ?, ?>) field,ops);
+           }
+           return addSimpleFieldOperations(field,ops);
+        }
+
+        private ScriptBuilder addSimpleFieldOperations(FieldDescriptor<?> field, Map<String, SortedSet<UpdateOperation>> ops) {
             ops.forEach((key, value) -> {
                 final String fieldName = FieldUtil.getFieldName(field, key);
                 value.forEach(op ->{
-                        checkValidPainlessSentence(field, op);
-                        painlessScript.addSentence(
-                                new Statement(
-                                        Operator.valueOf(op.getType().name()),
-                                        fieldName,
-                                        op.getValue(),
-                                        field.getType()));
+                    checkValidPainlessSentence(field, op);
+                    painlessScript.addSentence(
+                            new Statement(
+                                    Operator.valueOf(op.getType().name()),
+                                    fieldName,
+                                    op.getValue(),
+                                    field.getType()));
                 });
+            });
+            return this;
+        }
+
+        public <T> ScriptBuilder addComplexFieldOperations(ComplexFieldDescriptor<T,?,?> descriptor, Map<String, SortedSet<UpdateOperation>> ops) {
+            ops.forEach((key, value) -> {
+                    for( FieldDescriptor.UseCase useCase : FieldDescriptor.UseCase.values()) {
+                        final String fieldName = FieldUtil.getFieldName(descriptor, useCase, key);
+                        Function<T, ? extends Object> useCaseFunction = null;
+                        Class<?> useCaseType = null;
+                        switch (useCase) {
+                            case Suggest:
+                                if(descriptor.isSuggest() && descriptor.getSuggestFunction() != null) {
+                                    useCaseFunction = descriptor.getSuggestFunction();
+                                    useCaseType = String.class;
+                                }
+                                break;
+                            case Facet:
+                                if(descriptor.isFacet() && descriptor.getFacetFunction() != null) {
+                                    useCaseFunction = descriptor.getFacetFunction();
+                                    useCaseType = descriptor.getFacetType();
+                                }
+                                break;
+                            case Filter:
+                                if(descriptor.isAdvanceFilter() && descriptor.getAdvanceFilter() != null) {
+                                    useCaseFunction =  descriptor.getAdvanceFilter();
+                                    useCaseType =  descriptor.getFacetType();
+                                }
+                                break;
+                            case Stored:
+                                if(descriptor.isStored() && descriptor.getStoreFunction() != null) {
+                                    useCaseFunction = descriptor.getStoreFunction();
+                                    useCaseType = descriptor.getStoreType();
+                                }
+                                break;
+                            case Sort:
+                                if(descriptor.isSort()){
+                                    descriptor.getStoreType();
+                                    if (descriptor.isMultiValue())
+                                        useCaseFunction = ((MultiValuedComplexField)descriptor).getSortFunction();
+
+                                    else
+                                        useCaseFunction = ((SingleValuedComplexField)descriptor).getSortFunction();
+                                }
+                                break;
+                            case Fulltext:
+                                if(descriptor.isFullText() && descriptor.getFullTextFunction() != null) {
+                                    useCaseFunction =  descriptor.getFullTextFunction();
+                                    useCaseType = String.class;
+                                }
+                                break;
+                        }
+
+                        if( Objects.nonNull(useCaseFunction)) {
+                            final Function<T, ? extends Object> function = useCaseFunction;
+                            final Class<?> type = useCaseType;
+                            value.forEach(op ->{
+                                checkValidPainlessSentence(descriptor, op);
+                                painlessScript.addSentence(
+                                        new Statement(
+                                                Operator.valueOf(op.getType().name()),
+                                                fieldName,
+                                                function.apply((T)op.getValue()),
+                                                type));
+                            });
+                        }
+                    }
+
             });
             return this;
         }

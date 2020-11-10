@@ -88,11 +88,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.rbmhtechnology.vind.api.query.update.Update.UpdateOperations.set;
+import static com.rbmhtechnology.vind.model.FieldDescriptor.*;
 import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.DISTANCE;
 import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.ID;
 import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.TEXT;
 import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.TYPE;
-import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.UseCase;
 import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.getFieldname;
 
 /**

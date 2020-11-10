@@ -108,7 +108,7 @@ public class Update {
         final SortedSet<UpdateOperation> updateOperations =
                 Objects.isNull(fieldOperations.get(context)) ? new TreeSet<>() : fieldOperations.get(context);
 
-        updateOperations.add(new UpdateOperation(UpdateOperations.remove, t));
+        updateOperations.add(new UpdateOperation(UpdateOperations.remove, Arrays.asList(t)));
         fieldOperations.put(context,updateOperations);
         contextualizedOptions.put(descriptor,fieldOperations);
         return this;
@@ -298,22 +298,7 @@ public class Update {
         final SortedSet<UpdateOperation> updateOperations =
                 Objects.isNull(fieldOperations.get(context)) ? new TreeSet<>() : fieldOperations.get(context);
 
-        for( Filter.Scope scope : Filter.Scope.values()) {
-            switch (scope) {
-                case Suggest:
-                    if(descriptor.isSuggest() && descriptor.getSuggestFunction() != null)
-                        updateOperations.add(new UpdateOperation(UpdateOperations.set, descriptor.getSuggestFunction().apply(t)));
-                    break;
-                case Facet:
-                    if(descriptor.isFacet() && descriptor.getFacetFunction() != null)
-                        updateOperations.add(new UpdateOperation(UpdateOperations.set, descriptor.getFacetFunction().apply(t)));
-                    break;
-                case Filter:
-                    if(descriptor.isAdvanceFilter() && descriptor.getAdvanceFilter() != null)
-                        updateOperations.add(new UpdateOperation(UpdateOperations.set, descriptor.getAdvanceFilter().apply(t)));
-                    break;
-            }
-        }
+        updateOperations.add(new UpdateOperation(UpdateOperations.set, t));
         fieldOperations.put(context,updateOperations);
         contextualizedOptions.put(descriptor,fieldOperations);
         return this;
