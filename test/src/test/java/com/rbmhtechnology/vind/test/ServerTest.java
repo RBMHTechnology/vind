@@ -3045,4 +3045,24 @@ public class ServerTest {
         result = server.execute(search,assets);
         assertEquals("1", result.getResults().get(0).getId());
     }
+
+    @Rule
+    public ExpectedException expectedEx = ExpectedException.none();
+
+    @Test
+    @RunWithBackend(Solr)
+    public void testDoubleDependency() {
+
+        SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.solr.backend.EmbeddedSolrServerProvider");
+        SearchServer server = SearchServer.getInstance();
+
+        assertEquals("org.apache.solr.client.solrj.embedded.EmbeddedSolrServer", server.getBackend().getClass().getSuperclass().getCanonicalName());
+
+        SearchConfiguration.set(SearchConfiguration.SERVER_PROVIDER, "com.rbmhtechnology.vind.solr.backend.RemoteSolrServerProvider");
+
+        expectedEx.expect(SearchServerException.class);
+        expectedEx.expectMessage("Unable to found/instantiate SearchServer of class [com.rbmhtechnology.vind.solr.backend.RemoteSolrServerProvider]");
+
+        SearchServer.getInstance();
+    }
 }

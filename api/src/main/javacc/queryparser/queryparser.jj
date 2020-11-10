@@ -37,8 +37,7 @@ TOKEN :
 | <QUOTED_STRING:   <QUOTE> (~["\""])+ <QUOTE> >
 | <WILDCARD:        "*">
 | <TO:              ("t"|"T")("o"|"O")>
-| <TERM:             (["0"-"9","A"-"Z","a"-"z","_","-","\u0080"-"\uffff","(",")"])+ >
-| <PAREN_STRING_STRING: <LPAREN> <TERM> <RPAREN> >
+| <TERM:             (["0"-"9","A"-"Z","a"-"z","_","-","\u0080"-"\uffff"])+ >
 | <NUMBER:           ["0"-"9"]>
 }
 
@@ -54,6 +53,8 @@ Query query() :
     | value=<MINUS> {q.addText(value.image);}
     | value=<PLUS> {q.addText(value.image);}
     | value=<WILDCARD> {q.addText(value.image);}
+    | value=<LPAREN> {q.addText(value.image);}
+    | value=<RPAREN> {q.addText(value.image);}
     | value=<NUMBER_TERM> {q.addText(value.image);}
     )*
     { return q;}
