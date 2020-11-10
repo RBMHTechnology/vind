@@ -4,7 +4,7 @@
 
     <groupId>com.rbmhtechnology.vind</groupId>
     <artifactId>vind</artifactId>
-    <version>3.0.10-SNAPSHOT</version>
+    <version>3.0.11-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Vind</name>
@@ -95,7 +95,7 @@
         <commons-codec.version>1.10</commons-codec.version>
         <httpclient.version>4.5.3</httpclient.version>
 
-        <jackson.version>2.7.5</jackson.version>
+        <jackson.version>2.11.3</jackson.version>
         <sparkjava.version>2.9.1</sparkjava.version>
 
         <redlink-utils.version>1.1.0</redlink-utils.version>

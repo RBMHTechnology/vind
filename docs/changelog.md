@@ -191,6 +191,8 @@ documents matching the delete filters.
 
 # 3.0.9
 * BugFix: Fix sorting when sort fields do not (yet) exist (#174)
-* BugFix: Fix indexing of non-stored complex fields (#175)
 * BugFix: Do not throw Exception when deleting a non existing document (#176)
 * BugFix: Allow brackets in fulltext search for Smart Parser (#177)
+
+# 3.0.10
+* BugFix: Fix indexing of non-stored complex fields (#175)

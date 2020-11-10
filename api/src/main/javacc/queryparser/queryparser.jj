@@ -38,7 +38,6 @@ TOKEN :
 | <WILDCARD:        "*">
 | <TO:              ("t"|"T")("o"|"O")>
 | <TERM:             (["0"-"9","A"-"Z","a"-"z","_","-","\u0080"-"\uffff"])+ >
-| <PAREN_STRING_STRING: <LPAREN> <TERM> <RPAREN> >
 | <NUMBER:           ["0"-"9"]>
 }
 
@@ -47,7 +46,6 @@ Query query() :
 {
     ( c=expresion() {q.add(c);})*
     (value=<TERM>{q.addText(value.image);}
-    | value=<PAREN_STRING_STRING>{q.addText(value.image);}
     | value=<QUOTED_STRING>{q.addText(value.image);}
     | value=<AND>{q.addText(value.image);}
     | value=<OR>{q.addText(value.image);}
@@ -55,6 +53,8 @@ Query query() :
     | value=<MINUS> {q.addText(value.image);}
     | value=<PLUS> {q.addText(value.image);}
     | value=<WILDCARD> {q.addText(value.image);}
+    | value=<LPAREN> {q.addText(value.image);}
+    | value=<RPAREN> {q.addText(value.image);}
     | value=<NUMBER_TERM> {q.addText(value.image);}
     )*
     { return q;}

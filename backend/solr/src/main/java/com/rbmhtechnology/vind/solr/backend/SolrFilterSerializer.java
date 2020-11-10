@@ -14,6 +14,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.rbmhtechnology.vind.model.FieldDescriptor.*;
+
 /**
  * @author Thomas Kurz (tkurz@apache.org)
  * @since 27.06.16.
@@ -73,7 +75,7 @@ public class SolrFilterSerializer {
     }
 
     public String serialize(Filter.TermFilter filter, String searchContext) {
-        return getFieldName(filter.getField(), searchContext, SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())) + ":\"" + filter.getTerm() + "\"";
+        return getFieldName(filter.getField(), searchContext, UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())) + ":\"" + filter.getTerm() + "\"";
     }
 
     public String serialize(Filter.TermsQueryFilter filter, String searchContext) {
@@ -81,35 +83,35 @@ public class SolrFilterSerializer {
     }
 
     public String serialize(Filter.PrefixFilter filter, String searchContext) {
-        return getFieldName(filter.getField(), searchContext, SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())) + ":" + filter.getTerm() + "*";
+        return getFieldName(filter.getField(), searchContext, UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())) + ":" + filter.getTerm() + "*";
     }
 
     public String serialize(Filter.DescriptorFilter filter, String searchContext) {
-        return getFieldName(filter.getDescriptor().getName(), searchContext, SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getDescriptor()).toString())) + ":\"" + (filter.getTerm() instanceof ZonedDateTime ? DateTimeFormatter.ISO_INSTANT.format((ZonedDateTime)filter.getTerm()) : filter.getTerm())+ "\"";
+        return getFieldName(filter.getDescriptor().getName(), searchContext, UseCase.valueOf(filter.getFilterScope(filter.getDescriptor()).toString())) + ":\"" + (filter.getTerm() instanceof ZonedDateTime ? DateTimeFormatter.ISO_INSTANT.format((ZonedDateTime)filter.getTerm()) : filter.getTerm())+ "\"";
     }
 
     public String serialize(Filter.BeforeFilter filter, String searchContext) {
-        return String.format("%s:[* TO %s]", getFieldName(filter.getField(), searchContext, SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())), filter.getDate());
+        return String.format("%s:[* TO %s]", getFieldName(filter.getField(), searchContext, UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())), filter.getDate());
     }
 
     public String serialize(Filter.AfterFilter filter, String searchContext) {
-        return String.format("%s:[%s TO *]", getFieldName(filter.getField(), searchContext, SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())), filter.getDate());
+        return String.format("%s:[%s TO *]", getFieldName(filter.getField(), searchContext, UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())), filter.getDate());
     }
     public String serialize(Filter.LowerThanFilter filter, String searchContext) {
-        return String.format("%s:[* TO %s]", getFieldName(filter.getField(), searchContext, SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())), filter.getNumber());
+        return String.format("%s:[* TO %s]", getFieldName(filter.getField(), searchContext, UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())), filter.getNumber());
     }
     public String serialize(Filter.GreaterThanFilter filter, String searchContext) {
-        return String.format("%s:[%s TO *]", getFieldName(filter.getField(), searchContext, SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())), filter.getNumber());
+        return String.format("%s:[%s TO *]", getFieldName(filter.getField(), searchContext, UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())), filter.getNumber());
     }
     public String serialize(Filter.BetweenDatesFilter filter, String searchContext) {
-        return String.format("%s:[%s TO %s]", getFieldName(filter.getField(), searchContext, SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())), filter.getStart(), filter.getEnd());
+        return String.format("%s:[%s TO %s]", getFieldName(filter.getField(), searchContext, UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())), filter.getStart(), filter.getEnd());
     }
     public String serialize(Filter.BetweenNumericFilter filter, String searchContext) {
-        return String.format("%s:[%s TO %s]", getFieldName(filter.getField(), searchContext, SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())), filter.getStart(), filter.getEnd());
+        return String.format("%s:[%s TO %s]", getFieldName(filter.getField(), searchContext, UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())), filter.getStart(), filter.getEnd());
 
     }
     public String serialize(Filter.WithinBBoxFilter filter, String searchContext) {
-        final SolrUtils.Fieldname.UseCase usecase = SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(), factory).toString());
+        final UseCase usecase = UseCase.valueOf(filter.getFilterScope(filter.getField(), factory).toString());
         return String.format("%s:[%s,%s TO %s,%s]",
                 getFieldName(filter.getField(), searchContext, usecase),
                 //create lower-left corner point
@@ -121,16 +123,16 @@ public class SolrFilterSerializer {
     }
 
     public String serialize(Filter.WithinCircleFilter filter, String searchContext) {
-        return String.format("{!geofilt sfield=%s pt=%s d=%s}", getFieldName(filter.getField(), searchContext, SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())), filter.getCenter(), filter.getDistance());
+        return String.format("{!geofilt sfield=%s pt=%s d=%s}", getFieldName(filter.getField(), searchContext, UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())), filter.getCenter(), filter.getDistance());
     }
     public String serialize(Filter.NotEmptyTextFilter filter, String searchContext) {
-        return String.format("%s:['' TO *]", getFieldName(filter.getField(), searchContext, SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())));
+        return String.format("%s:['' TO *]", getFieldName(filter.getField(), searchContext, UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())));
     }
     public String serialize(Filter.NotEmptyFilter filter, String searchContext) {
-        return String.format("%s:*", getFieldName(filter.getField(), searchContext, SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())));
+        return String.format("%s:*", getFieldName(filter.getField(), searchContext, UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())));
     }
     public String serialize(Filter.NotEmptyLocationFilter filter, String searchContext) {
-        return String.format("%s:[-90,-180 TO 90,180]", getFieldName(filter.getField(), searchContext, SolrUtils.Fieldname.UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())));
+        return String.format("%s:[-90,-180 TO 90,180]", getFieldName(filter.getField(), searchContext, UseCase.valueOf(filter.getFilterScope(filter.getField(),factory).toString())));
     }
     public String serialize(Filter.ChildrenDocumentFilter filter, String searchContext) {
         if(StringUtils.isNotEmpty(filter.getNestedDocType())) {
@@ -330,7 +332,7 @@ public class SolrFilterSerializer {
         return filter;
     }
 
-    private String getFieldName(String name, String searchContext, SolrUtils.Fieldname.UseCase usecase) {
+    private String getFieldName(String name, String searchContext, UseCase usecase) {
         FieldDescriptor descriptor = factory.getField(name);
 
         if(Objects.isNull(descriptor)){
@@ -339,7 +341,7 @@ public class SolrFilterSerializer {
         }
 
         if(Objects.isNull(usecase)) {
-            usecase = SolrUtils.Fieldname.UseCase.Facet;
+            usecase = UseCase.Facet;
         }
 
         final String fieldName = SolrUtils.Fieldname.getFieldname(descriptor, usecase, searchContext);

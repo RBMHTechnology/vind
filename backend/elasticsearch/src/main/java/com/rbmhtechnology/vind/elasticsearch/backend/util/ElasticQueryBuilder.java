@@ -18,7 +18,6 @@ import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.StringSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.UpdateOperation;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
-import com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil.Fieldname.UseCase;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.apache.commons.lang3.ArrayUtils;
@@ -73,6 +72,8 @@ import java.util.Optional;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.rbmhtechnology.vind.model.FieldDescriptor.*;
 
 public class ElasticQueryBuilder {
     private static final Logger log = LoggerFactory.getLogger(ElasticQueryBuilder.class);
@@ -377,7 +378,7 @@ public class ElasticQueryBuilder {
         }
     }
 
-    private static List<AggregationBuilder> buildElasticAggregations(String name, Facet vindFacet, DocumentFactory factory, UseCase  useCase, String searchContext, int minCount, int facetLimit) {
+    private static List<AggregationBuilder> buildElasticAggregations(String name, Facet vindFacet, DocumentFactory factory, UseCase useCase, String searchContext, int minCount, int facetLimit) {
         final String contextualizedFacetName = Stream.of(searchContext, name)
                 .filter(Objects::nonNull)
                 .collect(Collectors.joining("_"));
@@ -816,7 +817,7 @@ public class ElasticQueryBuilder {
             DocumentFactory factory,
             String updateContext) {
         final PainlessScript.ScriptBuilder scriptBuilder = new PainlessScript.ScriptBuilder();
-                options.entrySet().stream()
+        options.entrySet().stream()
                 .map(entry -> scriptBuilder.addOperations(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
         return scriptBuilder;

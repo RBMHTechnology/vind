@@ -97,7 +97,7 @@ public abstract class ComplexFieldDescriptor<T,F,S> extends FieldDescriptor<T> {
 
     /**
      * Instantiates a new {@link Filter} to checking if a field value is not empty.
-     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
+     * @param scope Enum {@link Filter.Scope} describing the scope to perform the filter on.
      * @return A configured filter for the field.
      */
     public Filter isNotEmpty(Filter.Scope scope) {
@@ -127,7 +127,7 @@ public abstract class ComplexFieldDescriptor<T,F,S> extends FieldDescriptor<T> {
 
     /**
      * Instantiates a new {@link Filter} to checking if a field value is empty.
-     * @param scope Enum {@link Scope} describing the scope to perform the filter on.
+     * @param scope Enum {@link Filter.Scope} describing the scope to perform the filter on.
      * @return A configured filter for the field.
      */
     public Filter isEmpty(Filter.Scope scope) {

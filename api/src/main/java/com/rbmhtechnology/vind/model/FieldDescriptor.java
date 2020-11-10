@@ -293,4 +293,13 @@ public abstract class FieldDescriptor<T> implements Serializable {
                 this.boost,
                 this.metadata);
     }
+
+    public enum UseCase {
+        Facet,
+        Fulltext,
+        Stored,
+        Suggest,
+        Sort,
+        Filter
+    }
 }

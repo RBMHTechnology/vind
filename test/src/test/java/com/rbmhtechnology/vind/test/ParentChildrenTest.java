@@ -8,6 +8,7 @@ import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.model.*;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -19,6 +20,7 @@ import static org.junit.Assert.assertEquals;
  * @author Thomas Kurz (thomas.kurz@redlink.co)
  * @since 12.07.17.
  */
+@Ignore
 public class ParentChildrenTest {
 
     @Rule
