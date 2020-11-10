@@ -74,6 +74,8 @@ import static com.rbmhtechnology.vind.api.query.filter.Filter.eq;
 import static com.rbmhtechnology.vind.api.query.filter.Filter.hasChildrenDocuments;
 import static com.rbmhtechnology.vind.api.query.filter.Filter.not;
 import static com.rbmhtechnology.vind.api.query.filter.Filter.or;
+import static com.rbmhtechnology.vind.api.query.sort.Sort.*;
+import static com.rbmhtechnology.vind.api.query.sort.Sort.SpecialSort.*;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.asc;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.desc;
 import static com.rbmhtechnology.vind.model.MultiValueFieldDescriptor.DateFieldDescriptor;
@@ -1261,7 +1263,7 @@ public class ServerTest {
 
         //test sorting
         //TODO does not yet work (parsing error)
-        searchAll = Search.fulltext().sort(Sort.SpecialSort.distance()).geoDistance(locationSingle, madrid);;
+        searchAll = Search.fulltext().sort(distance()).geoDistance(locationSingle, madrid);;
         searchResult = server.execute(searchAll, assets).print();
         assertTrue("Distance sorting is not correct", searchResult.getResults().get(0).getDistance() < searchResult.getResults().get(1).getDistance());
     }
@@ -2510,13 +2512,13 @@ public class ServerTest {
 
 
         FulltextSearch search = Search.fulltext("hello").facet(category)
-                .sort(desc(Sort.SpecialSort.scoredDate(created)));
+                .sort(desc(scoredDate(created)));
 
         SearchResult result = server.execute(search,assets);
         assertEquals("2", result.getResults().get(0).getId());
 
         search = Search.fulltext("hello").facet(category)
-                .sort(asc(Sort.SpecialSort.scoredDate(created)));
+                .sort(asc(scoredDate(created)));
 
         result = server.execute(search,assets);
         assertEquals("1", result.getResults().get(0).getId());
@@ -2573,7 +2575,7 @@ public class ServerTest {
 
 
         FulltextSearch search = Search.fulltext("hello")
-                .facet(new Facet.TermFacet(category).addSort("popularity", desc(Sort.SpecialSort.scoredDate(created))));
+                .facet(new Facet.TermFacet(category).addSort("popularity", desc(scoredDate(created))));
 
         SearchResult result = server.execute(search,assets);
         assertEquals(4, result.getFacetResults().getTermFacet(category).getValues().get(0).getValue(), 0.001);
@@ -2648,7 +2650,7 @@ public class ServerTest {
 
         FulltextSearch search = Search.fulltext()
                 .facet(pivot("bucket",group, cluster,resource)
-                        .addSort("popularity", Sort.SpecialSort.scoredDate(created)))
+                        .addSort("popularity", scoredDate(created)))
                 ;
 
         SearchResult result = server.execute(search,assets);
@@ -2931,7 +2933,7 @@ public class ServerTest {
                 .addField(dateComplexField)
                 .build();
 
-        FulltextSearch search = Search.fulltext().sort(Sort.field(dateComplexField, Sort.Direction.Asc));
+        FulltextSearch search = Search.fulltext().sort(field(dateComplexField, Direction.Asc));
 
         SearchServer server = testBackend.getSearchServer();
 
@@ -2947,5 +2949,86 @@ public class ServerTest {
         DeleteResult result = server.delete(assets.createDoc("1"));
 
         Assert.assertNotNull(result);
+    }
+
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testSort() {
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
+
+        FieldDescriptor<String> title = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .buildTextField("title");
+
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+        SingleValueFieldDescriptor.UtilDateFieldDescriptor<Date> modified = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildUtilDateField("modified");
+
+        NumericFieldDescriptor<Long> category = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildMultivaluedNumericField("category", Long.class);
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(title)
+                .addField(created)
+                .addField(category)
+                .addField(modified)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(title, "Hello World")
+                .setValue(created, yesterday)
+                .setValue(modified, new Date())
+                .setValues(category, Arrays.asList(1L, 2L));
+
+        Document d2 = assets.createDoc("2")
+                .setValue(title, "Hello Friends")
+                .setValue(created, now)
+                .setValue(modified, new Date())
+                .addValue(category, 4L);
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.commit();
+
+
+        FulltextSearch search = Search.fulltext("hello")
+                .sort(desc(score()));
+
+        SearchResult result = server.execute(search,assets);
+        assertEquals("1", result.getResults().get(0).getId());
+
+        search = Search.fulltext("hello")
+                .sort(asc(score()));
+
+        result = server.execute(search,assets);
+        assertEquals("1", result.getResults().get(0).getId());
+
+        search = Search.fulltext("hello")
+                .sort(asc(score()), desc(category));
+
+        result = server.execute(search,assets);
+        assertEquals("2", result.getResults().get(0).getId());
+
+        search = Search.fulltext("hello friends")
+                .sort(desc(score()));
+
+        result = server.execute(search,assets);
+        assertEquals("2", result.getResults().get(0).getId());
+
+        search = Search.fulltext("hello friends")
+                .sort(asc(score()));
+
+        result = server.execute(search,assets);
+        assertEquals("1", result.getResults().get(0).getId());
     }
 }

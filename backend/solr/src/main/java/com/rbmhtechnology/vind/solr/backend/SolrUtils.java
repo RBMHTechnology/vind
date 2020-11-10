@@ -226,6 +226,9 @@ public class SolrUtils {
                         throw new RuntimeException("Sorting by distance requires a geodistance set");
                     }
                     return "geodist() " + ssort.getDirection();
+                } else if (sort instanceof Sort.SpecialSort.Score) {
+                    Sort.SpecialSort.Score scoreSort = (Sort.SpecialSort.Score) sort;
+                    return "score " + scoreSort.getDirection();
                 } else {
                     final Sort.DescriptorSort s = (Sort.DescriptorSort) sort;
                     final String fieldname = Fieldname.getFieldname(s.getDescriptor(), Sort, search.getSearchContext());

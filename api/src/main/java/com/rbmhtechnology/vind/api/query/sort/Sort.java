@@ -149,6 +149,14 @@ public abstract class Sort {
         }
 
         /**
+         * Static method to instantiate a {@link Sort.SpecialSort.Score} sorting object.
+         * @return {@link Sort.SpecialSort.Score} sort query object.
+         */
+        public static Score score() {
+            return new Score();
+        }
+
+        /**
          * Sorting class which modifies the document score based on the date.
          */
         public static class ScoredDate extends SpecialSort {
@@ -311,6 +319,39 @@ public abstract class Sort {
         @Override
         public Sort clone() {
             final DescriptorSort copy = new DescriptorSort(this.descriptor, this.direction);
+            return copy;
+        }
+    }
+
+    /**
+     * Sorting class which enables sorting result by score.
+     */
+    public static class Score extends SpecialSort {
+
+        /**
+         * Creates a new instance of {@link Sort.SpecialSort.Score} for a given field.
+         */
+        protected Score() {}
+
+
+        @Override
+        public void setDirection(Direction direction) {
+            this.direction = direction;
+        }
+
+        @Override
+        public String toString(){
+            final String scoreString = "{" +
+                    "\"direction\":\"%s\"," +
+                    "\"field\":\"_score\"" +
+                    "}";
+            return String.format(scoreString,this.direction);
+        }
+
+        @Override
+        public Sort clone() {
+            final Score copy = new Score();
+            copy.direction = this.direction;
             return copy;
         }
     }
