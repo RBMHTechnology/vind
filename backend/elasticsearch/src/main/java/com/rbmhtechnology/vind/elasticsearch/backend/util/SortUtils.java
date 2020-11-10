@@ -9,7 +9,6 @@ import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.BucketOrder;
 import org.elasticsearch.search.sort.ScriptSortBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -72,8 +71,12 @@ public class SortUtils {
                 return SortBuilders
                         .scriptSort(painlessDateSort, ScriptSortBuilder.ScriptSortType.NUMBER)
                         .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
+            case "Score":
+                return SortBuilders
+                        .scoreSort()
+                        .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
             default:
-                throw  new SearchServerException(String
+                throw new SearchServerException(String
                         .format("Unable to parse Vind sort '%s' to ElasticSearch sorting: sort type not supported.",
                                 sort.getType()));
         }
