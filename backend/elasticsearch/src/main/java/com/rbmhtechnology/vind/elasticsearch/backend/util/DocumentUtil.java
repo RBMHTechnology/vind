@@ -219,7 +219,7 @@ public class DocumentUtil {
     /*
      * Returns the value of a complex field for a given use case applying the defined function to the original field type
      */
-    private static Object toElasticType(Object value, ComplexFieldDescriptor descriptor, FieldDescriptor.UseCase useCase) {
+    protected static Object toElasticType(Object value, ComplexFieldDescriptor descriptor, FieldDescriptor.UseCase useCase) {
         if(value!=null) {
             if (Object[].class.isAssignableFrom(value.getClass())) {
                 return toElasticType(Arrays.asList((Object[]) value, descriptor, useCase));

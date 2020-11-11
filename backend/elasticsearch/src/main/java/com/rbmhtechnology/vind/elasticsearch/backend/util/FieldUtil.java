@@ -103,7 +103,7 @@ public class FieldUtil {
                 if(descriptor.isFacet()) {
                     if (isComplexField) {
                        type = Fieldname.Type.getFromClass(((ComplexFieldDescriptor)descriptor).getFacetType());
-                        return _COMPLEX + type.getName() + FACET + contextPrefix + descriptorName + _FACET;
+                        return _COMPLEX + type.getName() + FACET + contextPrefix + descriptorName;
                     }
                     return fieldName + type.getName() + contextPrefix + descriptorName + _FACET;
 
@@ -115,7 +115,7 @@ public class FieldUtil {
             case Suggest: {
                 if(descriptor.isSuggest()) {
                     if (isComplexField) {
-                        return _COMPLEX + "suggestion_" + contextPrefix + descriptorName + _SUGGEST;
+                        return _COMPLEX + "suggestion_" + contextPrefix + descriptorName;
                     } else {
                         type = Fieldname.Type.getFromClass(descriptor.getType());
                         return fieldName + type.getName() + contextPrefix + descriptorName + _SUGGEST;
@@ -140,7 +140,7 @@ public class FieldUtil {
                 fieldName = fieldName + type.getName();
                 if (isComplexField) {
                     type = Fieldname.Type.getFromClass(((ComplexFieldDescriptor) descriptor).getStoreType());
-                    fieldName = _COMPLEX + type.getName() + "sort_" + descriptorName;
+                    return _COMPLEX + type.getName() + "sort_" + descriptorName;
                 }
                 else
                     if (descriptor.isSort() && Objects.nonNull(type)){
@@ -156,7 +156,7 @@ public class FieldUtil {
                 if(isComplexField && ((ComplexFieldDescriptor)descriptor).isAdvanceFilter() && Objects.nonNull(((ComplexFieldDescriptor)descriptor).getFacetType())) {
                     type = Fieldname.Type.getFromClass(((ComplexFieldDescriptor)descriptor).getFacetType());
                     fieldName = _COMPLEX;
-                    return fieldName + type.getName() + "filter_" + contextPrefix + descriptorName + _FILTER;
+                    return fieldName + type.getName() + "filter_" + contextPrefix + descriptorName;
 
                 } else {
                     log.debug("Descriptor {} is not configured for advance filter search.", descriptorName);

@@ -30,10 +30,13 @@ TOKEN :
 | <RPAREN:           ")">
 | <LBRACKET:         "[">
 | <RBRACKET:         "]">
+| <LCBRACKET:         "{">
+| <RCBRACKET:         "}">
 | <DATE_TERM:        (<NUMBER><NUMBER>(<NUMBER><NUMBER>)?["/","-","."]<NUMBER><NUMBER>["/","-","."]<NUMBER><NUMBER>(<NUMBER><NUMBER>)?)  >
 | <NUMBER_TERM:      (["+","-"])? ( (<NUMBER>)+ ("."(<NUMBER>)*)? ) (["e","E"](<NUMBER>)+)? >
 | <FIELD:            (["0"-"9","A"-"Z","a"-"z","_","-","."])+ ":" >
 | <QUOTE:           "\"">
+| <SINGLE_QUOTE:    "'">
 | <QUOTED_STRING:   <QUOTE> (~["\""])+ <QUOTE> >
 | <WILDCARD:        "*">
 | <TO:              ("t"|"T")("o"|"O")>
@@ -50,12 +53,18 @@ Query query() :
     | value=<AND>{q.addText(value.image);}
     | value=<OR>{q.addText(value.image);}
     | value=<NOT>{q.addText(value.image);}
-    | value=<MINUS> {q.addText(value.image);}
-    | value=<PLUS> {q.addText(value.image);}
-    | value=<WILDCARD> {q.addText(value.image);}
-    | value=<LPAREN> {q.addText(value.image);}
-    | value=<RPAREN> {q.addText(value.image);}
     | value=<NUMBER_TERM> {q.addText(value.image);}
+    | <MINUS>
+    | <PLUS>
+    | <WILDCARD>
+    | <LPAREN>
+    | <RPAREN>
+    | <LBRACKET>
+    | <RBRACKET>
+    | <LCBRACKET>
+    | <RCBRACKET>
+    | <SINGLE_QUOTE>
+    | <QUOTE>
     )*
     { return q;}
 }

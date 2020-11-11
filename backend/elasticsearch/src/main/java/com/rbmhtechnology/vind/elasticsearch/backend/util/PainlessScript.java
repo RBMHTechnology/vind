@@ -27,11 +27,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil.toElasticType;
+
 public class PainlessScript {
 
     private static final Logger log = LoggerFactory.getLogger(PainlessScript.class);
 
     private final List<Statement> scriptStatements = new ArrayList<>();
+    public final HashMap<String, Object> scriptParameters = new HashMap<>();
 
     private PainlessScript() {
     }
@@ -54,23 +57,25 @@ public class PainlessScript {
 
     public static class Statement {
 
-        private static final String PAINLESS_ADD_TEMPLATE = "ctx._source.%s.addAll(%s)";
-        private static final String PAINLESS_SET_TEMPLATE = "ctx._source.%s=%s";
-        private static final String PAINLESS_INC_TEMPLATE = "ctx._source.%s+=%s";
-        private static final String PAINLESS_REMOVE_ITEM_TEMPLATE = "ctx._source.%s.removeAll(%s)";
-        private static final String PAINLESS_REMOVE_TEMPLATE = "ctx._source.remove(\"%s\")";
+        private static final String PAINLESS_ADD_TEMPLATE = "ctx._source[params.%s].addAll(params.%s)";
+        private static final String PAINLESS_SET_TEMPLATE = "ctx._source[params.%s]=params.%s";
+        private static final String PAINLESS_INC_TEMPLATE = "ctx._source[params.%s]+=params.%s";
+        private static final String PAINLESS_REMOVE_ITEM_TEMPLATE = "ctx._source[params.%s].removeAll(params.%s)";
+        private static final String PAINLESS_REMOVE_TEMPLATE = "ctx._source.remove(params.%s)";
         //private static final String PAINLESS_REMOVE_REGEX_TEMPLATE = "Pattern prefix = /%s/; ctx._source.%s.removeIf(item -> prefix. )";
 
         private final Operator op;
         private final String subject;
         private final Object predicate;
         private final Class<?> predicateType;
+        private HashMap<String, Object> scriptParameters;
 
-        private Statement(Operator op, String subject, Object predicate, Class<?> predicateType) {
+        private Statement(Operator op, String subject, Object predicate, Class<?> predicateType,HashMap<String,Object> scriptParameters) {
             this.op = op;
             this.subject = subject;
             this.predicate = predicate;
             this.predicateType = predicateType;
+            this.scriptParameters = scriptParameters;
         }
 
         public Operator getOp() {
@@ -107,7 +112,7 @@ public class PainlessScript {
                         .toArray());
             }
 
-            final Object elasticPredicate = DocumentUtil.toElasticType(predicate);
+            final Object elasticPredicate = toElasticType(predicate);
             if(String.class.isAssignableFrom(elasticPredicate.getClass())) {
                 return "'" + elasticPredicate.toString().replaceAll("'", "\\\\'") + "'";
             }
@@ -121,24 +126,82 @@ public class PainlessScript {
             return   elasticPredicate.toString() ;
         }
 
+        protected static Object getPredicate(Object predicate, Class<?> predicateType){
+
+            if(Objects.isNull(predicate)){
+                return null;
+            }
+
+            if (Collection.class.isAssignableFrom(predicate.getClass())) {
+                final Object[] predicateArray = ((Collection<Object>)predicate).stream()
+                        .map(pr -> Statement.getPredicate(pr, predicateType))
+                        .filter(Objects::nonNull)
+                        .toArray();
+                if (predicateArray.length == 0) return null;
+                return predicateArray;
+            }
+
+            if (predicate.getClass().isArray()) {
+                final Object[] predicateArray = Stream.of((Object[]) predicate)
+                        .map(pr -> Statement.getPredicate(pr, predicateType))
+                        .filter(Objects::nonNull)
+                        .toArray();
+                if (predicateArray.length == 0) return null;
+                return predicateArray;
+            }
+
+            final Object elasticPredicate = toElasticType(predicate);
+            if(String.class.isAssignableFrom(elasticPredicate.getClass())) {
+                return elasticPredicate.toString().replaceAll("'", "\\\\'");
+            }
+            if(Date.class.isAssignableFrom(elasticPredicate.getClass())) {
+                final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+                return "'" + formatter.format(elasticPredicate).replaceAll("'", "\\\\'") + "'";
+            }
+
+
+            return elasticPredicate ;
+        }
+
         @Override
         public String toString() {
             switch (op){
                 case add:
-                    return String.format(PAINLESS_ADD_TEMPLATE, subject, Statement.getStringPredicate(predicate, predicateType));
+                    final String addSubjectParamName = "param_" + scriptParameters.size();
+                    scriptParameters.put(addSubjectParamName, subject);
+                    final String addPredicateParamName = "param_" + scriptParameters.size();
+                    scriptParameters.put(addPredicateParamName, Statement.getPredicate(predicate, predicateType));
+                    return String.format(PAINLESS_ADD_TEMPLATE, addSubjectParamName, addPredicateParamName);
                 case inc:
-                    return String.format(PAINLESS_INC_TEMPLATE, subject, Statement.getStringPredicate(predicate, predicateType));
+                    final String incSubjectParamName = "param_" + scriptParameters.size();
+                    scriptParameters.put(incSubjectParamName, subject);
+                    final String incPredicateParamName = "param_" + scriptParameters.size();
+                    scriptParameters.put(incPredicateParamName, Statement.getPredicate(predicate, predicateType));
+                    return String.format(PAINLESS_INC_TEMPLATE, incSubjectParamName, incPredicateParamName);
                 case set:
                     if(Objects.nonNull(predicate)) {
-                        return String.format(PAINLESS_SET_TEMPLATE, subject, Statement.getStringPredicate(predicate, predicateType));
+                        final String subjectParamName = "param_" + scriptParameters.size();
+                        scriptParameters.put(subjectParamName, subject);
+                        final String predicateParamName = "param_" + scriptParameters.size();
+                        scriptParameters.put(predicateParamName, Statement.getPredicate(predicate, predicateType));
+                        return String.format(PAINLESS_SET_TEMPLATE, subjectParamName, predicateParamName );
                     } else {
-                        return String.format(PAINLESS_REMOVE_TEMPLATE, subject);
+                        final String subjectParamName = "param_" + scriptParameters.size();
+                        scriptParameters.put(subjectParamName, subject);
+                        return String.format(PAINLESS_REMOVE_TEMPLATE, subjectParamName);
                     }
                 case remove:
                     if(Objects.nonNull(predicate)) {
-                        return String.format(PAINLESS_REMOVE_ITEM_TEMPLATE, subject, Statement.getStringPredicate(predicate, predicateType));
+                        final String subjectParamName = "param_" + scriptParameters.size();
+                        scriptParameters.put(subjectParamName, subject);
+                        final String predicateParamName = "param_" + scriptParameters.size();
+                        scriptParameters.put(predicateParamName, Statement.getPredicate(predicate, predicateType));
+                        return String.format(PAINLESS_REMOVE_ITEM_TEMPLATE, subjectParamName, predicateParamName);
                     } else {
-                        return String.format(PAINLESS_REMOVE_TEMPLATE, subject);
+                        final String subjectParamName = "param_" + scriptParameters.size();
+                        scriptParameters.put(subjectParamName, subject);
+                        return String.format(PAINLESS_REMOVE_TEMPLATE, subjectParamName);
                     }
                 case removeregex:
                 default:
@@ -172,7 +235,8 @@ public class PainlessScript {
                                     Operator.valueOf(op.getType().name()),
                                     fieldName,
                                     op.getValue(),
-                                    field.getType()));
+                                    field.getType(),
+                                    painlessScript.scriptParameters));
                 });
             });
             return this;
@@ -236,8 +300,9 @@ public class PainlessScript {
                                         new Statement(
                                                 Operator.valueOf(op.getType().name()),
                                                 fieldName,
-                                                function.apply((T)op.getValue()),
-                                                type));
+                                                toElasticType(op.getValue(),descriptor, useCase),
+                                                type,
+                                                painlessScript.scriptParameters));
                             });
                         }
                     }
@@ -246,7 +311,7 @@ public class PainlessScript {
             return this;
         }
 
-        public Script build(Map<String, Object> parameters) {
+        private Script build(Map<String, Object> parameters) {
             return new Script(
                     ScriptType.INLINE,
                     "painless",
@@ -255,8 +320,7 @@ public class PainlessScript {
         }
 
         public Script build() {
-            final Map<String, Object> parameters = new HashMap<>();
-            return this.build(parameters);
+            return this.build(painlessScript.scriptParameters);
         }
 
         public void checkValidPainlessSentence(FieldDescriptor<?> field, UpdateOperation op) {
