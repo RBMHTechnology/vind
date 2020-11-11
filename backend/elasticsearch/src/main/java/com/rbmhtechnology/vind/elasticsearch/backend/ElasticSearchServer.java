@@ -473,17 +473,17 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
     @Override
     public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
-        //TODO implement for monitoring search server;
-        throw new NotImplementedException();
-    }
-
-    @Override
-    public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory, DocumentFactory childFactory) {
-        throw new NotImplementedException();
+        final SearchSourceBuilder query = ElasticQueryBuilder.buildSuggestionQuery(search, factory);
+        return query.toString();
     }
 
     @Override
     public <T> String getRawQuery(ExecutableSuggestionSearch search, Class<T> c) {
+        return getRawQuery(search,AnnotationUtil.createDocumentFactory(c));
+    }
+
+    @Override
+    public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory, DocumentFactory childFactory) {
         throw new NotImplementedException();
     }
 
