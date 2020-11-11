@@ -21,6 +21,7 @@ import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.geo.GeoPoint;
@@ -92,8 +93,13 @@ public class ElasticQueryBuilder {
 
         //build full text disMax query
         final String searchString = "*".equals(search.getSearchString())? "*:*" : search.getSearchString();
+
+        String minimumShouldMatch = search.getMinimumShouldMatch();
+        if(StringUtils.isNumeric(minimumShouldMatch) && !minimumShouldMatch.startsWith("-")) {
+            minimumShouldMatch = "0<" + minimumShouldMatch;
+        }
         final QueryStringQueryBuilder fullTextStringQuery = QueryBuilders.queryStringQuery(searchString)
-                .minimumShouldMatch(search.getMinimumShouldMatch()); //mm
+                .minimumShouldMatch(minimumShouldMatch); //mm
         // Set fulltext fields
         factory.getFields().values().stream()
                 .filter(FieldDescriptor::isFullText)
