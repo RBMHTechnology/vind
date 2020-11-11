@@ -1524,6 +1524,7 @@ public class ServerTest {
 
         SingleValuedComplexField.TextComplexField<Taxonomy,String,String> textComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,String,String>()
                 .setFacet(true, tx -> Arrays.asList(tx.getLabel()))
+                .setAdvanceFilter(true, tx -> Arrays.asList(tx.getLabel()))
                 .setSuggest(true, tx -> Arrays.asList(tx.getLabel()))
                 .setStored(true, tx -> tx.getTerm())
                 .buildTextComplexField("textFacetTaxonomy", Taxonomy.class, String.class, String.class);
@@ -1535,6 +1536,7 @@ public class ServerTest {
 
         MultiValuedComplexField.TextComplexField<Taxonomy,String,String> multiComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,String,String>()
                 .setFacet(true, tx -> Arrays.asList(tx.getLabel()))
+                .setAdvanceFilter(true, tx -> Arrays.asList(tx.getLabel()))
                 .setSuggest(true, tx -> Arrays.asList(tx.getLabel()))
                 .setStored(true, tx -> tx.getTerm())
                 .buildMultivaluedTextComplexField("multiTextTaxonomy", Taxonomy.class, String.class, String.class);
@@ -1587,6 +1589,15 @@ public class ServerTest {
         server.commit();
 
         GetResult result = server.execute(Search.getById("1"), assets);
+        Assert.assertTrue(true);
+
+        server.execute(Search.update("1")
+                .set(
+                        multiComplexField,
+                        new Taxonomy("multiUpdated", 11, "label multiUpdated", ZonedDateTime.now().plusMonths(1))), assets);
+        server.commit();
+
+        result = server.execute(Search.getById("1"), assets);
         Assert.assertTrue(true);
 
     }

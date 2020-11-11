@@ -27,6 +27,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil.toElasticType;
+
 public class PainlessScript {
 
     private static final Logger log = LoggerFactory.getLogger(PainlessScript.class);
@@ -107,7 +109,7 @@ public class PainlessScript {
                         .toArray());
             }
 
-            final Object elasticPredicate = DocumentUtil.toElasticType(predicate);
+            final Object elasticPredicate = toElasticType(predicate);
             if(String.class.isAssignableFrom(elasticPredicate.getClass())) {
                 return "'" + elasticPredicate.toString().replaceAll("'", "\\\\'") + "'";
             }
@@ -236,7 +238,7 @@ public class PainlessScript {
                                         new Statement(
                                                 Operator.valueOf(op.getType().name()),
                                                 fieldName,
-                                                function.apply((T)op.getValue()),
+                                                toElasticType(op.getValue(),descriptor, useCase),
                                                 type));
                             });
                         }
