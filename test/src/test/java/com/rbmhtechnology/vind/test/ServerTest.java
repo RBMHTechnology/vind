@@ -1585,7 +1585,8 @@ public class ServerTest {
         server.index(d2);
         server.commit();
 
-        server.execute(Search.update("1").set(textComplexField, new Taxonomy("unoUpdated", 11, "Uno label updated", ZonedDateTime.now().plusMonths(1))), assets);
+        server.execute(Search.update("1")
+                .set(textComplexField, new Taxonomy("unoUpdated", 11, "Uno label updated", ZonedDateTime.now().plusMonths(1))), assets);
         server.commit();
 
         GetResult result = server.execute(Search.getById("1"), assets);
@@ -1599,7 +1600,6 @@ public class ServerTest {
 
         result = server.execute(Search.getById("1"), assets);
         Assert.assertTrue(true);
-
     }
 
     //MDBN-486
