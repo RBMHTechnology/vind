@@ -201,3 +201,9 @@ documents matching the delete filters.
 * BugFix: Fix atomic updates for complex fields (#183)
 * Improvement: Add special sorting by score (#184)
 * BugFix: Support open parentheses within fulltext smart parser section (#186)
+
+# 3.0.12
+* BugFix: Minimum should match elastic unexpected behaviour. (#190)
+* Improvement: Ignore _()[]{}'"_ characters in smart parser fulltext search section. (#191)
+* BugFix: Atomic update and complex fields name issue. (#189)
+* Improvement: Improved update scripts to use parameters for values and fields.
