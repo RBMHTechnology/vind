@@ -207,3 +207,6 @@ documents matching the delete filters.
 * Improvement: Ignore _()[]{}'"_ characters in smart parser fulltext search section. (#191)
 * BugFix: Atomic update and complex fields name issue. (#189)
 * Improvement: Improved update scripts to use parameters for values and fields.
+
+# 3.0.13
+* BugFix: Update script issue with dates.
