@@ -154,12 +154,6 @@ public class PainlessScript {
             if(String.class.isAssignableFrom(elasticPredicate.getClass())) {
                 return elasticPredicate.toString().replaceAll("'", "\\\\'");
             }
-            if(Date.class.isAssignableFrom(elasticPredicate.getClass())) {
-                final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-                formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-                return "'" + formatter.format(elasticPredicate).replaceAll("'", "\\\\'") + "'";
-            }
-
 
             return elasticPredicate ;
         }
