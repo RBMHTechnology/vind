@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
+import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.MultiGetRequest;
@@ -42,8 +43,9 @@ public class ElasticRequestUtils {
 
     public static UpdateRequest getUpdateRequest(String index, String id, PainlessScript.ScriptBuilder script) {
        return new UpdateRequest(index, id)
-            .script(script.build())
-            .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
+               .retryOnConflict(3)
+                .script(script.build())
+                .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
     }
 
     public static GetRequest getRealTimeGetRequest(String index, String docId) {
@@ -78,11 +80,10 @@ public class ElasticRequestUtils {
 
     public static DeleteByQueryRequest getDeleteByQueryRequest(String index, QueryBuilder query) {
 
-        final DeleteByQueryRequest request =
-                new DeleteByQueryRequest(index);
-        request.setQuery(query);
-        request.setRefresh(true);
-        return request;
+        return new DeleteByQueryRequest(index)
+                .setTimeout(SearchConfiguration.get(SearchConfiguration.SERVER_SO_TIMEOUT))
+                .setQuery(query)
+                .setRefresh(true);
     }
 
     public static GetMappingsRequest getMappingsRequest(String index) {

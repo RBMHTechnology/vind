@@ -399,15 +399,17 @@ public class DocumentUtil {
                                 if (val instanceof Collection) {
                                     val = ((Collection) o).iterator().next();
                                 }
-                                Object storedValue;
-                                if (ZonedDateTime.class.isAssignableFrom(type)) {
-                                    storedValue = ZonedDateTime.parse(val.toString()).withZoneSameLocal(ZoneId.of("UTC"));
-                                } else if (Date.class.isAssignableFrom(type)) {
-                                    storedValue = Date.from(Instant.parse(val.toString())) ;
-                                } else if (LatLng.class.isAssignableFrom(type)) {
-                                    storedValue = LatLng.parseLatLng(val.toString());
-                                } else {
-                                    storedValue = castForDescriptor(val, field, FieldDescriptor.UseCase.Stored);
+                                Object storedValue = null;
+                                if(Objects.nonNull(val)) {
+                                    if (ZonedDateTime.class.isAssignableFrom(type)) {
+                                        storedValue = ZonedDateTime.parse(val.toString()).withZoneSameLocal(ZoneId.of("UTC"));
+                                    } else if (Date.class.isAssignableFrom(type)) {
+                                        storedValue = Date.from(Instant.parse(val.toString())) ;
+                                    } else if (LatLng.class.isAssignableFrom(type)) {
+                                        storedValue = LatLng.parseLatLng(val.toString());
+                                    } else {
+                                        storedValue = castForDescriptor(val, field, FieldDescriptor.UseCase.Stored);
+                                    }
                                 }
                                 if (contextualized) {
                                     document.setContextualizedValue((FieldDescriptor<Object>) field, searchContext, storedValue);
