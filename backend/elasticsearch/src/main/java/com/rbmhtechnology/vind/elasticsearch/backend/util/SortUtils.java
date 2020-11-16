@@ -83,20 +83,23 @@ public class SortUtils {
     }
 
     private static String getUnmappedType(String fieldName) {
-        String type = fieldName.split("_")[1];
-        switch (type) {
-            case "int": return "integer";
-            case "long": return "long";
-            case "float": return "float";
-            case "string":
-            case "path":
-                return "keyword";
-            case "boolean": return "boolean";
-            case "date": return "date";
-            case "location": return "geo_point";
-            case "binary": return "binary";
-            default:throw new RuntimeException("Cannot get type for fieldName '" + fieldName + "'");
-        }
+        if (fieldName.contains("_")) {
+            final String type = fieldName.split("_")[1];
+            switch (type) {
+                case "int": return "integer";
+                case "long": return "long";
+                case "float": return "float";
+                case "string":
+                case "path":
+                    return "keyword";
+                case "boolean": return "boolean";
+                case "date": return "date";
+                case "location": return "geo_point";
+                case "binary": return "binary";
+                default:throw new RuntimeException("Cannot get type for fieldName '" + fieldName + "'");
+            }
+        } else
+            throw new RuntimeException("Cannot get type for fieldName '" + fieldName + "'");
     }
 
     protected static AggregationBuilder buildFacetSort(String name, Sort sort, String searchContext) {
