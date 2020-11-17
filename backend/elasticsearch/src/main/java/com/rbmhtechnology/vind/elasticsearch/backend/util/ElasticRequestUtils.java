@@ -81,7 +81,6 @@ public class ElasticRequestUtils {
     public static DeleteByQueryRequest getDeleteByQueryRequest(String index, QueryBuilder query) {
 
         return new DeleteByQueryRequest(index)
-                .setTimeout(SearchConfiguration.get(SearchConfiguration.SERVER_SO_TIMEOUT))
                 .setQuery(query)
                 .setRefresh(true);
     }
