@@ -904,7 +904,7 @@ public class ElasticQueryBuilder {
         suggestionFieldNames
                 .forEach(fieldName -> suggestBuilder
                         .addSuggestion(
-                                FieldUtil.getSourceFieldName(fieldName.replaceAll(".suggestion", ""), searchContext),
+                                FieldUtil.getSourceFieldName(fieldName.replaceAll("\\.suggestion", ""), searchContext),
                                 SuggestBuilders.termSuggestion(fieldName.concat("_experimental")).prefixLength(0)));
 
         searchSource.suggest(suggestBuilder);
@@ -941,13 +941,13 @@ public class ElasticQueryBuilder {
             final StringSuggestionSearch suggestionSearch =(StringSuggestionSearch) search;
             return suggestionSearch.getSuggestionFields().stream()
                     .map(factory::getField)
-                    .map(descriptor -> FieldUtil.getFieldName(descriptor, UseCase.Suggest, searchContext))
+                    .map(descriptor -> FieldUtil.getFieldName(descriptor, UseCase.Suggest, searchContext) + ".suggestion")
                     .filter(Objects::nonNull)
                     .toArray(String[]::new);
         } else {
             final DescriptorSuggestionSearch suggestionSearch =(DescriptorSuggestionSearch) search;
             return suggestionSearch.getSuggestionFields().stream()
-                    .map(descriptor -> FieldUtil.getFieldName(descriptor, UseCase.Suggest, searchContext))
+                    .map(descriptor -> FieldUtil.getFieldName(descriptor, UseCase.Suggest, searchContext)+ ".suggestion")
                     .filter(Objects::nonNull)
                     .toArray(String[]::new);
         }
