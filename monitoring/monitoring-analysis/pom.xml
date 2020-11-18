@@ -3,7 +3,7 @@
     <parent>
         <artifactId>vind</artifactId>
         <groupId>com.rbmhtechnology.vind</groupId>
-        <version>3.0.16-SNAPSHOT</version>
+        <version>3.0.16</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
