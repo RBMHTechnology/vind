@@ -941,14 +941,16 @@ public class ElasticQueryBuilder {
             final StringSuggestionSearch suggestionSearch =(StringSuggestionSearch) search;
             return suggestionSearch.getSuggestionFields().stream()
                     .map(factory::getField)
-                    .map(descriptor -> FieldUtil.getFieldName(descriptor, UseCase.Suggest, searchContext) + ".suggestion")
+                    .map(descriptor -> FieldUtil.getFieldName(descriptor, UseCase.Suggest, searchContext))
                     .filter(Objects::nonNull)
+                    .map(name -> name.contains(".suggestion")? name : name+".suggestion" )
                     .toArray(String[]::new);
         } else {
             final DescriptorSuggestionSearch suggestionSearch =(DescriptorSuggestionSearch) search;
             return suggestionSearch.getSuggestionFields().stream()
-                    .map(descriptor -> FieldUtil.getFieldName(descriptor, UseCase.Suggest, searchContext)+ ".suggestion")
+                    .map(descriptor -> FieldUtil.getFieldName(descriptor, UseCase.Suggest, searchContext))
                     .filter(Objects::nonNull)
+                    .map(name -> name.contains(".suggestion")? name : name+".suggestion" )
                     .toArray(String[]::new);
         }
     }

@@ -15,11 +15,13 @@ import com.rbmhtechnology.vind.api.result.GetResult;
 import com.rbmhtechnology.vind.api.result.IndexResult;
 import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
+import com.rbmhtechnology.vind.model.ComplexFieldDescriptorBuilder;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
 import com.rbmhtechnology.vind.model.MultiValueFieldDescriptor;
+import com.rbmhtechnology.vind.model.MultiValuedComplexField;
 import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
 import com.rbmhtechnology.vind.model.value.LatLng;
 import org.junit.Test;
@@ -28,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 
@@ -487,8 +490,15 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         final SingleValueFieldDescriptor.LocationFieldDescriptor<LatLng> location = new FieldDescriptorBuilder()
                 .buildLocationField("location");
 
+        final MultiValuedComplexField.TextComplexField<Taxonomy,String,String> multiComplexField = new ComplexFieldDescriptorBuilder<Taxonomy,String,String>()
+                .setFacet(true, tx -> Arrays.asList(tx.getLabel()))
+                .setAdvanceFilter(true, tx -> Arrays.asList(tx.getLabel()))
+                .setSuggest(true, tx -> Arrays.asList(tx.getLabel()))
+                .setStored(true, tx -> tx.getTerm())
+                .buildMultivaluedTextComplexField("multiTextTaxonomy", Taxonomy.class, String.class, String.class);
+
         docFactoryBuilder
-                .addField(title, description, tags, created, published, rating, location);
+                .addField(title, description, tags, created, published, rating, location, multiComplexField);
 
         final DocumentFactory documents = docFactoryBuilder.build();
         final LatLng salzburg = new LatLng(47.811195, 13.033229);
@@ -498,7 +508,9 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .setValue(rating, 9.5)
                 .setValue(location, salzburg)
                 .setValue(created, ZonedDateTime.now())
-                .setValue(published, new Date());
+                .setValue(published, new Date())
+                .setValues(multiComplexField, new Taxonomy("uno", 1, "Label", ZonedDateTime.now()), new Taxonomy("dos", 2, "Label dos", ZonedDateTime.now()))
+                ;
 
         final LatLng wuhan = new LatLng(30.583332,114.283333);
 
@@ -534,7 +546,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
 
         SuggestionResult searchResult = server.execute(
                 Search.suggest("colona pamdemia")
-                        .fields(title,tags)
+                        .fields(title,tags,multiComplexField)
                         .filter(rating.greaterThan(9))
                 , documents);
         assertNotNull(searchResult);
