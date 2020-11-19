@@ -4,7 +4,7 @@
 
     <groupId>com.rbmhtechnology.vind</groupId>
     <artifactId>vind</artifactId>
-    <version>3.0.18-SNAPSHOT</version>
+    <version>3.0.18</version>
     <packaging>pom</packaging>
 
     <name>Vind</name>
@@ -112,7 +112,7 @@
         <connection>scm:git:https://github.com/RBMHTechnology/vind.git</connection>
         <developerConnection>scm:git:git@github.com:RBMHTechnology/vind.git</developerConnection>
         <url>https://github.com/RBMHTechnology/vind/</url>
-        <tag>vind-v3.0.0-RC2</tag>
+        <tag>vind-v3.0.18</tag>
     </scm>
     <issueManagement>
         <system>github</system>
