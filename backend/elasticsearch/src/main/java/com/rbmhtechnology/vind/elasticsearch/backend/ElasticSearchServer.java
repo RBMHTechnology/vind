@@ -772,14 +772,15 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                     && Objects.nonNull(response.getHits())
                     && Objects.nonNull(response.getHits().getHits())){
 
-                 final List<Document> documents = Arrays.stream(response.getHits().getHits())
+                final List<Document> documents = Arrays.stream(response.getHits().getHits())
                         .map(hit -> DocumentUtil.buildVindDoc(hit, factory, null))
                         .collect(Collectors.toList());
 
-                 if (CollectionUtils.isEmpty(documents) || !FieldUtil.compareFieldLists(documents.get(0).listFieldDescriptors().values(),factory.getFields().values())){
-                     this.elasticSearchClient.add(createEmptyDocument(factory));
+                final Map<String, Object> emptyDocument = createEmptyDocument(factory);
+                if (CollectionUtils.isEmpty(documents)
+                        || !DocumentUtil.equalDocs(documents.get(0), emptyDocument, factory)){
+                    this.elasticSearchClient.add(emptyDocument);
                  }
-
 
             }else {
                 throw new ElasticsearchException("Empty result from ElasticClient");
@@ -789,4 +790,6 @@ public class ElasticSearchServer extends SmartSearchServerBase {
             throw new SearchServerException(String.format("Cannot issue query: %s",e.getMessage()), e);
         }
     }
+
+
 }

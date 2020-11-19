@@ -509,7 +509,6 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .setValue(location, salzburg)
                 .setValue(created, ZonedDateTime.now())
                 .setValue(published, new Date())
-                .setValues(multiComplexField, new Taxonomy("uno", 1, "Label", ZonedDateTime.now()), new Taxonomy("dos", 2, "Label dos", ZonedDateTime.now()))
                 ;
 
         final LatLng wuhan = new LatLng(30.583332,114.283333);
@@ -541,10 +540,21 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .setValues(tags, "survival", "pandemia", "COVID19")
                 .setValue(rating, 9.1)
                 .setValue(created, ZonedDateTime.now())
-                .setValue(published, new Date());
-        server.index(doc1,doc2, doc3,doc4);
+                .setValue(published, new Date())
+                .setValues(multiComplexField, new Taxonomy("uno", 1, "colonia", ZonedDateTime.now()), new Taxonomy("dos", 2, "Label dos", ZonedDateTime.now()))
+                ;
 
         SuggestionResult searchResult = server.execute(
+                Search.suggest("colona pamdemia")
+                        .fields(title,tags,multiComplexField)
+                        .filter(rating.greaterThan(9))
+                , documents);
+        assertNotNull(searchResult);
+        assertEquals(0,searchResult.size());
+
+        server.index(doc1,doc2, doc3,doc4);
+
+        searchResult = server.execute(
                 Search.suggest("colona pamdemia")
                         .fields(title,tags,multiComplexField)
                         .filter(rating.greaterThan(9))
@@ -557,9 +567,10 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
         assertNotNull(searchResult);
 
         searchResult = server.execute(
-                Search.suggest("co").fields(title, tags)
+                Search.suggest("co").fields(title, tags, multiComplexField)
                 , documents);
         assertNotNull(searchResult);
+        assertEquals(4,searchResult.size());
 
     }
 

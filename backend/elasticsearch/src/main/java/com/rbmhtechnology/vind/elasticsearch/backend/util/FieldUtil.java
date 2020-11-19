@@ -3,13 +3,20 @@ package com.rbmhtechnology.vind.elasticsearch.backend.util;
 import com.rbmhtechnology.vind.elasticsearch.backend.ElasticSearchServer;
 import com.rbmhtechnology.vind.model.ComplexFieldDescriptor;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
+import com.rbmhtechnology.vind.model.MultiValueFieldDescriptor;
+import com.rbmhtechnology.vind.model.MultiValuedComplexField;
+import com.rbmhtechnology.vind.model.SingleValuedComplexField;
 import com.rbmhtechnology.vind.model.value.LatLng;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.text.ParseException;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -18,6 +25,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil.castForDescriptor;
 import static com.rbmhtechnology.vind.model.FieldDescriptor.UseCase;
 
 public class FieldUtil {
@@ -125,7 +133,7 @@ public class FieldUtil {
                     return null;
                 }
             }
-            case Stored: { //TODO
+            case Stored: {
                 if (descriptor.isStored()) {
                     fieldName = fieldName + type.getName();
                     if (isComplexField) {
@@ -237,11 +245,47 @@ public class FieldUtil {
         final List<String> fields1Names = fields1.stream()
                 .map(FieldDescriptor::getName)
                 .collect(Collectors.toList());
-        final List<String> fields2Names = fields2.stream().map(FieldDescriptor::getName).collect(Collectors.toList());
-        if (!fields1Names.containsAll(fields2Names)) {
-            return false;
-        }
-        return true;
+
+        final List<String> fields2Names = fields2.stream()
+                .map(FieldDescriptor::getName)
+                .collect(Collectors.toList());
+
+        return fields1Names.containsAll(fields2Names);
     }
 
+    public static Class<?> getComplexFieldType(ComplexFieldDescriptor<?,?,?> descriptor, UseCase useCase) {
+        switch (useCase) {
+            case Suggest:
+                if(descriptor.isSuggest() && descriptor.getSuggestFunction() != null) {
+                    return String.class;
+                }
+                break;
+            case Facet:
+                if(descriptor.isFacet() && descriptor.getFacetFunction() != null) {
+                    return descriptor.getFacetType();
+                }
+                break;
+            case Filter:
+                if(descriptor.isAdvanceFilter() && descriptor.getAdvanceFilter() != null) {
+                    return descriptor.getFacetType();
+                }
+                break;
+            case Stored:
+                if(descriptor.isStored() && descriptor.getStoreFunction() != null) {
+                    return descriptor.getStoreType();
+                }
+                break;
+            case Sort:
+                if(descriptor.isSort()){
+                    return descriptor.getStoreType();
+                }
+                break;
+            case Fulltext:
+                if(descriptor.isFullText() && descriptor.getFullTextFunction() != null) {
+                    return String.class;
+                }
+                break;
+        }
+        return null;
+    }
 }

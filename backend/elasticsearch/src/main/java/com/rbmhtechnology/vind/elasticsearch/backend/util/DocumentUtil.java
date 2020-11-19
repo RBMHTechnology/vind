@@ -1,5 +1,8 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearchQueryFactory;
 import com.rbmhtechnology.vind.model.ComplexFieldDescriptor;
@@ -22,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -102,16 +106,16 @@ public class DocumentUtil {
         }
     }
 
-    private static void addFieldToDoc(Map<String, Object> docMap, FieldDescriptor<?> descriptor) {
+    private static void addEmptyFieldToDoc(Map<String, Object> docMap, FieldDescriptor<?> descriptor) {
         if (ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass())) {
-            addFieldToDoc( docMap, (ComplexFieldDescriptor) descriptor);
+            addEmptyFieldToDoc( docMap, (ComplexFieldDescriptor) descriptor);
         } else {
             Optional.ofNullable(FieldUtil.getFieldName(descriptor, null))
                     .ifPresent(fieldName -> {
                         if (ZonedDateTime.class.isAssignableFrom(descriptor.getType())) {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ZonedDateTime.now()));
+                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ZonedDateTime.ofInstant(Instant.EPOCH,ZoneId.of("UTC"))));
                         } else if (Date.class.isAssignableFrom(descriptor.getType())) {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new Date()));
+                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(Date.from(Instant.EPOCH)));
                         } else if (LatLng.class.isAssignableFrom(descriptor.getType())) {
                             docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new LatLng(0,0)));
                         } else if (ByteBuffer.class.isAssignableFrom(descriptor.getType())) {
@@ -125,6 +129,31 @@ public class DocumentUtil {
                     );
         }
     }
+    private static void addEmptyFieldToDoc(Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor) {
+
+        Stream.of(FieldDescriptor.UseCase.values()).forEach( useCase -> {
+            final String name = FieldUtil.getFieldName(descriptor, useCase, null);
+            final Class<?> type =  FieldUtil.getComplexFieldType(descriptor, useCase);
+            Optional.ofNullable(name)
+                    .ifPresent( fieldName -> {
+                                if (ZonedDateTime.class.isAssignableFrom(type)) {
+                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ZonedDateTime.now()));
+                                } else if (Date.class.isAssignableFrom(type)) {
+                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new Date()));
+                                } else if (LatLng.class.isAssignableFrom(type)) {
+                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new LatLng(0,0)));
+                                } else if (ByteBuffer.class.isAssignableFrom(type)) {
+                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ByteBuffer.wrap(" ".getBytes())));
+                                } else if (Number.class.isAssignableFrom(type)) {
+                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(0));
+                                } else {
+                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(""));
+                                }
+                            }
+                    );
+        });
+    }
+
     private static void addFieldToDoc(InverseSearchQuery doc, Map<String, Object> docMap, FieldDescriptor<?> descriptor) {
         if (ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass())) {
             addFieldToDoc(doc, docMap, (ComplexFieldDescriptor) descriptor);
@@ -149,30 +178,6 @@ public class DocumentUtil {
                         );
                     })
                 );
-    }
-
-    private static void addFieldToDoc( Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor) {
-
-        Stream.of(FieldDescriptor.UseCase.values()).forEach( useCase -> {
-            final String name = FieldUtil.getFieldName(descriptor, useCase, null);
-            Optional.ofNullable(name)
-                    .ifPresent( fieldName -> {
-                        if (ZonedDateTime.class.isAssignableFrom(descriptor.getType())) {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ZonedDateTime.now()));
-                        } else if (Date.class.isAssignableFrom(descriptor.getType())) {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new Date()));
-                        } else if (LatLng.class.isAssignableFrom(descriptor.getType())) {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new LatLng(0,0)));
-                        } else if (ByteBuffer.class.isAssignableFrom(descriptor.getType())) {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ByteBuffer.wrap(" ".getBytes())));
-                        } else if (Number.class.isAssignableFrom(descriptor.getType())) {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(0));
-                        } else {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(""));
-                        }
-                    }
-            );
-        });
     }
 
     private static void addFieldToDoc(InverseSearchQuery doc, Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor) {
@@ -349,36 +354,7 @@ public class DocumentUtil {
                         }
                         try {
                             if (o instanceof Collection && field.isMultiValue()) {
-                                final Collection<Object> elasticValues = new ArrayList<>();
-                                if (ZonedDateTime.class.isAssignableFrom(type)) {
-                                    ((Collection<?>) o).stream()
-                                            .filter(Objects::nonNull)
-                                            .forEach(ob -> elasticValues.add(ZonedDateTime.parse(ob.toString())));
-                                } else if (Date.class.isAssignableFrom(type)) {
-                                    ((Collection<?>) o).stream()
-                                            .filter(Objects::nonNull)
-                                            .forEach(ob -> elasticValues.add(Date.from(Instant.parse(ob.toString()))));
-                                } else if (LatLng.class.isAssignableFrom(type)) {
-                                    ((Collection<?>) o).stream()
-                                            .filter(Objects::nonNull)
-                                            .forEach(ob -> {
-                                        try {
-                                            elasticValues.add(LatLng.parseLatLng(ob.toString()));
-                                        } catch (ParseException e) {
-                                            log.error("Unable to parse Elastic result field '{}' value '{}' to field descriptor type [{}]",
-                                                    fieldRawName, o.toString(), type);
-                                            throw new RuntimeException(e);
-                                        }
-                                    });
-                                } else {
-                                    final Collection<Object> values = ((Collection<?>) o).stream()
-                                            .filter(Objects::nonNull)
-                                            .map(ob -> castForDescriptor(ob, field))
-                                            .collect(Collectors.toList());
-
-                                    elasticValues.addAll(values);
-                                }
-
+                                final Collection<Object> elasticValues = (Collection<Object>) castForDescriptor(o, field, FieldDescriptor.UseCase.Stored);
                                 if (ComplexFieldDescriptor.class.isAssignableFrom(field.getClass())) {
                                     if (contextualized) {
                                         document.setContextualizedValues((MultiValuedComplexField<Object, ?, ?>) field, searchContext, elasticValues);
@@ -399,18 +375,8 @@ public class DocumentUtil {
                                 if (val instanceof Collection) {
                                     val = ((Collection) o).iterator().next();
                                 }
-                                Object storedValue = null;
-                                if(Objects.nonNull(val)) {
-                                    if (ZonedDateTime.class.isAssignableFrom(type)) {
-                                        storedValue = ZonedDateTime.parse(val.toString()).withZoneSameLocal(ZoneId.of("UTC"));
-                                    } else if (Date.class.isAssignableFrom(type)) {
-                                        storedValue = Date.from(Instant.parse(val.toString())) ;
-                                    } else if (LatLng.class.isAssignableFrom(type)) {
-                                        storedValue = LatLng.parseLatLng(val.toString());
-                                    } else {
-                                        storedValue = castForDescriptor(val, field, FieldDescriptor.UseCase.Stored);
-                                    }
-                                }
+                                final Object storedValue = castForDescriptor(val, field, FieldDescriptor.UseCase.Stored);
+
                                 if (contextualized) {
                                     document.setContextualizedValue((FieldDescriptor<Object>) field, searchContext, storedValue);
                                 } else {
@@ -515,7 +481,7 @@ public class DocumentUtil {
             }
             return castForDescriptor(o,type);
         }
-        return o;
+        return null;
     }
 
     private static Object castForDescriptor(Object o, FieldDescriptor<?> descriptor) {
@@ -530,13 +496,12 @@ public class DocumentUtil {
             }
             return castForDescriptor(o,type);
         }
-        return o;
+        return null;
     }
 
     private static Object castForDescriptor(Object o, Class<?> type) {
 
         if(o != null){
-
             if(Long.class.isAssignableFrom(type)) {
                 if(String.class.isAssignableFrom(o.getClass()) && NumberUtils.isCreatable((String) o)) {
                     return NumberUtils.createNumber((String)o).longValue();
@@ -577,28 +542,55 @@ public class DocumentUtil {
                 if( Number.class.isAssignableFrom(o.getClass())) {
                     return  Date.from(Instant.ofEpochMilli(((Number) o).longValue()));
                 }
+                if(o instanceof Date){
+                    return o;
+                }
                 return Date.from(Instant.parse(o.toString()));
             }
             if(ByteBuffer.class.isAssignableFrom(type)) {
                 return ByteBuffer.wrap(Base64.getDecoder().decode(((String) o).getBytes(UTF_8))) ;
             }
+            if(LatLng.class.isAssignableFrom(type)) {
+                try {
+                    return LatLng.parseLatLng(o.toString()) ;
+                } catch (ParseException e) {
+                    log.error("Unable to parse {} to LatLong.class", o);
+                    throw new SearchServerException("Unable to parse "+o.toString()+" to LatLong.class", e);
+                }
+            }
             if (String.class.isAssignableFrom(type)) {
                 return o.toString();
             }
         }
-        return o;
+        return null;
     }
     public static Map<String, Object> createEmptyDocument(DocumentFactory factory) {
 
         final Map<String, Object> docMap = new HashMap<>();
         //add fields
         factory.getFields().values().stream()
-                .forEach(descriptor -> addFieldToDoc(docMap, descriptor));
+                .forEach(descriptor -> addEmptyFieldToDoc(docMap, descriptor));
 
         docMap.put(FieldUtil.ID, "");
         docMap.put(FieldUtil.TYPE, factory.getType());
         docMap.put(FieldUtil.PERCOLATOR_FLAG, true);
 
         return docMap;
+    }
+
+    public static Boolean equalDocs(Document doc1, Document doc2, DocumentFactory factory) {
+        final ObjectMapper mapper = new ObjectMapper();
+        final JsonNode doc1JsonValues = mapper.valueToTree(doc1.getValues());
+        final JsonNode doc2JsonValues = mapper.valueToTree(doc2.getValues());
+        return FieldUtil.compareFieldLists(doc1.listFieldDescriptors().values(),factory.getFields().values())
+                && FieldUtil.compareFieldLists(doc2.listFieldDescriptors().values(),factory.getFields().values())
+                && FieldUtil.compareFieldLists(doc1.listFieldDescriptors().values(), doc2.listFieldDescriptors().values())
+                && doc1.getType().equals(doc2.getType())
+                && doc1JsonValues.equals(doc2JsonValues);
+    }
+
+    public static Boolean equalDocs(Document doc1, Map<String,Object> doc2, DocumentFactory factory) {
+        final Document vindDoc = buildVindDoc(doc2, factory, null);
+        return equalDocs(doc1,vindDoc, factory);
     }
 }
