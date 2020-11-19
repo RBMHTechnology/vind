@@ -227,3 +227,6 @@ documents matching the delete filters.
 # 3.0.18
 * Improvement: Increase version conflict retries for elastic backend and add a config parameter.
 * BugFix: add a null check to avoid null pointer except on complex fields footprint
+
+# 3.0.19
+* BugFix: fixed boolean condition in foot print creation

@@ -135,19 +135,21 @@ public class DocumentUtil {
             final String name = FieldUtil.getFieldName(descriptor, useCase, null);
             Optional.ofNullable(name)
                     .ifPresent( fieldName -> {
-                        final Class<?> type =  FieldUtil.getComplexFieldType(descriptor, useCase);
-                        if (type != null &&ZonedDateTime.class.isAssignableFrom(type)) {
-                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ZonedDateTime.ofInstant(Instant.EPOCH,ZoneId.of("UTC"))));
-                                } else if (Date.class.isAssignableFrom(type)) {
-                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(Date.from(Instant.EPOCH)));
-                                } else if (LatLng.class.isAssignableFrom(type)) {
-                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new LatLng(0,0)));
-                                } else if (ByteBuffer.class.isAssignableFrom(type)) {
-                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ByteBuffer.wrap(" ".getBytes())));
-                                } else if (Number.class.isAssignableFrom(type)) {
-                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(0));
-                                } else {
-                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(""));
+                                final Class<?> type = FieldUtil.getComplexFieldType(descriptor, useCase);
+                                if (type != null) {
+                                    if (ZonedDateTime.class.isAssignableFrom(type)) {
+                                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("UTC"))));
+                                    } else if (Date.class.isAssignableFrom(type)) {
+                                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(Date.from(Instant.EPOCH)));
+                                    } else if (LatLng.class.isAssignableFrom(type)) {
+                                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new LatLng(0, 0)));
+                                    } else if (ByteBuffer.class.isAssignableFrom(type)) {
+                                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ByteBuffer.wrap(" ".getBytes())));
+                                    } else if (Number.class.isAssignableFrom(type)) {
+                                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(0));
+                                    } else {
+                                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(""));
+                                    }
                                 }
                             }
                     );
