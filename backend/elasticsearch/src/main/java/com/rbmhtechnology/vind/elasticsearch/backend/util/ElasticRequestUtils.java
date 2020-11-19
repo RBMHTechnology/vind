@@ -43,7 +43,7 @@ public class ElasticRequestUtils {
 
     public static UpdateRequest getUpdateRequest(String index, String id, PainlessScript.ScriptBuilder script) {
        return new UpdateRequest(index, id)
-               .retryOnConflict(3)
+                .retryOnConflict(SearchConfiguration.get(SearchConfiguration.ELASTIC_VERSION_CONFLICT_UPDATE_RETRIES,10))
                 .script(script.build())
                 .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
     }

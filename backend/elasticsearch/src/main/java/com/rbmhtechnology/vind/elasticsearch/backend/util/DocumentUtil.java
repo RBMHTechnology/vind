@@ -133,13 +133,13 @@ public class DocumentUtil {
 
         Stream.of(FieldDescriptor.UseCase.values()).forEach( useCase -> {
             final String name = FieldUtil.getFieldName(descriptor, useCase, null);
-            final Class<?> type =  FieldUtil.getComplexFieldType(descriptor, useCase);
             Optional.ofNullable(name)
                     .ifPresent( fieldName -> {
-                                if (ZonedDateTime.class.isAssignableFrom(type)) {
-                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ZonedDateTime.now()));
+                        final Class<?> type =  FieldUtil.getComplexFieldType(descriptor, useCase);
+                        if (type != null &&ZonedDateTime.class.isAssignableFrom(type)) {
+                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ZonedDateTime.ofInstant(Instant.EPOCH,ZoneId.of("UTC"))));
                                 } else if (Date.class.isAssignableFrom(type)) {
-                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new Date()));
+                                    docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(Date.from(Instant.EPOCH)));
                                 } else if (LatLng.class.isAssignableFrom(type)) {
                                     docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new LatLng(0,0)));
                                 } else if (ByteBuffer.class.isAssignableFrom(type)) {
@@ -151,6 +151,7 @@ public class DocumentUtil {
                                 }
                             }
                     );
+
         });
     }
 
