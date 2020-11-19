@@ -230,3 +230,6 @@ documents matching the delete filters.
 
 # 3.0.19
 * BugFix: fixed boolean condition in foot print creation
+
+# 3.0.20
+* BugFix: Avoid null pointer exception when not storage type defined for complex fields

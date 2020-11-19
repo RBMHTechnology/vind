@@ -445,7 +445,7 @@ public class DocumentFactory {
                 log.error("The field {} does not exist in this factory",field);
                 throw new IllegalArgumentException("The field " + field + " does not exist in this factory");
             } else if (val != null) {
-                FieldDescriptor<?> fieldDescriptor = this.listFieldDescriptors().get(field);
+                final FieldDescriptor<?> fieldDescriptor = this.listFieldDescriptors().get(field);
                 //Check if it is a multivalued parameter
                 if(Collection.class.isAssignableFrom(val.getClass())) {
                     //Find elements in the collection which are not valid types
@@ -454,9 +454,10 @@ public class DocumentFactory {
                     Optional notValidOptional;
 
                     if(ComplexFieldDescriptor.class.isAssignableFrom(fieldDescriptor.getClass())) {
-                        Class storeType = ((ComplexFieldDescriptor) fieldDescriptor).getStoreType();
+                        final Class storeType = ((ComplexFieldDescriptor) fieldDescriptor).getStoreType();
                         notValidOptional = valueCollection.stream()
-                                .filter(t -> !(storeType.isAssignableFrom(t.getClass()) || fieldDescriptor.getType().isAssignableFrom(t.getClass())))
+                                .filter(t -> !(fieldDescriptor.getType().isAssignableFrom(t.getClass()) ||
+                                        (storeType!= null && storeType.isAssignableFrom(t.getClass()))))
                                 .findAny();
                     } else {
                         notValidOptional = valueCollection.stream()
