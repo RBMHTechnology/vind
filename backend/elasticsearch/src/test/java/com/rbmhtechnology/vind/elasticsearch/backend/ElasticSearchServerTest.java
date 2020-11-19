@@ -544,17 +544,9 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
                 .setValues(multiComplexField, new Taxonomy("uno", 1, "colonia", ZonedDateTime.now()), new Taxonomy("dos", 2, "Label dos", ZonedDateTime.now()))
                 ;
 
-        SuggestionResult searchResult = server.execute(
-                Search.suggest("colona pamdemia")
-                        .fields(title,tags,multiComplexField)
-                        .filter(rating.greaterThan(9))
-                , documents);
-        assertNotNull(searchResult);
-        assertEquals(0,searchResult.size());
-
         server.index(doc1,doc2, doc3,doc4);
 
-        searchResult = server.execute(
+        SuggestionResult searchResult = server.execute(
                 Search.suggest("colona pamdemia")
                         .fields(title,tags,multiComplexField)
                         .filter(rating.greaterThan(9))
