@@ -210,3 +210,20 @@ documents matching the delete filters.
 
 # 3.0.13
 * BugFix: Update script issue with dates.
+
+# 3.0.14
+* BugFix: Complex field field name creation issue.
+
+# 3.0.15
+* BugFix: Avoid null pointer exception on populaltion of complex fields.
+
+# 3.0.16
+* BugFix: problem on foorprint creation,missing complex field  
+
+# 3.0.17
+* BugFix: Fixed issue on complex field footprint creation.
+* Improvement: some refactoring
+
+# 3.0.18
+* Improvement: Increase version conflict retries for elastic backend and add a config parameter.
+* BugFix: add a null check to avoid null pointer except on complex fields footprint
