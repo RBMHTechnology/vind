@@ -233,3 +233,6 @@ documents matching the delete filters.
 
 # 3.0.20
 * BugFix: Avoid null pointer exception when not storage type defined for complex fields
+
+# 3.0.21
+* BugFix: Avoid type check validation for multi field when value is null.
