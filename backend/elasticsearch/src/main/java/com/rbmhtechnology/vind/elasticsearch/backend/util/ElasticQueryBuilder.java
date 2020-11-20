@@ -49,6 +49,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilde
 import org.elasticsearch.search.aggregations.metrics.ExtendedStatsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.search.suggest.Suggest.Suggestion.Entry.Option;
 import org.elasticsearch.search.suggest.SuggestBuilder;
 import org.elasticsearch.search.suggest.SuggestBuilders;
@@ -912,27 +913,33 @@ public class ElasticQueryBuilder {
     }
 
     public static List<String> getSpellCheckedQuery(SearchResponse response) {
-        final Map<String, Pair<String,Double>> spellcheck = Streams.stream(response.getSuggest().iterator())
-                .map(e ->Pair.of(e.getName(),  e.getEntries().stream()
-                        .map(word ->
-                                word.getOptions().stream()
-                                        .sorted(Comparator.comparingDouble(Option::getScore).reversed())
-                                        .map(o -> Pair.of(o.getText().string(),o.getScore()))
-                                        .findFirst()
-                                        .orElse(Pair.of(word.getText().string(),0f))
-                        ).collect(Collectors.toList()))
-                )
-                .collect(Collectors.toMap(
-                        Pair::getKey,
-                        p -> Pair.of(
-                                p.getRight().stream().map(Pair::getKey).collect(Collectors.joining(" ")),
-                                p.getValue().stream().mapToDouble(Pair::getValue).sum())));
+        final Suggest suggestions = response.getSuggest();
+        if(suggestions!= null) {
+            final Map<String, Pair<String,Double>> spellcheck = Streams.stream(suggestions.iterator())
+                    .map(e ->Pair.of(e.getName(),  e.getEntries().stream()
+                            .map(word ->
+                                    word.getOptions().stream()
+                                            .sorted(Comparator.comparingDouble(Option::getScore).reversed())
+                                            .map(o -> Pair.of(o.getText().string(),o.getScore()))
+                                            .findFirst()
+                                            .orElse(Pair.of(word.getText().string(),0f))
+                            ).collect(Collectors.toList()))
+                    )
+                    .collect(Collectors.toMap(
+                            Pair::getKey,
+                            // Pair( "value",  score)
+                            p -> Pair.of(
+                                    p.getRight().stream().map(Pair::getKey).collect(Collectors.joining(" ")),
+                                    p.getValue().stream().mapToDouble(Pair::getValue).sum())));
+            // sorted by spellcheck score
+            return spellcheck.values().stream()
+                    .filter( v -> v.getValue() >= 0.0)
+                    .sorted((p1,p2) -> Double.compare(p2.getValue(),p1.getValue()))
+                    .map(Pair::getKey)
+                    .collect(Collectors.toList());
+        }
+        return Collections.emptyList();
 
-        return spellcheck.values().stream()
-                .filter( v -> v.getValue() > 0.0)
-                .sorted((p1,p2) -> Double.compare(p2.getValue(),p1.getValue()))
-                .map(Pair::getKey)
-                .collect(Collectors.toList());
     }
 
     protected static String[] getSuggestionFieldNames(ExecutableSuggestionSearch search, DocumentFactory factory, String searchContext) {

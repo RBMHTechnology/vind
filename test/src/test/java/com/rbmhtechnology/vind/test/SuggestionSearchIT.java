@@ -169,7 +169,7 @@ public class SuggestionSearchIT {
 
         SuggestionResult result = server.execute(Search.suggest("2015León, Mexico").fields(parent_value),parent);
         assertNotNull(result);
-        assertEquals(0, result.size());
+        assertEquals(1, result.size());
 
         server.delete(parent.createDoc("P_SPEC_CHAR"));
         server.commit();
