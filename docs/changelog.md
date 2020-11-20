@@ -236,3 +236,6 @@ documents matching the delete filters.
 
 # 3.0.21
 * BugFix: Avoid type check validation for multi field when value is null.
+
+# 3.0.22
+* BugFix: Avoid null pointer exception when there is no suggestion results on spellchecked queries.
