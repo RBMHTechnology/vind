@@ -456,11 +456,13 @@ public class DocumentFactory {
                     if(ComplexFieldDescriptor.class.isAssignableFrom(fieldDescriptor.getClass())) {
                         final Class storeType = ((ComplexFieldDescriptor) fieldDescriptor).getStoreType();
                         notValidOptional = valueCollection.stream()
+                                .filter(Objects::nonNull)
                                 .filter(t -> !(fieldDescriptor.getType().isAssignableFrom(t.getClass()) ||
                                         (storeType!= null && storeType.isAssignableFrom(t.getClass()))))
                                 .findAny();
                     } else {
                         notValidOptional = valueCollection.stream()
+                                .filter(Objects::nonNull)
                                 .filter(t -> !fieldDescriptor.getType().isAssignableFrom(t.getClass()))
                                 .findAny();
                     }
