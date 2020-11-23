@@ -1013,6 +1013,9 @@ public class ServerTest {
         assertEquals(2, result.getResults().size());
         assertTrue(ByteBuffer.class.isAssignableFrom(result.getResults().get(0).getValue("blob").getClass()));
         assertEquals("ooalalalalala",new String(((ByteBuffer)result.getResults().get(0).getValue("blob")).array()));
+
+        server.execute(search, assets);
+
     }
 
     //MBDN-455

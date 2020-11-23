@@ -152,7 +152,7 @@ public class PainlessScript {
 
             final Object elasticPredicate = toElasticType(predicate);
             if(String.class.isAssignableFrom(elasticPredicate.getClass())) {
-                return elasticPredicate.toString().replaceAll("'", "\\\\'");
+                return elasticPredicate.toString()/*.replaceAll("'", "\\\\'")*/;
             }
 
             return elasticPredicate ;

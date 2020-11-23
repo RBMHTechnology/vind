@@ -239,3 +239,9 @@ documents matching the delete filters.
 
 # 3.0.22
 * BugFix: Avoid null pointer exception when there is no suggestion results on spellchecked queries.
+
+# 3.0.23
+* BugFix: Added check for non collection values when building the default sorting values.
+
+# 3.0.24
+* BugFix: fix binary field footprint.

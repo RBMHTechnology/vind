@@ -101,8 +101,9 @@ public class ComplexFieldDescriptorBuilder<T,F,S> {
                 if (Collection.class.isAssignableFrom(c.getClass())) {
                     final Iterator iterator = ((Collection)c).iterator();
                     if (iterator.hasNext()) {
-                        if (complexConcept.isAssignableFrom(c.getClass())) {
-                            return storeFunction.apply((T) iterator.next());
+                        final Object next = iterator.next();
+                        if (complexConcept.isAssignableFrom(next.getClass())) {
+                            return storeFunction.apply((T) next);
                         } else throw new SearchServerException(
                                 "Invalid argument exception, default sort function does not take type '" + c.getClass().getName() + "' as  valid parameter");
                     } else {
@@ -222,8 +223,9 @@ public class ComplexFieldDescriptorBuilder<T,F,S> {
                 if (Collection.class.isAssignableFrom(c.getClass())) {
                     final Iterator iterator = ((Collection)c).iterator();
                     if (iterator.hasNext()) {
-                        if (complexConcept.isAssignableFrom(c.getClass())) {
-                            return storeFunction.apply((T) iterator.next());
+                        final Object next = iterator.next();
+                        if (complexConcept.isAssignableFrom(next.getClass())) {
+                            return storeFunction.apply((T) next);
                         } else throw new SearchServerException(
                                 "Invalid argument exception, default sort function does not take type '" + c.getClass().getName() + "' as  valid parameter");
                     } else {
@@ -343,8 +345,9 @@ public class ComplexFieldDescriptorBuilder<T,F,S> {
                 if (Collection.class.isAssignableFrom(c.getClass())) {
                     final Iterator iterator = ((Collection)c).iterator();
                     if (iterator.hasNext()) {
-                        if (complexConcept.isAssignableFrom(c.getClass())) {
-                            return storeFunction.apply((T) iterator.next());
+                        final Object next = iterator.next();
+                        if (complexConcept.isAssignableFrom(next.getClass())) {
+                            return storeFunction.apply((T) next);
                         } else throw new SearchServerException(
                                 "Invalid argument exception, default sort function does not take type '" + c.getClass().getName() + "' as  valid parameter");
                     } else {
@@ -464,8 +467,9 @@ public class ComplexFieldDescriptorBuilder<T,F,S> {
                 if (Collection.class.isAssignableFrom(c.getClass())) {
                     final Iterator iterator = ((Collection)c).iterator();
                     if (iterator.hasNext()) {
-                        if (complexConcept.isAssignableFrom(c.getClass())) {
-                            return storeFunction.apply((T) iterator.next());
+                        final Object next = iterator.next();
+                        if (complexConcept.isAssignableFrom(next.getClass())) {
+                            return storeFunction.apply((T) next);
                         } else throw new SearchServerException(
                                 "Invalid argument exception, default sort function does not take type '" + c.getClass().getName() + "' as  valid parameter");
                     } else {

@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.time.Instant;
@@ -119,7 +120,7 @@ public class DocumentUtil {
                         } else if (LatLng.class.isAssignableFrom(descriptor.getType())) {
                             docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new LatLng(0,0)));
                         } else if (ByteBuffer.class.isAssignableFrom(descriptor.getType())) {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ByteBuffer.wrap(" ".getBytes())));
+                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ByteBuffer.wrap("".getBytes())));
                         } else if (Number.class.isAssignableFrom(descriptor.getType())) {
                             docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(0));
                         } else {
@@ -144,7 +145,7 @@ public class DocumentUtil {
                                     } else if (LatLng.class.isAssignableFrom(type)) {
                                         docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new LatLng(0, 0)));
                                     } else if (ByteBuffer.class.isAssignableFrom(type)) {
-                                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ByteBuffer.wrap(" ".getBytes())));
+                                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ByteBuffer.wrap(" ".getBytes())).toString());
                                     } else if (Number.class.isAssignableFrom(type)) {
                                         docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(0));
                                     } else {
@@ -476,35 +477,17 @@ public class DocumentUtil {
             }
         }
 
-        if(o != null){
-            if(Collection.class.isAssignableFrom(o.getClass())) {
-                return ((Collection)o).stream()
-                        .map( element -> castForDescriptor(element,descriptor))
-                        .collect(Collectors.toList());
-            }
-            return castForDescriptor(o,type);
-        }
-        return null;
-    }
-
-    private static Object castForDescriptor(Object o, FieldDescriptor<?> descriptor) {
-
-        Class<?> type = descriptor.getType();
-
-        if(o != null){
-            if(Collection.class.isAssignableFrom(o.getClass())) {
-                return ((Collection)o).stream()
-                        .map( element -> castForDescriptor(element,descriptor))
-                        .collect(Collectors.toList());
-            }
-            return castForDescriptor(o,type);
-        }
-        return null;
+        return castForDescriptor(o,type);
     }
 
     private static Object castForDescriptor(Object o, Class<?> type) {
 
         if(o != null){
+            if(Collection.class.isAssignableFrom(o.getClass())) {
+                return ((Collection)o).stream()
+                        .map( element -> castForDescriptor(element,type))
+                        .collect(Collectors.toList());
+            }
             if(Long.class.isAssignableFrom(type)) {
                 if(String.class.isAssignableFrom(o.getClass()) && NumberUtils.isCreatable((String) o)) {
                     return NumberUtils.createNumber((String)o).longValue();
@@ -551,7 +534,9 @@ public class DocumentUtil {
                 return Date.from(Instant.parse(o.toString()));
             }
             if(ByteBuffer.class.isAssignableFrom(type)) {
-                return ByteBuffer.wrap(Base64.getDecoder().decode(((String) o).getBytes(UTF_8))) ;
+                final byte[] byteArray =
+                        String.class.isAssignableFrom(o.getClass()) ? ((String) o).getBytes(UTF_8) : (byte[]) o;
+                return ByteBuffer.wrap(Base64.getDecoder().decode(byteArray)) ;
             }
             if(LatLng.class.isAssignableFrom(type)) {
                 try {
@@ -561,7 +546,7 @@ public class DocumentUtil {
                     throw new SearchServerException("Unable to parse "+o.toString()+" to LatLong.class", e);
                 }
             }
-            if (String.class.isAssignableFrom(type)) {
+            if (CharSequence.class.isAssignableFrom(type)) {
                 return o.toString();
             }
         }
