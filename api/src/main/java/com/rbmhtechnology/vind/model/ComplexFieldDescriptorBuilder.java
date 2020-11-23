@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.model;
 
+import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.annotations.language.Language;
 import com.rbmhtechnology.vind.model.value.LatLng;
 
@@ -96,16 +97,22 @@ public class ComplexFieldDescriptorBuilder<T,F,S> {
         complexFieldDescriptor.setStored(stored,storeFunction);
         if(stored) {
             complexFieldDescriptor.sort = true;
-            complexFieldDescriptor.setSort(c -> {
+            complexFieldDescriptor.setSort(c ->{
                 if (Collection.class.isAssignableFrom(c.getClass())) {
-                    final Iterator iterator = ((Collection) c).iterator();
+                    final Iterator iterator = ((Collection)c).iterator();
                     if (iterator.hasNext()) {
-                        return storeFunction.apply((T) iterator.next());
+                        if (complexConcept.isAssignableFrom(c.getClass())) {
+                            return storeFunction.apply((T) iterator.next());
+                        } else throw new SearchServerException(
+                                "Invalid argument exception, default sort function does not take type '" + c.getClass().getName() + "' as  valid parameter");
                     } else {
                         return null;
                     }
                 } else {
-                    return storeFunction.apply((T)c);
+                    if (complexConcept.isAssignableFrom(c.getClass())) {
+                        return storeFunction.apply((T) c);
+                    } else throw new SearchServerException(
+                            "Invalid argument exception, default sort function does not take type '"+c.getClass().getName()+"' as  valid parameter");
                 }
             });
         }
@@ -212,11 +219,21 @@ public class ComplexFieldDescriptorBuilder<T,F,S> {
         if(stored) {
             complexFieldDescriptor.sort = true;
             complexFieldDescriptor.setSort(c ->{
-                final Iterator iterator = ((Collection)c).iterator();
-                if (iterator.hasNext()) {
-                    return storeFunction.apply((T)iterator.next());
+                if (Collection.class.isAssignableFrom(c.getClass())) {
+                    final Iterator iterator = ((Collection)c).iterator();
+                    if (iterator.hasNext()) {
+                        if (complexConcept.isAssignableFrom(c.getClass())) {
+                            return storeFunction.apply((T) iterator.next());
+                        } else throw new SearchServerException(
+                                "Invalid argument exception, default sort function does not take type '" + c.getClass().getName() + "' as  valid parameter");
+                    } else {
+                        return null;
+                    }
                 } else {
-                    return null;
+                    if (complexConcept.isAssignableFrom(c.getClass())) {
+                        return storeFunction.apply((T) c);
+                    } else throw new SearchServerException(
+                            "Invalid argument exception, default sort function does not take type '"+c.getClass().getName()+"' as  valid parameter");
                 }
             });
         }
@@ -323,11 +340,21 @@ public class ComplexFieldDescriptorBuilder<T,F,S> {
         if(stored) {
             complexFieldDescriptor.sort = true;
             complexFieldDescriptor.setSort(c ->{
-                final Iterator iterator = ((Collection)c).iterator();
-                if (iterator.hasNext()) {
-                    return storeFunction.apply((T)iterator.next());
+                if (Collection.class.isAssignableFrom(c.getClass())) {
+                    final Iterator iterator = ((Collection)c).iterator();
+                    if (iterator.hasNext()) {
+                        if (complexConcept.isAssignableFrom(c.getClass())) {
+                            return storeFunction.apply((T) iterator.next());
+                        } else throw new SearchServerException(
+                                "Invalid argument exception, default sort function does not take type '" + c.getClass().getName() + "' as  valid parameter");
+                    } else {
+                        return null;
+                    }
                 } else {
-                    return null;
+                    if (complexConcept.isAssignableFrom(c.getClass())) {
+                        return storeFunction.apply((T) c);
+                    } else throw new SearchServerException(
+                            "Invalid argument exception, default sort function does not take type '"+c.getClass().getName()+"' as  valid parameter");
                 }
             });
         }
@@ -434,15 +461,21 @@ public class ComplexFieldDescriptorBuilder<T,F,S> {
         if(stored) {
             complexFieldDescriptor.sort = true;
             complexFieldDescriptor.setSort(c ->{
-                if(Collection.class.isAssignableFrom(c.getClass())) {
+                if (Collection.class.isAssignableFrom(c.getClass())) {
                     final Iterator iterator = ((Collection)c).iterator();
                     if (iterator.hasNext()) {
-                        return storeFunction.apply((T)iterator.next());
+                        if (complexConcept.isAssignableFrom(c.getClass())) {
+                            return storeFunction.apply((T) iterator.next());
+                        } else throw new SearchServerException(
+                                "Invalid argument exception, default sort function does not take type '" + c.getClass().getName() + "' as  valid parameter");
                     } else {
                         return null;
                     }
                 } else {
-                    return storeFunction.apply((T)c);
+                    if (complexConcept.isAssignableFrom(c.getClass())) {
+                        return storeFunction.apply((T) c);
+                    } else throw new SearchServerException(
+                            "Invalid argument exception, default sort function does not take type '"+c.getClass().getName()+"' as  valid parameter");
                 }
             });
         }
