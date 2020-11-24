@@ -81,6 +81,7 @@ public class ElasticRequestUtils {
     public static DeleteByQueryRequest getDeleteByQueryRequest(String index, QueryBuilder query) {
 
         return new DeleteByQueryRequest(index)
+                .setMaxRetries(SearchConfiguration.get(SearchConfiguration.ELASTIC_VERSION_CONFLICT_UPDATE_RETRIES,10))
                 .setQuery(query)
                 .setRefresh(true);
     }

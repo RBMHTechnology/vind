@@ -245,3 +245,6 @@ documents matching the delete filters.
 
 # 3.0.24
 * BugFix: fix binary field footprint.
+
+# 3.0.25
+* Improvement: Applied max retries config value to delete by query.
