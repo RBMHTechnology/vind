@@ -248,3 +248,6 @@ documents matching the delete filters.
 
 # 3.0.25
 * Improvement: Applied max retries config value to delete by query.
+
+# 3.0.26
+* Improvement: Added search configuration to delete on version conflict or not.

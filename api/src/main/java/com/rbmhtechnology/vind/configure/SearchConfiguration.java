@@ -41,6 +41,7 @@ public class SearchConfiguration {
     public static final String SEARCH_AUTHENTICATION_METHOD = "search.authentication.method";
     public static final String TRACK_TOTAL_HITS = "search.track.total.hits";
     public static final String ELASTIC_VERSION_CONFLICT_UPDATE_RETRIES = "vind.elastic.version.conflict.update.retries";
+    public static final String ELASTIC_DELETE_ON_VERSION_CONFLICT = "vind.elastic.delete.on.version.conflict";
 
     private static Logger log = LoggerFactory.getLogger(SearchConfiguration.class);
 
