@@ -55,6 +55,7 @@ public abstract class FieldDescriptor<T> implements Serializable {
     private boolean suggest;
     protected boolean sort;
     private boolean contextualized;
+    private Set<String> contexts = new HashSet<>();
 
     protected FieldDescriptor(String fieldName, Class<T> type) {
         if (!checkFieldType(type)) {
@@ -235,6 +236,11 @@ public abstract class FieldDescriptor<T> implements Serializable {
         this.contextualized = contextualized;
     }
 
+    public void setContextualized(boolean contextualized, String context) {
+        this.contextualized = contextualized;
+        this.contexts.add(context);
+    }
+
     /**
      * Instantiates a new {@link Filter} to checking if a field value is not empty.
      * @return A configured filter for the field.
@@ -292,6 +298,10 @@ public abstract class FieldDescriptor<T> implements Serializable {
                 this.contextualized,
                 this.boost,
                 this.metadata);
+    }
+
+    public boolean hasContext(String context) {
+        return contexts.contains(context);
     }
 
     public enum UseCase {

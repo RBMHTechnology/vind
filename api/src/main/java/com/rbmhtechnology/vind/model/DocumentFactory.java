@@ -264,7 +264,7 @@ public class DocumentFactory {
 
             //set field as contextualized.
             if (Objects.nonNull(context)) {
-                fields.get(field).setContextualized(true);
+                fields.get(field).setContextualized(true, context);
             }
 
             // TODO
@@ -325,7 +325,7 @@ public class DocumentFactory {
 
             //set field as contextualized.
             if (Objects.nonNull(context)) {
-                fields.get(field).setContextualized(true);
+                fields.get(field).setContextualized(true, context);
             }
 
             // TODO
@@ -383,7 +383,7 @@ public class DocumentFactory {
 
             //setting field as contextualized
             if (Objects.nonNull(context)) {
-                fields.get(field).setContextualized(true);
+                fields.get(field).setContextualized(true, context);
             }
             return this;
         }
@@ -536,7 +536,7 @@ public class DocumentFactory {
             this.values.put(field, contexts);
 
             if (Objects.nonNull(context)) {
-                fieldDescriptor.setContextualized(true);
+                fieldDescriptor.setContextualized(true, context);
             }
             return this;
         }

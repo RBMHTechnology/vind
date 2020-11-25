@@ -80,8 +80,10 @@ public class FieldUtil {
         final String contextPrefix;
         if (Objects.isNull(context) || !descriptor.isContextualized()) {
             contextPrefix = "";
-        } else {
+        } else if (descriptor.hasContext(context)){
             contextPrefix = context + "_";
+        } else {
+            return null;
         }
         String fieldName = _DYNAMIC;
 

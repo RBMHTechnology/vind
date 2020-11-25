@@ -3079,4 +3079,65 @@ public class ServerTest {
 
         SearchServer.getInstance();
     }
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testContextSuggestions() {
+        SearchServer server = testBackend.getSearchServer();
+
+        ZonedDateTime now = ZonedDateTime.now();
+        ZonedDateTime yesterday = ZonedDateTime.now().minus(1, ChronoUnit.DAYS);
+
+        FieldDescriptor<String> title = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setFacet(true)
+                .setSuggest(true)
+                .buildTextField("title");
+
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+        NumericFieldDescriptor<Long> category = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setSuggest(true)
+                .buildMultivaluedNumericField("category", Long.class);
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(title)
+                .addField(created)
+                .addField(category)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(title, "Hello 4 World")
+                .setContextualizedValue(title, "testContext","Hello 4 World")
+                .setValue(created, yesterday)
+                .setValues(category, Arrays.asList(1L, 2L, 4L));
+
+        Document d2 = assets.createDoc("2")
+                .setValue(title, "Hello 4 Friends")
+                .setValue(created, now)
+                .addValue(category, 4L);
+
+        server.index(d1);
+        server.index(d2);
+        server.commit(true);
+
+        SuggestionResult emptySuggestion = server.execute(Search.suggest().context("testContext").addField(title).filter(created.before(ZonedDateTime.now().minus(6, ChronoUnit.DAYS))).text("Hel"), assets);
+        assertTrue(emptySuggestion.size() == 0);
+
+        SuggestionResult suggestion = server.execute(Search.suggest().context("testContext").fields(title, category).filter(created.before(ZonedDateTime.now().minus(6, ChronoUnit.HOURS))).text("4"), assets);
+        assertTrue(suggestion.size() > 0);
+
+        suggestion = server.execute(Search.suggest("helli").context("testContext").fields(title, category), assets);
+        assertEquals("hello", suggestion.getSpellcheck());
+
+        server.deleteWithin(d1, 100);
+        server.commit();
+
+        suggestion = server.execute(Search.suggest("helli").context("differentContext").fields(title), assets);
+        assertTrue(suggestion.size() == 0);
+
+    }
+
 }
