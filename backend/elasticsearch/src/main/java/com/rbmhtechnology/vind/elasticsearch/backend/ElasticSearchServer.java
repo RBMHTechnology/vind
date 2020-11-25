@@ -45,6 +45,7 @@ import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.util.Asserts;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -75,6 +76,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -766,8 +768,10 @@ public class ElasticSearchServer extends SmartSearchServerBase {
         final SearchSourceBuilder query = ElasticQueryBuilder.buildPercolatorQueryReadiness(factory);
 
         try {
+            addExistingContextsToDescriptors(factory);
             elasticClientLogger.debug(">>> query({})", query.toString());
             final SearchResponse response = elasticSearchClient.query(query);
+
             if(Objects.nonNull(response)
                     && Objects.nonNull(response.getHits())
                     && Objects.nonNull(response.getHits().getHits())){
@@ -780,7 +784,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                 if (CollectionUtils.isEmpty(documents)
                         || !DocumentUtil.equalDocs(documents.get(0), emptyDocument, factory)){
                     this.elasticSearchClient.add(emptyDocument);
-                 }
+                }
 
             }else {
                 throw new ElasticsearchException("Empty result from ElasticClient");
@@ -789,6 +793,19 @@ public class ElasticSearchServer extends SmartSearchServerBase {
         } catch (ElasticsearchException | IOException e) {
             throw new SearchServerException(String.format("Cannot issue query: %s",e.getMessage()), e);
         }
+    }
+
+    private void addExistingContextsToDescriptors(DocumentFactory factory) throws IOException {
+        final String pattern = "(" + FieldUtil.INTERNAL_FIELD_PREFIX + ")|(" + FieldUtil.INTERNAL_COMPLEX_FIELD_PREFIX + ")";
+        final List<String> contextFields = ((Map<String, Object>) elasticSearchClient.getMappings().mappings().get(elasticSearchClient.getDefaultIndex()).getSourceAsMap().get("properties")).keySet().stream()
+                .filter(fieldName -> fieldName.startsWith("dynamic_") || fieldName.startsWith("context_"))
+                .map(fieldName -> Pattern.compile(pattern).matcher(fieldName).replaceFirst(""))
+                .filter( name -> name.contains("_"))
+                .collect(Collectors.toList());
+        contextFields.stream()
+                .map( fieldName -> fieldName.split("_", 2))
+                .filter( splitedField -> factory.hasField(splitedField[1]))
+                .forEach( fieldcontext -> factory.getField(fieldcontext[1]).setContextualized(true, fieldcontext[0]) );
     }
 
 

@@ -5,6 +5,9 @@ import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.apache.commons.lang3.math.NumberUtils;
 
+import java.time.ZonedDateTime;
+import java.util.Date;
+
 public class NumericRangeLiteral extends RangeLiteral{
 
     public NumericRangeLiteral(String from, String to) {
@@ -38,11 +41,11 @@ public class NumericRangeLiteral extends RangeLiteral{
             }
             if(from==null && to!=null) {
                 return Filter.lesserThan(descriptor.getName(),(Number)to);
-            }
-            throw new SearchServerException("Error parsingRange filter: range should have defined at least upper or lower limit" );
-        } else {
-            throw new SearchServerException("Error parsingRange filter: descriptor type ["+descriptor.getType().getSimpleName()+"] does not suport ranges" );
+            } else return descriptor.isNotEmpty();
+        } else  if (from ==null && to ==null  &&
+                (ZonedDateTime.class.isAssignableFrom(descriptor.getType()) || Date.class.isAssignableFrom(descriptor.getType()))){
+            return descriptor.isNotEmpty();
         }
-
+        throw new SearchServerException("Error parsingRange filter: descriptor type ["+descriptor.getType().getSimpleName()+"] does not suport ranges" );
     }
 }

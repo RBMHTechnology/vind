@@ -797,8 +797,6 @@ public class ElasticQueryBuilder {
                     interval.getName(),
                     start.toElasticString(),
                     end.toElasticString()
-//                    ZonedDateTime.ofInstant(Instant.ofEpochSecond(start.getTimeStamp()), ZoneId.of("UTC")),
-//                    ZonedDateTime.ofInstant(Instant.ofEpochSecond(end.getTimeStamp()), ZoneId.of("UTC"))
                     );
         } else {
             Optional.ofNullable(start).ifPresent(n ->

@@ -123,6 +123,10 @@ public class QueryParserTest {
         assertEquals(1, q.size());
         assertEquals(null,((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getFrom());
         assertEquals(56,((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getTo());
+
+        q = parse("field: [* TO * ]");
+        assertEquals(1, q.size());
+        assertEquals(null,((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getFrom());
     }
 
     @Test
@@ -257,7 +261,12 @@ public class QueryParserTest {
         assertEquals("*",vindFilter.getSearchString());
         assertEquals(2,((Filter.AndFilter)vindFilter.getFilter()).getChildren().size());
 
+        vindFilter = filterLuceneParser
+                .parse(
+                        "(fromDate:[01-01-2010 TO 10-03-2020] AND toDate:[* TO *])"
 
+                        , testDocFactory);
+        assertEquals("AndFilter",vindFilter.getFilter().getType());
         //(type:MediaPlanetProject or type:Event)
         //customMetadata:((\"resourceType=mezzanine\" OR \"resourceType=essence\") AND \"cloudTranscoding_normal=true\")
 
