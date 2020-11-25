@@ -251,3 +251,7 @@ documents matching the delete filters.
 
 # 3.0.26
 * Improvement: Added search configuration to delete on version conflict or not.
+
+# 3.0.27
+* Improvement: Implemented support fot [* TO *] range.
+* bugfix: Made field descriptor aware of context to avoid unknown field error in elastic.
