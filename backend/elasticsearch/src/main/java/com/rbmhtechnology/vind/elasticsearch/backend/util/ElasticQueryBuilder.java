@@ -24,6 +24,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -80,7 +81,36 @@ import static com.rbmhtechnology.vind.model.FieldDescriptor.*;
 public class ElasticQueryBuilder {
     private static final Logger log = LoggerFactory.getLogger(ElasticQueryBuilder.class);
 
+    private final static Map<String, String> reservedChars = new HashMap<String, String>() {{
+        put("\\+","\\\\+");
+        put("\\-","\\\\-");
+        put("=","\\\\=");
+        put("&","\\\\&");
+        put("\\|","\\\\|");
+        put("!","\\\\!");
+        put("\\(","\\\\(");
+        put("\\)","\\\\)");
+        put("\\{","\\\\{");
+        put("\\}","\\\\}");
+        put("\\[","\\\\[");
+        put("\\]","\\\\]");
+        put("\\^","\\\\^");
+        put("\"","\\\\\"");
+        put("~","\\\\~");
+        put("\\*","\\\\*");
+        put("\\?","\\\\?");
+        put(":","\\\\:");
+        put("\\\\","\\\\\\");
+        put("\\/","\\\\/");
+        put("<","");
+        put(">","");
+    }};
+
     public static SearchSourceBuilder buildQuery(FulltextSearch search, DocumentFactory factory) {
+        return buildQuery(search,factory,false);
+    }
+
+    public static SearchSourceBuilder buildQuery(FulltextSearch search, DocumentFactory factory, boolean escape) {
 
 
         final String searchContext = search.getSearchContext();
@@ -93,7 +123,16 @@ public class ElasticQueryBuilder {
         searchSource.trackTotalHits(trackTotalHits);
 
         //build full text disMax query
-        final String searchString = "*".equals(search.getSearchString())? "*:*" : search.getSearchString();
+        String searchString = "*".equals(search.getSearchString())
+                || Strings.isEmpty(search.getSearchString().trim())? "*:*" : search.getSearchString();
+
+        if (escape){
+            //Escape especial characters: + - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \ /
+            for(Map.Entry<String,String> wordEntry: reservedChars.entrySet()) {
+                searchString = searchString.replaceAll(wordEntry.getKey(), wordEntry.getValue());
+            }
+        }
+
 
         String minimumShouldMatch = search.getMinimumShouldMatch();
         if(StringUtils.isNumeric(minimumShouldMatch) && !minimumShouldMatch.startsWith("-")) {

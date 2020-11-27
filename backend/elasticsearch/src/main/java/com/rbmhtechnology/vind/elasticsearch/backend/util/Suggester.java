@@ -33,9 +33,11 @@ import java.util.stream.Collectors;
 public class Suggester {
     private static final String IGNORE_CASE_REGEX = "[%s|%s]";
     public static final String PREFIX_REGEX = "((.*[^A-Za-z0-9_])?%s.*)";
-    private static final Collection<String> SOLR_REGEX_ESCAPE_CHARS =
+
+    private static final Collection<String> LUCENE_REGEX_ESCAPE_CHARS =
             Arrays.asList("-", ".", "*", "+", "&&", "||", "!", "(",  ")",
                     "{", "}", "[", "]", "^" ,"\"", "~", "*", "?", ":", "\\", "/");
+
 
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchServer.class);
     private static final Logger elasticClientLogger = LoggerFactory.getLogger(log.getName() + "#client");
@@ -101,15 +103,18 @@ public class Suggester {
 
     protected static String getSuggestionRegex(String input) {
 
-        String scapedInput = Suggester.unescapeQuery(input);
+        String escapedInput = Suggester.unescapeQuery(input);
+        if (escapedInput.contains("<")) {
+            escapedInput = escapedInput.replaceAll("<", "\\\\<");
+        }
 
         //remove *
-        if(scapedInput.endsWith("*")) {
-            scapedInput = scapedInput.substring(0, scapedInput.length() - 1);
+        if(escapedInput.endsWith("*")) {
+            escapedInput = escapedInput.substring(0, escapedInput.length() - 1);
         }
 
         //Split the query into terms separated by spaces
-        List<String> terms = Arrays.asList(scapedInput.trim().split(" |\\+"));
+        List<String> terms = Arrays.asList(escapedInput.trim().split(" |\\+"));
 
 
         //Get the REGEX expression for each term to make them match as prefix in any word of a field.
@@ -137,7 +142,7 @@ public class Suggester {
         while (i < query.length()) {
             char c = query.charAt(i);
             if (c == '\\' && i < query.length() - 1) {
-                if (SOLR_REGEX_ESCAPE_CHARS.contains(String.valueOf(query.charAt(i + 1)))) {
+                if (LUCENE_REGEX_ESCAPE_CHARS.contains(String.valueOf(query.charAt(i + 1)))) {
                     sb.append(query.charAt(i + 1));
                     ++i;
                 } else {
