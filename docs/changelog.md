@@ -258,3 +258,6 @@ documents matching the delete filters.
 
 # 3.0.28
 * Bugfix: Escaped elastic special characters from search when the syntax is not right.
+
+# 3.0.29
+* Bugfix: fulltext search elastic input treated to avoid errors with whitespaces.
