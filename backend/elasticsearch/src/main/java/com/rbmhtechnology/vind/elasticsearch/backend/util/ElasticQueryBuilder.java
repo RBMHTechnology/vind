@@ -126,6 +126,7 @@ public class ElasticQueryBuilder {
         String searchString = "*".equals(search.getSearchString())
                 || Strings.isEmpty(search.getSearchString().trim())? "*:*" : search.getSearchString();
 
+
         if (escape){
             //Escape especial characters: + - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \ /
             for(Map.Entry<String,String> wordEntry: reservedChars.entrySet()) {

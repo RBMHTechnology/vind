@@ -3198,7 +3198,7 @@ public class ServerTest {
         SearchResult result = server.execute(search,assets);
         assertEquals(0, result.getResults().size());
 
-        search = Search.fulltext("Baptiste FAUCHILLE <baptiste.fauchille@gmail.com>")
+        search = Search.fulltext("Baptiste  +FAUCHILLE <baptiste.fauchille@gmail.com>")
                 .sort(desc(score()));
 
         result = server.execute(search,assets);
@@ -3209,6 +3209,27 @@ public class ServerTest {
 
         result = server.execute(search,assets);
         assertEquals("1", result.getResults().get(0).getId());
+
+        search = Search.fulltext("spitaler AND AND AND (*ninestare* OR *ninestare**)")
+                .sort(desc(score()));
+
+        result = server.execute(search,assets);
+        assertEquals(0, result.getResults().size());
+
+        search = Search.fulltext("(title: water AND (title:\"Adam Ondra\" OR NOT(title: video)))")
+                .smartParsing(true)
+                .sort(desc(score()));
+
+        result = server.execute(search,assets);
+        assertEquals(0, result.getResults().size());
+
+        search = Search.fulltext("(created:[01-01-2010 TO 10-03-2020] AND created:[* TO 2020-01-01])")
+                .smartParsing(true)
+                .sort(desc(score()));
+
+        result = server.execute(search,assets);
+        assertEquals(0, result.getResults().size());
+
 
         ExecutableSuggestionSearch suggest = Search.suggest("[Stept AND / AND (TierZero OR TierZero*)").addField(title);
 

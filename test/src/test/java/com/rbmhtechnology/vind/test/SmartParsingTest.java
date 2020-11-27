@@ -2,11 +2,7 @@ package com.rbmhtechnology.vind.test;
 
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.SearchServer;
-import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.Search;
-import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticMappingUtils;
-import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticRequestUtils;
-import com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
@@ -19,7 +15,6 @@ import org.junit.Test;
 
 import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.Date;
 
 import static com.rbmhtechnology.vind.test.Backend.Elastic;
 import static com.rbmhtechnology.vind.test.Backend.Solr;
