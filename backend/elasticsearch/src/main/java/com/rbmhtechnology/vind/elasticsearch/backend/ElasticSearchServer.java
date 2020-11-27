@@ -48,6 +48,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.util.Asserts;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.admin.indices.validate.query.ValidateQueryResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse.Failure;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -333,10 +334,11 @@ public class ElasticSearchServer extends SmartSearchServerBase {
     protected SearchResult doExecute(FulltextSearch search, DocumentFactory factory) {
         createDocumentFactoryFootprint(factory);
         final StopWatch elapsedtime = StopWatch.createStarted();
-        final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory);
 
         //query
         try {
+            final ValidateQueryResponse validateQueryResponse = elasticSearchClient.validateQuery(search.getSearchString());
+            final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory, !validateQueryResponse.isValid());
             elasticClientLogger.debug(">>> query({})", query.toString());
             final SearchResponse response = elasticSearchClient.query(query);
             if(Objects.nonNull(response)

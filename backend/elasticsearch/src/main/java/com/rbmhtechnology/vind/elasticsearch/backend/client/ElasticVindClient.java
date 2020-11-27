@@ -2,6 +2,8 @@ package com.rbmhtechnology.vind.elasticsearch.backend.client;
 
 import com.rbmhtechnology.vind.elasticsearch.backend.util.ElasticRequestUtils;
 import com.rbmhtechnology.vind.elasticsearch.backend.util.PainlessScript;
+import org.elasticsearch.action.admin.indices.validate.query.ValidateQueryRequest;
+import org.elasticsearch.action.admin.indices.validate.query.ValidateQueryResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
@@ -14,7 +16,6 @@ import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.BulkRequestBuilder;
-import org.elasticsearch.client.Request;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexResponse;
@@ -206,6 +207,11 @@ public abstract class ElasticVindClient {
             builder.field(k, value);
         }
         return builder.endObject();
+    }
+
+    public ValidateQueryResponse validateQuery(String query) throws IOException {
+        final ValidateQueryRequest request = ElasticRequestUtils.getValidateQueryRequest(defaultIndex, query);
+        return client.indices().validateQuery(request,RequestOptions.DEFAULT);
     }
 
     public static class Builder {

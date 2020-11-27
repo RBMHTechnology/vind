@@ -13,6 +13,8 @@ import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
+import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
+import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.DeleteResult;
 import com.rbmhtechnology.vind.api.result.GetResult;
@@ -3139,5 +3141,82 @@ public class ServerTest {
         assertTrue(suggestion.size() == 0);
 
     }
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testFailedToParseSearch() {
 
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
+
+        FieldDescriptor<String> title = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setSuggest(true)
+                .setFacet(true)
+                .buildTextField("title");
+
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+        SingleValueFieldDescriptor.UtilDateFieldDescriptor<Date> modified = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildUtilDateField("modified");
+
+        NumericFieldDescriptor<Long> category = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildMultivaluedNumericField("category", Long.class);
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(title)
+                .addField(created)
+                .addField(category)
+                .addField(modified)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(title, "Hello /World")
+                .setValue(created, yesterday)
+                .setValue(modified, new Date())
+                .setValues(category, Arrays.asList(1L, 2L));
+
+        Document d2 = assets.createDoc("2")
+                .setValue(title, "Hello Friends")
+                .setValue(created, now)
+                .setValue(modified, new Date())
+                .addValue(category, 4L);
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.commit();
+
+
+        FulltextSearch search = Search.fulltext("[Stept AND / AND (TierZero OR TierZero*)").spellcheck(true)
+                .sort(desc(score()));
+
+        SearchResult result = server.execute(search,assets);
+        assertEquals(0, result.getResults().size());
+
+        search = Search.fulltext("Baptiste FAUCHILLE <baptiste.fauchille@gmail.com>")
+                .sort(desc(score()));
+
+        result = server.execute(search,assets);
+        assertEquals(0, result.getResults().size());
+
+        search = Search.fulltext("/world")
+                .sort(desc(score()));
+
+        result = server.execute(search,assets);
+        assertEquals("1", result.getResults().get(0).getId());
+
+        ExecutableSuggestionSearch suggest = Search.suggest("[Stept AND / AND (TierZero OR TierZero*)").addField(title);
+
+        SuggestionResult suggestionResult = server.execute(suggest,assets);
+
+        suggest = Search.suggest("Baptiste FAUCHILLE <baptiste.fauchille@gmail.com>").addField(title);
+
+        suggestionResult = server.execute(suggest,assets);
+
+    }
 }

@@ -255,3 +255,6 @@ documents matching the delete filters.
 # 3.0.27
 * Improvement: Implemented support fot [* TO *] range.
 * bugfix: Made field descriptor aware of context to avoid unknown field error in elastic.
+
+# 3.0.28
+* Bugfix: Escaped elastic special characters from search when the syntax is not right.

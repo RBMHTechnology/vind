@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
+import org.elasticsearch.action.admin.indices.validate.query.ValidateQueryRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.MultiGetRequest;
@@ -115,4 +116,13 @@ public class ElasticRequestUtils {
     }
 
 
+    public static ValidateQueryRequest getValidateQueryRequest(String defaultIndex, String query) {
+        final QueryBuilder builder = QueryBuilders
+                .boolQuery()
+                .must(QueryBuilders.queryStringQuery(query));
+        final ValidateQueryRequest request = new ValidateQueryRequest(defaultIndex);
+        request.explain(true);
+        request.query(builder);
+        return request;
+    }
 }
