@@ -143,10 +143,11 @@ public class ElasticQueryBuilder {
                 .minimumShouldMatch(minimumShouldMatch); //mm
         // Set fulltext fields
         factory.getFields().values().stream()
-                .filter(FieldDescriptor::isFullText)
-                .forEach(field -> fullTextStringQuery
-                        .field(FieldUtil.getFieldName(field, UseCase.Fulltext, searchContext), field.getBoost()));
-
+                .filter( FieldDescriptor::isFullText)
+                .map( field -> Pair.of(Optional.ofNullable(FieldUtil.getFieldName(field, UseCase.Fulltext, searchContext)), field.getBoost()))
+                .filter( pair -> pair.getKey().isPresent())
+                .forEach( field -> fullTextStringQuery
+                        .field(field.getKey().get(),field.getValue()));
 
         final DisMaxQueryBuilder query = QueryBuilders.disMaxQuery()
                 .add(fullTextStringQuery);
@@ -634,9 +635,8 @@ public class ElasticQueryBuilder {
             case "StatsUtilDateFacet":
             case "StatsNumericFacet":
                 final Facet.StatsFacet statsFacet = (Facet.StatsFacet) vindFacet;
-                if(!CharSequence.class.isAssignableFrom(((Facet.StatsFacet) vindFacet).getField().getType())) {
                     return getStatsAggregationBuilders(searchContext, contextualizedFacetName, UseCase.Facet, statsFacet);
-                }
+
             case "PivotFacet":
                 final Facet.PivotFacet pivotFacet = (Facet.PivotFacet) vindFacet;
                 final List<TermsAggregationBuilder> termFacets = pivotFacet.getFieldDescriptors().stream()
@@ -697,9 +697,13 @@ public class ElasticQueryBuilder {
 
     private static List<AggregationBuilder> getStatsAggregationBuilders(String searchContext, String contextualizedFacetName, UseCase useCase,  Facet.StatsFacet statsFacet) {
         final List<AggregationBuilder> statsAggs = new ArrayList<>();
-        final ExtendedStatsAggregationBuilder statsAgg = AggregationBuilders
+
+        if(!CharSequence.class.isAssignableFrom(statsFacet.getField().getType())) {
+            final ExtendedStatsAggregationBuilder statsAgg = AggregationBuilders
                 .extendedStats(contextualizedFacetName)
                 .field(FieldUtil.getFieldName(statsFacet.getField(), useCase, searchContext));
+            statsAggs.add(statsAgg);
+        }
 
         if (ArrayUtils.isNotEmpty(statsFacet.getPercentiles())) {
             statsAggs.add(AggregationBuilders
@@ -729,7 +733,7 @@ public class ElasticQueryBuilder {
             );
         }
 
-        statsAggs.add(statsAgg);
+
         return statsAggs;
     }
 

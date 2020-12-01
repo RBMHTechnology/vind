@@ -261,3 +261,5 @@ documents matching the delete filters.
 
 # 3.0.29
 * Bugfix: fulltext search elastic input treated to avoid errors with whitespaces.
+* Bugfix: Avoid NPE when doing contextualize search on fields which do not have the 
+context. 

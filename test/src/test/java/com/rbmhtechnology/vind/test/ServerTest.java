@@ -1111,7 +1111,7 @@ public class ServerTest {
                 .facet(range("facetDateRange", dateComplexField, ZonedDateTime.now().minusDays(3), ZonedDateTime.now().plusDays(3), Duration.ofDays(1)))
                 .facet(((Facet.StatsNumericFacet)stats("facetStats", numericComplexField)).min().max().sum())
                 .facet(stats("facetDateStats", dateComplexField))
-                //        .facet(stats("facetTextStats", textComplexField))
+                 //.facet(stats("facetTextStats", textComplexField))
                 .facet(pivot("facetNumericPivot", numericComplexField, entityID, dateComplexField, textComplexField))
                 .facet(numericComplexField, entityID, dateComplexField, textComplexField)
                 .sort(desc(dateStoredComplexField));
@@ -3238,6 +3238,64 @@ public class ServerTest {
         suggest = Search.suggest("Baptiste FAUCHILLE <baptiste.fauchille@gmail.com>").addField(title);
 
         suggestionResult = server.execute(suggest,assets);
+    }
 
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testErrorSearchingContext() {
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
+
+        FieldDescriptor<String> title = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setSuggest(true)
+                .setFacet(true)
+                .buildTextField("title");
+
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+        SingleValueFieldDescriptor.UtilDateFieldDescriptor<Date> modified = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildUtilDateField("modified");
+
+        NumericFieldDescriptor<Long> category = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildMultivaluedNumericField("category", Long.class);
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(title)
+                .addField(created)
+                .addField(category)
+                .addField(modified)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(title, "Hello /World")
+                .setValue(created, yesterday)
+                .setValue(modified, new Date())
+                .setValues(category, Arrays.asList(1L, 2L));
+
+        Document d2 = assets.createDoc("2")
+                .setContextualizedValue(title, "titleContext" ,"Hello Friends" )
+                .setValue(created, now)
+                .setValue(modified, new Date())
+                .addValue(category, 4L);
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.commit();
+
+
+        FulltextSearch search = Search.fulltext("Hello")
+                .context("testContext")
+                .sort(desc(score()));
+
+        SearchResult result = server.execute(search, assets);
+        assertEquals(2, result.getResults().size());
     }
 }
