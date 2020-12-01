@@ -3296,6 +3296,6 @@ public class ServerTest {
                 .sort(desc(score()));
 
         SearchResult result = server.execute(search, assets);
-        assertEquals(2, result.getResults().size());
+        assertEquals(0, result.getResults().size());
     }
 }
