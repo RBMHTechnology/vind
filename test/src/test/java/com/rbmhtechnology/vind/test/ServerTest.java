@@ -57,6 +57,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -3297,5 +3298,67 @@ public class ServerTest {
 
         SearchResult result = server.execute(search, assets);
         assertEquals(0, result.getResults().size());
+    }
+
+    @Test
+    @RunWithBackend({Elastic, Solr})
+    public void testComplexContextSearchFields() {
+
+
+        final MultiValuedComplexField.TextComplexField<Taxonomy, String, String> textMulti =
+                new ComplexFieldDescriptorBuilder<Taxonomy,String,String>()
+                .setFullText(true, tx -> Collections.singletonList(tx.getLabel()))
+                .setStored(true, Taxonomy::getLabel)
+                .buildMultivaluedTextComplexField("textMulti", Taxonomy.class,String.class,String.class);
+
+        final NumericFieldDescriptor<Integer> numMulti = new FieldDescriptorBuilder()
+                .buildMultivaluedNumericField("numMulti", Integer.class);
+
+        final Function<Collection<ZonedDateTime>, ZonedDateTime> dateSortFunction = txs -> txs.stream().max(Comparator.<ZonedDateTime>naturalOrder()).get();
+        final DateFieldDescriptor dateMulti = new FieldDescriptorBuilder()
+                .buildSortableMultivaluedDateField("dateMulti", dateSortFunction);
+
+        final SingleValuedComplexField.UtilDateComplexField<Taxonomy,Date,Date> dateSingle = new ComplexFieldDescriptorBuilder<Taxonomy,Date,Date>()
+                .setStored(true, tx -> tx.getUtilDate())
+                .buildUtilDateComplexField("singleDate", Taxonomy.class, Date.class, Date.class);
+
+        final MultiValuedComplexField.DateComplexField<Taxonomy,ZonedDateTime,ZonedDateTime> dateComplexMulti = new ComplexFieldDescriptorBuilder<Taxonomy,ZonedDateTime,ZonedDateTime>()
+                .setStored(true, tx -> tx.getDate())
+                .buildMultivaluedDateComplexField("dateComplexMulti", Taxonomy.class, ZonedDateTime.class, ZonedDateTime.class);
+
+        final DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(textMulti)
+                .addField(numMulti)
+                .addField(dateMulti)
+                .addField(dateSingle)
+                .addField(dateComplexMulti)
+                .build();
+
+        final Document doc1 = assets.createDoc("1")
+                .setContextualizedValue(textMulti, "en", new Taxonomy("today", 2, "German", ZonedDateTime.now()))
+                .setValues(numMulti,6,7,8)
+                .setValue(dateSingle, new Taxonomy("today", 2, "todays date", ZonedDateTime.now()))
+                .setValues(dateComplexMulti, new Taxonomy("today", 2, "todays date", ZonedDateTime.now()), new Taxonomy("today", 2, "todays date", ZonedDateTime.now().minusDays(1)))
+                .setValues(dateMulti, ZonedDateTime.now().minusMonths(3));
+
+        final Document doc2 = assets.createDoc("2")
+                .setContextualizedValue(textMulti, "en", new Taxonomy("today", 2, "English", ZonedDateTime.now()))
+                .setValues(numMulti, 1, 2, 3)
+                .setValue(dateSingle, new Taxonomy("today", 1, "todays date", ZonedDateTime.now().plusDays(1)))
+                .setValues(dateComplexMulti, new Taxonomy("today", 2, "todays date", ZonedDateTime.now().plusDays(2)), new Taxonomy("today", 2, "todays date", ZonedDateTime.now().minusDays(1)))
+                .setValues(dateMulti, ZonedDateTime.now().plusMonths(1));
+
+
+        final SearchServer server = testBackend.getSearchServer();
+
+        server.index(doc1);
+        server.index(doc2);
+        server.commit();
+
+        //test empty filter in single valued field
+        FulltextSearch searchAll = Search.fulltext("germ OR germ*").context("en");
+        SearchResult searchResult = server.execute(searchAll, assets);
+        assertEquals("On document contains German in 'en' context", 1, searchResult.getNumOfResults());
+        assertEquals("Documents are properly ordered by multi valued text field", "1", searchResult.getResults().get(0).getId());
     }
 }

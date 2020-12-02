@@ -1,0 +1,328 @@
+///*
+//options {
+//  STATIC=false;
+//  JAVA_UNICODE_ESCAPE=true;
+//  USER_CHAR_STREAM=true;
+//}
+//
+//PARSER_BEGIN(LuceneQueryParser)
+//
+//package com.rbmhtechnology.vind.parser.queryparser;
+//
+//import java.io.StringReader;
+//import java.util.ArrayList;
+//import java.util.Arrays;
+//import java.util.HashSet;
+//import java.util.List;
+//import java.util.Locale;
+//import java.util.Set;
+//
+////import org.apache.lucene.analysis.Analyzer;
+////import org.apache.lucene.document.DateTools;
+////import org.apache.lucene.search.BooleanClause;
+////import org.apache.lucene.search.Query;
+////import org.apache.lucene.search.TermRangeQuery;
+////import org.apache.lucene.queryparser.charstream.CharStream;
+////import org.apache.lucene.queryparser.charstream.FastCharStream;
+//
+//
+//public class LuceneQueryParser  {
+//
+//  static public enum Operator { OR, AND }
+//  static public enum Conjuntion { CONJ_NONE, CONJ_AND, CONJ_OR}
+//
+//  */
+///** default split on whitespace behavior *//*
+//
+//  public static final boolean DEFAULT_SPLIT_ON_WHITESPACE = false;
+//
+//
+//  */
+///**
+//   * @see #setSplitOnWhitespace(boolean)
+//   *//*
+//
+//  public boolean getSplitOnWhitespace() {
+//    return splitOnWhitespace;
+//  }
+//
+//  */
+///***//*
+//
+//  public void setSplitOnWhitespace(boolean splitOnWhitespace) {
+//    this.splitOnWhitespace = splitOnWhitespace;
+//  }
+//
+//  private boolean splitOnWhitespace = DEFAULT_SPLIT_ON_WHITESPACE;
+//
+//  public Query run() throws ParseException {
+//          return TopLevelQuery();
+//  }
+//}
+//
+//PARSER_END(LuceneQueryParser)
+//
+//*/
+///* ***************** *//*
+//
+//*/
+///* Token Definitions *//*
+//
+//*/
+///* ***************** *//*
+//
+//
+//<*> TOKEN : {
+//  <#_NUM_CHAR:        ["0"-"9"] >
+//| <#_ESCAPED_CHAR:    "\\" ~[] >  // every character that follows a backslash is considered as an escaped character
+//| <#_TERM_START_CHAR: ( ~[ " ", "\t", "\n", "\r", "\u3000", "+", "-", "!", "(", ")", ":", "^",
+//                           "[", "]", "\"", "{", "}", "~", "*", "?", "\\", "/" ]
+//                        | <_ESCAPED_CHAR> ) >
+//| <#_TERM_CHAR:       ( <_TERM_START_CHAR> | "-" | "+" ) >
+//| <#_WHITESPACE:      ( " " | "\t" | "\n" | "\r" | "\u3000") >
+//| <#_QUOTED_CHAR:     ( ~[ "\"", "\\" ] | <_ESCAPED_CHAR> ) >
+//}
+//
+//<DEFAULT, Range> SKIP : {
+//  < <_WHITESPACE>>
+//}
+//
+//<DEFAULT> TOKEN : {
+//  <AND:           ("AND" | "&&") >
+//| <OR:            ("OR" | "||") >
+//| <NOT:           ("NOT" | "!") >
+//| <PLUS:          "+" >
+//| <MINUS:         "-" >
+//| <BAREOPER:      ("+"|"-"|"!") <_WHITESPACE> >
+//| <LPAREN:        "(" >
+//| <RPAREN:        ")" >
+//| <COLON:         ":" >
+//| <STAR:          "*" >
+//| <CARAT:         "^" > : Boost
+//| <QUOTED:        "\"" (<_QUOTED_CHAR>)* "\"">
+//| <TERM:          <_TERM_START_CHAR> (<_TERM_CHAR>)*  >
+//| <FUZZY_SLOP:    "~" ((<_NUM_CHAR>)+ (( "." (<_NUM_CHAR>)+ )? (<_TERM_CHAR>)*) | (<_TERM_CHAR>)*) >
+//| <PREFIXTERM:    ("*") | ( <_TERM_START_CHAR> (<_TERM_CHAR>)* "*" ) >
+//| <WILDTERM:      (<_TERM_START_CHAR> | [ "*", "?" ]) (<_TERM_CHAR> | ( [ "*", "?" ] ))* >
+//| <REGEXPTERM:    "/" (~[ "/" ] | "\\/" )* "/" >
+//| <RANGEIN_START: "[" > : Range
+//| <RANGEEX_START: "{" > : Range
+//}
+//
+//<Boost> TOKEN : {
+//  <NUMBER: (<_NUM_CHAR>)+ ( "." (<_NUM_CHAR>)+ )? > : DEFAULT
+//}
+//
+//<Range> TOKEN : {
+//  <RANGE_TO:     "TO">
+//| <RANGEIN_END:  "]"> : DEFAULT
+//| <RANGEEX_END:  "}"> : DEFAULT
+//| <RANGE_QUOTED: "\"" (~["\""] | "\\\"")+ "\"">
+//| <RANGE_GOOP:   (~[ " ", "]", "}" ])+ >
+//}
+//
+//// *   Query  ::= ( Clause )*
+//// *   Clause ::= ["+", "-"] [<TERM> ":"] ( <TERM> | "(" Query ")" )
+//
+//int Conjunction() : {
+//  int ret = 0;
+//}
+//{
+//  [
+//    <AND> { ret = 1; }
+//    | <OR>  { ret = 2; }
+//  ]
+//  { return ret; }
+//}
+//
+//int Modifiers() : {
+//  int ret = 0;
+//}
+//{
+//  [
+//    <PLUS> { ret = 1; }
+//    | <MINUS> { ret = 2; }
+//    | <NOT> { ret = 3; }
+//  ]
+//  { return ret; }
+//}
+//
+//// This makes sure that there is no garbage after the query string
+//Query TopLevelQuery() : {
+//  Query q;
+//}
+//{
+//  q=Query() <EOF>
+//  { return q; }
+//}
+//
+//Query Query() :
+//{
+//  //List<BooleanClause> clauses = new ArrayList<BooleanClause>();
+//  Query q, firstQuery=null;
+//  int conj, mods;
+//}
+//{
+//  (
+//    LOOKAHEAD(2)
+//
+//    //firstQuery= MultiTerm(field, clauses) |
+//     mods=Modifiers() q=Clause(field)
+//      {
+//        q.add()
+//        addClause(clauses, 0, mods, q);
+//        if (mods == 0) {
+//          firstQuery = q;
+//        }
+//      }
+//  )
+//  (
+//    LOOKAHEAD(2)
+//    //MultiTerm(field, clauses) |
+//     conj=Conjunction() mods=Modifiers() q=Clause(field)
+//      { addClause(clauses, conj, mods, q); }
+//  )*
+//  {
+//    if (clauses.size() == 1 && firstQuery != null) {
+//      return firstQuery;
+//    } else {
+//      return getBooleanQuery(clauses);
+//    }
+//  }
+//}
+//
+//Query Clause() : {
+//  Query q;
+//  Token fieldToken=null, boost=null;
+//}
+//{
+//  [
+//    LOOKAHEAD(2)
+//    (
+//      fieldToken=<TERM> <COLON> {field=discardEscapeChar(fieldToken.image);}
+//      | <STAR> <COLON> {field="*";}
+//    )
+//  ]
+//  (
+//    q=Term(field)
+//    | <LPAREN> q=Query() <RPAREN> [ <CARAT> boost=<NUMBER> ]
+//  )
+//  { return handleBoost(q, boost); }
+//}
+//
+//Query Term(String field) : {
+//  Token term, boost=null, fuzzySlop=null, goop1, goop2;
+//  boolean prefix = false;
+//  boolean wildcard = false;
+//  boolean fuzzy = false;
+//  boolean regexp = false;
+//  boolean startInc=false;
+//  boolean endInc=false;
+//  Query q;
+//  SimpleLiteral literal;
+//}
+//{
+//  (
+//    (
+//      term=<TERM>
+//      | term=<STAR> { wildcard=true; }
+//      | term=<PREFIXTERM> { prefix=true; }
+//      | term=<WILDTERM> { wildcard=true; }
+//      | term=<REGEXPTERM> { regexp=true; }
+//      | term=<NUMBER>
+//      | term=<BAREOPER> { term.image = term.image.substring(0,1); }
+//    )
+//    [
+//      <CARAT> boost=<NUMBER> [ fuzzySlop=<FUZZY_SLOP> { fuzzy=true; } ]
+//      | fuzzySlop=<FUZZY_SLOP> { fuzzy=true; } [ <CARAT> boost=<NUMBER> ]
+//    ]
+//    {   //TODO: field / term query
+//         literal = new TermsLiteral().add(term.image);
+//         if(field != null) {
+//            q.add( new SimpleTermClause(false, fieldName, literal));
+//         } else {
+//            q.addText(literal);
+//         }
+//        //q = handleBareTokenQuery(field, term, fuzzySlop, prefix, wildcard, fuzzy, regexp);
+//    }
+//
+//  | ( <RANGEIN_START> { startInc = true; } | <RANGEEX_START> )
+//    ( goop1=<RANGE_GOOP> | goop1=<RANGE_QUOTED> | goop1=<RANGE_TO> )
+//    ( <RANGE_TO> )
+//    ( goop2=<RANGE_GOOP> | goop2=<RANGE_QUOTED> | goop2=<RANGE_TO> )
+//    ( <RANGEIN_END> { endInc = true; } | <RANGEEX_END> )
+//    [ <CARAT> boost=<NUMBER> ]
+//    {
+//      boolean startOpen=false;
+//      boolean endOpen=false;
+//      if (goop1.kind == RANGE_QUOTED) {
+//        goop1.image = goop1.image.substring(1, goop1.image.length()-1);
+//      } else if ("*".equals(goop1.image)) {
+//        startOpen=true;
+//      }
+//      if (goop2.kind == RANGE_QUOTED) {
+//        goop2.image = goop2.image.substring(1, goop2.image.length()-1);
+//      } else if ("*".equals(goop2.image)) {
+//        endOpen=true;
+//      }
+//      //TODO: add  range query
+//      q = getRangeQuery(field, startOpen ? null : discardEscapeChar(goop1.image), endOpen ? null : discardEscapeChar(goop2.image), startInc, endInc);
+//    }
+//
+//  | term=<QUOTED>
+//    [
+//      <CARAT> boost=<NUMBER> [ fuzzySlop=<FUZZY_SLOP> { fuzzy=true; } ]
+//      | fuzzySlop=<FUZZY_SLOP> { fuzzy=true; } [ <CARAT> boost=<NUMBER> ]
+//    ]
+//    {
+//         //TODO: field / term query
+//         literal = new TermsLiteral().add(term.image);
+//         if(field != null) {
+//            q.add( new SimpleTermClause(false, fieldName, literal));
+//         } else {
+//            q.addText(literal);
+//         }
+//        //q = handleQuotedTerm(field, term, fuzzySlop);
+//    }
+//  )
+//  { return q;//handleBoost(q, boost);
+//  }
+//}
+//
+//*/
+///** Returns the first query if splitOnWhitespace=true or otherwise the entire produced query *//*
+//
+////Query MultiTerm(String field, List<BooleanClause> clauses) : {
+////  Token text, whitespace, followingText;
+////  Query firstQuery = null;
+////}
+////{
+////  text=<TERM>
+////  {
+////    if (splitOnWhitespace) {
+////      firstQuery = getFieldQuery(field, discardEscapeChar(text.image), false);
+////      addClause(clauses, 0, 0, firstQuery);
+////    }
+////  }
+////  // Both lookaheads are required; the first lookahead vets the first following term and the second lookahead vets the rest
+////  LOOKAHEAD({ getToken(1).kind == TERM && allowedPostMultiTerm(getToken(2).kind) })
+////  (
+////    LOOKAHEAD({ getToken(1).kind == TERM && allowedPostMultiTerm(getToken(2).kind) })
+////    followingText=<TERM>
+////    {
+////      if (splitOnWhitespace) {
+////        Query q = getFieldQuery(field, discardEscapeChar(followingText.image), false);
+////        addClause(clauses, 0, 0, q);
+////      } else { // build up the text to send to analysis
+////        text.image += " " + followingText.image;
+////      }
+////    }
+////  )+
+////  {
+////    if (splitOnWhitespace == false) {
+////      firstQuery = getFieldQuery(field, discardEscapeChar(text.image), false);
+////      addMultiTermClauses(clauses, firstQuery);
+////    }
+////    return firstQuery;
+////  }
+////}*/

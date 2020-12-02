@@ -337,7 +337,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
         //query
         try {
-            final String searchString = search.getSearchString().replaceAll(" +","+");
+            final String searchString = search.getSearchString();
             final ValidateQueryResponse validateQueryResponse = elasticSearchClient.validateQuery(searchString);
             if (validateQueryResponse.isValid()) {
                 search.text(searchString);
