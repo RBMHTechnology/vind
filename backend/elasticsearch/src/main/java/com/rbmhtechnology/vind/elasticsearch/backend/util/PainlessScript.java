@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TimeZone;
 import java.util.function.Function;
@@ -221,17 +222,19 @@ public class PainlessScript {
 
         private ScriptBuilder addSimpleFieldOperations(FieldDescriptor<?> field, Map<String, SortedSet<UpdateOperation>> ops) {
             ops.forEach((key, value) -> {
-                final String fieldName = FieldUtil.getFieldName(field, key);
-                value.forEach(op ->{
-                    checkValidPainlessSentence(field, op);
-                    painlessScript.addSentence(
-                            new Statement(
-                                    Operator.valueOf(op.getType().name()),
-                                    fieldName,
-                                    op.getValue(),
-                                    field.getType(),
-                                    painlessScript.scriptParameters));
-                });
+                FieldUtil.getFieldName(field, key)
+                        .ifPresent( fieldName -> {
+                            value.forEach(op ->{
+                                checkValidPainlessSentence(field, op);
+                                painlessScript.addSentence(
+                                        new Statement(
+                                                Operator.valueOf(op.getType().name()),
+                                                fieldName,
+                                                op.getValue(),
+                                                field.getType(),
+                                                painlessScript.scriptParameters));
+                            });
+                        });
             });
             return this;
         }
@@ -239,66 +242,68 @@ public class PainlessScript {
         public <T> ScriptBuilder addComplexFieldOperations(ComplexFieldDescriptor<T,?,?> descriptor, Map<String, SortedSet<UpdateOperation>> ops) {
             ops.forEach((key, value) -> {
                     for( FieldDescriptor.UseCase useCase : FieldDescriptor.UseCase.values()) {
-                        final String fieldName = FieldUtil.getFieldName(descriptor, useCase, key);
-                        Function<T, ? extends Object> useCaseFunction = null;
-                        Class<?> useCaseType = null;
-                        switch (useCase) {
-                            case Suggest:
-                                if(descriptor.isSuggest() && descriptor.getSuggestFunction() != null) {
-                                    useCaseFunction = descriptor.getSuggestFunction();
-                                    useCaseType = String.class;
-                                }
-                                break;
-                            case Facet:
-                                if(descriptor.isFacet() && descriptor.getFacetFunction() != null) {
-                                    useCaseFunction = descriptor.getFacetFunction();
-                                    useCaseType = descriptor.getFacetType();
-                                }
-                                break;
-                            case Filter:
-                                if(descriptor.isAdvanceFilter() && descriptor.getAdvanceFilter() != null) {
-                                    useCaseFunction =  descriptor.getAdvanceFilter();
-                                    useCaseType =  descriptor.getFacetType();
-                                }
-                                break;
-                            case Stored:
-                                if(descriptor.isStored() && descriptor.getStoreFunction() != null) {
-                                    useCaseFunction = descriptor.getStoreFunction();
-                                    useCaseType = descriptor.getStoreType();
-                                }
-                                break;
-                            case Sort:
-                                if(descriptor.isSort()){
-                                    descriptor.getStoreType();
-                                    if (descriptor.isMultiValue())
-                                        useCaseFunction = ((MultiValuedComplexField)descriptor).getSortFunction();
+                        FieldUtil.getFieldName(descriptor, useCase, key)
+                                .ifPresent( name -> {
+                                    Function<T, ? extends Object> useCaseFunction = null;
+                                    Class<?> useCaseType = null;
+                                    switch (useCase) {
+                                        case Suggest:
+                                            if(descriptor.isSuggest() && descriptor.getSuggestFunction() != null) {
+                                                useCaseFunction = descriptor.getSuggestFunction();
+                                                useCaseType = String.class;
+                                            }
+                                            break;
+                                        case Facet:
+                                            if(descriptor.isFacet() && descriptor.getFacetFunction() != null) {
+                                                useCaseFunction = descriptor.getFacetFunction();
+                                                useCaseType = descriptor.getFacetType();
+                                            }
+                                            break;
+                                        case Filter:
+                                            if(descriptor.isAdvanceFilter() && descriptor.getAdvanceFilter() != null) {
+                                                useCaseFunction =  descriptor.getAdvanceFilter();
+                                                useCaseType =  descriptor.getFacetType();
+                                            }
+                                            break;
+                                        case Stored:
+                                            if(descriptor.isStored() && descriptor.getStoreFunction() != null) {
+                                                useCaseFunction = descriptor.getStoreFunction();
+                                                useCaseType = descriptor.getStoreType();
+                                            }
+                                            break;
+                                        case Sort:
+                                            if(descriptor.isSort()){
+                                                descriptor.getStoreType();
+                                                if (descriptor.isMultiValue())
+                                                    useCaseFunction = ((MultiValuedComplexField)descriptor).getSortFunction();
 
-                                    else
-                                        useCaseFunction = ((SingleValuedComplexField)descriptor).getSortFunction();
-                                }
-                                break;
-                            case Fulltext:
-                                if(descriptor.isFullText() && descriptor.getFullTextFunction() != null) {
-                                    useCaseFunction =  descriptor.getFullTextFunction();
-                                    useCaseType = String.class;
-                                }
-                                break;
-                        }
+                                                else
+                                                    useCaseFunction = ((SingleValuedComplexField)descriptor).getSortFunction();
+                                            }
+                                            break;
+                                        case Fulltext:
+                                            if(descriptor.isFullText() && descriptor.getFullTextFunction() != null) {
+                                                useCaseFunction =  descriptor.getFullTextFunction();
+                                                useCaseType = String.class;
+                                            }
+                                            break;
+                                    }
 
-                        if( Objects.nonNull(useCaseFunction)) {
-                            final Function<T, ? extends Object> function = useCaseFunction;
-                            final Class<?> type = useCaseType;
-                            value.forEach(op ->{
-                                checkValidPainlessSentence(descriptor, op);
-                                painlessScript.addSentence(
-                                        new Statement(
-                                                Operator.valueOf(op.getType().name()),
-                                                fieldName,
-                                                toElasticType(op.getValue(),descriptor, useCase),
-                                                type,
-                                                painlessScript.scriptParameters));
-                            });
-                        }
+                                    if( Objects.nonNull(useCaseFunction)) {
+                                        final Function<T, ? extends Object> function = useCaseFunction;
+                                        final Class<?> type = useCaseType;
+                                        value.forEach(op ->{
+                                            checkValidPainlessSentence(descriptor, op);
+                                            painlessScript.addSentence(
+                                                    new Statement(
+                                                            Operator.valueOf(op.getType().name()),
+                                                            name,
+                                                            toElasticType(op.getValue(),descriptor, useCase),
+                                                            type,
+                                                            painlessScript.scriptParameters));
+                                        });
+                                    }
+                                });
                     }
 
             });

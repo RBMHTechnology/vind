@@ -24,17 +24,20 @@ public class SortUtils {
     protected static SortBuilder buildSort(Sort sort, FulltextSearch search, DocumentFactory factory, String searchContext) {
         switch (sort.getType()) {
             case "SimpleSort":
-                final FieldDescriptor<?> simpleSortField = factory.getField(((Sort.SimpleSort) sort).getField());
+                final String simpleSortFieldName = ((Sort.SimpleSort) sort).getField();
+                final FieldDescriptor<?> simpleSortField = factory.getField(simpleSortFieldName);
                 final String sortFieldName = Optional.ofNullable(simpleSortField)
                         .filter(FieldDescriptor::isSort)
-                        .map(descriptor -> FieldUtil.getFieldName(descriptor, FieldDescriptor.UseCase.Sort, searchContext))
-                        .orElse(((Sort.SimpleSort) sort).getField());
+                        .map(descriptor -> FieldUtil.getFieldName(descriptor, FieldDescriptor.UseCase.Sort, searchContext)
+                                .orElseThrow(() ->
+                                        new SearchServerException("The field '" + simpleSortFieldName + "' is not set for context ["+searchContext+"]")))
+                        .orElse(simpleSortFieldName);
                 return SortBuilders
                         .fieldSort(sortFieldName)
                         .unmappedType(getUnmappedType(sortFieldName)) //TODO should be set correctly for cross index search usecase
                         .order(SortOrder.valueOf(sort.getDirection().name().toUpperCase()));
             case "DescriptorSort":
-                final String descriptorFieldName = Optional.ofNullable(FieldUtil.getFieldName(((Sort.DescriptorSort) sort).getDescriptor(), FieldDescriptor.UseCase.Sort, searchContext))
+                final String descriptorFieldName = FieldUtil.getFieldName(((Sort.DescriptorSort) sort).getDescriptor(), FieldDescriptor.UseCase.Sort, searchContext)
                         .orElseThrow(() ->
                                 new RuntimeException("The field '" + ((Sort.DescriptorSort) sort).getDescriptor().getName() + "' is not set as sortable"));
                 return SortBuilders
@@ -44,7 +47,9 @@ public class SortUtils {
             case "DistanceSort":
                 Optional.ofNullable(search.getGeoDistance())
                         .orElseThrow(() -> new SearchServerException("Sorting by distance requires a geodistance set"));
-                final String distanceFieldName = FieldUtil.getFieldName(search.getGeoDistance().getField(), null, searchContext);
+                final String distanceFieldName =
+                        FieldUtil.getFieldName(search.getGeoDistance().getField(), null, searchContext)
+                                .orElseThrow(() -> new SearchServerException("Sorting by distance requires a geodistance set"));
                 return SortBuilders
                         .geoDistanceSort(distanceFieldName,
                                 search.getGeoDistance().getLocation().getLat(),
@@ -56,7 +61,9 @@ public class SortUtils {
                 final String sortDateField = Optional.ofNullable(descriptor)
                         .filter(FieldDescriptor::isSort)
                         .filter( field -> Date.class.isAssignableFrom(field.getType()) || ZonedDateTime.class.isAssignableFrom(field.getType()))
-                        .map( field -> FieldUtil.getFieldName(descriptor, FieldDescriptor.UseCase.Sort, searchContext))
+                        .map( field -> FieldUtil.getFieldName(descriptor, FieldDescriptor.UseCase.Sort, searchContext)
+                                .orElseThrow(() ->
+                                new SearchServerException("The field '" + descriptor.getName() + "' is not set for context ["+searchContext+"]")))
                         .orElse(((Sort.SpecialSort.ScoredDate) sort).getField());
                 final Map<String, Object> parameters = new HashMap<>();
                 parameters.put("field",sortDateField);
@@ -109,7 +116,8 @@ public class SortUtils {
                 final String sortDateField = Optional.ofNullable(descriptor)
                         .filter(FieldDescriptor::isSort)
                         .filter( field -> Date.class.isAssignableFrom(field.getType()) || ZonedDateTime.class.isAssignableFrom(field.getType()))
-                        .map( field -> FieldUtil.getFieldName(descriptor, FieldDescriptor.UseCase.Sort, searchContext))
+                        .map( field -> FieldUtil.getFieldName(descriptor, FieldDescriptor.UseCase.Sort, searchContext).orElseThrow(() ->
+                                new SearchServerException("The field '" + descriptor + "' is not set for context ["+searchContext+"]")))
                         .orElse(((Sort.SpecialSort.ScoredDate) sort).getField());
                 final Map<String, Object> parameters = new HashMap<>();
                 parameters.put("field",sortDateField);

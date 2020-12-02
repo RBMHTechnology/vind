@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -67,14 +68,14 @@ public class FieldUtil {
             );
 
 
-    public static String getFieldName(FieldDescriptor<?> descriptor, String context) {
+    public static Optional<String> getFieldName(FieldDescriptor<?> descriptor, String context) {
         return getFieldName(descriptor, null, context);
     }
-    public static String getFieldName(FieldDescriptor descriptor, UseCase useCase, String context) {
+    public static Optional<String> getFieldName(FieldDescriptor descriptor, UseCase useCase, String context) {
 
         if (Objects.isNull(descriptor)) {
             log.warn("Trying to get name of null field descriptor.");
-            return null;
+            return Optional.empty();
         }
 
         final String contextPrefix;
@@ -83,7 +84,7 @@ public class FieldUtil {
         } else if (descriptor.hasContext(context)){
             contextPrefix = context + "_";
         } else {
-            return null;
+            return Optional.empty();
         }
         String fieldName = _DYNAMIC;
 
@@ -92,7 +93,7 @@ public class FieldUtil {
         final boolean isComplexField = ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass());
         final String descriptorName = descriptor.getName().replaceAll("\\.", DOT);
         if (Objects.isNull(useCase)) {
-            return fieldName + type.getName() + contextPrefix + descriptorName;
+            return Optional.of(fieldName + type.getName() + contextPrefix + descriptorName);
         }
         switch (useCase) {
             case Fulltext: {
@@ -102,10 +103,10 @@ public class FieldUtil {
                     if (isComplexField) {
                         fieldName = _COMPLEX + TEXT;
                     }
-                    return fieldName + contextPrefix + descriptorName + lang;
+                    return Optional.of(fieldName + contextPrefix + descriptorName + lang);
                 } else {
                     log.debug("Descriptor {} is not configured for full text search.", descriptorName);
-                    return null;
+                    return Optional.empty();
                 }
             }
 
@@ -113,26 +114,26 @@ public class FieldUtil {
                 if(descriptor.isFacet()) {
                     if (isComplexField) {
                        type = Fieldname.Type.getFromClass(((ComplexFieldDescriptor)descriptor).getFacetType());
-                        return _COMPLEX + type.getName() + FACET + contextPrefix + descriptorName;
+                        return Optional.of(_COMPLEX + type.getName() + FACET + contextPrefix + descriptorName);
                     }
-                    return fieldName + type.getName() + contextPrefix + descriptorName + _FACET;
+                    return Optional.of(fieldName + type.getName() + contextPrefix + descriptorName + _FACET);
 
                 } else {
                     log.debug("Descriptor {} is not configured for facet search.", descriptorName);
-                    return null;
+                    return Optional.empty();
                 }
             }
             case Suggest: {
                 if(descriptor.isSuggest()) {
                     if (isComplexField) {
-                        return _COMPLEX + "suggestion_" + contextPrefix + descriptorName;
+                        return Optional.of(_COMPLEX + "suggestion_" + contextPrefix + descriptorName);
                     } else {
                         type = Fieldname.Type.getFromClass(descriptor.getType());
-                        return fieldName + type.getName() + contextPrefix + descriptorName + _SUGGEST;
+                        return Optional.of(fieldName + type.getName() + contextPrefix + descriptorName + _SUGGEST);
                     }
                 } else {
                     log.debug("Descriptor {} is not configured for suggestion search.", descriptorName);
-                    return null;
+                    return Optional.empty();
                 }
             }
             case Stored: {
@@ -144,38 +145,38 @@ public class FieldUtil {
                     }
 
                 }
-                return fieldName + contextPrefix + descriptorName;
+                return Optional.of(fieldName + contextPrefix + descriptorName);
             }
             case Sort: {
                 fieldName = fieldName + type.getName();
                 if (isComplexField) {
                     type = Fieldname.Type.getFromClass(((ComplexFieldDescriptor) descriptor).getStoreType());
-                    return _COMPLEX + type.getName() + "sort_" + descriptorName;
+                    return Optional.of(_COMPLEX + type.getName() + "sort_" + descriptorName);
                 }
                 else
                     if (descriptor.isSort() && Objects.nonNull(type)){
-                        return fieldName + contextPrefix + descriptorName + _SORT;
+                        return Optional.of(fieldName + contextPrefix + descriptorName + _SORT);
                     } else if(isComplexField && descriptor.isStored() && !descriptor.isMultiValue() && Objects.nonNull(type)){
-                        return fieldName + contextPrefix + descriptorName + _SORT ;
+                        return Optional.of(fieldName + contextPrefix + descriptorName + _SORT) ;
                     } else {
                         log.debug("Descriptor {} is not configured for sorting.", descriptorName);
-                        return null; //TODO: throw runtime exception?
+                        Optional.empty(); //TODO: throw runtime exception?
                     }
             }
             case Filter: {
                 if(isComplexField && ((ComplexFieldDescriptor)descriptor).isAdvanceFilter() && Objects.nonNull(((ComplexFieldDescriptor)descriptor).getFacetType())) {
                     type = Fieldname.Type.getFromClass(((ComplexFieldDescriptor)descriptor).getFacetType());
                     fieldName = _COMPLEX;
-                    return fieldName + type.getName() + "filter_" + contextPrefix + descriptorName;
+                    return Optional.of(fieldName + type.getName() + "filter_" + contextPrefix + descriptorName);
 
                 } else {
                     log.debug("Descriptor {} is not configured for advance filter search.", descriptorName);
-                    return null;
+                    return Optional.empty();
                 }
             }
             default: {
                 log.warn("Unsupported use case {}.", useCase);
-                return fieldName + type.getName() + contextPrefix + descriptorName;
+                return Optional.of(fieldName + type.getName() + contextPrefix + descriptorName);
             }
         }
     }

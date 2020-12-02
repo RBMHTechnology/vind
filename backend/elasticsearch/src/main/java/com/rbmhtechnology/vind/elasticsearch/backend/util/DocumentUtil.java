@@ -98,7 +98,7 @@ public class DocumentUtil {
         } else {
             doc.getFieldContexts(descriptor)
                     .forEach(context ->
-                            Optional.ofNullable(FieldUtil.getFieldName(descriptor, context))
+                            FieldUtil.getFieldName(descriptor, context)
                                     .ifPresent(fieldName ->
                                             Optional.ofNullable(doc.getContextualizedValue(descriptor, context))
                                                     .ifPresent(value -> docMap.put(fieldName.replaceAll("\\.\\w+" , ""), toElasticType(value)))
@@ -111,49 +111,58 @@ public class DocumentUtil {
         if (ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass())) {
             addEmptyFieldToDoc( docMap, (ComplexFieldDescriptor) descriptor);
         } else {
-            Optional.ofNullable(FieldUtil.getFieldName(descriptor, null))
-                    .ifPresent(fieldName -> {
-                        if (ZonedDateTime.class.isAssignableFrom(descriptor.getType())) {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ZonedDateTime.ofInstant(Instant.EPOCH,ZoneId.of("UTC"))));
-                        } else if (Date.class.isAssignableFrom(descriptor.getType())) {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(Date.from(Instant.EPOCH)));
-                        } else if (LatLng.class.isAssignableFrom(descriptor.getType())) {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new LatLng(0,0)));
-                        } else if (ByteBuffer.class.isAssignableFrom(descriptor.getType())) {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ByteBuffer.wrap("".getBytes())));
-                        } else if (Number.class.isAssignableFrom(descriptor.getType())) {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(0));
-                        } else {
-                            docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(""));
-                        }
+            FieldUtil.getFieldName(descriptor, null)
+                .ifPresent(fieldName -> {
+                    if (ZonedDateTime.class.isAssignableFrom(descriptor.getType())) {
+                        docMap.put(
+                                fieldName.replaceAll("\\.\\w+", ""),
+                                toElasticType(ZonedDateTime.ofInstant(Instant.EPOCH,ZoneId.of("UTC"))));
+                    } else if (Date.class.isAssignableFrom(descriptor.getType())) {
+                        docMap.put(
+                                fieldName.replaceAll("\\.\\w+", ""),
+                                toElasticType(Date.from(Instant.EPOCH)));
+                    } else if (LatLng.class.isAssignableFrom(descriptor.getType())) {
+                        docMap.put(
+                                fieldName.replaceAll("\\.\\w+", ""),
+                                toElasticType(new LatLng(0,0)));
+                    } else if (ByteBuffer.class.isAssignableFrom(descriptor.getType())) {
+                        docMap.put(
+                                fieldName.replaceAll("\\.\\w+", ""),
+                                toElasticType(ByteBuffer.wrap("".getBytes())));
+                    } else if (Number.class.isAssignableFrom(descriptor.getType())) {
+                        docMap.put(
+                                fieldName.replaceAll("\\.\\w+", ""),
+                                toElasticType(0));
+                    } else {
+                        docMap.put(
+                                fieldName.replaceAll("\\.\\w+", ""),
+                                toElasticType(""));
                     }
-                    );
+                });
         }
     }
     private static void addEmptyFieldToDoc(Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor) {
 
         Stream.of(FieldDescriptor.UseCase.values()).forEach( useCase -> {
-            final String name = FieldUtil.getFieldName(descriptor, useCase, null);
-            Optional.ofNullable(name)
-                    .ifPresent( fieldName -> {
-                                final Class<?> type = FieldUtil.getComplexFieldType(descriptor, useCase);
-                                if (type != null) {
-                                    if (ZonedDateTime.class.isAssignableFrom(type)) {
-                                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("UTC"))));
-                                    } else if (Date.class.isAssignableFrom(type)) {
-                                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(Date.from(Instant.EPOCH)));
-                                    } else if (LatLng.class.isAssignableFrom(type)) {
-                                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new LatLng(0, 0)));
-                                    } else if (ByteBuffer.class.isAssignableFrom(type)) {
-                                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ByteBuffer.wrap(" ".getBytes())).toString());
-                                    } else if (Number.class.isAssignableFrom(type)) {
-                                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(0));
-                                    } else {
-                                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(""));
-                                    }
-                                }
-                            }
-                    );
+            final Optional<String> name = FieldUtil.getFieldName(descriptor, useCase, null);
+            name.ifPresent( fieldName -> {
+                final Class<?> type = FieldUtil.getComplexFieldType(descriptor, useCase);
+                if (type != null) {
+                    if (ZonedDateTime.class.isAssignableFrom(type)) {
+                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("UTC"))));
+                    } else if (Date.class.isAssignableFrom(type)) {
+                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(Date.from(Instant.EPOCH)));
+                    } else if (LatLng.class.isAssignableFrom(type)) {
+                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(new LatLng(0, 0)));
+                    } else if (ByteBuffer.class.isAssignableFrom(type)) {
+                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(ByteBuffer.wrap(" ".getBytes())).toString());
+                    } else if (Number.class.isAssignableFrom(type)) {
+                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(0));
+                    } else {
+                        docMap.put(fieldName.replaceAll("\\.\\w+", ""), toElasticType(""));
+                    }
+                }
+            });
 
         });
     }
@@ -162,7 +171,7 @@ public class DocumentUtil {
         if (ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass())) {
             addFieldToDoc(doc, docMap, (ComplexFieldDescriptor) descriptor);
         } else {
-            Optional.ofNullable(FieldUtil.getFieldName(descriptor, null))
+            FieldUtil.getFieldName(descriptor, null)
                     .ifPresent(fieldName ->
                             Optional.ofNullable(doc.getValue(descriptor))
                                     .ifPresent(value -> docMap.put(fieldName.replaceAll("\\.\\w+" , ""), toElasticType(value)))
@@ -172,28 +181,31 @@ public class DocumentUtil {
 
     private static void addFieldToDoc(Document doc, Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor) {
         doc.getFieldContexts(descriptor)
-                .forEach(context ->
-                    Stream.of(FieldDescriptor.UseCase.values()).forEach( useCase -> {
-                        final String name = FieldUtil.getFieldName(descriptor, useCase, context);
-                        Optional.ofNullable(name).ifPresent( fieldName ->
-                            Optional.ofNullable( doc.getContextualizedValue(descriptor, context)).ifPresent(
-                                contextualizedValue ->
-                                    docMap.put(fieldName.replaceAll("\\.\\w+" , ""), toElasticType(contextualizedValue, descriptor, useCase)))
-                        );
-                    })
-                );
+            .forEach(context ->
+                Stream.of(FieldDescriptor.UseCase.values()).forEach( useCase -> {
+                    final Optional<String> name = FieldUtil.getFieldName(descriptor, useCase, context);
+                    name.ifPresent( fieldName ->
+                        Optional.ofNullable( doc.getContextualizedValue(descriptor, context)).ifPresent(
+                            contextualizedValue ->
+                                docMap.put(fieldName.replaceAll("\\.\\w+" , ""), toElasticType(contextualizedValue, descriptor, useCase)))
+                    );
+                })
+            );
     }
 
     private static void addFieldToDoc(InverseSearchQuery doc, Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor) {
-
-                        Stream.of(FieldDescriptor.UseCase.values()).forEach( useCase -> {
-                            final String name = FieldUtil.getFieldName(descriptor, useCase, null);
-                            Optional.ofNullable(name).ifPresent( fieldName ->
-                                    Optional.ofNullable( doc.getValue(descriptor)).ifPresent(
-                                            contextualizedValue ->
-                                                    docMap.put(fieldName.replaceAll("\\.\\w+" , ""), toElasticType(contextualizedValue, descriptor, useCase)))
-                            );
-                        });
+        Stream.of(FieldDescriptor.UseCase.values()).forEach( useCase -> {
+            final Optional<String> name = FieldUtil.getFieldName(descriptor, useCase, null);
+            name.ifPresent( fieldName ->
+                Optional.ofNullable( doc.getValue(descriptor))
+                    .ifPresent(contextualizedValue ->
+                            docMap.put(
+                                    fieldName.replaceAll("\\.\\w+" , ""),
+                                    toElasticType(contextualizedValue, descriptor, useCase)
+                            )
+                )
+            );
+        });
     }
 
     protected static Object toElasticType(Object value) {

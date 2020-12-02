@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -75,12 +76,16 @@ public class Suggester {
             suggestionFacetQuery.query(filterSuggestions);
 
             suggestionValues.entrySet().stream()
+                    .filter(e -> FieldUtil.getFieldName(e.getKey(), context).isPresent())
                     .map(e -> Pair.of(
                             e.getKey().getName(),
                             e.getValue().getValues().stream()
-                                    .map(value -> new FiltersAggregator.KeyedFilter(
-                                            value.getValue().toString(),
-                                            QueryBuilders.termQuery(FieldUtil.getFieldName(e.getKey(), context), value.getValue())))
+                                    .map(value -> {
+                                        final Optional<String> fieldName = FieldUtil.getFieldName(e.getKey(), context);
+                                        return new FiltersAggregator.KeyedFilter(
+                                                value.getValue().toString(),
+                                                QueryBuilders.termQuery(fieldName.get(), value.getValue()));
+                                    })
                                     .toArray(FiltersAggregator.KeyedFilter[]::new)
                             )
                     )
@@ -175,12 +180,16 @@ public class Suggester {
             suggestionFacetQuery.query(filterSuggestions);
 
             suggestionValues.entrySet().stream()
+                    .filter(e -> FieldUtil.getFieldName(e.getKey(), context).isPresent())
                     .map(e -> Pair.of(
                             e.getKey().getName(),
                             e.getValue().getValues().stream()
-                                    .map(value ->  new FiltersAggregator.KeyedFilter(
-                                            value.getValue().toString(),
-                                            QueryBuilders.termQuery(FieldUtil.getFieldName(e.getKey(), context), value.getValue())))
+                                    .map(value -> {
+                                        final Optional<String> fieldName = FieldUtil.getFieldName(e.getKey(), context);
+                                        return new FiltersAggregator.KeyedFilter(
+                                                value.getValue().toString(),
+                                                QueryBuilders.termQuery(fieldName.get(), value.getValue()));
+                                    })
                                     .toArray(FiltersAggregator.KeyedFilter[]::new)
                             )
                     )
