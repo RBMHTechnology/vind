@@ -12,9 +12,7 @@ import com.rbmhtechnology.vind.api.query.facet.Facet;
 import com.rbmhtechnology.vind.api.query.facet.Interval;
 import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
-import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
-import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.DeleteResult;
 import com.rbmhtechnology.vind.api.result.GetResult;
@@ -35,7 +33,6 @@ import com.rbmhtechnology.vind.model.MultiValuedComplexField;
 import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
 import com.rbmhtechnology.vind.model.SingleValuedComplexField;
 import com.rbmhtechnology.vind.model.value.LatLng;
-import org.apache.solr.client.solrj.io.comp.SingleValueComparator;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -67,6 +64,7 @@ import java.util.function.Function;
 import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.DAY;
 import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.HOUR;
 import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.MILLISECONDS;
+import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.YEAR;
 import static com.rbmhtechnology.vind.api.query.facet.Facets.interval;
 import static com.rbmhtechnology.vind.api.query.facet.Facets.pivot;
 import static com.rbmhtechnology.vind.api.query.facet.Facets.query;
@@ -80,16 +78,18 @@ import static com.rbmhtechnology.vind.api.query.filter.Filter.eq;
 import static com.rbmhtechnology.vind.api.query.filter.Filter.hasChildrenDocuments;
 import static com.rbmhtechnology.vind.api.query.filter.Filter.not;
 import static com.rbmhtechnology.vind.api.query.filter.Filter.or;
-import static com.rbmhtechnology.vind.api.query.sort.Sort.*;
-import static com.rbmhtechnology.vind.api.query.sort.Sort.SpecialSort.*;
+import static com.rbmhtechnology.vind.api.query.sort.Sort.Direction;
+import static com.rbmhtechnology.vind.api.query.sort.Sort.SpecialSort.distance;
+import static com.rbmhtechnology.vind.api.query.sort.Sort.SpecialSort.score;
+import static com.rbmhtechnology.vind.api.query.sort.Sort.SpecialSort.scoredDate;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.asc;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.desc;
+import static com.rbmhtechnology.vind.api.query.sort.Sort.field;
 import static com.rbmhtechnology.vind.model.MultiValueFieldDescriptor.DateFieldDescriptor;
 import static com.rbmhtechnology.vind.model.MultiValueFieldDescriptor.TextFieldDescriptor;
 import static com.rbmhtechnology.vind.test.Backend.Elastic;
 import static com.rbmhtechnology.vind.test.Backend.Solr;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -3360,5 +3360,39 @@ public class ServerTest {
         SearchResult searchResult = server.execute(searchAll, assets);
         assertEquals("On document contains German in 'en' context", 1, searchResult.getNumOfResults());
         assertEquals("Documents are properly ordered by multi valued text field", "1", searchResult.getResults().get(0).getId());
+    }
+    //[NOW/DAY]
+
+    @Test
+    @RunWithBackend({Elastic, Solr})
+    public void testDateMathElasticErrorFields() {
+
+
+        final DateFieldDescriptor<ZonedDateTime> date = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .setStored(true)
+                .buildMultivaluedDateField("date");
+
+
+        final DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(date)
+                .build();
+
+        final Document doc1 = assets.createDoc("1")
+                .setValues(date, ZonedDateTime.now());
+
+
+        final SearchServer server = testBackend.getSearchServer();
+
+        server.index(doc1);
+        server.commit();
+
+        //test empty filter in single valued field
+        final DateMathExpression oneYearAgo = new DateMathExpression().sub(1, YEAR);
+        FulltextSearch searchAll = Search.fulltext()
+                .filter(date.between(oneYearAgo,new DateMathExpression().add(1,DAY)));
+        SearchResult searchResult = server.execute(searchAll, assets);
+        assertEquals( 1, searchResult.getNumOfResults());
+
     }
 }

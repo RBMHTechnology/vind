@@ -263,3 +263,8 @@ documents matching the delete filters.
 * Bugfix: fulltext search elastic input treated to avoid errors with whitespaces.
 * Bugfix: Avoid NPE when doing contextualize search on fields which do not have the 
 context. 
+
+# 3.0.30
+* BugFix: roll back fulltext search text treatement.
+* BugFix: between filter uses datemath to elastic string.
+* BugFix: get FieldName now returns Optional to avoid NPE and elastic errors with null fields. 

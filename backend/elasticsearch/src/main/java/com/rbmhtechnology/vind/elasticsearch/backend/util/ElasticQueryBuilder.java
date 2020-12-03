@@ -373,8 +373,8 @@ public class ElasticQueryBuilder {
                 ;
                 return betweenDatesQueryFilterFieldName.map(s -> QueryBuilders
                             .rangeQuery(betweenDatesQueryFilterFieldName.get())
-                            .from(betweenDatesFilter.getStart().toString())
-                            .to(betweenDatesFilter.getEnd().toString()))
+                            .from(betweenDatesFilter.getStart().toElasticString())
+                            .to(betweenDatesFilter.getEnd().toElasticString()))
                         .orElse(null);
 
             case "BeforeFilter":
