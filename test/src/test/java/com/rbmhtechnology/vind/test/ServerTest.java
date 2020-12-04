@@ -3387,6 +3387,7 @@ public class ServerTest {
         server.index(doc1);
         server.commit();
 
+
         //test empty filter in single valued field
         final DateMathExpression oneYearAgo = new DateMathExpression().sub(1, YEAR);
         FulltextSearch searchAll = Search.fulltext()

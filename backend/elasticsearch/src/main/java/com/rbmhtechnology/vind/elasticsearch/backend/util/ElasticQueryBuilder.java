@@ -1033,7 +1033,7 @@ public class ElasticQueryBuilder {
         return searchSource;
     }
 
-    public static List<String> getSpellCheckedQuery(SearchResponse response) {
+    public static List<String> getSpellCheckedQuery(String q, SearchResponse response) {
         final Suggest suggestions = response.getSuggest();
         if(suggestions!= null) {
             final Map<String, Pair<String,Double>> spellcheck = Streams.stream(suggestions.iterator())
@@ -1057,6 +1057,8 @@ public class ElasticQueryBuilder {
                     .filter( v -> v.getValue() >= 0.0)
                     .sorted((p1,p2) -> Double.compare(p2.getValue(),p1.getValue()))
                     .map(Pair::getKey)
+                    .filter( v -> !q.equals(v))
+                    .distinct()
                     .collect(Collectors.toList());
         }
         return Collections.emptyList();

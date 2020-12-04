@@ -68,7 +68,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -87,6 +89,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchServer.class);
     private static final Logger elasticClientLogger = LoggerFactory.getLogger(log.getName() + "#elasticSearchClient");
+    private final List<String> currentFootprint = new ArrayList<>();
 
     private ServiceProvider serviceProviderClass;
     private final ElasticVindClient elasticSearchClient;
@@ -131,30 +134,36 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                 log.info("Ping to Elastic server successful");
 
                 try {
-                    if(!client.indexExists()) {
+                    if(!elasticSearchClient.indexExists()) {
                         if(SearchConfiguration.get(SearchConfiguration.SERVER_COLLECTION_AUTOCREATE, false)) {
-                            log.debug("Collection {} does not exist in elasticsearch host: trying to auto-create.", client.getDefaultIndex());
+                            log.debug("Collection {} does not exist in elasticsearch host: trying to auto-create.", elasticSearchClient.getDefaultIndex());
                             try {
-                                log.info("Creating elastic collection {}", client.getDefaultIndex());
-                                client.createIndex(client.getDefaultIndex());
+                                log.info("Creating elastic collection {}", elasticSearchClient.getDefaultIndex());
+                                elasticSearchClient.createIndex(elasticSearchClient.getDefaultIndex());
                             } catch (Exception e) {
-                                log.error("Error creating collection {}: {}", client.getDefaultIndex(), e.getMessage(), e);
+                                log.error("Error creating collection {}: {}", elasticSearchClient.getDefaultIndex(), e.getMessage(), e);
                                 throw new SearchServerInstantiateException(
                                         String.format(
                                                 "Error when creating collection %s: %s",
-                                                client.getDefaultIndex(), e.getMessage()
+                                                elasticSearchClient.getDefaultIndex(), e.getMessage()
                                         ),
                                         this.getClass(),
                                         e
                                 );
                             }
-                            log.info("Collection {} created successfully", client.getDefaultIndex());
+                            log.info("Collection {} created successfully", elasticSearchClient.getDefaultIndex());
                         } else {
                             log.error("Index does not exist: try to enable auto-creation");
                             throw new SearchServerInstantiateException(
                                     "Index does not exist: try to enable auto-creation",
                                     this.getClass());
                         }
+                    } else {
+                        this.currentFootprint.addAll( elasticSearchClient.getMappings().mappings().values().stream()
+                                .map(indexFields -> ((Map<String, Object>)indexFields.getSourceAsMap().get("properties")).keySet())
+                                .flatMap(Collection::stream)
+                                .filter(fieldName -> fieldName.startsWith("dynamic_") || fieldName.startsWith("complex_"))
+                                .collect(Collectors.toList()));
                     }
                 } catch (Exception e) {
                     log.error("Cannot connect to Elasticsearch server: index check failed - {}",e.getMessage(), e);
@@ -353,25 +362,32 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                         .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))
                         .collect(Collectors.toList());
 
+                long totalHits = response.getHits().getTotalHits().value;
+                long queryTime = response.getTook().getMillis();
+
                 if ( search.isSpellcheck()
                         && CollectionUtils.isEmpty(documents)) {
 
                     //if no results, try spellchecker (if defined and if spellchecked query differs from original)
-                    final List<String> spellCheckedQuery = ElasticQueryBuilder.getSpellCheckedQuery(response);
+                    final List<String> spellCheckedQuery = ElasticQueryBuilder.getSpellCheckedQuery(search.getSearchString(), response);
 
                     //query with checked query
-
-                    if(spellCheckedQuery != null && CollectionUtils.isNotEmpty(spellCheckedQuery)) {
+                    if (spellCheckedQuery != null && CollectionUtils.isNotEmpty(spellCheckedQuery)) {
                         final Iterator<String> iterator = spellCheckedQuery.iterator();
-                        while(iterator.hasNext()) {
+                        while (iterator.hasNext()) {
                             final String text = iterator.next();
                             final FulltextSearch spellcheckSearch = search.copy().text(text).spellcheck(false);
                             final SearchSourceBuilder spellcheckQuery =
                                     ElasticQueryBuilder.buildQuery(spellcheckSearch, factory);
                             final SearchResponse spellcheckResponse = elasticSearchClient.query(spellcheckQuery);
-                            documents.addAll(Arrays.stream(spellcheckResponse.getHits().getHits())
-                                    .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))
-                                    .collect(Collectors.toList()));
+                            queryTime = queryTime + spellcheckResponse.getTook().getMillis();
+                            if(spellcheckResponse.getHits().getTotalHits().value > 0) {
+                                totalHits = spellcheckResponse.getHits().getTotalHits().value;
+                                documents.addAll(Arrays.stream(spellcheckResponse.getHits().getHits())
+                                        .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))
+                                        .collect(Collectors.toList()));
+                                break;
+                            }
                         }
                     }
                 }
@@ -386,16 +402,15 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
                 elapsedtime.stop();
 
-                final long totalHits = response.getHits().getTotalHits().value;
                 switch(search.getResultSet().getType()) {
                     case page:{
-                        return new PageResult(totalHits, response.getTook().getMillis(), documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
+                        return new PageResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     case slice: {
-                        return new SliceResult(totalHits, response.getTook().getMillis(), documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
+                        return new SliceResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     default:
-                        return new PageResult(totalHits, response.getTook().getMillis(), documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
+                        return new PageResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                 }
             }else {
                 throw new ElasticsearchException("Empty result from ElasticClient");
@@ -434,12 +449,14 @@ public class ElasticSearchServer extends SmartSearchServerBase {
             HashMap<FieldDescriptor, TermFacetResult<?>> suggestionValues =
                     ResultUtils.buildSuggestionResults(response, factory, search.getSearchContext());
 
+            long queryTime = response.getTook().getMillis();
+
             String spellcheckText = null;
             if (!suggestionValues.values().stream()
                     .anyMatch(termFacetResult -> CollectionUtils.isNotEmpty(termFacetResult.getValues())) ) {
 
                 //if no results, try spellchecker (if defined and if spellchecked query differs from original)
-                final List<String> spellCheckedQuery = ElasticQueryBuilder.getSpellCheckedQuery(response);
+                final List<String> spellCheckedQuery = ElasticQueryBuilder.getSpellCheckedQuery(search.getInput(), response);
 
                 //query with checked query
 
@@ -451,6 +468,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                         final SearchResponse spellcheckResponse = elasticSearchClient.query(spellcheckQuery);
                         final HashMap<FieldDescriptor, TermFacetResult<?>> spellcheckValues =
                                 ResultUtils.buildSuggestionResults(spellcheckResponse, factory, search.getSearchContext());
+                        queryTime = queryTime + spellcheckResponse.getTook().getMillis();
                         if (spellcheckValues.values().stream()
                                 .anyMatch(termFacetResult -> CollectionUtils.isNotEmpty(termFacetResult.getValues())) ) {
                             spellcheckText = text;
@@ -465,7 +483,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
             return new SuggestionResult(
                     suggestionValues,
                     spellcheckText,
-                    response.getTook().getMillis(),
+                    queryTime,
                     factory)
                     .setElapsedTime(elapsedtime.getTime(TimeUnit.MILLISECONDS));
 
@@ -804,7 +822,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
     private void addExistingContextsToDescriptors(DocumentFactory factory) throws IOException {
         final String pattern = "(" + FieldUtil.INTERNAL_FIELD_PREFIX + ")|(" + FieldUtil.INTERNAL_COMPLEX_FIELD_PREFIX + ")";
         final List<String> contextFields = ((Map<String, Object>) elasticSearchClient.getMappings().mappings().get(elasticSearchClient.getDefaultIndex()).getSourceAsMap().get("properties")).keySet().stream()
-                .filter(fieldName -> fieldName.startsWith("dynamic_") || fieldName.startsWith("context_"))
+                .filter(fieldName -> fieldName.startsWith("dynamic_") || fieldName.startsWith("complex"))
                 .map(fieldName -> Pattern.compile(pattern).matcher(fieldName).replaceFirst(""))
                 .filter( name -> name.contains("_"))
                 .collect(Collectors.toList());

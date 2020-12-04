@@ -72,7 +72,7 @@ public class FulltextSearch {
 
 
         this.getFacets().keySet().stream().forEach(k -> copy.facets.put(k,this.getFacets().get(k).clone()));
-
+        copy.setFacetLimit(this.getFacetLimit());
         return copy;
     }
 
