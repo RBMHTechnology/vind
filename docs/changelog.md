@@ -268,3 +268,8 @@ context.
 * BugFix: roll back fulltext search text treatement.
 * BugFix: between filter uses datemath to elastic string.
 * BugFix: get FieldName now returns Optional to avoid NPE and elastic errors with null fields. 
+
+# 3.0.31
+* BugFix: Fix context field issues.
+* Improvement: Added better elasticsearch footprint handling based on mapping fields.
+* BugFix: fixed issue with spellcheck results. 
