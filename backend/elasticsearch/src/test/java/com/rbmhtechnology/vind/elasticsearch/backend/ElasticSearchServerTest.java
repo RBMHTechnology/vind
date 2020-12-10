@@ -345,7 +345,7 @@ public class ElasticSearchServerTest extends ElasticBaseTest {
     }
 
     @Test
-    public void deleteTest(){
+    public void deleteTest() throws InterruptedException {
         server.clearIndex();
         final DocumentFactoryBuilder docFactoryBuilder = new DocumentFactoryBuilder("TestDoc");
 

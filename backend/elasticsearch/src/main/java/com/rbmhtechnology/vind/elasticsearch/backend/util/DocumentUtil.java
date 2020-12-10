@@ -21,15 +21,12 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
@@ -64,7 +61,7 @@ public class DocumentUtil {
                 .values()
                 .stream()
                 .filter(doc::hasValue)
-                .forEach(descriptor -> addFieldToDoc(doc, docMap, descriptor));
+                .forEach(descriptor -> addFieldToDoc(doc, docMap, descriptor, null));
 
         docMap.put(FieldUtil.ID, doc.getId());
         docMap.put(FieldUtil.TYPE, doc.getType());
@@ -81,9 +78,9 @@ public class DocumentUtil {
                 .values()
                 .stream()
                 .filter(doc::hasValue)
-                .forEach(descriptor -> addFieldToDoc(doc, docMap, descriptor));
+                .forEach(descriptor -> addFieldToDoc(doc, docMap, descriptor, null));
 
-        addFieldToDoc(doc, docMap, InverseSearchQueryFactory.BINARY_QUERY_FIELD);
+        addFieldToDoc(doc, docMap, InverseSearchQueryFactory.BINARY_QUERY_FIELD, null);
 
         docMap.put(FieldUtil.ID, doc.getId());
         docMap.put(FieldUtil.TYPE, doc.getType());
@@ -92,13 +89,14 @@ public class DocumentUtil {
         return docMap;
     }
 
-    private static void addFieldToDoc(Document doc, Map<String, Object> docMap, FieldDescriptor<?> descriptor) {
+    private static void addFieldToDoc(Document doc, Map<String, Object> docMap, FieldDescriptor<?> descriptor,
+                                      List<String> indexFootPrint) {
         if (ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass())) {
-            addFieldToDoc(doc, docMap, (ComplexFieldDescriptor) descriptor);
+            addFieldToDoc(doc, docMap, (ComplexFieldDescriptor) descriptor, indexFootPrint);
         } else {
             doc.getFieldContexts(descriptor)
                     .forEach(context ->
-                            FieldUtil.getFieldName(descriptor, context)
+                            FieldUtil.getFieldName(descriptor, context, indexFootPrint)
                                     .ifPresent(fieldName ->
                                             Optional.ofNullable(doc.getContextualizedValue(descriptor, context))
                                                     .ifPresent(value -> docMap.put(fieldName.replaceAll("\\.\\w+" , ""), toElasticType(value)))
@@ -107,11 +105,11 @@ public class DocumentUtil {
         }
     }
 
-    private static void addEmptyFieldToDoc(Map<String, Object> docMap, FieldDescriptor<?> descriptor) {
+    private static void addEmptyFieldToDoc(Map<String, Object> docMap, FieldDescriptor<?> descriptor, List<String> indexFootPrint) {
         if (ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass())) {
-            addEmptyFieldToDoc( docMap, (ComplexFieldDescriptor) descriptor);
+            addEmptyFieldToDoc( docMap, (ComplexFieldDescriptor) descriptor, indexFootPrint);
         } else {
-            FieldUtil.getFieldName(descriptor, null)
+            FieldUtil.getFieldName(descriptor, null, indexFootPrint)
                 .ifPresent(fieldName -> {
                     if (ZonedDateTime.class.isAssignableFrom(descriptor.getType())) {
                         docMap.put(
@@ -141,10 +139,10 @@ public class DocumentUtil {
                 });
         }
     }
-    private static void addEmptyFieldToDoc(Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor) {
+    private static void addEmptyFieldToDoc(Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor, List<String> indexFootPrint) {
 
         Stream.of(FieldDescriptor.UseCase.values()).forEach( useCase -> {
-            final Optional<String> name = FieldUtil.getFieldName(descriptor, useCase, null);
+            final Optional<String> name = FieldUtil.getFieldName(descriptor, useCase, null, indexFootPrint);
             name.ifPresent( fieldName -> {
                 final Class<?> type = FieldUtil.getComplexFieldType(descriptor, useCase);
                 if (type != null) {
@@ -167,11 +165,12 @@ public class DocumentUtil {
         });
     }
 
-    private static void addFieldToDoc(InverseSearchQuery doc, Map<String, Object> docMap, FieldDescriptor<?> descriptor) {
+    private static void addFieldToDoc(InverseSearchQuery doc, Map<String, Object> docMap, FieldDescriptor<?> descriptor,
+                                      List<String> indexFootPrint) {
         if (ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass())) {
-            addFieldToDoc(doc, docMap, (ComplexFieldDescriptor) descriptor);
+            addFieldToDoc(doc, docMap, (ComplexFieldDescriptor) descriptor, indexFootPrint);
         } else {
-            FieldUtil.getFieldName(descriptor, null)
+            FieldUtil.getFieldName(descriptor, null, indexFootPrint)
                     .ifPresent(fieldName ->
                             Optional.ofNullable(doc.getValue(descriptor))
                                     .ifPresent(value -> docMap.put(fieldName.replaceAll("\\.\\w+" , ""), toElasticType(value)))
@@ -179,11 +178,12 @@ public class DocumentUtil {
         }
     }
 
-    private static void addFieldToDoc(Document doc, Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor) {
+    private static void addFieldToDoc(Document doc, Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor,
+                                      List<String> indexFootPrint) {
         doc.getFieldContexts(descriptor)
             .forEach(context ->
                 Stream.of(FieldDescriptor.UseCase.values()).forEach( useCase -> {
-                    final Optional<String> name = FieldUtil.getFieldName(descriptor, useCase, context);
+                    final Optional<String> name = FieldUtil.getFieldName(descriptor, useCase, context, indexFootPrint);
                     name.ifPresent( fieldName ->
                         Optional.ofNullable( doc.getContextualizedValue(descriptor, context)).ifPresent(
                             contextualizedValue ->
@@ -193,9 +193,10 @@ public class DocumentUtil {
             );
     }
 
-    private static void addFieldToDoc(InverseSearchQuery doc, Map<String, Object> docMap, ComplexFieldDescriptor<?,?,?> descriptor) {
+    private static void addFieldToDoc(InverseSearchQuery doc, Map<String, Object> docMap,
+                                      ComplexFieldDescriptor<?,?,?> descriptor, List<String> indexFootPrint) {
         Stream.of(FieldDescriptor.UseCase.values()).forEach( useCase -> {
-            final Optional<String> name = FieldUtil.getFieldName(descriptor, useCase, null);
+            final Optional<String> name = FieldUtil.getFieldName(descriptor, useCase, null, indexFootPrint);
             name.ifPresent( fieldName ->
                 Optional.ofNullable( doc.getValue(descriptor))
                     .ifPresent(contextualizedValue ->
@@ -569,7 +570,7 @@ public class DocumentUtil {
         final Map<String, Object> docMap = new HashMap<>();
         //add fields
         factory.getFields().values().stream()
-                .forEach(descriptor -> addEmptyFieldToDoc(docMap, descriptor));
+                .forEach(descriptor -> addEmptyFieldToDoc(docMap, descriptor, null));
 
         docMap.put(FieldUtil.ID, "");
         docMap.put(FieldUtil.TYPE, factory.getType());

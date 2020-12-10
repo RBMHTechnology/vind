@@ -45,7 +45,6 @@ import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.util.Asserts;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.validate.query.ValidateQueryResponse;
@@ -89,7 +88,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
     private static final Logger log = LoggerFactory.getLogger(ElasticSearchServer.class);
     private static final Logger elasticClientLogger = LoggerFactory.getLogger(log.getName() + "#elasticSearchClient");
-    private final List<String> currentFootprint = new ArrayList<>();
+    private List<String> currentFootprint = new ArrayList<>();
 
     private ServiceProvider serviceProviderClass;
     private final ElasticVindClient elasticSearchClient;
@@ -159,11 +158,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                                     this.getClass());
                         }
                     } else {
-                        this.currentFootprint.addAll( elasticSearchClient.getMappings().mappings().values().stream()
-                                .map(indexFields -> ((Map<String, Object>)indexFields.getSourceAsMap().get("properties")).keySet())
-                                .flatMap(Collection::stream)
-                                .filter(fieldName -> fieldName.startsWith("dynamic_") || fieldName.startsWith("complex_"))
-                                .collect(Collectors.toList()));
+                        this.currentFootprint = getIndexedFields();
                     }
                 } catch (Exception e) {
                     log.error("Cannot connect to Elasticsearch server: index check failed - {}",e.getMessage(), e);
@@ -285,7 +280,8 @@ public class ElasticSearchServer extends SmartSearchServerBase {
             log.debug("Update script builder does not check for script injection. Ensure values provided are script safe.");
             final StopWatch elapsedTime = StopWatch.createStarted();
             elasticClientLogger.debug(">>> update({})", update);
-            final PainlessScript.ScriptBuilder updateScript = ElasticQueryBuilder.buildUpdateScript(update.getOptions(), factory, update.getUpdateContext());
+            final PainlessScript.ScriptBuilder updateScript =
+                    ElasticQueryBuilder.buildUpdateScript(update.getOptions(), factory, update.getUpdateContext(), currentFootprint);
             final UpdateResponse response = elasticSearchClient.update(update.getId(), updateScript);
             if(response.status().getStatus() >= 400) {
                 log.error("Cannot update document {}: {} - {} ", update.getId(), response.status().getStatus(),response.status().name());
@@ -303,10 +299,14 @@ public class ElasticSearchServer extends SmartSearchServerBase {
     @Override
     public DeleteResult execute(Delete delete, DocumentFactory factory) {
         try {
-            createDocumentFactoryFootprint(factory);
             final StopWatch elapsedTime = StopWatch.createStarted();
             elasticClientLogger.debug(">>> delete({})", delete);
-            final QueryBuilder deleteQuery = ElasticQueryBuilder.buildFilterQuery(delete.getQuery(), factory, delete.getUpdateContext());
+            final QueryBuilder deleteQuery =
+                    ElasticQueryBuilder.buildFilterQuery(
+                            delete.getQuery(),
+                            factory,
+                            delete.getUpdateContext(),
+                            this.currentFootprint);
             final BulkByScrollResponse response = elasticSearchClient.deleteByQuery(deleteQuery);
             if(response.getBulkFailures().size() > 0) {
                 final List<String> failureMessages = response.getBulkFailures().stream()
@@ -333,15 +333,12 @@ public class ElasticSearchServer extends SmartSearchServerBase {
     @Override
     protected  <T> BeanSearchResult<T> doExecute(FulltextSearch search, Class<T> c) {
         final DocumentFactory factory = AnnotationUtil.createDocumentFactory(c);
-        createDocumentFactoryFootprint(factory);
-
         final SearchResult docResult = this.execute(search, factory);
         return docResult.toPojoResult(docResult, c);
     }
 
     @Override
     protected SearchResult doExecute(FulltextSearch search, DocumentFactory factory) {
-        createDocumentFactoryFootprint(factory);
         final StopWatch elapsedtime = StopWatch.createStarted();
 
         //query
@@ -351,7 +348,8 @@ public class ElasticSearchServer extends SmartSearchServerBase {
             if (validateQueryResponse.isValid()) {
                 search.text(searchString);
             }
-            final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory, !validateQueryResponse.isValid());
+            final SearchSourceBuilder query =
+                    ElasticQueryBuilder.buildQuery(search, factory, !validateQueryResponse.isValid(), currentFootprint);
             elasticClientLogger.debug(">>> query({})", query.toString());
             final SearchResponse response = elasticSearchClient.query(query);
             if(Objects.nonNull(response)
@@ -378,7 +376,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                             final String text = iterator.next();
                             final FulltextSearch spellcheckSearch = search.copy().text(text).spellcheck(false);
                             final SearchSourceBuilder spellcheckQuery =
-                                    ElasticQueryBuilder.buildQuery(spellcheckSearch, factory);
+                                    ElasticQueryBuilder.buildQuery(spellcheckSearch, factory, currentFootprint);
                             final SearchResponse spellcheckResponse = elasticSearchClient.query(spellcheckQuery);
                             queryTime = queryTime + spellcheckResponse.getTook().getMillis();
                             if(spellcheckResponse.getHits().getTotalHits().value > 0) {
@@ -423,7 +421,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
     @Override
     public String getRawQuery(FulltextSearch search, DocumentFactory factory) {
-        final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory);
+        final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory, currentFootprint);
         return query.toString();
     }
 
@@ -439,9 +437,8 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
     @Override
     public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory factory) {
-        createDocumentFactoryFootprint(factory);
         final StopWatch elapsedtime = StopWatch.createStarted();
-        final SearchSourceBuilder query = ElasticQueryBuilder.buildSuggestionQuery(search, factory);
+        final SearchSourceBuilder query = ElasticQueryBuilder.buildSuggestionQuery(search, factory, currentFootprint);
         //query
         try {
             elasticClientLogger.debug(">>> query({})", query.toString());
@@ -464,7 +461,8 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                     final Iterator<String> iterator = spellCheckedQuery.iterator();
                     while(iterator.hasNext()) {
                         final String text = iterator.next();
-                        final SearchSourceBuilder spellcheckQuery = ElasticQueryBuilder.buildSuggestionQuery(search.text(text), factory);
+                        final SearchSourceBuilder spellcheckQuery =
+                                ElasticQueryBuilder.buildSuggestionQuery(search.text(text), factory, currentFootprint);
                         final SearchResponse spellcheckResponse = elasticSearchClient.query(spellcheckQuery);
                         final HashMap<FieldDescriptor, TermFacetResult<?>> spellcheckValues =
                                 ResultUtils.buildSuggestionResults(spellcheckResponse, factory, search.getSearchContext());
@@ -499,7 +497,8 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
     @Override
     public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory) {
-        final SearchSourceBuilder query = ElasticQueryBuilder.buildSuggestionQuery(search, factory);
+        final SearchSourceBuilder query =
+                ElasticQueryBuilder.buildSuggestionQuery(search, factory,currentFootprint);
         return query.toString();
     }
 
@@ -516,7 +515,6 @@ public class ElasticSearchServer extends SmartSearchServerBase {
     @Override
     public <T> BeanGetResult<T> execute(RealTimeGet search, Class<T> c) {
         final DocumentFactory documentFactory = AnnotationUtil.createDocumentFactory(c);
-        createDocumentFactoryFootprint(documentFactory);
         final GetResult result = this.execute(search, documentFactory);
         return result.toPojoResult(result,c);
     }
@@ -525,7 +523,6 @@ public class ElasticSearchServer extends SmartSearchServerBase {
     public GetResult execute(RealTimeGet search, DocumentFactory assets) {
         try {
             final StopWatch elapsedTime = StopWatch.createStarted();
-            createDocumentFactoryFootprint(assets);
             final MultiGetResponse response = elasticSearchClient.realTimeGet(search.getValues());
             elapsedTime.stop();
 
@@ -549,7 +546,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                 .map(DocumentUtil::createInputDocument)
                 .collect(Collectors.toList());
         final QueryBuilder query =
-                ElasticQueryBuilder.buildFilterQuery(inverseSearch.getQueryFilter(), documentFactory, null);
+                ElasticQueryBuilder.buildFilterQuery(inverseSearch.getQueryFilter(), documentFactory, null,currentFootprint);
         //query
         try {
             elasticClientLogger.debug(">>> query({})", query.toString());
@@ -599,10 +596,8 @@ public class ElasticSearchServer extends SmartSearchServerBase {
         Asserts.notNull(query,"Query should not be null.");
         final StopWatch elapsedTime = StopWatch.createStarted();
 
-        createDocumentFactoryFootprint(query.getFactory());
-
         final QueryBuilder elasticQuery =
-                ElasticQueryBuilder.buildFilterQuery(query.getQuery(), query.getFactory(), null);
+                ElasticQueryBuilder.buildFilterQuery(query.getQuery(), query.getFactory(), null, currentFootprint);
 
         try {
             if (elasticClientLogger.isTraceEnabled()) {
@@ -724,6 +719,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                 throw new SearchServerException("Cannot index document " + document.get(FieldUtil.ID) + ": " + failureMessages.get(0));
 
             }
+            this.currentFootprint = this.getIndexedFields();
             elapsedTime.stop();
             return new IndexResult(response.getTook().getMillis()).setElapsedTime(elapsedTime.getTime());
 
@@ -740,12 +736,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                 .map(DocumentUtil::createInputDocument)
                 .collect(Collectors.toList());
         try {
-            if (elasticClientLogger.isTraceEnabled()) {
-                elasticClientLogger.debug(">>> add({})", jsonDocs);
-            } else {
-                elasticClientLogger.debug(">>> add({})", jsonDocs);
-            }
-
+            elasticClientLogger.debug(">>> add({})", jsonDocs);
             final BulkResponse response =this.elasticSearchClient.add(jsonDocs) ;
             if(response.hasFailures()) {
                 final List<String> failureMessages = Stream.of(response.getItems())
@@ -756,6 +747,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                 throw new SearchServerException("Cannot index " + failureMessages.size() + "documents: " + String.join(" - ", failureMessages));
 
             }
+            this.currentFootprint = this.getIndexedFields();
             elapsedTime.stop();
             return new IndexResult(elapsedTime.getTime()).setElapsedTime(elapsedTime.getTime());
 
@@ -792,7 +784,6 @@ public class ElasticSearchServer extends SmartSearchServerBase {
         final SearchSourceBuilder query = ElasticQueryBuilder.buildPercolatorQueryReadiness(factory);
 
         try {
-            addExistingContextsToDescriptors(factory);
             elasticClientLogger.debug(">>> query({})", query.toString());
             final SearchResponse response = elasticSearchClient.query(query);
 
@@ -819,18 +810,11 @@ public class ElasticSearchServer extends SmartSearchServerBase {
         }
     }
 
-    private void addExistingContextsToDescriptors(DocumentFactory factory) throws IOException {
-        final String pattern = "(" + FieldUtil.INTERNAL_FIELD_PREFIX + ")|(" + FieldUtil.INTERNAL_COMPLEX_FIELD_PREFIX + ")";
-        final List<String> contextFields = ((Map<String, Object>) elasticSearchClient.getMappings().mappings().get(elasticSearchClient.getDefaultIndex()).getSourceAsMap().get("properties")).keySet().stream()
-                .filter(fieldName -> fieldName.startsWith("dynamic_") || fieldName.startsWith("complex"))
-                .map(fieldName -> Pattern.compile(pattern).matcher(fieldName).replaceFirst(""))
-                .filter( name -> name.contains("_"))
+    private List<String> getIndexedFields() throws IOException {
+        return elasticSearchClient.getMappings().mappings().values().stream()
+                .map(indexFields -> ((Map<String, Object>) indexFields.getSourceAsMap().get("properties")).keySet())
+                .flatMap(Collection::stream)
+                .filter(fieldName -> fieldName.startsWith("dynamic_") || fieldName.startsWith("complex_"))
                 .collect(Collectors.toList());
-        contextFields.stream()
-                .map( fieldName -> fieldName.split("_", 2))
-                .filter( splitedField -> factory.hasField(splitedField[1]))
-                .forEach( fieldcontext -> factory.getField(fieldcontext[1]).setContextualized(true, fieldcontext[0]) );
     }
-
-
 }

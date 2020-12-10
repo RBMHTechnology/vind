@@ -59,9 +59,10 @@ public class Suggester {
         this.context = suggestionSearch.getSearchContext();
     }
 
-    public SuggestionResult getExperimentalSuggestions() {
+    public SuggestionResult getExperimentalSuggestions( List<String> indexFootPrint) {
         final StopWatch elapsedtime = StopWatch.createStarted();
-        final SearchSourceBuilder query = ElasticQueryBuilder.buildExperimentalSuggestionQuery(search, factory);
+        final SearchSourceBuilder query =
+                ElasticQueryBuilder.buildExperimentalSuggestionQuery(search, factory, indexFootPrint);
         //query
         try {
             elasticClientLogger.debug(">>> query({})", query.toString());
@@ -72,16 +73,17 @@ public class Suggester {
             final SearchSourceBuilder suggestionFacetQuery = new SearchSourceBuilder();
             final BoolQueryBuilder filterSuggestions = QueryBuilders.boolQuery()
                     .must(QueryBuilders.matchAllQuery())
-                    .filter(ElasticQueryBuilder.buildFilterQuery(filter, factory, context));
+                    .filter(ElasticQueryBuilder.buildFilterQuery(filter, factory, context, indexFootPrint));
             suggestionFacetQuery.query(filterSuggestions);
 
             suggestionValues.entrySet().stream()
-                    .filter(e -> FieldUtil.getFieldName(e.getKey(), context).isPresent())
+                    .filter(e -> FieldUtil.getFieldName(e.getKey(), context, indexFootPrint).isPresent())
                     .map(e -> Pair.of(
                             e.getKey().getName(),
                             e.getValue().getValues().stream()
                                     .map(value -> {
-                                        final Optional<String> fieldName = FieldUtil.getFieldName(e.getKey(), context);
+                                        final Optional<String> fieldName =
+                                                FieldUtil.getFieldName(e.getKey(), context, indexFootPrint);
                                         return new FiltersAggregator.KeyedFilter(
                                                 value.getValue().toString(),
                                                 QueryBuilders.termQuery(fieldName.get(), value.getValue()));
@@ -163,9 +165,10 @@ public class Suggester {
     }
 
 
-    public SuggestionResult getSuggestions() {
+    public SuggestionResult getSuggestions( List<String> indexFootPrint) {
         final StopWatch elapsedtime = StopWatch.createStarted();
-        final SearchSourceBuilder query = ElasticQueryBuilder.buildExperimentalSuggestionQuery(search, factory);
+        final SearchSourceBuilder query =
+                ElasticQueryBuilder.buildExperimentalSuggestionQuery(search, factory, indexFootPrint);
         //query
         try {
             elasticClientLogger.debug(">>> query({})", query.toString());
@@ -176,16 +179,17 @@ public class Suggester {
             final SearchSourceBuilder suggestionFacetQuery = new SearchSourceBuilder();
             final BoolQueryBuilder filterSuggestions = QueryBuilders.boolQuery()
                     .must(QueryBuilders.matchAllQuery())
-                    .filter(ElasticQueryBuilder.buildFilterQuery(filter, factory, context));
+                    .filter(ElasticQueryBuilder.buildFilterQuery(filter, factory, context,indexFootPrint));
             suggestionFacetQuery.query(filterSuggestions);
 
             suggestionValues.entrySet().stream()
-                    .filter(e -> FieldUtil.getFieldName(e.getKey(), context).isPresent())
+                    .filter(e -> FieldUtil.getFieldName(e.getKey(), context,indexFootPrint).isPresent())
                     .map(e -> Pair.of(
                             e.getKey().getName(),
                             e.getValue().getValues().stream()
                                     .map(value -> {
-                                        final Optional<String> fieldName = FieldUtil.getFieldName(e.getKey(), context);
+                                        final Optional<String> fieldName =
+                                                FieldUtil.getFieldName(e.getKey(), context, indexFootPrint);
                                         return new FiltersAggregator.KeyedFilter(
                                                 value.getValue().toString(),
                                                 QueryBuilders.termQuery(fieldName.get(), value.getValue()));

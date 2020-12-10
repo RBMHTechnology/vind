@@ -76,7 +76,7 @@ public abstract class ElasticVindClient {
         return this;
     }
 
-    public long getClientTimOut() {
+    public long getClientTimeOut() {
         return clientTimOut;
     }
 
@@ -117,6 +117,7 @@ public abstract class ElasticVindClient {
         final BulkRequest bulkIndexRequest = new BulkRequest(defaultIndex);
         jsonDocs.forEach( jsonDoc -> bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(jsonDoc)) );
         bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
+        bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
         return BulkRequestBuilder.executeBulk(bulkIndexRequest,RequestOptions.DEFAULT,defaultIndex,client);
     }
 

@@ -51,7 +51,7 @@ public class ParallelIndexingTest {
     }
 
     @Test
-    public void testParallelIndexing() {
+    public void testParallelIndexing() throws InterruptedException {
 
         FieldDescriptor<String> title = new FieldDescriptorBuilder()
                 .setFullText(true)
@@ -64,6 +64,7 @@ public class ParallelIndexingTest {
         masterSlave.index(d1);
         masterSlave.commit();
 
+        Thread.sleep(10000);
         Assert.assertEquals("MasterSlave is not indexed properly", 1, masterSlave.execute(Search.fulltext(), assets).getNumOfResults());
         Assert.assertEquals("Master is not indexed properly", 1, solr.execute(Search.fulltext(), assets).getNumOfResults());
         Assert.assertEquals("Salve is not indexed properly", 1, elastic.execute(Search.fulltext(), assets).getNumOfResults());

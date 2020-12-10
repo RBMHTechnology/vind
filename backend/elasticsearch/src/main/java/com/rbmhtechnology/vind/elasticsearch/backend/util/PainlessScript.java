@@ -213,16 +213,18 @@ public class PainlessScript {
             painlessScript = new PainlessScript();
         }
 
-        public ScriptBuilder addOperations(FieldDescriptor<?> field, Map<String, SortedSet<UpdateOperation>> ops) {
+        public ScriptBuilder addOperations(FieldDescriptor<?> field, Map<String, SortedSet<UpdateOperation>> ops,
+                                           List<String> indexFootPrint) {
            if(ComplexFieldDescriptor.class.isAssignableFrom(field.getClass())) {
-               return addComplexFieldOperations((ComplexFieldDescriptor<? extends Object, ?, ?>) field,ops);
+               return addComplexFieldOperations((ComplexFieldDescriptor<? extends Object, ?, ?>) field,ops, indexFootPrint);
            }
-           return addSimpleFieldOperations(field,ops);
+           return addSimpleFieldOperations(field, ops, indexFootPrint);
         }
 
-        private ScriptBuilder addSimpleFieldOperations(FieldDescriptor<?> field, Map<String, SortedSet<UpdateOperation>> ops) {
+        private ScriptBuilder addSimpleFieldOperations(FieldDescriptor<?> field, Map<String,
+                SortedSet<UpdateOperation>> ops, List<String> indexFootPrint) {
             ops.forEach((key, value) -> {
-                FieldUtil.getFieldName(field, key)
+                FieldUtil.getFieldName(field, key, indexFootPrint)
                         .ifPresent( fieldName -> {
                             value.forEach(op ->{
                                 checkValidPainlessSentence(field, op);
@@ -239,10 +241,11 @@ public class PainlessScript {
             return this;
         }
 
-        public <T> ScriptBuilder addComplexFieldOperations(ComplexFieldDescriptor<T,?,?> descriptor, Map<String, SortedSet<UpdateOperation>> ops) {
+        public <T> ScriptBuilder addComplexFieldOperations(ComplexFieldDescriptor<T,?,?> descriptor, Map<String,
+                SortedSet<UpdateOperation>> ops, List<String> indexFootPrint) {
             ops.forEach((key, value) -> {
                     for( FieldDescriptor.UseCase useCase : FieldDescriptor.UseCase.values()) {
-                        FieldUtil.getFieldName(descriptor, useCase, key)
+                        FieldUtil.getFieldName(descriptor, useCase, key, indexFootPrint)
                                 .ifPresent( name -> {
                                     Function<T, ? extends Object> useCaseFunction = null;
                                     Class<?> useCaseType = null;
