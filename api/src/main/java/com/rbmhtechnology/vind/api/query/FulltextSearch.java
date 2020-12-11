@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.api.query;
 
 import com.rbmhtechnology.vind.api.query.distance.Distance;
+import com.rbmhtechnology.vind.api.query.division.Cursor;
 import com.rbmhtechnology.vind.api.query.division.Page;
 import com.rbmhtechnology.vind.api.query.division.ResultSubset;
 import com.rbmhtechnology.vind.api.query.division.Slice;
@@ -724,6 +725,16 @@ public class FulltextSearch {
                 this.isSmartParsing()
         );
     }
+
+    public FulltextSearch cursor(Cursor cursor) {
+        this.resultSet = cursor;
+        return this;
+    }
+    public FulltextSearch cursor(long aliveMinutes) {
+        this.resultSet = new Cursor(aliveMinutes);
+        return this;
+    }
+
     public enum Operators {
         AND, OR
     }

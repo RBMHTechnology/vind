@@ -6,12 +6,15 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetMappingsRequest;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -19,7 +22,9 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.percolator.PercolateQueryBuilder;
+import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.searchafter.SearchAfterBuilder;
 
 import java.util.List;
 import java.util.Map;
@@ -70,6 +75,37 @@ public class ElasticRequestUtils {
         final SearchRequest searchRequest = new SearchRequest(index);
         searchRequest.source(searchSource);
         return searchRequest;
+    }
+
+    /**
+     * Returns the first request of a scrolling search
+     * @param index index used for the search
+     * @param searchSource search query
+     * @param scrollTimeOut minutes the scroll session wil be kept alive.
+     * @return the search request used for the first scroll.
+     */
+    public static SearchRequest getScrollSearchRequest(String index, SearchSourceBuilder searchSource, Long scrollTimeOut) {
+
+        final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(scrollTimeOut));
+        SearchRequest searchRequest = new SearchRequest(index);
+        searchRequest.scroll(scroll);
+        searchRequest.source(searchSource);
+
+        return searchRequest;
+    }
+
+    /**
+     * Returns the next request of a scrolling search.
+     * @param scrollId id given in the previous scroll request.
+     * @param scrollTimeOut minutes the scroll session wil be kept alive.
+     * @return the search request used for the next scroll.
+     */
+    public static SearchScrollRequest getScrollSearchRequest(String scrollId, Long scrollTimeOut) {
+        final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(scrollTimeOut));
+        final SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+        scrollRequest.scroll(scroll);
+
+        return scrollRequest;
     }
 
     public static CreateIndexRequest getCreateIndexRequest(String index) {
@@ -123,6 +159,12 @@ public class ElasticRequestUtils {
         final ValidateQueryRequest request = new ValidateQueryRequest(defaultIndex);
         request.explain(true);
         request.query(builder);
+        return request;
+    }
+
+    public static ClearScrollRequest getCloseScrollRequest(String defaultIndex, String scrollId) {
+        final ClearScrollRequest request = new ClearScrollRequest();
+        request.addScrollId(scrollId);
         return request;
     }
 }

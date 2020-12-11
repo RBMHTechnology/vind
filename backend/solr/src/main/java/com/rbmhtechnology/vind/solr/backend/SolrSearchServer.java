@@ -668,16 +668,20 @@ public class SolrSearchServer extends SmartSearchServerBase {
 
         // paging
         switch(search.getResultSet().getType()) {
-            case page:{
-                final Page resultSet = (Page) search.getResultSet();
-                query.setStart(resultSet.getOffset());
-                query.setRows(resultSet.getPagesize());
-                break;
-            }
             case slice: {
                 final Slice resultSet = (Slice) search.getResultSet();
                 query.setStart(resultSet.getOffset());
                 query.setRows(resultSet.getSliceSize());
+                break;
+            }
+            case cursor: {
+                throw new NotImplementedException("Result sub type cursor is not supported by Solr backend");
+            }
+            default:
+            case page: {
+                final Page resultSet = (Page) search.getResultSet();
+                query.setStart(resultSet.getOffset());
+                query.setRows(resultSet.getPagesize());
                 break;
             }
         }
@@ -1180,5 +1184,10 @@ public class SolrSearchServer extends SmartSearchServerBase {
     @Override
     public Class<? extends ServiceProvider> getServiceProviderClass() {
         return serviceProviderClass!=null? serviceProviderClass.getClass() : null;
+    }
+
+    @Override
+    public void closeCursor(String cursor) {
+        throw new NotImplementedException("Solr backend does not support cursor search");
     }
 }

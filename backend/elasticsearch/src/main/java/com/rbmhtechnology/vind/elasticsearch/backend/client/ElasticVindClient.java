@@ -10,8 +10,10 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.get.MultiGetResponse;
+import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -38,6 +40,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -195,10 +199,29 @@ public abstract class ElasticVindClient {
         }
     }
 
+    public SearchResponse scrolledQuery(SearchSourceBuilder query, String scrollId, Long scrollTimeOut) throws IOException {
+        if (Objects.nonNull(scrollId)){
+            return getNextScroll(scrollId, scrollTimeOut);
+        } else {
+            return startScrolledQuery(query, scrollTimeOut);
+        }
+    }
+
+    public SearchResponse getNextScroll(String scrollId, Long scrollTimeOut) throws IOException {
+        final SearchScrollRequest request = ElasticRequestUtils.getScrollSearchRequest(scrollId, scrollTimeOut);
+        return client.scroll(request,RequestOptions.DEFAULT);
+    }
+
+    public SearchResponse startScrolledQuery(SearchSourceBuilder query, Long scrollTimeOut) throws IOException {
+        final SearchRequest request = ElasticRequestUtils.getScrollSearchRequest(defaultIndex, query, scrollTimeOut);
+        return client.search(request,RequestOptions.DEFAULT);
+    }
+
     public SearchResponse query(SearchSourceBuilder query) throws IOException {
         final SearchRequest request = ElasticRequestUtils.getSearchRequest(defaultIndex, query);
         return client.search(request,RequestOptions.DEFAULT);
     }
+
 
     private XContentBuilder mapToXContentBuilder(Map<String, Object> doc) throws IOException {
         final XContentBuilder builder = jsonBuilder().startObject();
@@ -212,7 +235,12 @@ public abstract class ElasticVindClient {
 
     public ValidateQueryResponse validateQuery(String query) throws IOException {
         final ValidateQueryRequest request = ElasticRequestUtils.getValidateQueryRequest(defaultIndex, query);
-        return client.indices().validateQuery(request,RequestOptions.DEFAULT);
+        return client.indices().validateQuery(request, RequestOptions.DEFAULT);
+    }
+
+    public void closeScroll(String scrollId) throws IOException {
+        final ClearScrollRequest request = ElasticRequestUtils.getCloseScrollRequest(defaultIndex, scrollId);
+        client.clearScroll(request, RequestOptions.DEFAULT);
     }
 
     public static class Builder {
