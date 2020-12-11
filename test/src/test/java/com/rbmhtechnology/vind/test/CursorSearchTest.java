@@ -53,15 +53,19 @@ public class CursorSearchTest {
     @Test
     public void testCursorSearch() {
 
-        final CursorResult cursorResult = (CursorResult)elastic.execute(Search.fulltext().cursor(10L), factory);
+        final CursorResult cursorResult = (CursorResult)elastic.execute(
+                Search.fulltext().cursor(10L, 50),
+                factory);
         Assert.assertNotNull(cursorResult.getCursor());
-        Assert.assertTrue(cursorResult.getNumOfResults() == 51);
+        Assert.assertEquals(51, cursorResult.getNumOfResults() );
+        Assert.assertEquals(50, cursorResult.getResults().size());
 
         final CursorResult next = cursorResult.next();
         Assert.assertNotNull(cursorResult.getCursor());
-        Assert.assertTrue(cursorResult.getNumOfResults() == 51);
+        Assert.assertEquals(51, next.getNumOfResults() );
+        Assert.assertEquals(1, next.getResults().size() );
 
-        cursorResult.closeCursor();
+        next.closeCursor();
 
     }
 }

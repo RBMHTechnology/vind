@@ -5,6 +5,7 @@ import com.google.common.collect.Streams;
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
+import com.rbmhtechnology.vind.api.query.division.Cursor;
 import com.rbmhtechnology.vind.api.query.division.Page;
 import com.rbmhtechnology.vind.api.query.division.Slice;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
@@ -280,6 +281,11 @@ public class ElasticQueryBuilder {
                 final Slice resultSet = (Slice) search.getResultSet();
                 searchSource.from(resultSet.getOffset());
                 searchSource.size(resultSet.getSliceSize());
+                break;
+            }
+            case cursor: {
+                final Cursor resultSet = (Cursor) search.getResultSet();
+                searchSource.size(resultSet.getWindowSize());
                 break;
             }
         }

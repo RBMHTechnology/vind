@@ -731,7 +731,12 @@ public class FulltextSearch {
         return this;
     }
     public FulltextSearch cursor(long aliveMinutes) {
-        this.resultSet = new Cursor(aliveMinutes);
+        this.resultSet = new Cursor(aliveMinutes, SearchConfiguration.get(SearchConfiguration.SEARCH_RESULT_PAGESIZE,10));
+        return this;
+    }
+
+    public FulltextSearch cursor(long aliveMinutes, int windowSize) {
+        this.resultSet = new Cursor(aliveMinutes, windowSize);
         return this;
     }
 
