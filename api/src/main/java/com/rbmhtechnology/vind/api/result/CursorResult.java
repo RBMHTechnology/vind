@@ -42,8 +42,8 @@ public class CursorResult extends SearchResult {
      * Gets the actual cursor details.
      * @return the cursor details.
      */
-    public String getCursor() {
-        return this.cursor.getCursor();
+    public Object[] getSearchAfter() {
+        return this.cursor.getSearchAfter();
     }
 
     /**
@@ -68,12 +68,7 @@ public class CursorResult extends SearchResult {
     }
 
     public void closeCursor() {
-        try{
-            server.closeCursor(cursor.getCursor());
-        } catch (SearchServerException e) {
-            log.error("Unable to close current cursor {}", cursor.getCursor(), e);
-            throw e;
-        }
+
     }
 
     @Override

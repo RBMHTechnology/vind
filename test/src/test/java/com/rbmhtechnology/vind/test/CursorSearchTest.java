@@ -56,12 +56,12 @@ public class CursorSearchTest {
         final CursorResult cursorResult = (CursorResult)elastic.execute(
                 Search.fulltext().cursor(10L, 50),
                 factory);
-        Assert.assertNotNull(cursorResult.getCursor());
+        Assert.assertNotNull(cursorResult.getSearchAfter());
         Assert.assertEquals(51, cursorResult.getNumOfResults() );
         Assert.assertEquals(50, cursorResult.getResults().size());
 
         final CursorResult next = cursorResult.next();
-        Assert.assertNotNull(cursorResult.getCursor());
+        Assert.assertNotNull(cursorResult.getSearchAfter());
         Assert.assertEquals(51, next.getNumOfResults() );
         Assert.assertEquals(1, next.getResults().size() );
 

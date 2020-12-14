@@ -356,16 +356,9 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
             final boolean isScrollSearch = cursor.equals(search.getResultSet().getType());
             final SearchResponse response ;
-            if(isScrollSearch) {
-                final Cursor cursor = (Cursor)search.getResultSet();
-                response = elasticSearchClient.scrolledQuery(
-                        query,
-                        cursor.getCursor(),
-                        cursor.getMinutesKeptAlive());
-                cursor.setCursor(response.getScrollId());
-            } else {
-                response = elasticSearchClient.query(query);
-            }
+
+            response = elasticSearchClient.query(query);
+
             if(Objects.nonNull(response)
                     && Objects.nonNull(response.getHits())
                     && Objects.nonNull(response.getHits().getHits())){
@@ -422,6 +415,8 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                         return new SliceResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     case cursor: {
+                        final Object[] sortValues = response.getHits().getAt(response.getHits().getHits().length - 1).getSortValues();
+                        ((Cursor) search.getResultSet()).setSearchAfter(sortValues);
                         return new CursorResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     default:

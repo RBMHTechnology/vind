@@ -12,7 +12,7 @@ public class Cursor extends ResultSubset {
 
     private Logger log = LoggerFactory.getLogger(getClass());
 
-    private String cursor;
+    private Object[] searchAfter;
     private final Integer windowSize;
     private final long minutesKeptAlive;
 
@@ -30,7 +30,7 @@ public class Cursor extends ResultSubset {
         type = DivisionType.cursor;
     }
 
-    public Cursor(String cursor, long minutesKeptAlive, Integer windowSize) {
+    public Cursor(Object[] searchAfter, long minutesKeptAlive, Integer windowSize) {
         if(minutesKeptAlive <= 0 ) {
             log.error("Minutes kept alive can not be lower or equals than 0: {}", minutesKeptAlive);
             throw new IllegalArgumentException("Minutes kept alive can not be lower or equals than 0: " + minutesKeptAlive);
@@ -39,7 +39,7 @@ public class Cursor extends ResultSubset {
             log.error("Cursor window size can not be lower or equals than 0: {}", windowSize);
             throw new IllegalArgumentException("Cursor window size can not be lower or equals than 0: " + windowSize);
         }
-        this.cursor = cursor;
+        this.searchAfter = searchAfter;
         this.windowSize = windowSize;
         this.minutesKeptAlive = minutesKeptAlive;
         type = DivisionType.cursor;
@@ -50,12 +50,12 @@ public class Cursor extends ResultSubset {
         return minutesKeptAlive;
     }
 
-    public String getCursor() {
-        return cursor;
+    public Object[] getSearchAfter() {
+        return searchAfter;
     }
 
-    public void setCursor(String cursor) {
-        this.cursor = cursor;
+    public void setSearchAfter(Object[] searchAfter) {
+        this.searchAfter = searchAfter;
     }
 
     public int getWindowSize() {
@@ -64,7 +64,7 @@ public class Cursor extends ResultSubset {
 
     @Override
     public ResultSubset copy() {
-        return new Cursor(this.cursor, this.minutesKeptAlive, this.windowSize);
+        return new Cursor(this.searchAfter, this.minutesKeptAlive, this.windowSize);
     }
 
     @Override
@@ -74,6 +74,6 @@ public class Cursor extends ResultSubset {
                 "\"windowSize\":%s," +
                 "\"minutsKeptAlive\":%s" +
                 "}";
-        return String.format(scoreString,this.cursor, this.windowSize, this.minutesKeptAlive);
+        return String.format(scoreString,this.searchAfter, this.windowSize, this.minutesKeptAlive);
     }
 }

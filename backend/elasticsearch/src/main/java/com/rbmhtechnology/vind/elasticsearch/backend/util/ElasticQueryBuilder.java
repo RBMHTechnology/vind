@@ -286,6 +286,10 @@ public class ElasticQueryBuilder {
             case cursor: {
                 final Cursor resultSet = (Cursor) search.getResultSet();
                 searchSource.size(resultSet.getWindowSize());
+                searchSource.sort("_id_");
+                if( resultSet.getSearchAfter()!= null ) {
+                    searchSource.searchAfter(resultSet.getSearchAfter());
+                }
                 break;
             }
         }
