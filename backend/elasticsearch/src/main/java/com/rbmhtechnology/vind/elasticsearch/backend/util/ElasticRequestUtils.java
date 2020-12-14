@@ -24,14 +24,12 @@ import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.percolator.PercolateQueryBuilder;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.searchafter.SearchAfterBuilder;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class ElasticRequestUtils {
 

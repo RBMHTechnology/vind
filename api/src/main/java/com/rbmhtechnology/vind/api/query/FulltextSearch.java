@@ -740,6 +740,16 @@ public class FulltextSearch {
         return this;
     }
 
+    public FulltextSearch cursor(String cursor, long aliveMinutes, int windowSize) {
+        this.resultSet = new Cursor(cursor, aliveMinutes, windowSize);
+        return this;
+    }
+
+    public FulltextSearch cursor(String cursor, long aliveMinutes) {
+        this.resultSet = new Cursor(cursor, aliveMinutes, SearchConfiguration.get(SearchConfiguration.SEARCH_RESULT_PAGESIZE,10));
+        return this;
+    }
+
     public enum Operators {
         AND, OR
     }
