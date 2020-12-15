@@ -433,4 +433,6 @@ public abstract class SearchServer implements Closeable {
     public abstract void close();
 
     public abstract Class<? extends ServiceProvider> getServiceProviderClass();
+
+    public abstract void closeCursor(String cursor);
 }
