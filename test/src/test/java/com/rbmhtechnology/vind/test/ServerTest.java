@@ -2476,7 +2476,7 @@ public class ServerTest {
                 .buildTextField("title");
 
         SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
-                .setFacet(true)
+                //.setFacet(true)
                 .buildDateField("created");
 
         SingleValueFieldDescriptor.UtilDateFieldDescriptor<Date> modified = new FieldDescriptorBuilder()
@@ -2502,7 +2502,7 @@ public class ServerTest {
 
         Document d2 = assets.createDoc("2")
                 .setValue(title, "Hello Friends")
-                .setValue(created, now)
+                //.setValue(created, now)
                 .setValue(modified, new Date())
                 .addValue(category, 4L);
 
