@@ -2,6 +2,7 @@ package com.rbmhtechnology.vind.elasticsearch.backend.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearchQueryFactory;
@@ -30,6 +31,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -594,4 +596,5 @@ public class DocumentUtil {
         final Document vindDoc = buildVindDoc(doc2, factory, null);
         return equalDocs(doc1,vindDoc, factory);
     }
+    
 }

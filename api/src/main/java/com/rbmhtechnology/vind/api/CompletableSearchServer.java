@@ -396,4 +396,8 @@ public class CompletableSearchServer extends SearchServer {
         return backend.getServiceProviderClass();
     }
 
+    @Override
+    public void closeCursor(String cursor) {
+        backend.closeCursor(cursor);
+    }
 }

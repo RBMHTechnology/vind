@@ -11,9 +11,11 @@ import com.rbmhtechnology.vind.api.SmartSearchServerBase;
 import com.rbmhtechnology.vind.api.ServiceProvider;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.delete.Delete;
+import com.rbmhtechnology.vind.api.query.division.Cursor;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.get.RealTimeGet;
 import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearch;
+import com.rbmhtechnology.vind.api.result.CursorResult;
 import com.rbmhtechnology.vind.elasticsearch.backend.client.ElasticVindClient;
 import com.rbmhtechnology.vind.model.InverseSearchQuery;
 import com.rbmhtechnology.vind.api.query.inverseSearch.InverseSearchQueryFactory;
@@ -78,10 +80,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.rbmhtechnology.vind.api.query.division.ResultSubset.DivisionType.cursor;
+import static com.rbmhtechnology.vind.elasticsearch.backend.util.CursorUtils.toSearchAfterCursor;
 import static com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil.createEmptyDocument;
 
 public class ElasticSearchServer extends SmartSearchServerBase {
@@ -351,6 +354,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
             final SearchSourceBuilder query =
                     ElasticQueryBuilder.buildQuery(search, factory, !validateQueryResponse.isValid(), currentFootprint);
             elasticClientLogger.debug(">>> query({})", query.toString());
+
             final SearchResponse response = elasticSearchClient.query(query);
             if(Objects.nonNull(response)
                     && Objects.nonNull(response.getHits())
@@ -406,6 +410,11 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                     }
                     case slice: {
                         return new SliceResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
+                    }
+                    case cursor: {
+                        final Object[] sortValues = response.getHits().getAt(response.getHits().getHits().length - 1).getSortValues();
+                        ((Cursor) search.getResultSet()).setSearchAfter(toSearchAfterCursor(sortValues));
+                        return new CursorResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     default:
                         return new PageResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
@@ -647,6 +656,22 @@ public class ElasticSearchServer extends SmartSearchServerBase {
         return ElasticServerProvider.class;
     }
 
+    @Override
+    public void closeCursor(String cursor) {
+        try {
+            elasticSearchClient.closeScroll(cursor);
+        } catch (IOException e) {
+            log.error("Error closing cursor session {}: {}",
+                    cursor,
+                    e.getMessage(), e);
+            throw new SearchServerException(
+                    String.format(
+                            "Error closing cursor session %s: %s",
+                            cursor,
+                            e.getMessage()), e);
+        }
+    }
+
     private static ElasticServerProvider getElasticServerProvider() {
         final String providerClassName = SearchConfiguration.get(SearchConfiguration.SERVER_PROVIDER, null);
 
@@ -809,6 +834,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
             throw new SearchServerException(String.format("Cannot issue query: %s",e.getMessage()), e);
         }
     }
+
 
     private List<String> getIndexedFields() throws IOException {
         return elasticSearchClient.getMappings().mappings().values().stream()
