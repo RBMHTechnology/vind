@@ -12,35 +12,35 @@ public class Cursor extends ResultSubset {
 
     private Logger log = LoggerFactory.getLogger(getClass());
 
-    private Object[] searchAfter;
-    private final Integer windowSize;
+    private String searchAfter;
+    private final Integer size;
     private final long minutesKeptAlive;
 
-    public Cursor(long minutesKeptAlive, Integer windowSize) {
+    public Cursor(long minutesKeptAlive, Integer size) {
         if(minutesKeptAlive <= 0 ) {
             log.error("Minutes kept alive can not be lower or equals than 0: {}", minutesKeptAlive);
             throw new IllegalArgumentException("Minutes kept alive can not be lower or equals than 0: " + minutesKeptAlive);
         }
-        if(windowSize <= 0 ) {
-            log.error("Cursor window size can not be lower or equals than 0: {}", windowSize);
-            throw new IllegalArgumentException("Cursor window size can not be lower or equals than 0: " + windowSize);
+        if(size <= 0 ) {
+            log.error("Cursor window size can not be lower or equals than 0: {}", size);
+            throw new IllegalArgumentException("Cursor window size can not be lower or equals than 0: " + size);
         }
         this.minutesKeptAlive = minutesKeptAlive;
-        this.windowSize = windowSize;
+        this.size = size;
         type = DivisionType.cursor;
     }
 
-    public Cursor(Object[] searchAfter, long minutesKeptAlive, Integer windowSize) {
+    public Cursor(String searchAfter, long minutesKeptAlive, Integer size) {
         if(minutesKeptAlive <= 0 ) {
             log.error("Minutes kept alive can not be lower or equals than 0: {}", minutesKeptAlive);
             throw new IllegalArgumentException("Minutes kept alive can not be lower or equals than 0: " + minutesKeptAlive);
         }
-        if(windowSize <= 0 ) {
-            log.error("Cursor window size can not be lower or equals than 0: {}", windowSize);
-            throw new IllegalArgumentException("Cursor window size can not be lower or equals than 0: " + windowSize);
+        if(size <= 0 ) {
+            log.error("Cursor window size can not be lower or equals than 0: {}", size);
+            throw new IllegalArgumentException("Cursor window size can not be lower or equals than 0: " + size);
         }
         this.searchAfter = searchAfter;
-        this.windowSize = windowSize;
+        this.size = size;
         this.minutesKeptAlive = minutesKeptAlive;
         type = DivisionType.cursor;
     }
@@ -50,21 +50,21 @@ public class Cursor extends ResultSubset {
         return minutesKeptAlive;
     }
 
-    public Object[] getSearchAfter() {
+    public String getSearchAfter() {
         return searchAfter;
     }
 
-    public void setSearchAfter(Object[] searchAfter) {
+    public void setSearchAfter(String searchAfter) {
         this.searchAfter = searchAfter;
     }
 
-    public int getWindowSize() {
-        return windowSize;
+    public int getSize() {
+        return size;
     }
 
     @Override
     public ResultSubset copy() {
-        return new Cursor(this.searchAfter, this.minutesKeptAlive, this.windowSize);
+        return new Cursor(this.searchAfter, this.minutesKeptAlive, this.size);
     }
 
     @Override
@@ -74,6 +74,6 @@ public class Cursor extends ResultSubset {
                 "\"windowSize\":%s," +
                 "\"minutsKeptAlive\":%s" +
                 "}";
-        return String.format(scoreString,this.searchAfter, this.windowSize, this.minutesKeptAlive);
+        return String.format(scoreString,this.searchAfter, this.size, this.minutesKeptAlive);
     }
 }

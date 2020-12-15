@@ -84,6 +84,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.rbmhtechnology.vind.api.query.division.ResultSubset.DivisionType.cursor;
+import static com.rbmhtechnology.vind.elasticsearch.backend.util.CursorUtils.toSearchAfterCursor;
 import static com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil.createEmptyDocument;
 
 public class ElasticSearchServer extends SmartSearchServerBase {
@@ -416,7 +417,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                     }
                     case cursor: {
                         final Object[] sortValues = response.getHits().getAt(response.getHits().getHits().length - 1).getSortValues();
-                        ((Cursor) search.getResultSet()).setSearchAfter(sortValues);
+                        ((Cursor) search.getResultSet()).setSearchAfter(toSearchAfterCursor(sortValues));
                         return new CursorResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     default:

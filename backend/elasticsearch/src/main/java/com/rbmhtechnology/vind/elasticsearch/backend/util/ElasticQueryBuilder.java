@@ -76,6 +76,7 @@ import java.util.SortedSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.rbmhtechnology.vind.elasticsearch.backend.util.CursorUtils.fromSearchAfterCursor;
 import static com.rbmhtechnology.vind.model.FieldDescriptor.*;
 
 public class ElasticQueryBuilder {
@@ -285,10 +286,10 @@ public class ElasticQueryBuilder {
             }
             case cursor: {
                 final Cursor resultSet = (Cursor) search.getResultSet();
-                searchSource.size(resultSet.getWindowSize());
+                searchSource.size(resultSet.getSize());
                 searchSource.sort("_id_");
                 if( resultSet.getSearchAfter()!= null ) {
-                    searchSource.searchAfter(resultSet.getSearchAfter());
+                    searchSource.searchAfter(fromSearchAfterCursor(resultSet.getSearchAfter()));
                 }
                 break;
             }

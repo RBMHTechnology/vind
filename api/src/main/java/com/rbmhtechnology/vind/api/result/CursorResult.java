@@ -42,7 +42,7 @@ public class CursorResult extends SearchResult {
      * Gets the actual cursor details.
      * @return the cursor details.
      */
-    public Object[] getSearchAfter() {
+    public String getSearchAfter() {
         return this.cursor.getSearchAfter();
     }
 

@@ -740,12 +740,12 @@ public class FulltextSearch {
         return this;
     }
 
-    public FulltextSearch cursor(Object[] searchAfter, long aliveMinutes, int windowSize) {
+    public FulltextSearch cursor(String searchAfter, long aliveMinutes, int windowSize) {
         this.resultSet = new Cursor(searchAfter, aliveMinutes, windowSize);
         return this;
     }
 
-    public FulltextSearch cursor(Object[] searchAfter, long aliveMinutes) {
+    public FulltextSearch cursor(String searchAfter, long aliveMinutes) {
         this.resultSet = new Cursor(searchAfter, aliveMinutes, SearchConfiguration.get(SearchConfiguration.SEARCH_RESULT_PAGESIZE,10));
         return this;
     }
