@@ -535,6 +535,11 @@ public class MonitoringSearchServer extends SearchServer {
         return this.server.getServiceProviderClass();
     }
 
+    @Override
+    public void closeCursor(String cursor) {
+        server.closeCursor(cursor);
+    }
+
     private void addDeleteMonitoringEntry(Session session, ZonedDateTime start, DeleteResult result, ZonedDateTime end) {
         try {
             final DeleteEntry entry =
