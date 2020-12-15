@@ -2502,16 +2502,21 @@ public class ServerTest {
 
         Document d2 = assets.createDoc("2")
                 .setValue(title, "Hello Friends")
-                //.setValue(created, now)
+                .setValue(created, now)
                 .setValue(modified, new Date())
                 .addValue(category, 4L);
+
+        Document d3 = assets.createDoc("3")
+                .setValue(title, "Best Friends")
+                .setValue(modified, new Date())
+                .addValue(category, 5L);
 
         SearchServer server = testBackend.getSearchServer();
 
         server.index(d1);
         server.index(d2);
+        server.index(d3);
         server.commit();
-
 
         FulltextSearch search = Search.fulltext("hello").facet(category)
                 .sort(desc(scoredDate(created)));
@@ -2524,6 +2529,18 @@ public class ServerTest {
 
         result = server.execute(search,assets);
         assertEquals("1", result.getResults().get(0).getId());
+
+        search = Search.fulltext("friends").facet(category)
+                .sort(desc(scoredDate(created)));
+
+        result = server.execute(search,assets);
+        assertEquals("2", result.getResults().get(0).getId());
+
+        search = Search.fulltext("friends").facet(category)
+                .sort(asc(scoredDate(created)));
+
+        result = server.execute(search,assets);
+        assertEquals("3", result.getResults().get(0).getId());
     }
 
     @Test
