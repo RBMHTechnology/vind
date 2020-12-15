@@ -273,3 +273,7 @@ context.
 * BugFix: Fix context field issues.
 * Improvement: Added better elasticsearch footprint handling based on mapping fields.
 * BugFix: fixed issue with spellcheck results. 
+
+# 3.0.32
+* Feature: Implemented cursor search for elasticsearch backend.
+

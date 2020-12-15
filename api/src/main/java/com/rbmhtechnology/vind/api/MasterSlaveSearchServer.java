@@ -204,4 +204,10 @@ public class MasterSlaveSearchServer extends SearchServer {
     public Class<? extends ServiceProvider> getServiceProviderClass() {
         return backend.getServiceProviderClass();
     }
+
+    @Override
+    public void closeCursor(String cursor) {
+        slaveBackend.closeCursor(cursor);
+        backend.closeCursor(cursor);
+    }
 }

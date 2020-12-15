@@ -13,6 +13,6 @@ public abstract class ResultSubset {
     }
 
     public enum DivisionType {
-        slice, page
+        slice, page, cursor
     }
 }

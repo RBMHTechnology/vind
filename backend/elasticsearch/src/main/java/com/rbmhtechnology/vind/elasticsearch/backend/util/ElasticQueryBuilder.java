@@ -5,6 +5,7 @@ import com.google.common.collect.Streams;
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
+import com.rbmhtechnology.vind.api.query.division.Cursor;
 import com.rbmhtechnology.vind.api.query.division.Page;
 import com.rbmhtechnology.vind.api.query.division.Slice;
 import com.rbmhtechnology.vind.api.query.facet.Facet;
@@ -75,6 +76,7 @@ import java.util.SortedSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.rbmhtechnology.vind.elasticsearch.backend.util.CursorUtils.fromSearchAfterCursor;
 import static com.rbmhtechnology.vind.model.FieldDescriptor.*;
 
 public class ElasticQueryBuilder {
@@ -280,6 +282,15 @@ public class ElasticQueryBuilder {
                 final Slice resultSet = (Slice) search.getResultSet();
                 searchSource.from(resultSet.getOffset());
                 searchSource.size(resultSet.getSliceSize());
+                break;
+            }
+            case cursor: {
+                final Cursor resultSet = (Cursor) search.getResultSet();
+                searchSource.size(resultSet.getSize());
+                searchSource.sort("_id_");
+                if( resultSet.getSearchAfter()!= null ) {
+                    searchSource.searchAfter(fromSearchAfterCursor(resultSet.getSearchAfter()));
+                }
                 break;
             }
         }
