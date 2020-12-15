@@ -677,8 +677,8 @@ public class SolrSearchServer extends SmartSearchServerBase {
             case cursor: {
                 throw new NotImplementedException("Result sub type cursor is not supported by Solr backend");
             }
-            default:
-            case page: {
+            case page:
+            default: {
                 final Page resultSet = (Page) search.getResultSet();
                 query.setStart(resultSet.getOffset());
                 query.setRows(resultSet.getPagesize());

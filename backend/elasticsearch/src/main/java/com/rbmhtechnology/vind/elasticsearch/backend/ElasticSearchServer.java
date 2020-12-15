@@ -355,11 +355,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                     ElasticQueryBuilder.buildQuery(search, factory, !validateQueryResponse.isValid(), currentFootprint);
             elasticClientLogger.debug(">>> query({})", query.toString());
 
-            final boolean isScrollSearch = cursor.equals(search.getResultSet().getType());
-            final SearchResponse response ;
-
-            response = elasticSearchClient.query(query);
-
+            final SearchResponse response = elasticSearchClient.query(query);
             if(Objects.nonNull(response)
                     && Objects.nonNull(response.getHits())
                     && Objects.nonNull(response.getHits().getHits())){
