@@ -277,5 +277,8 @@ context.
 # 3.0.32
 * Feature: Implemented cursor search for elasticsearch backend.
 
-# 3.1.00
+# 3.1.0
 * Improvement: Added cursor reference to individual document for cursored based search(#199).
+
+# 3.1.1
+* Bugfix: avoid index out of bounds on cursor results.

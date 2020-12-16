@@ -413,7 +413,9 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                         return new SliceResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     case cursor: {
-                        ((Cursor) search.getResultSet()).setSearchAfter(documents.get(documents.size()-1).getSearchAfterCursor().get());
+                        if (!documents.isEmpty()) {
+                            ((Cursor) search.getResultSet()).setSearchAfter(documents.get(documents.size()-1).getSearchAfterCursor().get());
+                        }
                         return new CursorResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     default:
