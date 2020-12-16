@@ -275,5 +275,7 @@ context.
 * BugFix: fixed issue with spellcheck results. 
 
 # 3.0.32
-* Feature: Implemented cursor search for elasticsearch backend.
+* Feature: Implemented cursor search for elasticsearch backend(#195).
 
+# 3.0.33
+* BugFix: fixed issue on scoredate function(#197).
