@@ -43,6 +43,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.rbmhtechnology.vind.elasticsearch.backend.util.CursorUtils.toSearchAfterCursor;
 import static com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil._COMPLEX;
 import static com.rbmhtechnology.vind.elasticsearch.backend.util.FieldUtil._DYNAMIC;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -334,8 +335,7 @@ public class DocumentUtil {
         return value;
     }
 
-    public static Document buildVindDoc(SearchHit hit , DocumentFactory factory, String searchContext) {
-
+    public static Document buildVindDoc(SearchHit hit, DocumentFactory factory, String searchContext, boolean isCursorSearch) {
         final Document document = buildVindDoc(hit.getSourceAsMap(), factory, searchContext);
 
         // Setting score if present in result
@@ -345,7 +345,14 @@ public class DocumentUtil {
         Optional.ofNullable(hit.field(FieldUtil.DISTANCE))
                 .ifPresent(distance -> document.setDistance(((Double)distance.getValue()).floatValue()/1000));
 
+        if (isCursorSearch) {
+            document.setSearchAfterCursor(toSearchAfterCursor(hit.getSortValues()));
+        }
         return document;
+    }
+
+    public static Document buildVindDoc(SearchHit hit , DocumentFactory factory, String searchContext) {
+        return buildVindDoc(hit,factory,searchContext,false);
     }
 
     public static Document buildVindDoc( Map<String, Object> docMap , DocumentFactory factory, String searchContext) {
@@ -596,5 +603,4 @@ public class DocumentUtil {
         final Document vindDoc = buildVindDoc(doc2, factory, null);
         return equalDocs(doc1,vindDoc, factory);
     }
-    
 }
