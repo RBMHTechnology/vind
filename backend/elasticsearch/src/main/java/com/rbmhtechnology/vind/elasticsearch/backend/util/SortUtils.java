@@ -74,10 +74,11 @@ public class SortUtils {
                 parameters.put("a",4);
                 parameters.put("m",1.9e-10);
                 parameters.put("b",0.1);
+                parameters.put("n",0.5);
                 final Script painlessDateSort = new Script(
                         ScriptType.INLINE,
                         "painless",
-                        "_score*(params.a/(params.m*(new Date().getTime()-doc[params.field].value.millis)+params.b))",
+                        "doc[params.field].empty ? _score*params.n : _score*(params.a/(params.m*(new Date().getTime()-doc[params.field].value.millis)+params.b))",
                         parameters);
                 return SortBuilders
                         .scriptSort(painlessDateSort, ScriptSortBuilder.ScriptSortType.NUMBER)
@@ -129,10 +130,11 @@ public class SortUtils {
                 parameters.put("a",4);
                 parameters.put("m",1.9e-10);
                 parameters.put("b",0.1);
+                parameters.put("n",0.5);
                 final Script painlessDateSort = new Script(
                         ScriptType.INLINE,
                         "painless",
-                        "_score*(params.a/(params.m*(new Date().getTime()-doc[params.field].value.millis)+params.b))",
+                        "doc[params.field].empty ? _score*params.n : _score*(params.a/(params.m*(new Date().getTime()-doc[params.field].value.millis)+params.b))",
                         parameters);
                 return AggregationBuilders.avg(name)
                         .script(painlessDateSort);
