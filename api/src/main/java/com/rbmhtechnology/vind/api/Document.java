@@ -6,6 +6,7 @@ import com.rbmhtechnology.vind.model.MultiValuedComplexField;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -444,4 +445,11 @@ public interface Document {
 
     Map<String, Object> getValues();
 
+
+    /**
+     * Gets the document search after cursor on a cursored search.
+     * @return an {@link Optional<String>} empty if not cursored search otherwise containing the cursor to the
+     * document.
+     */
+    Optional<String> getSearchAfterCursor();
 }

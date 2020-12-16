@@ -180,6 +180,7 @@ public class DocumentFactory {
         private float score;
         private float distance;
         private Integer childCount;
+        private Optional<String> searchAfterCursor = Optional.empty();
 
         private DocumentImpl(String id, String type) {
             //this.values.put(DocumentFactory.ID, id);
@@ -809,11 +810,21 @@ public class DocumentFactory {
         }
 
         @Override
+        public Optional<String> getSearchAfterCursor() {
+            return this.searchAfterCursor;
+        }
+
+        public void setSearchAfterCursor(String searchAfterCursor) {
+            this.searchAfterCursor = Optional.ofNullable(searchAfterCursor);
+        }
+
+        @Override
         public String toString() {
             return "DocumentImpl{" +
                     "values=" + values +
                     ", id='" + getValue(DocumentFactory.ID, String.class) + '\'' +
                     ", type='" + type + '\'' +
+                    ", cursor='" + searchAfterCursor + '\'' +
                     '}';
         }
     }
