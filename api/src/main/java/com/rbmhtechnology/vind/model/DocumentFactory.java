@@ -814,8 +814,10 @@ public class DocumentFactory {
             return this.searchAfterCursor;
         }
 
-        public void setSearchAfterCursor(String searchAfterCursor) {
+        @Override
+        public Document setSearchAfterCursor(String searchAfterCursor) {
             this.searchAfterCursor = Optional.ofNullable(searchAfterCursor);
+            return this;
         }
 
         @Override

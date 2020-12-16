@@ -360,8 +360,9 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                     && Objects.nonNull(response.getHits())
                     && Objects.nonNull(response.getHits().getHits())){
 
+                final boolean isCursorSearch = search.getResultSet().getType().equals(cursor);
                 final List<Document> documents = Arrays.stream(response.getHits().getHits())
-                        .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))
+                        .map( hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext(), isCursorSearch))
                         .collect(Collectors.toList());
 
                 long totalHits = response.getHits().getTotalHits().value;
@@ -412,8 +413,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                         return new SliceResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     case cursor: {
-                        final Object[] sortValues = response.getHits().getAt(response.getHits().getHits().length - 1).getSortValues();
-                        ((Cursor) search.getResultSet()).setSearchAfter(toSearchAfterCursor(sortValues));
+                        ((Cursor) search.getResultSet()).setSearchAfter(documents.get(documents.size()-1).getSearchAfterCursor().get());
                         return new CursorResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     default:

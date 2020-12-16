@@ -452,4 +452,11 @@ public interface Document {
      * document.
      */
     Optional<String> getSearchAfterCursor();
+
+    /**
+     * Sets the document search after cursor on a cursored search.
+     * @param searchAfterCursor {@link String} search after cursor pointing to te document.
+     * @return the document with the new cursor value.
+     */
+    Document setSearchAfterCursor(String searchAfterCursor);
 }
