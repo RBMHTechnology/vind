@@ -2,7 +2,9 @@ package com.rbmhtechnology.vind.test;
 
 import com.rbmhtechnology.vind.api.Document;
 import com.rbmhtechnology.vind.api.SearchServer;
+import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.Search;
+import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
@@ -54,6 +56,23 @@ public class SmartParsingTest {
         Assert.assertEquals(3, server.execute(Search.fulltext("title").smartParsing(true), factory).getNumOfResults());
         Assert.assertEquals(1, server.execute(Search.fulltext("category:\"Cat 2\"").smartParsing(true), factory).getNumOfResults());
     }
+
+    @Test
+    @RunWithBackend({Solr,Elastic})
+    public void testSmartParserFailingNot() {
+        SearchServer server = backend.getSearchServer();
+
+        server.index(getDoc("1", "CoverageDBProject", ZonedDateTime.now(), "Cat 1"));
+        server.index(getDoc("2", "Event", ZonedDateTime.now(), "Media Planet Event" ,"Cat 2"));
+        server.index(getDoc("3", "Title three", ZonedDateTime.now().minusYears(1), "Cat 3"));
+
+        server.commit();
+
+        final FulltextSearch search = Search.fulltext("title:(CoverageDBProject OR Event) AND NOT (category:\"Media Planet Event\")").smartParsing(true);
+        final SearchResult result = server.execute(search, factory);
+        Assert.assertEquals(1, result.getNumOfResults());
+    }
+
 
     public Document getDoc(String id, String title, ZonedDateTime created, String ... cats) {
         Document document = factory.createDoc(id)

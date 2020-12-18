@@ -127,6 +127,7 @@ public class QueryParserTest {
         q = parse("field: [* TO * ]");
         assertEquals(1, q.size());
         assertEquals(null,((RangeLiteral)((SimpleTermClause)q.get(0)).getValue()).getFrom());
+
     }
 
     @Test
@@ -134,6 +135,12 @@ public class QueryParserTest {
         Query q = parse("some.field:test");
         assertEquals(1, q.size());
         assertEquals("test",((TermsLiteral)((SimpleTermClause)q.get(0)).getValue()).getValues().get(0));
+    }
+
+    @Test
+    public void testDotOnFulltextParsings() throws ParseException {
+        Query q = parse("m.e.o.");
+        assertEquals("m.e.o.", q.getText());
     }
 
 
