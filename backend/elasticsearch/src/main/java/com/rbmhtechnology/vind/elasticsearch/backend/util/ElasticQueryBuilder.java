@@ -22,6 +22,7 @@ import com.rbmhtechnology.vind.configure.SearchConfiguration;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.elasticsearch.action.search.SearchResponse;
@@ -40,6 +41,7 @@ import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.BucketOrder;
+import org.elasticsearch.search.aggregations.bucket.global.GlobalAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregationBuilder;
@@ -48,6 +50,8 @@ import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilde
 import org.elasticsearch.search.aggregations.bucket.terms.IncludeExclude;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.ExtendedStatsAggregationBuilder;
+import org.elasticsearch.search.aggregations.metrics.StatsAggregationBuilder;
+import org.elasticsearch.search.aggregations.support.ValueType;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.suggest.Suggest;
@@ -225,7 +229,6 @@ public class ElasticQueryBuilder {
                                             vindFacet.getKey(),
                                             vindFacet.getValue(),
                                             factory,
-                                            UseCase.Facet,//TODO : complex fields can have aggregation on non facet?
                                             searchContext,
                                             search.getFacetMinCount() ,
                                             facetLimit,
@@ -493,31 +496,35 @@ public class ElasticQueryBuilder {
     }
 
     private static List<AggregationBuilder> buildElasticAggregations(String name, Facet vindFacet,
-                                                                     DocumentFactory factory, UseCase useCase,
+                                                                     DocumentFactory factory,
                                                                      String searchContext, int minCount, int facetLimit,
                                                                      List<String> indexFootPrint) {
         final String contextualizedFacetName = Stream.of(searchContext, name)
                 .filter(Objects::nonNull)
                 .collect(Collectors.joining("_"));
 
+        final UseCase facetScope = UseCase.valueOf(vindFacet.getScope().name());
+
         switch (vindFacet.getType()) {
             case "TermFacet":
                 final Facet.TermFacet termFacet = (Facet.TermFacet) vindFacet;
                 final FieldDescriptor<?> field = factory.getField(termFacet.getFieldName());
-                final String fieldName = FieldUtil.getFieldName(field, useCase, searchContext,indexFootPrint)
-                        .orElse(termFacet.getFieldName());
+                if (field.isFacet()) {
+                    final String fieldName = FieldUtil.getFieldName(field, facetScope, searchContext,indexFootPrint)
+                            .orElse(termFacet.getFieldName());
 
-                final TermsAggregationBuilder termsAgg = AggregationBuilders
-                        .terms(contextualizedFacetName)
-                        .field(fieldName)
-                        .minDocCount(minCount)
-                        .size(facetLimit);
+                    final TermsAggregationBuilder termsAgg = AggregationBuilders
+                            .terms(contextualizedFacetName)
+                            .field(fieldName)
+                            .minDocCount(minCount)
+                            .size(facetLimit);
 
-                Optional.ofNullable(termFacet.getOption()).ifPresent(option -> setTermOptions(termsAgg, option));
+                    Optional.ofNullable(termFacet.getOption()).ifPresent(option -> setTermOptions(termsAgg, option));
 
-                addSortToAggregation(vindFacet, searchContext, termsAgg, indexFootPrint);
+                    addSortToAggregation(vindFacet, searchContext, termsAgg, indexFootPrint);
 
-                return Collections.singletonList(termsAgg);
+                    return Collections.singletonList(termsAgg);
+                } else return Collections.emptyList();
             case "TypeFacet":
                 final Facet.TypeFacet typeFacet = (Facet.TypeFacet) vindFacet;
                 final TermsAggregationBuilder typeAgg = AggregationBuilders
@@ -541,7 +548,7 @@ public class ElasticQueryBuilder {
             case "NumericRangeFacet":
                 final Facet.NumericRangeFacet<?> numericRangeFacet = (Facet.NumericRangeFacet) vindFacet;
                 final Optional<String> numericRangeAggField =
-                        FieldUtil.getFieldName(numericRangeFacet.getFieldDescriptor(), useCase, searchContext, indexFootPrint);
+                        FieldUtil.getFieldName(numericRangeFacet.getFieldDescriptor(), facetScope, searchContext, indexFootPrint);
                 if (numericRangeAggField.isPresent()) {
                     final HistogramAggregationBuilder rangeAggregation = AggregationBuilders
                             .histogram(name)
@@ -570,7 +577,7 @@ public class ElasticQueryBuilder {
                 final Facet.DateRangeFacet.ZoneDateRangeFacet zoneDateRangeFacet = (Facet.DateRangeFacet.ZoneDateRangeFacet) vindFacet;
 
                 final Optional<String> zoneDateRangeAggFieldName =
-                        FieldUtil.getFieldName(zoneDateRangeFacet.getFieldDescriptor(), useCase, searchContext, indexFootPrint);
+                        FieldUtil.getFieldName(zoneDateRangeFacet.getFieldDescriptor(), facetScope, searchContext, indexFootPrint);
                 if(zoneDateRangeAggFieldName.isPresent()) {
 
                     final DateRangeAggregationBuilder dateRangeAggregation = AggregationBuilders
@@ -603,7 +610,7 @@ public class ElasticQueryBuilder {
                 final Facet.DateRangeFacet.UtilDateRangeFacet utilDateRangeFacet = (Facet.DateRangeFacet.UtilDateRangeFacet) vindFacet;
 
                 final Optional<String> utilDateRangeAggFieldName =
-                        FieldUtil.getFieldName(utilDateRangeFacet.getFieldDescriptor(), useCase, searchContext, indexFootPrint);
+                        FieldUtil.getFieldName(utilDateRangeFacet.getFieldDescriptor(), facetScope, searchContext, indexFootPrint);
 
                 if (utilDateRangeAggFieldName.isPresent()) {
                     final DateRangeAggregationBuilder utilDateRangeAggregation = AggregationBuilders
@@ -635,7 +642,7 @@ public class ElasticQueryBuilder {
                 final Facet.DateRangeFacet.DateMathRangeFacet dateMathRangeFacet = (Facet.DateRangeFacet.DateMathRangeFacet) vindFacet;
 
                 final Optional<String> dateMathRangeAggFieldName =
-                        FieldUtil.getFieldName(dateMathRangeFacet.getFieldDescriptor(), useCase, searchContext, indexFootPrint);
+                        FieldUtil.getFieldName(dateMathRangeFacet.getFieldDescriptor(), facetScope, searchContext, indexFootPrint);
                 if(dateMathRangeAggFieldName.isPresent()) {
                     final DateRangeAggregationBuilder dateMathDateRangeAggregation = AggregationBuilders
                             .dateRange(contextualizedFacetName)
@@ -675,7 +682,7 @@ public class ElasticQueryBuilder {
             case "NumericIntervalFacet":
                 final Facet.NumericIntervalFacet numericIntervalFacet = (Facet.NumericIntervalFacet) vindFacet;
                 final Optional<String> numericIntervalAggFieldName =
-                        FieldUtil.getFieldName(numericIntervalFacet.getFieldDescriptor(), useCase, searchContext, indexFootPrint);
+                        FieldUtil.getFieldName(numericIntervalFacet.getFieldDescriptor(), facetScope, searchContext, indexFootPrint);
 
                 if (numericIntervalAggFieldName.isPresent()) {
                     final RangeAggregationBuilder numericIntervalAggregation = AggregationBuilders
@@ -694,7 +701,7 @@ public class ElasticQueryBuilder {
             case "ZoneDateTimeIntervalFacet":
                 final Facet.DateIntervalFacet.ZoneDateTimeIntervalFacet zoneDateTimeIntervalFacet = (Facet.DateIntervalFacet.ZoneDateTimeIntervalFacet) vindFacet;
                 final Optional<String> zoneDateTimeIntervalAggFieldName =
-                        FieldUtil.getFieldName(zoneDateTimeIntervalFacet.getFieldDescriptor(), useCase, searchContext, indexFootPrint);
+                        FieldUtil.getFieldName(zoneDateTimeIntervalFacet.getFieldDescriptor(), facetScope, searchContext, indexFootPrint);
                 if (zoneDateTimeIntervalAggFieldName.isPresent()) {
                     final DateRangeAggregationBuilder ZoneDateIntervalAggregation = AggregationBuilders
                             .dateRange(contextualizedFacetName)
@@ -711,7 +718,7 @@ public class ElasticQueryBuilder {
             case "UtilDateIntervalFacet":
                 final Facet.DateIntervalFacet.UtilDateIntervalFacet utilDateIntervalFacet = (Facet.DateIntervalFacet.UtilDateIntervalFacet) vindFacet;
                 final Optional<String> utilDateIntervalAggFieldName =
-                        FieldUtil.getFieldName(utilDateIntervalFacet.getFieldDescriptor(), useCase, searchContext, indexFootPrint);
+                        FieldUtil.getFieldName(utilDateIntervalFacet.getFieldDescriptor(), facetScope, searchContext, indexFootPrint);
                 if (utilDateIntervalAggFieldName.isPresent()) {
                     final DateRangeAggregationBuilder utilDateIntervalAggregation = AggregationBuilders
                             .dateRange(contextualizedFacetName)
@@ -729,7 +736,7 @@ public class ElasticQueryBuilder {
             case "UtilDateMathIntervalFacet":
                 final Facet.DateIntervalFacet dateMathIntervalFacet = (Facet.DateIntervalFacet) vindFacet;
                 final Optional<String> dateMathIntervalAggFieldName =
-                        FieldUtil.getFieldName(dateMathIntervalFacet.getFieldDescriptor(), useCase, searchContext, indexFootPrint);
+                        FieldUtil.getFieldName(dateMathIntervalFacet.getFieldDescriptor(), facetScope, searchContext, indexFootPrint);
                 if (dateMathIntervalAggFieldName.isPresent()) {
                     final DateRangeAggregationBuilder dateMathIntervalAggregation = AggregationBuilders
                             .dateRange(contextualizedFacetName)
@@ -742,25 +749,33 @@ public class ElasticQueryBuilder {
                     return Collections.singletonList(dateMathIntervalAggregation);
                 }
                 return Collections.emptyList();
-            case "StatsFacet":
             case "StatsDateFacet":
             case "StatsUtilDateFacet":
             case "StatsNumericFacet":
+            case "StatsFacet":
                 final Facet.StatsFacet statsFacet = (Facet.StatsFacet) vindFacet;
-                    return getStatsAggregationBuilders(
+                if(String.class.isAssignableFrom(FieldUtil.getFieldType(statsFacet.getField(), facetScope))) {
+                    return getStringStatsAggregationBuilders(
                             searchContext,
                             contextualizedFacetName,
-                            UseCase.Facet,
+                            facetScope,
                             statsFacet,
                             indexFootPrint);
-
+                }
+                return getStatsAggregationBuilders(
+                        searchContext,
+                        contextualizedFacetName,
+                        facetScope,
+                        statsFacet,
+                        indexFootPrint);
             case "PivotFacet":
                 final Facet.PivotFacet pivotFacet = (Facet.PivotFacet) vindFacet;
                 final List<TermsAggregationBuilder> termFacets = pivotFacet.getFieldDescriptors().stream()
-                        .map(f -> FieldUtil.getFieldName(f, useCase, searchContext, indexFootPrint))
+                        .map(f -> FieldUtil.getFieldName(f, facetScope, searchContext, indexFootPrint))
                         .filter(Optional::isPresent)
                         .map(n -> AggregationBuilders
                                 .terms(contextualizedFacetName)
+
                                 .field(n.get())
                                 .minDocCount(minCount)
                                 .size(facetLimit))
@@ -851,6 +866,50 @@ public class ElasticQueryBuilder {
                     if (statsFacet.getCountDistinct() || statsFacet.getDistinctValues()) {
                         statsAggs.add(AggregationBuilders
                                 .terms(contextualizedFacetName + "_values")
+                                .field(fieldName)
+                        );
+                    }
+
+                    if (statsFacet.getMissing()) {
+                        statsAggs.add(AggregationBuilders
+                                .missing(contextualizedFacetName + "_missing")
+                                .field(fieldName)
+                        );
+                    }
+                });
+
+        return statsAggs;
+    }
+    private static List<AggregationBuilder> getStringStatsAggregationBuilders(String searchContext,
+                                                                        String contextualizedFacetName, UseCase useCase,
+                                                                        Facet.StatsFacet statsFacet,
+                                                                        List<String> indexFootPrint) {
+        final List<AggregationBuilder> statsAggs = new ArrayList<>();
+
+        FieldUtil.getFieldName(statsFacet.getField(), useCase, searchContext, indexFootPrint)
+                .ifPresent(fieldName -> {
+
+                    if (ArrayUtils.isNotEmpty(statsFacet.getPercentiles())) {
+                       throw new SearchServerException("Percentile stat is not supported on text fields by elastic backend");
+                    }
+
+                    if (statsFacet.getCardinality()) {
+                        statsAggs.add(AggregationBuilders
+                                .cardinality(contextualizedFacetName + "_cardinality")
+                                .field(fieldName)
+                        );
+                    }
+
+                    if (statsFacet.getCountDistinct() || statsFacet.getDistinctValues()) {
+                        statsAggs.add(AggregationBuilders
+                                .terms(contextualizedFacetName + "_values")
+                                .field(fieldName)
+                        );
+                    }
+
+                    if (statsFacet.getCount() ) {
+                        statsAggs.add(AggregationBuilders
+                                .count(contextualizedFacetName + "_value_count")
                                 .field(fieldName)
                         );
                     }

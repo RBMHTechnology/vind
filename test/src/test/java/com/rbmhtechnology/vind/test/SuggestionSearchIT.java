@@ -193,4 +193,19 @@ public class SuggestionSearchIT {
 
     }
 
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testColonSearch() {
+        server.index(
+                parent.createDoc("P_SPEC_CHAR").setValue(parent_value, "Servus Nachrichten 19:20 -> Season 4 -> Episode 20 - January 20"));
+        server.commit();
+
+        SuggestionResult result = server.execute(Search.suggest("Servus Nachrichten 19:20 Season 4 Episode 20").fields(parent_value),parent);
+        assertNotNull(result);
+        assertEquals(1, result.size());
+
+        server.delete(parent.createDoc("P_SPEC_CHAR"));
+        server.commit();
+    }
+
 }

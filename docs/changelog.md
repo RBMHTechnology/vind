@@ -282,3 +282,10 @@ context.
 
 # 3.1.1
 * Bugfix: avoid index out of bounds on cursor results.
+
+# 3.1.2
+* Bugfix: Fixed issue on query pareser with '.' caracter at the end of fulltext search
+
+#3.1.3
+* Bugfix: Use Scope define at facet level for aggregations.
+* Bugfix: implement stats facets on text fields and enable cardinality facet.

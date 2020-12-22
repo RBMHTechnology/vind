@@ -232,26 +232,27 @@ public class ResultUtils {
         Long countDistinct = null;
         Long cardinality = null;
 
-        final ParsedExtendedStats statsAggregation = (ParsedExtendedStats)aggregations.entrySet().stream()
+        final Optional<ParsedExtendedStats> statsAggregation = aggregations.entrySet().stream()
                 .filter(entry -> entry.getKey().endsWith(statsFacet.getFacetName()))
                 .map(Map.Entry::getValue)
-                .findFirst()
-                .orElseThrow(RuntimeException::new);
+                .map(agg -> (ParsedExtendedStats)agg)
+                .findFirst();
 
-        if(statsFacet.getSum()) {
-            sum = statsAggregation.getSum();
+
+        if(statsAggregation.isPresent() && statsFacet.getSum()) {
+            sum = statsAggregation.get().getSum();
         }
 
-        if(statsFacet.getMin()) {
-            min = DocumentUtil.castForDescriptor(statsAggregation.getMin(),field, FieldDescriptor.UseCase.Facet);
+        if(statsAggregation.isPresent() &&statsFacet.getMin()) {
+            min = DocumentUtil.castForDescriptor(statsAggregation.get().getMin(),field, FieldDescriptor.UseCase.Facet);
         }
 
-        if(statsFacet.getMax()) {
-            max = DocumentUtil.castForDescriptor(statsAggregation.getMax(),field, FieldDescriptor.UseCase.Facet);
+        if(statsAggregation.isPresent() &&statsFacet.getMax()) {
+            max = DocumentUtil.castForDescriptor(statsAggregation.get().getMax(),field, FieldDescriptor.UseCase.Facet);
         }
 
-        if(statsFacet.getCount()) {
-            count = statsAggregation.getCount();
+        if(statsAggregation.isPresent() &&statsFacet.getCount()) {
+            count = statsAggregation.get().getCount();
         }
 
         if(statsFacet.getMissing()) {
@@ -265,16 +266,16 @@ public class ResultUtils {
             }
         }
 
-        if(statsFacet.getSumOfSquares()) {
-            sumOfSquares = statsAggregation.getSumOfSquares();
+        if(statsAggregation.isPresent() && statsFacet.getSumOfSquares()) {
+            sumOfSquares = statsAggregation.get().getSumOfSquares();
         }
 
-        if(statsFacet.getMean()) {
-            mean = DocumentUtil.castForDescriptor(statsAggregation.getAvg(),field, FieldDescriptor.UseCase.Facet);
+        if(statsAggregation.isPresent() && statsFacet.getMean()) {
+            mean = DocumentUtil.castForDescriptor(statsAggregation.get().getAvg(),field, FieldDescriptor.UseCase.Facet);
         }
 
-        if(statsFacet.getStddev()) {
-            stddev = statsAggregation.getStdDeviation();
+        if(statsAggregation.isPresent() && statsFacet.getStddev()) {
+            stddev = statsAggregation.get().getStdDeviation();
         }
 
         if(ArrayUtils.isNotEmpty(statsFacet.getPercentiles())) {

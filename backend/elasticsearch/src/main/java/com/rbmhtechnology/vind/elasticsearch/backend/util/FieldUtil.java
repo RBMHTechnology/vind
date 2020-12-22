@@ -274,6 +274,12 @@ public class FieldUtil {
         return fields1Names.containsAll(fields2Names);
     }
 
+    public static Class<?> getFieldType(FieldDescriptor<?> descriptor, UseCase useCase) {
+        if(ComplexFieldDescriptor.class.isAssignableFrom(descriptor.getClass())) {
+            return getComplexFieldType((ComplexFieldDescriptor<?, ?, ?>) descriptor,useCase);
+        }
+        return descriptor.getType();
+    }
     public static Class<?> getComplexFieldType(ComplexFieldDescriptor<?,?,?> descriptor, UseCase useCase) {
         switch (useCase) {
             case Suggest:

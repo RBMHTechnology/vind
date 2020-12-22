@@ -1103,10 +1103,10 @@ public abstract class Facet {
         //  java.lang.NoSuchMethodError: com.google.common.hash.HashFunction.hashString(Ljava/lang/CharSequence;)Lcom/google/common/hash/HashCode;
         //      at org.apache.solr.handler.component.StringStatsValues.hash(StatsValuesFactory.java:826)
         //At the moment this method will be moved to numeric and data specific statsFacets
-        /*public StatsFacet<T> cardinality() {
+        public StatsFacet<T> cardinality() {
             this.cardinality=true;
             return this;
-        }*/
+        }
 
         public Boolean getMin() {
             return min;
