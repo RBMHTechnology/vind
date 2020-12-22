@@ -2670,7 +2670,7 @@ public class ServerTest {
 
 
         FulltextSearch search = Search.fulltext()
-                .facet(pivot("bucket",group, cluster,resource)
+                .facet(pivot("bucket",0, group, cluster,resource)
                         .addSort("popularity", scoredDate(created)))
                 ;
 

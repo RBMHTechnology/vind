@@ -288,4 +288,5 @@ context.
 
 #3.1.3
 * Bugfix: Use Scope define at facet level for aggregations.
-* Bugfix: implement stats facets on text fields and enable cardinality facet.
+* Bugfix: Implement stats facets on text fields and enable cardinality facet.
+* Feature: Added pagination to pivot facet.

@@ -3,6 +3,7 @@ package com.rbmhtechnology.vind.elasticsearch.backend.util;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Streams;
 import com.rbmhtechnology.vind.SearchServerException;
+import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.division.Cursor;
@@ -19,10 +20,11 @@ import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.StringSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.UpdateOperation;
 import com.rbmhtechnology.vind.configure.SearchConfiguration;
+import com.rbmhtechnology.vind.elasticsearch.backend.ElasticSearchServer;
+import com.rbmhtechnology.vind.elasticsearch.backend.client.ElasticVindClient;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.elasticsearch.action.search.SearchResponse;
@@ -41,7 +43,6 @@ import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.BucketOrder;
-import org.elasticsearch.search.aggregations.bucket.global.GlobalAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregationBuilder;
@@ -50,8 +51,7 @@ import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilde
 import org.elasticsearch.search.aggregations.bucket.terms.IncludeExclude;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.ExtendedStatsAggregationBuilder;
-import org.elasticsearch.search.aggregations.metrics.StatsAggregationBuilder;
-import org.elasticsearch.search.aggregations.support.ValueType;
+import org.elasticsearch.search.aggregations.metrics.ParsedCardinality;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.suggest.Suggest;
@@ -61,6 +61,7 @@ import org.elasticsearch.search.suggest.SuggestBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -81,7 +82,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.rbmhtechnology.vind.elasticsearch.backend.util.CursorUtils.fromSearchAfterCursor;
-import static com.rbmhtechnology.vind.model.FieldDescriptor.*;
+import static com.rbmhtechnology.vind.model.FieldDescriptor.UseCase;
 
 public class ElasticQueryBuilder {
     private static final Logger log = LoggerFactory.getLogger(ElasticQueryBuilder.class);
@@ -111,11 +112,13 @@ public class ElasticQueryBuilder {
         put(">","");
     }};
 
-    public static SearchSourceBuilder buildQuery(FulltextSearch search, DocumentFactory factory, List<String> indexFootPrint) {
-        return buildQuery(search,factory,false, indexFootPrint);
+    public static SearchSourceBuilder buildQuery(FulltextSearch search, DocumentFactory factory,
+                                                 List<String> indexFootPrint, ElasticVindClient client) {
+        return buildQuery(search,factory,false, indexFootPrint, client);
     }
 
-    public static SearchSourceBuilder buildQuery(FulltextSearch search, DocumentFactory factory, boolean escape, List<String> indexFootPrint) {
+    public static SearchSourceBuilder buildQuery(FulltextSearch search, DocumentFactory factory, boolean escape,
+                                                 List<String> indexFootPrint, ElasticVindClient client) {
 
 
         final String searchContext = search.getSearchContext();
@@ -232,7 +235,8 @@ public class ElasticQueryBuilder {
                                             searchContext,
                                             search.getFacetMinCount() ,
                                             facetLimit,
-                                indexFootPrint);
+                                            indexFootPrint,
+                                            client);
                     })
                     .flatMap(Collection::stream)
                     .filter(Objects::nonNull)
@@ -498,7 +502,8 @@ public class ElasticQueryBuilder {
     private static List<AggregationBuilder> buildElasticAggregations(String name, Facet vindFacet,
                                                                      DocumentFactory factory,
                                                                      String searchContext, int minCount, int facetLimit,
-                                                                     List<String> indexFootPrint) {
+                                                                     List<String> indexFootPrint,
+                                                                     ElasticVindClient client) {
         final String contextualizedFacetName = Stream.of(searchContext, name)
                 .filter(Objects::nonNull)
                 .collect(Collectors.joining("_"));
@@ -782,6 +787,20 @@ public class ElasticQueryBuilder {
                         //.forEach(agg -> addSortToAggregation(vindFacet, searchContext, agg))
                         .collect(Collectors.toList());
                 termFacets.forEach(agg -> addSortToAggregation(vindFacet, searchContext, agg, indexFootPrint));
+
+
+                if (pivotFacet.getPage().isPresent()) {
+                    final int page = Math.toIntExact(pivotFacet.getPage().get());
+                    try {
+                        final int fieldCardinality = getFieldCardinality(client, termFacets.get(0).field());
+                        final int partitions = (int)Math.ceil(fieldCardinality / Double.valueOf(facetLimit));
+                        termFacets.get(0)
+                                .includeExclude(new IncludeExclude(page, partitions));
+                    } catch (IOException e) {
+                        throw new SearchServerException(
+                                "Error calculating cardinality of field" + termFacets.get(0).field()+ " for paged pivot facet: " + e.getMessage(), e);
+                    }
+                }
 
                 final Optional<TermsAggregationBuilder> pivotAgg =
                         Lists.reverse(termFacets).stream().reduce((agg1, agg2) -> agg2.subAggregation(agg1));
@@ -1208,5 +1227,15 @@ public class ElasticQueryBuilder {
                 .map(Optional::get)
                 .toArray(String[]::new);
 
+    }
+    private static int getFieldCardinality(ElasticVindClient client, String fieldName) throws IOException {
+        final SearchSourceBuilder searchSource = new SearchSourceBuilder();
+
+        searchSource.size(0);
+        searchSource.aggregation(AggregationBuilders
+                .cardinality("_cardinality")
+                .field(fieldName));
+        final SearchResponse response = client.query(searchSource);
+        return Math.toIntExact(((ParsedCardinality)response.getAggregations().get("_cardinality")).getValue());
     }
 }

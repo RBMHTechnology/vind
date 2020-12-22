@@ -463,6 +463,18 @@ public class Facets {
     public static Facet pivot(String name,  FieldDescriptor<?>... fieldDescriptors) {
         return new Facet.PivotFacet(name, fieldDescriptors);
     }
+
+    /**
+     * Creates a paged basic pivot facet query on a group of fields. A basic pivot facet query returns a decision
+     * tree of the specified fields.
+     * @param name String with a custom name for the new instance.
+     * @param page {@link long} page of the paginated facet result.
+     * @param fieldDescriptors A group of {@link FieldDescriptor} objects on which perform the pivot query
+     * @return {@link Facet.PivotFacet} object.
+     */
+    public static Facet pivot(String name, long page, FieldDescriptor<?>... fieldDescriptors) {
+        return new Facet.PivotFacet(name, page, fieldDescriptors);
+    }
     /**
      * Creates a basic pivot facet query on a group of fields. A basic pivot facet query returns a decision
      * tree of the specified fields.

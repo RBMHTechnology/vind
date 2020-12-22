@@ -352,7 +352,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                 search.text(searchString);
             }
             final SearchSourceBuilder query =
-                    ElasticQueryBuilder.buildQuery(search, factory, !validateQueryResponse.isValid(), currentFootprint);
+                    ElasticQueryBuilder.buildQuery(search, factory, !validateQueryResponse.isValid(), currentFootprint, elasticSearchClient);
             elasticClientLogger.debug(">>> query({})", query.toString());
 
             final SearchResponse response = elasticSearchClient.query(query);
@@ -381,7 +381,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                             final String text = iterator.next();
                             final FulltextSearch spellcheckSearch = search.copy().text(text).spellcheck(false);
                             final SearchSourceBuilder spellcheckQuery =
-                                    ElasticQueryBuilder.buildQuery(spellcheckSearch, factory, currentFootprint);
+                                    ElasticQueryBuilder.buildQuery(spellcheckSearch, factory, currentFootprint, elasticSearchClient);
                             final SearchResponse spellcheckResponse = elasticSearchClient.query(spellcheckQuery);
                             queryTime = queryTime + spellcheckResponse.getTook().getMillis();
                             if(spellcheckResponse.getHits().getTotalHits().value > 0) {
@@ -432,7 +432,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
     @Override
     public String getRawQuery(FulltextSearch search, DocumentFactory factory) {
-        final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory, currentFootprint);
+        final SearchSourceBuilder query = ElasticQueryBuilder.buildQuery(search, factory, currentFootprint, elasticSearchClient);
         return query.toString();
     }
 

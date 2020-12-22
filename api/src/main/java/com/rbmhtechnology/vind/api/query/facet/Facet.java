@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -857,6 +858,7 @@ public abstract class Facet {
     public static class PivotFacet extends Facet {
 
         private List<FieldDescriptor<?>> fieldDescriptors;
+        private Long page;
 
         /**
          * Creates a new instance of the {@link PivotFacet} class.
@@ -871,11 +873,33 @@ public abstract class Facet {
         }
 
         /**
+         * Creates a new instance of the {@link PivotFacet} class.
+         * @param name String with a custom name for the new instance.
+         * @param page String with the page index(starting from 0).
+         * @param descriptors A group of {@link FieldDescriptor} objects on which perform the pivot query
+         */
+        public PivotFacet(String name, Long page, FieldDescriptor<?>... descriptors ) {
+            this.facetName = name;
+            // Backwards compatibility
+            this.name = name;
+            this.fieldDescriptors = Lists.newArrayList(descriptors);
+            this.page = page;
+        }
+
+        /**
          * Get the {@link FieldDescriptor} used to do the facet query.
          * @return {@link FieldDescriptor} describing the field in which the pivot facet query will be perform.
          */
         public List<FieldDescriptor<?>> getFieldDescriptors() {
             return fieldDescriptors;
+        }
+
+        /**
+         * Get the {@link Optional<Long>} page requested.
+         * @return {@link Optional<Long>} page requested or empty if not set.
+         */
+        public Optional<Long> getPage() {
+            return Optional.ofNullable(page);
         }
 
         @Override
@@ -884,17 +908,19 @@ public abstract class Facet {
                     "\"%s\":{" +
                     "\"type\":\"%s\","+
                     "\"field\":[%s]"+
+                    "\"page\":%s"+
                     "}";
             return String.format(serializeFacet,
                     this.facetName,
                     this.getClass().getSimpleName(),
-                    this.fieldDescriptors.stream().map(d -> "\"" + d.getName() + "\"").collect(Collectors.joining(","))
+                    this.fieldDescriptors.stream().map(d -> "\"" + d.getName() + "\"").collect(Collectors.joining(",")),
+                    this.page
             );
         }
 
         @Override
         public Facet clone() {
-            return new PivotFacet(this.facetName, this.fieldDescriptors.toArray(new FieldDescriptor<?>[this.fieldDescriptors.size()]));
+            return new PivotFacet(this.facetName, this.page, this.fieldDescriptors.toArray(new FieldDescriptor<?>[this.fieldDescriptors.size()]));
         }
     }
 
