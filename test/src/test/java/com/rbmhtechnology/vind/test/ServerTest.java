@@ -14,7 +14,6 @@ import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.suggestion.DescriptorSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
-import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.DeleteResult;
 import com.rbmhtechnology.vind.api.result.GetResult;

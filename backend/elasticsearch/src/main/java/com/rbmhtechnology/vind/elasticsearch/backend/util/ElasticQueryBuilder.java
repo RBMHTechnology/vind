@@ -514,7 +514,7 @@ public class ElasticQueryBuilder {
             case "TermFacet":
                 final Facet.TermFacet termFacet = (Facet.TermFacet) vindFacet;
                 final FieldDescriptor<?> field = factory.getField(termFacet.getFieldName());
-                if (field.isFacet()) {
+                if (field.hasUseCase(facetScope)) {
                     final String fieldName = FieldUtil.getFieldName(field, facetScope, searchContext,indexFootPrint)
                             .orElse(termFacet.getFieldName());
 
@@ -775,25 +775,24 @@ public class ElasticQueryBuilder {
                         indexFootPrint);
             case "PivotFacet":
                 final Facet.PivotFacet pivotFacet = (Facet.PivotFacet) vindFacet;
+                final int facetSize = pivotFacet.getSize().orElse(facetLimit);
                 final List<TermsAggregationBuilder> termFacets = pivotFacet.getFieldDescriptors().stream()
                         .map(f -> FieldUtil.getFieldName(f, facetScope, searchContext, indexFootPrint))
                         .filter(Optional::isPresent)
                         .map(n -> AggregationBuilders
                                 .terms(contextualizedFacetName)
-
                                 .field(n.get())
                                 .minDocCount(minCount)
-                                .size(facetLimit))
-                        //.forEach(agg -> addSortToAggregation(vindFacet, searchContext, agg))
+                                .size(facetSize))
                         .collect(Collectors.toList());
-                termFacets.forEach(agg -> addSortToAggregation(vindFacet, searchContext, agg, indexFootPrint));
 
+                termFacets.forEach(agg -> addSortToAggregation(vindFacet, searchContext, agg, indexFootPrint));
 
                 if (pivotFacet.getPage().isPresent()) {
                     final int page = Math.toIntExact(pivotFacet.getPage().get());
                     try {
                         final int fieldCardinality = getFieldCardinality(client, termFacets.get(0).field());
-                        final int partitions = (int)Math.ceil(fieldCardinality / Double.valueOf(facetLimit));
+                        final int partitions = (int)Math.ceil(fieldCardinality / Double.valueOf(facetSize));
                         termFacets.get(0)
                                 .includeExclude(new IncludeExclude(page, partitions));
                     } catch (IOException e) {

@@ -41,6 +41,7 @@ public abstract class Facet {
     protected String name;
     protected String[] tagedPivots = new String[0];
     protected String facetName;
+    protected Integer size;
 
     protected Map<String,Sort> sortings = new HashMap<>();
 
@@ -123,6 +124,14 @@ public abstract class Facet {
     }
 
     /**
+     * Gets the size defined for the current facet.
+     * @return {@link Optional<Integer>} containing the size of the Facet if defined. Otherwise an empty optional.
+     */
+    public Optional<Integer> getSize() {
+        return Optional.ofNullable(size);
+    }
+
+    /**
      * This class allows to perform the basic term facet query on one field.
      * @param <T> Spectated type of content from the field to be faceted.
      */
@@ -189,8 +198,9 @@ public abstract class Facet {
                     "\"%s\":{" +
                     "\"type\":\"TermFacet\"," +
                     "\"field\":\"%s\"" +
+                    "\"size\":\"%s\"" +
                     "}";
-            return String.format(serializeFacet, this.facetName, this.facetName);
+            return String.format(serializeFacet, this.facetName, this.facetName,this.size);
         }
 
         @Override
@@ -884,6 +894,15 @@ public abstract class Facet {
             this.name = name;
             this.fieldDescriptors = Lists.newArrayList(descriptors);
             this.page = page;
+        }
+
+        public PivotFacet(String name, long page, int size, FieldDescriptor<?>... descriptors) {
+            this.facetName = name;
+            // Backwards compatibility
+            this.name = name;
+            this.fieldDescriptors = Lists.newArrayList(descriptors);
+            this.page = page;
+            this.size = size;
         }
 
         /**

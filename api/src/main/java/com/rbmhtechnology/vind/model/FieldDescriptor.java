@@ -258,6 +258,26 @@ public abstract class FieldDescriptor<T> implements Serializable {
         return new Filter.NotFilter(this.isNotEmpty());
     }
 
+    /** Cheks if a the field descriptor has the given usecase defined.
+     * @param useCase {@link UseCase} to check if the field is configured to support.
+     * @return returns true if the field is configured to work with the provided usecase, false otherwise.
+     */
+    public boolean hasUseCase(UseCase useCase) {
+        switch (useCase) {
+            case Sort:
+                return isSort();
+            case Facet:
+                return isFacet();
+            case Fulltext:
+                return isFullText();
+            case Stored:
+                return isStored();
+            case Suggest:
+                return isSuggest();
+            case Filter:
+            default: return false;
+        }
+    }
 
     @Override
     public String toString() {

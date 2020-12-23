@@ -133,5 +133,19 @@ public abstract class ComplexFieldDescriptor<T,F,S> extends FieldDescriptor<T> {
     public Filter isEmpty(Filter.Scope scope) {
         return new Filter.NotFilter( this.isNotEmpty(scope));
     }
+
+    /** Checks if a the field descriptor has the given usecase defined.
+     * @param useCase {@link UseCase} to check if the field is configured to support.
+     * @return returns true if the field is configured to work with the provided usecase, false otherwise.
+     */
+    @Override
+    public boolean hasUseCase(UseCase useCase) {
+        switch (useCase) {
+            case Filter:
+                return isAdvanceFilter();
+            default:
+                return super.hasUseCase(useCase);
+        }
+    }
 }
 
