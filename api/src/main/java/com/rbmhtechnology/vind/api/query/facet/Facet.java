@@ -922,7 +922,7 @@ public abstract class Facet {
             this.fieldDescriptors = Lists.newArrayList(descriptorBuckets);
         }
 
-        public PivotFacet(String name, long page, Pair<FieldDescriptor<?>, Integer>... descriptorBuckets) {
+        public PivotFacet(String name, Long page, Pair<FieldDescriptor<?>, Integer>... descriptorBuckets) {
             this.facetName = name;
             // Backwards compatibility
             this.name = name;
@@ -971,7 +971,11 @@ public abstract class Facet {
 
         @Override
         public Facet clone() {
-            return new PivotFacet(this.facetName, this.page, this.fieldDescriptors.toArray(new FieldDescriptor<?>[this.fieldDescriptors.size()]));
+            final Pair<FieldDescriptor<?>, Integer>[] buckets = new Pair[fieldDescriptors.size()];
+            for (int i =0 ; i < fieldDescriptors.size(); i++) {
+                buckets[i] = fieldDescriptors.get(i);
+            }
+            return new PivotFacet(this.facetName, this.page, buckets);
         }
     }
 
