@@ -34,6 +34,8 @@ import com.rbmhtechnology.vind.model.MultiValuedComplexField;
 import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
 import com.rbmhtechnology.vind.model.SingleValuedComplexField;
 import com.rbmhtechnology.vind.model.value.LatLng;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -2674,6 +2676,23 @@ public class ServerTest {
                 ;
 
         SearchResult result = server.execute(search,assets);
+        assertEquals(1, result.getFacetResults().getPivotFacets().size());
+        assertEquals(2, result.getFacetResults().getPivotFacets().get("bucket").size());
+        assertEquals("g2", result.getFacetResults().getPivotFacets().get("bucket").get(0).getValue());
+        assertEquals(2, result.getFacetResults().getPivotFacets().get("bucket").get(0).getCount(),0);
+        assertEquals("c3", result.getFacetResults().getPivotFacets().get("bucket").get(0).getPivot().get(0).getValue());
+        assertEquals("g1", result.getFacetResults().getPivotFacets().get("bucket").get(1).getValue());
+
+        search = Search.fulltext()
+                .facet(pivot("bucket",
+                        0,
+                        Pair.of(group,2),
+                        Pair.of(cluster,2),
+                        Pair.of(resource,2))
+                        .addSort("popularity", scoredDate(created)))
+                ;
+
+        result = server.execute(search,assets);
         assertEquals(1, result.getFacetResults().getPivotFacets().size());
         assertEquals(2, result.getFacetResults().getPivotFacets().get("bucket").size());
         assertEquals("g2", result.getFacetResults().getPivotFacets().get("bucket").get(0).getValue());

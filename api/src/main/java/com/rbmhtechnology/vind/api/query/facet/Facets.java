@@ -13,6 +13,8 @@ import com.rbmhtechnology.vind.model.ComplexFieldDescriptor;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import com.rbmhtechnology.vind.model.MultiValueFieldDescriptor;
 import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -487,6 +489,33 @@ public class Facets {
      */
     public static Facet pivot(String name, long page, int size, FieldDescriptor<?>... fieldDescriptors) {
         return new Facet.PivotFacet(name, page, size, fieldDescriptors);
+    }
+
+    /**
+     * Creates a offset/limit navigable pivot facet query on a group of fields. A basic pivot facet query returns a decision
+     * tree of the specified fields. The first level can be navigated with the offset and the limit.
+     * @param name String with a custom name for the new instance.
+     * @param descriptorBuckets A group of {@link Pair<FieldDescriptor<?>, Integer>} objects on which perform the
+     *                         pivot query. The left value of the triple stands for the field descriptor, and the right
+     *                          is the page size.
+     * @return {@link Facet.PivotFacet} object.
+     */
+    public static Facet pivot(String name, Pair<FieldDescriptor<?>, Integer>... descriptorBuckets) {
+        return new Facet.PivotFacet(name, descriptorBuckets);
+    }
+
+    /**
+     * Creates a offset/limit navigable pivot facet query on a group of fields. A basic pivot facet query returns a decision
+     * tree of the specified fields. The first level can be navigated with the offset and the limit.
+     * @param name String with a custom name for the new instance.
+     * @param page {@link long} page of the paginated facet result. Uses default facet limit as page size.
+     * @param descriptorBuckets A group of {@link Pair<FieldDescriptor<?>, Integer>} objects on which perform the
+     *                         pivot query. The left value of the triple stands for the field descriptor, and the right
+     *                          is the page size.
+     * @return {@link Facet.PivotFacet} object.
+     */
+    public static Facet pivot(String name,long page, Pair<FieldDescriptor<?>, Integer>... descriptorBuckets) {
+        return new Facet.PivotFacet(name, page, descriptorBuckets);
     }
     /**
      * Creates a basic pivot facet query on a group of fields. A basic pivot facet query returns a decision

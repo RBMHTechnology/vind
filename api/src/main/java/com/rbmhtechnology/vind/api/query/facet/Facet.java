@@ -8,12 +8,15 @@ import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.model.*;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -867,7 +870,7 @@ public abstract class Facet {
      */
     public static class PivotFacet extends Facet {
 
-        private List<FieldDescriptor<?>> fieldDescriptors;
+        private List<Pair<FieldDescriptor<?>, Integer>> fieldDescriptors = new ArrayList<>();
         private Long page;
 
         /**
@@ -879,7 +882,9 @@ public abstract class Facet {
             this.facetName = name;
             // Backwards compatibility
             this.name = name;
-            this.fieldDescriptors = Lists.newArrayList(descriptors);
+            for (FieldDescriptor<?> desc : descriptors) {
+                this.fieldDescriptors.add(Pair.of(desc,  null));
+            }
         }
 
         /**
@@ -892,17 +897,37 @@ public abstract class Facet {
             this.facetName = name;
             // Backwards compatibility
             this.name = name;
-            this.fieldDescriptors = Lists.newArrayList(descriptors);
             this.page = page;
+            for (FieldDescriptor<?> desc : descriptors) {
+                this.fieldDescriptors.add(Pair.of(desc,null));
+            }
+
         }
 
         public PivotFacet(String name, long page, int size, FieldDescriptor<?>... descriptors) {
             this.facetName = name;
             // Backwards compatibility
             this.name = name;
-            this.fieldDescriptors = Lists.newArrayList(descriptors);
             this.page = page;
-            this.size = size;
+            for (FieldDescriptor<?> desc : descriptors) {
+                this.fieldDescriptors.add(Pair.of(desc, size));
+            }
+
+        }
+
+        public PivotFacet(String name, Pair<FieldDescriptor<?>, Integer>... descriptorBuckets) {
+            this.facetName = name;
+            // Backwards compatibility
+            this.name = name;
+            this.fieldDescriptors = Lists.newArrayList(descriptorBuckets);
+        }
+
+        public PivotFacet(String name, long page, Pair<FieldDescriptor<?>, Integer>... descriptorBuckets) {
+            this.facetName = name;
+            // Backwards compatibility
+            this.name = name;
+            this.page = page;
+            this.fieldDescriptors = Lists.newArrayList(descriptorBuckets);
         }
 
         /**
@@ -910,13 +935,20 @@ public abstract class Facet {
          * @return {@link FieldDescriptor} describing the field in which the pivot facet query will be perform.
          */
         public List<FieldDescriptor<?>> getFieldDescriptors() {
-            return fieldDescriptors;
+            return fieldDescriptors.stream()
+                    .map(Pair::getLeft)
+                    .collect(Collectors.toList());
         }
 
         /**
-         * Get the {@link Optional<Long>} page requested.
-         * @return {@link Optional<Long>} page requested or empty if not set.
+         * Get the bucket definitions fos the pivot facet.
+         * @return {@link List<Pair<FieldDescriptor<?>, Integer>>} describing the buckets in which the pivot
+         * facet query will be perform.
          */
+        public List<Pair<FieldDescriptor<?>, Integer>> getBuckets() {
+            return fieldDescriptors;
+        }
+
         public Optional<Long> getPage() {
             return Optional.ofNullable(page);
         }
@@ -932,7 +964,7 @@ public abstract class Facet {
             return String.format(serializeFacet,
                     this.facetName,
                     this.getClass().getSimpleName(),
-                    this.fieldDescriptors.stream().map(d -> "\"" + d.getName() + "\"").collect(Collectors.joining(",")),
+                    this.getFieldDescriptors().stream().map(d -> "\"" + d.getName() + "\"").collect(Collectors.joining(",")),
                     this.page
             );
         }

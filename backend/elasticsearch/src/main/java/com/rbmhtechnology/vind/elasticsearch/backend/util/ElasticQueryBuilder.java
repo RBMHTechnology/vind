@@ -27,6 +27,7 @@ import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.geo.GeoPoint;
@@ -776,28 +777,33 @@ public class ElasticQueryBuilder {
             case "PivotFacet":
                 final Facet.PivotFacet pivotFacet = (Facet.PivotFacet) vindFacet;
                 final int facetSize = pivotFacet.getSize().orElse(facetLimit);
-                final List<TermsAggregationBuilder> termFacets = pivotFacet.getFieldDescriptors().stream()
-                        .map(f -> FieldUtil.getFieldName(f, facetScope, searchContext, indexFootPrint))
-                        .filter(Optional::isPresent)
-                        .map(n -> AggregationBuilders
-                                .terms(contextualizedFacetName)
-                                .field(n.get())
-                                .minDocCount(minCount)
-                                .size(facetSize))
+                final List<TermsAggregationBuilder> termFacets = pivotFacet.getBuckets().stream()
+                        .map(bucket ->
+                                Pair.of(
+                                        FieldUtil.getFieldName(bucket.getLeft(), facetScope, searchContext, indexFootPrint),
+                                        bucket.getRight())
+                        )
+                        .filter(bucket -> bucket.getLeft().isPresent())
+                        .map(bucket ->
+                                AggregationBuilders
+                                        .terms(contextualizedFacetName)
+                                        .field(bucket.getLeft().get())
+                                        .minDocCount(minCount)
+                                        .size(Optional.ofNullable(bucket.getRight()).orElse(facetSize))
+                        )
                         .collect(Collectors.toList());
 
                 termFacets.forEach(agg -> addSortToAggregation(vindFacet, searchContext, agg, indexFootPrint));
 
+                final TermsAggregationBuilder mainBucket = termFacets.get(0);
                 if (pivotFacet.getPage().isPresent()) {
-                    final int page = Math.toIntExact(pivotFacet.getPage().get());
                     try {
-                        final int fieldCardinality = getFieldCardinality(client, termFacets.get(0).field());
-                        final int partitions = (int)Math.ceil(fieldCardinality / Double.valueOf(facetSize));
-                        termFacets.get(0)
-                                .includeExclude(new IncludeExclude(page, partitions));
+                        final int fieldCardinality = getFieldCardinality(client, mainBucket.field());
+                        final int partitions = (int)Math.ceil(fieldCardinality / Double.valueOf(mainBucket.size()));
+                        mainBucket.includeExclude(new IncludeExclude(Math.toIntExact(pivotFacet.getPage().get()), partitions));
                     } catch (IOException e) {
                         throw new SearchServerException(
-                                "Error calculating cardinality of field" + termFacets.get(0).field()+ " for paged pivot facet: " + e.getMessage(), e);
+                                "Error calculating cardinality of field" + mainBucket.field()+ " for paged pivot facet: " + e.getMessage(), e);
                     }
                 }
 
@@ -814,6 +820,26 @@ public class ElasticQueryBuilder {
         }
     }
 
+    private static TermsAggregationBuilder createTermPivotAggregation(String descriptorName, Long page, Integer size,
+                                                               String contextualizedFacetName, int minCount, ElasticVindClient client) {
+        final TermsAggregationBuilder aggBuilder = AggregationBuilders
+                .terms(contextualizedFacetName)
+                .field(descriptorName)
+                .minDocCount(minCount)
+                .size(size);
+
+        if (Optional.ofNullable(page).isPresent()) {
+            try {
+                final int fieldCardinality = getFieldCardinality(client, descriptorName);
+                final int partitions = (int)Math.ceil(fieldCardinality / Double.valueOf(size));
+                aggBuilder.includeExclude(new IncludeExclude(Math.toIntExact(page), partitions));
+            } catch (IOException e) {
+                throw new SearchServerException(
+                        "Error calculating cardinality of field" + descriptorName+ " for paged pivot facet: " + e.getMessage(), e);
+            }
+        }
+        return aggBuilder;
+    }
     private static void addSortToAggregation(Facet vindFacet, String searchContext, TermsAggregationBuilder termsAgg,
                                              List<String> indexFootPrint) {
         Optional.ofNullable(vindFacet.getSortings())
