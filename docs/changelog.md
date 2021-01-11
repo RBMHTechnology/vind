@@ -294,3 +294,6 @@ context.
 #3.1.4
 * Bugfix: Update check on term aggregation usecase from fixed facet to provided usecase.
 * Improvement: Added size to the paging on pivot facets.
+
+#3.1.5
+* Bugfix: cardinality calculation on pivot paging is fixed to use original query filters and text.
