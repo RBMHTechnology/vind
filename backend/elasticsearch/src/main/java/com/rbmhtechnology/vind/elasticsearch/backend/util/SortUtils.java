@@ -95,6 +95,9 @@ public class SortUtils {
     }
 
     private static String getUnmappedType(String fieldName) {
+        if(FieldUtil.ID.equals(fieldName)) {
+            return "keyword";
+        }
         if (fieldName.contains("_")) {
             final String type = fieldName.split("_")[1];
             switch (type) {
