@@ -297,3 +297,6 @@ context.
 
 #3.1.5
 * Bugfix: cardinality calculation on pivot paging is fixed to use original query filters and text.
+
+#3.1.6
+* Improvement: Support sorting by id.
