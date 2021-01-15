@@ -134,11 +134,21 @@ public class ElasticQueryBuilder {
                 || Strings.isEmpty(search.getSearchString().trim())? "*:*" : search.getSearchString();
 
 
+
         if (escape){
             //Escape especial characters: + - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \ /
             for(Map.Entry<String,String> wordEntry: reservedChars.entrySet()) {
                 searchString = searchString.replaceAll(wordEntry.getKey(), wordEntry.getValue());
             }
+        }
+        if(!escape && searchString.contains(":")) {
+            final  String skipColonSearchString = searchString.replaceAll(":", reservedChars.get(":"));
+            Arrays.stream(skipColonSearchString.split(" "))
+                    .filter(term -> term.contains("\\:"))
+                    .map( term -> term.substring(0,term.indexOf("\\:")))
+                    .filter(posibleField -> indexFootPrint.contains(posibleField))
+                    .forEach( field -> skipColonSearchString.replaceAll(field + "\\\\:", field +":"));
+            searchString = skipColonSearchString;
         }
 
 
