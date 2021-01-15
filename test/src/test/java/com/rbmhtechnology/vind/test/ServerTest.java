@@ -3655,11 +3655,17 @@ public class ServerTest {
         server.commit();
 
         //test empty filter in single valued field
-        DescriptorSuggestionSearch suggestion = Search.suggest("Servus Nachrichten 19:20 Season 4 Episode 20")
+        DescriptorSuggestionSearch suggestion = Search.suggest("19:20")
                 .context("en")
                 .addField(textMulti);
-        SuggestionResult suggestionResult = server.execute( suggestion, assets);
+        final SuggestionResult suggestionResult = server.execute( suggestion, assets);
         assertEquals( 1, suggestionResult.size());
         assertEquals( "Servus Nachrichten 19:20 -> Season 4 -> Episode 20 - January 20", suggestionResult.get(textMulti).getValues().get(0).getValue());
+
+        final FulltextSearch search = Search.fulltext("19:20 OR dynamic_int_numMulti:6").context("en");
+        final SearchResult searchResult = server.execute(search, assets);
+        assertEquals( 1, searchResult.getResults().size());
+        assertEquals( "Servus Nachrichten 19:20 -> Season 4 -> Episode 20 - January 20",
+                ((ArrayList<String>)searchResult.getResults().get(0).getContextualizedValue(textMulti, "en")).get(0));
     }
 }

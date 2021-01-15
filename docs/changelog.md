@@ -300,3 +300,6 @@ context.
 
 #3.1.6
 * Improvement: Support sorting by id.
+
+#3.1.7
+* Bugfix: escape colon when the previous word is not a field or wildcard.
