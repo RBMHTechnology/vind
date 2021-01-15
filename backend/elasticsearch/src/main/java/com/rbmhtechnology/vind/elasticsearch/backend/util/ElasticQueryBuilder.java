@@ -130,10 +130,8 @@ public class ElasticQueryBuilder {
         searchSource.trackTotalHits(trackTotalHits);
 
         //build full text disMax query
-        String searchString = "*".equals(search.getSearchString())
-                || Strings.isEmpty(search.getSearchString().trim())? "*:*" : search.getSearchString();
-
-
+        String searchString = "*".equals(search.getSearchString()) || Strings.isEmpty(search.getSearchString().trim())?
+                "*:*" : search.getSearchString().trim();
 
         if (escape){
             //Escape especial characters: + - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \ /
@@ -142,15 +140,18 @@ public class ElasticQueryBuilder {
             }
         }
         if(!escape && searchString.contains(":")) {
-            final  String skipColonSearchString = searchString.replaceAll(":", reservedChars.get(":"));
-            Arrays.stream(skipColonSearchString.split(" "))
+            String skipColonSearchString = searchString.replaceAll(":", reservedChars.get(":"));
+            final String[] skipedFields = Arrays.stream(skipColonSearchString.split(" "))
                     .filter(term -> term.contains("\\:"))
-                    .map( term -> term.substring(0,term.indexOf("\\:")))
-                    .filter(posibleField -> indexFootPrint.contains(posibleField))
-                    .forEach( field -> skipColonSearchString.replaceAll(field + "\\\\:", field +":"));
+                    .map(term -> term.substring(0, term.indexOf("\\:")))
+                    .filter(posibleField -> indexFootPrint.contains(posibleField) || "*".equals(posibleField))
+                    .toArray(String[]::new);
+            for (String field : skipedFields) {
+                skipColonSearchString = skipColonSearchString.replace(field+"\\:", field +":");
+            }
+
             searchString = skipColonSearchString;
         }
-
 
         String minimumShouldMatch = search.getMinimumShouldMatch();
         if(StringUtils.isNumeric(minimumShouldMatch) && !minimumShouldMatch.startsWith("-")) {
