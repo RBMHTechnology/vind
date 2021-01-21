@@ -3668,4 +3668,140 @@ public class ServerTest {
         assertEquals( "Servus Nachrichten 19:20 -> Season 4 -> Episode 20 - January 20",
                 ((ArrayList<String>)searchResult.getResults().get(0).getContextualizedValue(textMulti, "en")).get(0));
     }
+
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testPrefixSearch() {
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime yesterday = ZonedDateTime.now(ZoneId.of("UTC")).minus(1, ChronoUnit.DAYS);
+
+        FieldDescriptor<String> title = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setSuggest(true)
+                .setFacet(true)
+                .buildTextField("title");
+
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+        SingleValueFieldDescriptor.UtilDateFieldDescriptor<Date> modified = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildUtilDateField("modified");
+
+        NumericFieldDescriptor<Long> category = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildMultivaluedNumericField("category", Long.class);
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(title)
+                .addField(created)
+                .addField(category)
+                .addField(modified)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(title, "Hello /World")
+                .setValue(created, yesterday)
+                .setValue(modified, new Date())
+                .setValues(category, Arrays.asList(1L, 2L));
+
+        Document d2 = assets.createDoc("2")
+                .setValue(title, "Hello Friends")
+                .setValue(created, now)
+                .setValue(modified, new Date())
+                .addValue(category, 4L);
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.commit();
+
+
+        FulltextSearch search = Search.fulltext("Hell*").spellcheck(true)
+                .sort(desc(score()));
+
+        SearchResult result = server.execute(search,assets);
+        assertEquals(2, result.getResults().size());
+    }
+
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testSingleQuotesSearch() {
+
+        FieldDescriptor<String> textField = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setSuggest(true)
+                .setFacet(true)
+                .buildTextField("textField");
+
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(textField)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(textField, "Rubik´s Cube");
+        Document d2 = assets.createDoc("2")
+                .setValue(textField, "Rubik's Cube");
+        Document d3 = assets.createDoc("3")
+                .setValue(textField, "Rubiks Cube");
+        Document d4 = assets.createDoc("4")
+                .setValue(textField, "Rubik＇s Cube");
+        Document d5 = assets.createDoc("5")
+                .setValue(textField, "Rubik❜s Cube");
+        Document d6 = assets.createDoc("6")
+                .setValue(textField, "Rubik❛s Cube");
+        Document d7 = assets.createDoc("7")
+                .setValue(textField, "Rubik›s Cube");
+        Document d8 = assets.createDoc("8")
+                .setValue(textField, "Rubik‹s Cube");
+        Document d9 = assets.createDoc("9")
+                .setValue(textField, "Rubik‵s Cube");
+        Document d10 = assets.createDoc("10")
+                .setValue(textField, "Rubik′s Cube");
+        Document d11 = assets.createDoc("11")
+                .setValue(textField, "Rubik‛s Cube");
+        Document d12 = assets.createDoc("12")
+                .setValue(textField, "Rubik‚s Cube");
+        Document d13 = assets.createDoc("13")
+                .setValue(textField, "Rubik’s Cube");
+        Document d14 = assets.createDoc("14")
+                .setValue(textField, "Rubik‘s Cube");
+        Document d15 = assets.createDoc("15")
+                .setValue(textField, "Rubik`s Cube");
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.index(d3);
+        server.index(d4);
+        server.index(d5);
+        server.index(d6);
+        server.index(d7);
+        server.index(d8);
+        server.index(d9);
+        server.index(d10);
+        server.index(d11);
+        server.index(d12);
+        server.index(d13);
+        server.index(d14);
+        server.index(d15);
+        server.commit();
+
+        SearchResult result = server.execute(Search.fulltext("Rubik*").page(1,15).spellcheck(true),assets);
+        assertEquals(15, result.getResults().size());
+
+        result = server.execute(Search.fulltext("Rubik's").page(1,15).spellcheck(true),assets);
+        assertEquals(14, result.getResults().size());
+
+        result = server.execute(Search.fulltext("Rubik´s").page(1,15).spellcheck(true),assets);
+        assertEquals(14, result.getResults().size());
+
+        result = server.execute(Search.fulltext("rubik`s").page(1,15).spellcheck(true),assets);
+        assertEquals(14, result.getResults().size());
+    }
 }
