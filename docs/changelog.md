@@ -306,3 +306,5 @@ context.
 
 #3.1.8
 * Bugfix: Added Unicode hex 0060 and 00B4 mapping to simple quote '.
+* Bugfix: Run validate query just against the field 'fulltext' to avoid hitting the field expansion 
+  limit per query.

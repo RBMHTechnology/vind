@@ -153,7 +153,7 @@ public class ElasticRequestUtils {
     public static ValidateQueryRequest getValidateQueryRequest(String defaultIndex, String query) {
         final QueryBuilder builder = QueryBuilders
                 .boolQuery()
-                .must(QueryBuilders.queryStringQuery(query));
+                .must(QueryBuilders.queryStringQuery(query).field("fulltext"));
         final ValidateQueryRequest request = new ValidateQueryRequest(defaultIndex);
         request.explain(true);
         request.query(builder);
