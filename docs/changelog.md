@@ -308,3 +308,6 @@ context.
 * Bugfix: Added Unicode hex 0060 and 00B4 mapping to simple quote '.
 * Bugfix: Run validate query just against the field 'fulltext' to avoid hitting the field expansion 
   limit per query.
+
+#3.1.9
+* Bugfix: Fixed issue with special regex lucene character on suggestion input
