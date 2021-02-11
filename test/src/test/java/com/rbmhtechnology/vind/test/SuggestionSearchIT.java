@@ -173,6 +173,17 @@ public class SuggestionSearchIT {
 
         server.delete(parent.createDoc("P_SPEC_CHAR"));
         server.commit();
+
+        server.index(
+                parent.createDoc("P_SPEC_CHAR").setValue(parent_value, "\"Film"));
+        server.commit();
+
+        result = server.execute(Search.suggest("\"Film").fields(parent_value),parent);
+        assertNotNull(result);
+        assertEquals(1, result.size());
+
+        server.delete(parent.createDoc("P_SPEC_CHAR"));
+        server.commit();
     }
     @Test
     @RunWithBackend({Solr, Elastic})

@@ -132,7 +132,7 @@ public class Suggester {
                             if(Character.isAlphabetic(letter)) {
                                 return  String.format(IGNORE_CASE_REGEX, letter, StringUtils.upperCase(letter.toString()));
                             } else {
-                                return letter.toString();
+                                return escapeCharacter(letter.toString());
                             }
                         })
                         .collect(Collectors.joining()))
@@ -164,6 +164,12 @@ public class Suggester {
         return sb.toString();
     }
 
+    private static String escapeCharacter( String letter) {
+       if (LUCENE_REGEX_ESCAPE_CHARS.contains(letter) ){
+           return "\\" + letter;
+       }
+        return letter;
+    }
 
     public SuggestionResult getSuggestions( List<String> indexFootPrint) {
         final StopWatch elapsedtime = StopWatch.createStarted();
