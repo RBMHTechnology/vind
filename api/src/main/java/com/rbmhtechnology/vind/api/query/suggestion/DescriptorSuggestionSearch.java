@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.api.query.suggestion;
 
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 
 import java.util.Arrays;
@@ -21,6 +22,8 @@ public class DescriptorSuggestionSearch implements ExecutableSuggestionSearch {
     private Filter filter = null;
     private Set<FieldDescriptor> suggestionFields = new HashSet<>();
     private String searchContext = null;
+    private Sort sort = null;
+
     /**
      * Creates a new instance of {@link DescriptorSuggestionSearch}.
      * @param input String text to find suggestion for.
@@ -161,5 +164,14 @@ public class DescriptorSuggestionSearch implements ExecutableSuggestionSearch {
     @Override
     public boolean isStringSuggestion() {
         return false;
+    }
+
+    public Sort getSort() {
+        return sort;
+    }
+
+    public DescriptorSuggestionSearch setSort(Sort sort) {
+        this.sort = sort;
+        return this;
     }
 }

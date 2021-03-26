@@ -52,7 +52,6 @@ import org.elasticsearch.search.aggregations.metrics.ExtendedStatsAggregationBui
 import org.elasticsearch.search.aggregations.metrics.ParsedCardinality;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
-import org.elasticsearch.search.slice.SliceBuilder;
 import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.search.suggest.Suggest.Suggestion.Entry.Option;
 import org.elasticsearch.search.suggest.SuggestBuilder;
@@ -81,6 +80,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.rbmhtechnology.vind.elasticsearch.backend.util.CursorUtils.fromSearchAfterCursor;
+import static com.rbmhtechnology.vind.elasticsearch.backend.util.SortUtils.NUMBER_OF_MATCHING_TERMS_SORT;
 import static com.rbmhtechnology.vind.model.FieldDescriptor.UseCase;
 
 public class ElasticQueryBuilder {
@@ -110,6 +110,7 @@ public class ElasticQueryBuilder {
         put("<","");
         put(">","");
     }};
+    private static final String RELEVANCE = "relevance";
 
     public static SearchSourceBuilder buildQuery(FulltextSearch search, DocumentFactory factory,
                                                  List<String> indexFootPrint, ElasticVindClient client) {
@@ -1188,6 +1189,11 @@ public class ElasticQueryBuilder {
                         .includeExclude(
                                 new IncludeExclude(Suggester.getSuggestionRegex(search.getInput()), null))
                 )
+                .map(aggregation ->
+                    search.getSort() != null && NUMBER_OF_MATCHING_TERMS_SORT.equals(search.getSort().getType())
+                            ? addSubAggregation(aggregation, search, searchContext, indexFootPrint)
+                            : aggregation
+                )
                 .forEach(searchSource::aggregation);
 
         final SuggestBuilder suggestBuilder = new SuggestBuilder();
@@ -1200,6 +1206,15 @@ public class ElasticQueryBuilder {
 
         searchSource.suggest(suggestBuilder);
         return searchSource;
+    }
+
+    private static AggregationBuilder addSubAggregation(TermsAggregationBuilder aggregation,
+                                                        ExecutableSuggestionSearch search,
+                                                        String searchContext,
+                                                        List<String> indexFootPrint) {
+        return aggregation
+                .subAggregation(SortUtils.buildSuggestionSort(RELEVANCE, search.getSort(), searchContext, indexFootPrint, search.getInput()))
+                .order(BucketOrder.aggregation(RELEVANCE, false));
     }
 
     public static List<String> getSpellCheckedQuery(String q, SearchResponse response) {

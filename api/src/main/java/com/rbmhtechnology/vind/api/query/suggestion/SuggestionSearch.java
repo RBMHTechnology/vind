@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.api.query.suggestion;
 
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 
 import java.util.HashSet;
@@ -19,6 +20,7 @@ public class SuggestionSearch {
     private Set<FieldDescriptor> suggestionFields = new HashSet<>();
     private Set<String> suggestionStringFields = new HashSet<>();
     private String searchContext = null;
+    private Sort sort = null;
 
     /**
      * Creates a new instance of {@link SuggestionSearch}.
@@ -42,6 +44,7 @@ public class SuggestionSearch {
         copy.suggestionFields = this.suggestionFields;
         copy.suggestionStringFields = this.suggestionStringFields;
         copy.searchContext = this.searchContext;
+        copy.sort = this.sort;
         return copy;
     }
 
@@ -177,4 +180,12 @@ public class SuggestionSearch {
         return this.searchContext;
     }
 
+    public Sort getSort() {
+        return sort;
+    }
+
+    public SuggestionSearch setSort(final Sort sort) {
+        this.sort = sort;
+        return this;
+    }
 }

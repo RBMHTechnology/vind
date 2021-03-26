@@ -6,18 +6,24 @@ package com.rbmhtechnology.vind.test;
 import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptorBuilder;
+import com.rbmhtechnology.vind.model.MultiValueFieldDescriptor;
 import com.rbmhtechnology.vind.model.SingleValueFieldDescriptor;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.Locale;
+
 import static com.rbmhtechnology.vind.api.query.filter.Filter.eq;
+import static com.rbmhtechnology.vind.api.query.sort.Sort.SpecialSort.numberOfMatchingTermsSort;
+import static com.rbmhtechnology.vind.api.query.sort.Sort.desc;
 import static com.rbmhtechnology.vind.test.Backend.Elastic;
 import static com.rbmhtechnology.vind.test.Backend.Solr;
 import static org.junit.Assert.assertEquals;
@@ -35,6 +41,7 @@ public class SuggestionSearchIT {
     private SingleValueFieldDescriptor<String> parent_value;
     private SingleValueFieldDescriptor<String> child_value;
     private SingleValueFieldDescriptor<String> shared_value;
+    private MultiValueFieldDescriptor<String> multi_value;
 
     private SearchServer server;
 
@@ -66,9 +73,15 @@ public class SuggestionSearchIT {
                 .setSuggest(true)
                 .buildTextField("shared_value");
 
+        multi_value = new FieldDescriptorBuilder<String>()
+                .setFacet(true)
+                .setSuggest(true)
+                .setFullText(true)
+                .buildMultivaluedTextField("multi_value");
+
         parent = new DocumentFactoryBuilder("parent")
                 .setUpdatable(true)
-                .addField(shared_value, parent_value)
+                .addField(shared_value, parent_value, multi_value)
                 .build();
 
         child = new DocumentFactoryBuilder("child")
@@ -219,4 +232,43 @@ public class SuggestionSearchIT {
         server.commit();
     }
 
+    @Test
+    @RunWithBackend({Elastic})
+    public void testSuggestionSort() {
+        server.index(
+                parent.createDoc("multi1").setValue(parent_value, "New Lockdown"));
+        server.index(
+                parent.createDoc("multi2").setValue(parent_value, "Lindsey Vonn"));
+        server.index(
+                parent.createDoc("multi3").setValue(parent_value, "Lindsay Lohan"));
+        server.index(
+                parent.createDoc("multi4").setValue(parent_value, "New Lockdown"));
+        server.commit();
+
+        SuggestionResult suggestionResult = server.execute(Search.suggest("Lin Lo")
+                        .addField(parent_value)
+                        .setSort(desc(numberOfMatchingTermsSort(parent_value))),
+                parent);
+
+        Assert.assertEquals(3, suggestionResult.size());
+        Assert.assertEquals("Lindsay Lohan", suggestionResult.get(parent_value).getValues().get(0).getValue());
+
+        suggestionResult = server.execute(Search.suggest("Lin Lo").addField(parent_value), parent);
+        Assert.assertEquals(3, suggestionResult.size());
+        Assert.assertEquals("New Lockdown", suggestionResult.get(parent_value).getValues().get(0).getValue());
+
+        server.index(
+                parent.createDoc("multi1").setValues(multi_value, "Vienna City", "Salzburg City", "Austria"));
+        server.index(
+                parent.createDoc("multi2").setValues(multi_value, "Madrid City", "Spain"));
+        server.index(
+                parent.createDoc("multi3").setValues(multi_value, "People", "Animals", "Flowers"));
+        server.commit();
+
+        suggestionResult = server.execute(Search.suggest("Sal City")
+                .addField(multi_value)
+                .setSort(desc(numberOfMatchingTermsSort(multi_value))), parent);
+        Assert.assertEquals(3, suggestionResult.size());
+        Assert.assertEquals("Salzburg City", suggestionResult.get(multi_value).getValues().get(0).getValue());
+    }
 }
