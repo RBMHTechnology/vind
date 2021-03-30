@@ -51,6 +51,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -3803,5 +3804,51 @@ public class ServerTest {
 
         result = server.execute(Search.fulltext("rubik`s").page(1,15).spellcheck(true),assets);
         assertEquals(14, result.getResults().size());
+    }
+
+    @Test
+    @RunWithBackend({Elastic})
+    public void testSpellcheckResultHasGroups() {
+
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+        FieldDescriptor<String> textField = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setSuggest(true)
+                .setFacet(true)
+                .buildTextField("textField");
+
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(textField)
+                .addField(created)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(textField, "Stark")
+                .setValue(created, ZonedDateTime.now());
+        Document d2 = assets.createDoc("2")
+                .setValue(textField, "Stark")
+                .setValue(created, ZonedDateTime.now());
+        Document d3 = assets.createDoc("3")
+                .setValue(textField, "Widow")
+                .setValue(created, ZonedDateTime.now());
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1);
+        server.index(d2);
+        server.index(d3);
+        server.commit();
+
+        SearchResult result = server.execute(
+                Search.fulltext("Sark").spellcheck(true).facet(created),
+                assets
+        );
+
+        assertEquals(2, result.getResults().size());
+        assertEquals(2, result.getFacetResults().getTermFacet(created).getValues().size());
     }
 }
