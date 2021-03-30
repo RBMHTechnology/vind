@@ -355,6 +355,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
             }
             final SearchSourceBuilder query =
                     ElasticQueryBuilder.buildQuery(search, factory, !validateQueryResponse.isValid(), currentFootprint, elasticSearchClient);
+            FulltextSearch usedSearch = search.copy();
             elasticClientLogger.debug(">>> query({})", query.toString());
 
             SearchResponse response = elasticSearchClient.query(query);
@@ -388,6 +389,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                             if(spellcheckResponse.getHits().getTotalHits().value > 0) {
                                 totalHits = spellcheckResponse.getHits().getTotalHits().value;
                                 response = spellcheckResponse;
+                                usedSearch = spellcheckSearch.copy();
                                 documents.addAll(Arrays.stream(spellcheckResponse.getHits().getHits())
                                         .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))
                                         .collect(Collectors.toList()));
@@ -409,19 +411,19 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
                 switch(search.getResultSet().getType()) {
                     case page:{
-                        return new PageResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
+                        return new PageResult(totalHits, queryTime, documents, usedSearch, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     case slice: {
-                        return new SliceResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
+                        return new SliceResult(totalHits, queryTime, documents, usedSearch, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     case cursor: {
                         if (!documents.isEmpty()) {
                             ((Cursor) search.getResultSet()).setSearchAfter(documents.get(documents.size()-1).getSearchAfterCursor().get());
                         }
-                        return new CursorResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
+                        return new CursorResult(totalHits, queryTime, documents, usedSearch, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     default:
-                        return new PageResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
+                        return new PageResult(totalHits, queryTime, documents, usedSearch, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                 }
             }else {
                 throw new ElasticsearchException("Empty result from ElasticClient");

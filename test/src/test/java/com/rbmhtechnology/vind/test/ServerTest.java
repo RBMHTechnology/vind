@@ -96,6 +96,8 @@ import static com.rbmhtechnology.vind.test.Backend.Elastic;
 import static com.rbmhtechnology.vind.test.Backend.Solr;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -3809,7 +3811,7 @@ public class ServerTest {
 
     @Test
     @RunWithBackend({Elastic})
-    public void testSpellcheckResultHasGroups() {
+    public void testSpellcheckResultHasFacets() {
 
         SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
                 .setFacet(true)
@@ -3849,6 +3851,41 @@ public class ServerTest {
 
         assertEquals(2, result.getResults().size());
         assertEquals(2, result.getFacetResults().getTermFacet(created).getValues().size());
+    }
+
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testSpellcheckResultHasUsedSearchterm() {
+
+        FieldDescriptor<String> textField = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setSuggest(true)
+                .setFacet(true)
+                .buildTextField("textField");
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(textField)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(textField, "Stark");
+        Document d2 = assets.createDoc("2")
+                .setValue(textField, "Thor");
+        Document d3 = assets.createDoc("3")
+                .setValue(textField, "Widow");
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1, d2, d3);
+        server.commit();
+
+        final FulltextSearch initialQuery = Search.fulltext("Sark").spellcheck(true);
+        SearchResult result = server.execute(initialQuery, assets);
+
+        assertEquals(1, result.getResults().size());
+        assertEquals("stark", result.getQuery().getSearchString());
+        assertFalse(result.getQuery().isSpellcheck());
+        assertNotEquals(result.getQuery(), initialQuery);
     }
 
     @Test
