@@ -1,11 +1,15 @@
 package com.rbmhtechnology.vind.api.query.suggestion;
 
+import com.rbmhtechnology.vind.api.query.FulltextTerm;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+
+import static java.util.Optional.empty;
 
 /**
  * Class to configure suggestions based on field String names.
@@ -20,6 +24,7 @@ public class StringSuggestionSearch implements ExecutableSuggestionSearch {
     private Filter filter = null;
     private Set<String> suggestionFields = new HashSet<>();
     private String searchContext = null;
+    private Optional<FulltextTerm> fulltextTerm = empty();
 
     /**
      * Creates a new instance of {@link StringSuggestionSearch}.
@@ -58,6 +63,17 @@ public class StringSuggestionSearch implements ExecutableSuggestionSearch {
     @Override
     public StringSuggestionSearch context(String context) {
         this.searchContext = context;
+        return this;
+    }
+
+    @Override
+    public Optional<FulltextTerm> getFulltextTerm() {
+        return fulltextTerm;
+    }
+
+    @Override
+    public StringSuggestionSearch fulltextTerm(final FulltextTerm fulltextTerm) {
+        this.fulltextTerm = Optional.ofNullable(fulltextTerm);
         return this;
     }
 
