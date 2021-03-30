@@ -1,12 +1,17 @@
 package com.rbmhtechnology.vind.api.query.suggestion;
 
+import com.rbmhtechnology.vind.api.query.FulltextTerm;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.util.Optional.empty;
 
 /**
  * Class to prepare suggestion queries.
@@ -19,6 +24,7 @@ public class SuggestionSearch {
     private Set<FieldDescriptor> suggestionFields = new HashSet<>();
     private Set<String> suggestionStringFields = new HashSet<>();
     private String searchContext = null;
+    private Optional<FulltextTerm> fulltextTerm = empty();
 
     /**
      * Creates a new instance of {@link SuggestionSearch}.
@@ -42,6 +48,7 @@ public class SuggestionSearch {
         copy.suggestionFields = this.suggestionFields;
         copy.suggestionStringFields = this.suggestionStringFields;
         copy.searchContext = this.searchContext;
+        copy.fulltextTerm = this.fulltextTerm;
         return copy;
     }
 
@@ -123,7 +130,7 @@ public class SuggestionSearch {
      */
     //FIXME: this supports also: fields()
     public StringSuggestionSearch fields(String... fields) {
-        return new StringSuggestionSearch(input,limit,filter,fields).context(this.searchContext);
+        return new StringSuggestionSearch(input,limit,filter,fields).context(this.searchContext).fulltextTerm(fulltextTerm.orElse(null));
     }
 
     /**
@@ -132,7 +139,7 @@ public class SuggestionSearch {
      * @return {@link DescriptorSuggestionSearch} with the added field.
      */
     public DescriptorSuggestionSearch addField(FieldDescriptor field) {
-        return new DescriptorSuggestionSearch(input,limit,filter,field).context(this.searchContext);
+        return new DescriptorSuggestionSearch(input,limit,filter,field).context(this.searchContext).fulltextTerm(fulltextTerm.orElse(null));
     }
     /**
      * Adds the fields to search for suggestions in.
@@ -141,7 +148,7 @@ public class SuggestionSearch {
      */
     //FIXME: this supports also: fields()
     public DescriptorSuggestionSearch fields(FieldDescriptor... fields) {
-        return new DescriptorSuggestionSearch(input,limit,filter,fields).context(this.searchContext);
+        return new DescriptorSuggestionSearch(input,limit,filter,fields).context(this.searchContext).fulltextTerm(fulltextTerm.orElse(null));
     }
 
     /**
@@ -177,4 +184,18 @@ public class SuggestionSearch {
         return this.searchContext;
     }
 
+    /**
+     * Get the fulltext term, to base the search on.
+     * Useful when suggesting within an already existing fulltext search
+     *
+     * @return a fulltext term
+     */
+    public Optional<FulltextTerm> getFulltextTerm() {
+        return fulltextTerm;
+    }
+
+    public SuggestionSearch fulltextTerm(final FulltextTerm fulltextTerm) {
+        this.fulltextTerm = Optional.ofNullable(fulltextTerm);
+        return this;
+    }
 }

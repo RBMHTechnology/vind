@@ -1035,6 +1035,8 @@ public class SolrSearchServer extends SmartSearchServerBase {
 
         query.add(CommonParams.FQ, parentTypeFilter);
 
+        search.getFulltextTerm().ifPresent(fulltextTerm -> query.add(CommonParams.FQ, fulltextTerm.getFulltextSearchTerm()));
+
         //filters
         if(search.hasFilter()) {
             SolrUtils.Query.buildFilterString(search.getFilter(), assets,childFactory,query, searchContext, false);

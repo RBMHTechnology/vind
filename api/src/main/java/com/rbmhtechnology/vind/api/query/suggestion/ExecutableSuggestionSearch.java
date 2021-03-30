@@ -1,6 +1,9 @@
 package com.rbmhtechnology.vind.api.query.suggestion;
 
+import com.rbmhtechnology.vind.api.query.FulltextTerm;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+
+import java.util.Optional;
 
 /**
  * @author Thomas Kurz (tkurz@apache.org)
@@ -22,6 +25,10 @@ public interface ExecutableSuggestionSearch {
     public ExecutableSuggestionSearch setLimit(int limit);
 
     public ExecutableSuggestionSearch context(String context);
+
+    public Optional<FulltextTerm> getFulltextTerm();
+
+    public ExecutableSuggestionSearch fulltextTerm(FulltextTerm fulltextTerm);
 
     public int getLimit();
 
