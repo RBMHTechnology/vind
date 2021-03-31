@@ -38,6 +38,7 @@ import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import com.rbmhtechnology.vind.model.InverseSearchQuery;
 import com.rbmhtechnology.vind.model.value.LatLng;
+import com.rbmhtechnology.vind.utils.SpecialCharacterEscaping;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
@@ -94,6 +95,7 @@ import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.ID;
 import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.TEXT;
 import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.TYPE;
 import static com.rbmhtechnology.vind.solr.backend.SolrUtils.Fieldname.getFieldname;
+import static com.rbmhtechnology.vind.utils.SpecialCharacterEscaping.escapeSpecialCharacters;
 
 /**
  * @author Thomas Kurz (tkurz@apache.org)
@@ -467,7 +469,10 @@ public class SolrSearchServer extends SmartSearchServerBase {
         }
 
         // fulltext search
-        query.set(CommonParams.Q, search.getSearchString());
+        query.set(
+            CommonParams.Q,
+            search.isEscapeCharacter() ? escapeSpecialCharacters(search.getSearchString()) : search.getSearchString()
+        );
 
         if(SearchConfiguration.get(SearchConfiguration.SEARCH_RESULT_SHOW_SCORE, true)) {
             query.set(CommonParams.FL, "*,score");
