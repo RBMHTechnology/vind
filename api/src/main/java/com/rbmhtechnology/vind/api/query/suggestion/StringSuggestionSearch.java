@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.api.query.suggestion;
 
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.sort.Sort;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -20,6 +21,7 @@ public class StringSuggestionSearch implements ExecutableSuggestionSearch {
     private Filter filter = null;
     private Set<String> suggestionFields = new HashSet<>();
     private String searchContext = null;
+    private Sort sort = null;
 
     /**
      * Creates a new instance of {@link StringSuggestionSearch}.
@@ -163,4 +165,12 @@ public class StringSuggestionSearch implements ExecutableSuggestionSearch {
         return true;
     }
 
+    public Sort getSort() {
+        return sort;
+    }
+
+    public StringSuggestionSearch setSort(Sort sort) {
+        this.sort = sort;
+        return this;
+    }
 }
