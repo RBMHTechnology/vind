@@ -64,6 +64,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.DAY;
 import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.HOUR;
@@ -3838,9 +3839,7 @@ public class ServerTest {
 
         SearchServer server = testBackend.getSearchServer();
 
-        server.index(d1);
-        server.index(d2);
-        server.index(d3);
+        server.index(d1, d2, d3);
         server.commit();
 
         SearchResult result = server.execute(
@@ -3850,5 +3849,33 @@ public class ServerTest {
 
         assertEquals(2, result.getResults().size());
         assertEquals(2, result.getFacetResults().getTermFacet(created).getValues().size());
+    }
+
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testEscapingSpecialCharacters() {
+
+        FieldDescriptor<String> textField = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setSuggest(true)
+                .setFacet(true)
+                .buildTextField("textField");
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(textField)
+                .build();
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(
+            assets.createDoc("1").setValue(textField, "Hell*"),
+            assets.createDoc("2").setValue(textField, "Hello Neighbour"),
+            assets.createDoc("3").setValue(textField, "Hello World")
+        );
+        server.commit();
+
+        SearchResult result = server.execute(Search.fulltext("Hell*").escapeCharacter(true), assets);
+
+        assertEquals(1, result.getResults().size());
     }
 }

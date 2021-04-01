@@ -84,8 +84,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.rbmhtechnology.vind.api.query.division.ResultSubset.DivisionType.cursor;
-import static com.rbmhtechnology.vind.elasticsearch.backend.util.CursorUtils.toSearchAfterCursor;
 import static com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil.createEmptyDocument;
+import static com.rbmhtechnology.vind.utils.SpecialCharacterEscaping.escapeSpecialCharacters;
 
 public class ElasticSearchServer extends SmartSearchServerBase {
 
@@ -346,7 +346,9 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
         //query
         try {
-            final String searchString = search.getSearchString();
+            final String searchString = search.isEscapeCharacter()
+                    ? escapeSpecialCharacters(search.getSearchString())
+                    : search.getSearchString();
             final ValidateQueryResponse validateQueryResponse = elasticSearchClient.validateQuery(searchString);
             if (validateQueryResponse.isValid()) {
                 search.text(searchString);
