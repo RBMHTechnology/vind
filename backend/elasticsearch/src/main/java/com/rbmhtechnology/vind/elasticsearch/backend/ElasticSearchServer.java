@@ -84,8 +84,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.rbmhtechnology.vind.api.query.division.ResultSubset.DivisionType.cursor;
-import static com.rbmhtechnology.vind.elasticsearch.backend.util.CursorUtils.toSearchAfterCursor;
 import static com.rbmhtechnology.vind.elasticsearch.backend.util.DocumentUtil.createEmptyDocument;
+import static com.rbmhtechnology.vind.utils.SpecialCharacterEscaping.escapeSpecialCharacters;
 
 public class ElasticSearchServer extends SmartSearchServerBase {
 
@@ -346,19 +346,22 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
         //query
         try {
-            final String searchString = search.getSearchString();
+            final String searchString = search.isEscapeCharacter()
+                    ? escapeSpecialCharacters(search.getSearchString())
+                    : search.getSearchString();
             final ValidateQueryResponse validateQueryResponse = elasticSearchClient.validateQuery(searchString);
             if (validateQueryResponse.isValid()) {
                 search.text(searchString);
             }
             final SearchSourceBuilder query =
                     ElasticQueryBuilder.buildQuery(search, factory, !validateQueryResponse.isValid(), currentFootprint, elasticSearchClient);
+            FulltextSearch usedSearch = search.copy();
             elasticClientLogger.debug(">>> query({})", query.toString());
 
-            final SearchResponse response = elasticSearchClient.query(query);
+            SearchResponse response = elasticSearchClient.query(query);
             if(Objects.nonNull(response)
                     && Objects.nonNull(response.getHits())
-                    && Objects.nonNull(response.getHits().getHits())){
+                    && Objects.nonNull(response.getHits().getHits())) {
 
                 final boolean isCursorSearch = search.getResultSet().getType().equals(cursor);
                 final List<Document> documents = Arrays.stream(response.getHits().getHits())
@@ -368,14 +371,13 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                 long totalHits = response.getHits().getTotalHits().value;
                 long queryTime = response.getTook().getMillis();
 
-                if ( search.isSpellcheck()
-                        && CollectionUtils.isEmpty(documents)) {
+                if (search.isSpellcheck() && CollectionUtils.isEmpty(documents)) {
 
                     //if no results, try spellchecker (if defined and if spellchecked query differs from original)
                     final List<String> spellCheckedQuery = ElasticQueryBuilder.getSpellCheckedQuery(search.getSearchString(), response);
 
                     //query with checked query
-                    if (spellCheckedQuery != null && CollectionUtils.isNotEmpty(spellCheckedQuery)) {
+                    if (CollectionUtils.isNotEmpty(spellCheckedQuery)) {
                         final Iterator<String> iterator = spellCheckedQuery.iterator();
                         while (iterator.hasNext()) {
                             final String text = iterator.next();
@@ -386,6 +388,8 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                             queryTime = queryTime + spellcheckResponse.getTook().getMillis();
                             if(spellcheckResponse.getHits().getTotalHits().value > 0) {
                                 totalHits = spellcheckResponse.getHits().getTotalHits().value;
+                                response = spellcheckResponse;
+                                usedSearch = spellcheckSearch.copy();
                                 documents.addAll(Arrays.stream(spellcheckResponse.getHits().getHits())
                                         .map(hit -> DocumentUtil.buildVindDoc(hit, factory, search.getSearchContext()))
                                         .collect(Collectors.toList()));
@@ -407,19 +411,19 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
                 switch(search.getResultSet().getType()) {
                     case page:{
-                        return new PageResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
+                        return new PageResult(totalHits, queryTime, documents, usedSearch, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     case slice: {
-                        return new SliceResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
+                        return new SliceResult(totalHits, queryTime, documents, usedSearch, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     case cursor: {
                         if (!documents.isEmpty()) {
                             ((Cursor) search.getResultSet()).setSearchAfter(documents.get(documents.size()-1).getSearchAfterCursor().get());
                         }
-                        return new CursorResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
+                        return new CursorResult(totalHits, queryTime, documents, usedSearch, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     default:
-                        return new PageResult(totalHits, queryTime, documents, search, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
+                        return new PageResult(totalHits, queryTime, documents, usedSearch, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                 }
             }else {
                 throw new ElasticsearchException("Empty result from ElasticClient");

@@ -48,6 +48,7 @@ public class FulltextSearch {
     private boolean strict = true;
     private boolean spellcheck = false;
     private boolean smartParsing = false;
+    private boolean escapeCharacter = false;
 
     /**
      * Creates a new basic full text search query object.
@@ -74,6 +75,10 @@ public class FulltextSearch {
 
         this.getFacets().keySet().stream().forEach(k -> copy.facets.put(k,this.getFacets().get(k).clone()));
         copy.setFacetLimit(this.getFacetLimit());
+        copy.setStrict(this.strict);
+        copy.spellcheck(this.spellcheck);
+        copy.smartParsing(this.smartParsing);
+        copy.escapeCharacter(this.escapeCharacter);
         return copy;
     }
 
@@ -682,6 +687,15 @@ public class FulltextSearch {
         return this;
     }
 
+    public boolean isEscapeCharacter() {
+        return escapeCharacter;
+    }
+
+    public FulltextSearch escapeCharacter(boolean escapeCharacter) {
+        this.escapeCharacter = escapeCharacter;
+        return this;
+    }
+
     @Override
     public String toString(){
         String searchString = "" +
@@ -703,6 +717,7 @@ public class FulltextSearch {
                 "\"searchContext\":\"%s\"," +
                 "\"strictFlag\":%s" +
                 "\"smartParsing\":%s" +
+                "\"escapeCharacter\":%s" +
                 "}";
 
         return String.format(searchString,
@@ -722,7 +737,8 @@ public class FulltextSearch {
                 this.geoDistance,
                 this.searchContext,
                 this.strict,
-                this.isSmartParsing()
+                this.isSmartParsing(),
+                this.escapeCharacter
         );
     }
 

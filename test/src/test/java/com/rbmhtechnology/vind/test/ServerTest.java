@@ -51,6 +51,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -63,6 +64,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.DAY;
 import static com.rbmhtechnology.vind.api.query.datemath.DateMathExpression.TimeUnit.HOUR;
@@ -94,6 +96,8 @@ import static com.rbmhtechnology.vind.test.Backend.Elastic;
 import static com.rbmhtechnology.vind.test.Backend.Solr;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -3803,5 +3807,112 @@ public class ServerTest {
 
         result = server.execute(Search.fulltext("rubik`s").page(1,15).spellcheck(true),assets);
         assertEquals(14, result.getResults().size());
+    }
+
+    @Test
+    @RunWithBackend({Elastic})
+    public void testSpellcheckResultHasFacets() {
+
+        SingleValueFieldDescriptor.DateFieldDescriptor<ZonedDateTime> created = new FieldDescriptorBuilder()
+                .setFacet(true)
+                .buildDateField("created");
+
+        FieldDescriptor<String> textField = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setSuggest(true)
+                .setFacet(true)
+                .buildTextField("textField");
+
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(textField)
+                .addField(created)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(textField, "Stark")
+                .setValue(created, ZonedDateTime.now());
+        Document d2 = assets.createDoc("2")
+                .setValue(textField, "Stark")
+                .setValue(created, ZonedDateTime.now());
+        Document d3 = assets.createDoc("3")
+                .setValue(textField, "Widow")
+                .setValue(created, ZonedDateTime.now());
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1, d2, d3);
+        server.commit();
+
+        SearchResult result = server.execute(
+                Search.fulltext("Sark").spellcheck(true).facet(created),
+                assets
+        );
+
+        assertEquals(2, result.getResults().size());
+        assertEquals(2, result.getFacetResults().getTermFacet(created).getValues().size());
+    }
+
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testSpellcheckResultHasUsedSearchterm() {
+
+        FieldDescriptor<String> textField = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setSuggest(true)
+                .setFacet(true)
+                .buildTextField("textField");
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(textField)
+                .build();
+
+        Document d1 = assets.createDoc("1")
+                .setValue(textField, "Stark");
+        Document d2 = assets.createDoc("2")
+                .setValue(textField, "Thor");
+        Document d3 = assets.createDoc("3")
+                .setValue(textField, "Widow");
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(d1, d2, d3);
+        server.commit();
+
+        final FulltextSearch initialQuery = Search.fulltext("Sark").spellcheck(true);
+        SearchResult result = server.execute(initialQuery, assets);
+
+        assertEquals(1, result.getResults().size());
+        assertEquals("stark", result.getQuery().getSearchString());
+        assertFalse(result.getQuery().isSpellcheck());
+        assertNotEquals(result.getQuery(), initialQuery);
+    }
+
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testEscapingSpecialCharacters() {
+
+        FieldDescriptor<String> textField = new FieldDescriptorBuilder()
+                .setFullText(true)
+                .setSuggest(true)
+                .setFacet(true)
+                .buildTextField("textField");
+
+        DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(textField)
+                .build();
+
+        SearchServer server = testBackend.getSearchServer();
+
+        server.index(
+            assets.createDoc("1").setValue(textField, "Hell*"),
+            assets.createDoc("2").setValue(textField, "Hello Neighbour"),
+            assets.createDoc("3").setValue(textField, "Hello World")
+        );
+        server.commit();
+
+        SearchResult result = server.execute(Search.fulltext("Hell*").escapeCharacter(true), assets);
+
+        assertEquals(1, result.getResults().size());
     }
 }

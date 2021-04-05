@@ -1,6 +1,7 @@
 package com.rbmhtechnology.vind.api.query.suggestion;
 
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.sort.Sort;
 
 /**
  * @author Thomas Kurz (tkurz@apache.org)
@@ -14,6 +15,8 @@ public interface ExecutableSuggestionSearch {
     public Filter getFilter();
 
     public String getInput();
+
+    public Sort getSort();
 
     public ExecutableSuggestionSearch text(String text);
 

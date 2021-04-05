@@ -9,12 +9,14 @@ import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.metrics.MaxAggregationBuilder;
 import org.elasticsearch.search.sort.ScriptSortBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +24,8 @@ import java.util.Map;
 import java.util.Optional;
 
 public class SortUtils {
+    public static final String NUMBER_OF_MATCHING_TERMS_SORT = "NumberOfMatchingTermsSort";
+
     protected static SortBuilder buildSort(Sort sort, FulltextSearch search, DocumentFactory factory,
                                            String searchContext, List<String> indexFootPrint) {
         switch (sort.getType()) {
@@ -146,5 +150,49 @@ public class SortUtils {
                         .format("Unable to parse Vind sort '%s' to ElasticSearch sorting: sort type not supported.",
                                 sort.getType()));
         }
+    }
+
+    protected static AggregationBuilder buildSuggestionSort(String name,
+                                                            Sort sort,
+                                                            String searchContext,
+                                                            List<String> indexFootPrint,
+                                                            String input) {
+        switch (sort.getType()) {
+            case NUMBER_OF_MATCHING_TERMS_SORT:
+                return setNumberOfMatchingTermsSort(
+                        name,
+                        (Sort.SpecialSort.NumberOfMatchingTermsSort) sort,
+                        searchContext,
+                        indexFootPrint,
+                        input);
+            default:
+                throw new SearchServerException(String
+                        .format("Unable to parse Vind sort '%s' to ElasticSearch sorting: sort type not supported.",
+                                sort.getType()));
+        }
+    }
+
+    private static MaxAggregationBuilder setNumberOfMatchingTermsSort(String name,
+                                                                      Sort.SpecialSort.NumberOfMatchingTermsSort sort,
+                                                                      String searchContext,
+                                                                      List<String> indexFootPrint,
+                                                                      String input) {
+        final FieldDescriptor descriptor = sort.getDescriptor();
+        final String matchingField = Optional.ofNullable(descriptor)
+                .filter(FieldDescriptor::isSort)
+                .map(field -> FieldUtil.getFieldName(descriptor, FieldDescriptor.UseCase.Sort, searchContext, indexFootPrint)
+                        .orElseThrow(() ->
+                                new SearchServerException("The field '" + descriptor.getName() + "' is not set for context ["+ searchContext +"]")))
+                .orElse(sort.getField());
+        final Map<String, Object> parameters = new HashMap<>();
+        parameters.put("field",matchingField);
+        parameters.put("input", Arrays.asList(input.split(" ")));
+        final Script painlessMatchingSort = new Script(
+                ScriptType.INLINE,
+                "painless",
+                "long sum = 0;for(String value: doc[params.field]){long subSum = 0;for(String searchTerm: params.input){subSum+=value.toLowerCase().contains(searchTerm.toLowerCase()) ? 1 : 0;}if(subSum>sum){sum=subSum;}}return sum;",
+                parameters
+        );
+        return AggregationBuilders.max(name).script(painlessMatchingSort);
     }
 }

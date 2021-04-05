@@ -140,6 +140,15 @@ public abstract class Sort {
         }
 
         /**
+         * Static method to instantiate a {@link Sort.SpecialSort.NumberOfMatchingTermsSort} sorting object.
+         * @param descriptor {@link SingleValueFieldDescriptor} indicating the field to perform the sorting on.
+         * @return {@link Sort.SpecialSort.NumberOfMatchingTermsSort} sort query object.
+         */
+        public static NumberOfMatchingTermsSort numberOfMatchingTermsSort(FieldDescriptor descriptor) {
+            return new NumberOfMatchingTermsSort(descriptor);
+        }
+
+        /**
          * Static method to instantiate a {@link com.rbmhtechnology.vind.api.query.distance.Distance} object.
          * Be sure that geoDistance is set in search!
          * @return {@link Sort.SpecialSort.ScoredDate} sort query object.
@@ -202,6 +211,54 @@ public abstract class Sort {
             @Override
             public Sort clone() {
                 final ScoredDate copy = new ScoredDate(this.descriptor);
+                copy.direction = this.direction;
+                return copy;
+            }
+        }
+
+        public static class NumberOfMatchingTermsSort extends SpecialSort {
+
+            private FieldDescriptor descriptor;
+
+            /**
+             * Creates a new instance of {@link Sort.SpecialSort.NumberOfMatchingTermsSort} for a given field.
+             * @param descriptor {@link SingleValueFieldDescriptor} indicating the field to perform the sorting on.
+             */
+            protected NumberOfMatchingTermsSort(FieldDescriptor descriptor) {
+                this.descriptor = descriptor;
+            }
+
+            /**
+             * Gets the {@link FieldDescriptor}.
+             * @return {@link FieldDescriptor}
+             */
+            public FieldDescriptor getDescriptor() {
+                return descriptor;
+            }
+
+            /**
+             * Gets the {@link String} name of the field descriptor.
+             * @return {@link String} name of the field descriptor.
+             */
+            public String getField() {return descriptor.getName();}
+
+            @Override
+            public void setDirection(Direction direction) {
+                this.direction = direction;
+            }
+
+            @Override
+            public String toString(){
+                final String scoreString = "{" +
+                        "\"direction\":\"%s\"," +
+                        "\"field\":\"%s\"" +
+                        "}";
+                return String.format(scoreString,this.direction,this.descriptor.getName());
+            }
+
+            @Override
+            public Sort clone() {
+                final NumberOfMatchingTermsSort copy = new NumberOfMatchingTermsSort(this.descriptor);
                 copy.direction = this.direction;
                 return copy;
             }
