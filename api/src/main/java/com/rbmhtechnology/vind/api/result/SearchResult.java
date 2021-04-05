@@ -138,4 +138,11 @@ public abstract class SearchResult {
         this.elapsedTime = elapsedTime;
         return this;
     }
+
+    /**
+     * @return The search query that has been used for this result.
+     */
+    public FulltextSearch getQuery() {
+        return query;
+    }
 }
