@@ -6,11 +6,11 @@ import com.rbmhtechnology.vind.model.ComplexFieldDescriptor;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import com.rbmhtechnology.vind.model.MultiValuedComplexField;
 import com.rbmhtechnology.vind.model.SingleValuedComplexField;
+import org.apache.commons.lang3.NotImplementedException;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TimeZone;
 import java.util.function.Function;
@@ -200,7 +199,7 @@ public class PainlessScript {
                     }
                 case removeregex:
                 default:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("Operation '" + op +"' is not supported");
             }
         }
 
@@ -383,7 +382,7 @@ public class PainlessScript {
                     case removeregex:
                         //TODO: find a way to implement removeregex in painless script
                     default:
-                        throw new NotImplementedException();
+                        throw new NotImplementedException("Update operation '" + op +"' is not supported");
                 }
             }
 

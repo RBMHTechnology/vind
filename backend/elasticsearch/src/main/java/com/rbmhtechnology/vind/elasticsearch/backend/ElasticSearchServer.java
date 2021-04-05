@@ -46,6 +46,7 @@ import com.rbmhtechnology.vind.elasticsearch.backend.util.ResultUtils;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.http.util.Asserts;
 import org.elasticsearch.ElasticsearchException;
@@ -63,7 +64,6 @@ import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -447,7 +447,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
     @Override
     public <T> SuggestionResult execute(ExecutableSuggestionSearch search, Class<T> c) {
-        throw new NotImplementedException();
+        return execute(search, AnnotationUtil.createDocumentFactory(c));
     }
 
     @Override
@@ -507,7 +507,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
     @Override
     public SuggestionResult execute(ExecutableSuggestionSearch search, DocumentFactory assets, DocumentFactory childFactory) {
-        throw new NotImplementedException();
+        throw new NotImplementedException("Nested document functionalities are not implemented in elastic Backend");
     }
 
     @Override
@@ -524,7 +524,7 @@ public class ElasticSearchServer extends SmartSearchServerBase {
 
     @Override
     public String getRawQuery(ExecutableSuggestionSearch search, DocumentFactory factory, DocumentFactory childFactory) {
-        throw new NotImplementedException();
+        throw new NotImplementedException("Nested document functionalities are not implemented in elastic Backend");
     }
 
     @Override
