@@ -311,3 +311,8 @@ context.
 
 #3.1.9
 * Bugfix: Fixed issue with special regex lucene character on suggestion input
+
+#3.1.10
+* Feature: disable lucene syntax flag (#201)
+* Feature: Sorted Suggestions (#205)
+* Improvement: Suggestions can be limited by a full text search (#204)
