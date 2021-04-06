@@ -1,5 +1,6 @@
 package com.rbmhtechnology.vind.api.query.suggestion;
 
+import com.rbmhtechnology.vind.api.query.FulltextTerm;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.sort.Sort;
 import com.rbmhtechnology.vind.model.FieldDescriptor;
@@ -7,7 +8,10 @@ import com.rbmhtechnology.vind.model.FieldDescriptor;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+
+import static java.util.Optional.empty;
 
 /**
  * Class to configure suggestions based on field descriptors.
@@ -23,6 +27,7 @@ public class DescriptorSuggestionSearch implements ExecutableSuggestionSearch {
     private Set<FieldDescriptor> suggestionFields = new HashSet<>();
     private String searchContext = null;
     private Sort sort = null;
+    private Optional<FulltextTerm> fulltextTerm = empty();
 
     /**
      * Creates a new instance of {@link DescriptorSuggestionSearch}.
@@ -31,14 +36,14 @@ public class DescriptorSuggestionSearch implements ExecutableSuggestionSearch {
      * @param field {@link FieldDescriptor} fields where to find the suggestions.
      */
     protected DescriptorSuggestionSearch(String input, int limit, Filter filter, FieldDescriptor ... field) {
-        Objects.requireNonNull(field);
-        this.input = input;
-        this.limit = limit;
-        this.filter = filter;
-        suggestionFields.addAll(Arrays.asList(field));
+      Objects.requireNonNull(field);
+      this.input = input;
+      this.limit = limit;
+      this.filter = filter;
+      suggestionFields.addAll(Arrays.asList(field));
     }
 
-    /**
+  /**
      * Set the text to find suggestions for.
      * @param input String text to find suggestion for.
      * @return {@link DescriptorSuggestionSearch} with the new text.
@@ -172,6 +177,15 @@ public class DescriptorSuggestionSearch implements ExecutableSuggestionSearch {
 
     public DescriptorSuggestionSearch setSort(Sort sort) {
         this.sort = sort;
+        return this;
+    }
+
+    public Optional<FulltextTerm> getFulltextTerm() {
+        return fulltextTerm;
+    }
+
+    public DescriptorSuggestionSearch fulltextTerm(final FulltextTerm fulltextTerm) {
+        this.fulltextTerm = Optional.ofNullable(fulltextTerm);
         return this;
     }
 }

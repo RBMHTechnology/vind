@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Streams;
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.api.query.FulltextSearch;
+import com.rbmhtechnology.vind.api.query.FulltextTerm;
 import com.rbmhtechnology.vind.api.query.datemath.DateMathExpression;
 import com.rbmhtechnology.vind.api.query.division.Cursor;
 import com.rbmhtechnology.vind.api.query.division.Page;
@@ -154,26 +155,7 @@ public class ElasticQueryBuilder {
             searchString = skipColonSearchString;
         }
 
-        String minimumShouldMatch = search.getMinimumShouldMatch();
-        if(StringUtils.isNumeric(minimumShouldMatch) && !minimumShouldMatch.startsWith("-")) {
-            minimumShouldMatch = "0<" + minimumShouldMatch;
-        }
-        final QueryStringQueryBuilder fullTextStringQuery = QueryBuilders.queryStringQuery(searchString)
-                .minimumShouldMatch(minimumShouldMatch); //mm
-        // Set fulltext fields
-        factory.getFields().values().stream()
-                .filter( FieldDescriptor::isFullText)
-                .map( field -> Pair.of(FieldUtil.getFieldName(field, UseCase.Fulltext, searchContext, indexFootPrint), field.getBoost()))
-                .filter( pair -> pair.getKey().isPresent())
-                .forEach( field -> fullTextStringQuery
-                        .field(field.getKey().get(),field.getValue()));
-
-        if(fullTextStringQuery.fields().isEmpty()) {
-            fullTextStringQuery.defaultField("full_text");
-        }
-
-        final DisMaxQueryBuilder query = QueryBuilders.disMaxQuery()
-                .add(fullTextStringQuery);
+        final DisMaxQueryBuilder query = createDisMaxQueryBuilder(new FulltextTerm(searchString, search.getMinimumShouldMatch()), factory, indexFootPrint, searchContext);
 
         baseQuery.must(query);
         searchSource.query(baseQuery);
@@ -317,6 +299,29 @@ public class ElasticQueryBuilder {
         return searchSource;
     }
 
+    private static DisMaxQueryBuilder createDisMaxQueryBuilder(FulltextTerm fulltextTerm, DocumentFactory factory, List<String> indexFootPrint, String searchContext) {
+        String minimumShouldMatch = fulltextTerm.getMinimumMatch();
+        if(StringUtils.isNumeric(minimumShouldMatch) && !minimumShouldMatch.startsWith("-")) {
+            minimumShouldMatch = "0<" + minimumShouldMatch;
+        }
+        final QueryStringQueryBuilder fullTextStringQuery = QueryBuilders.queryStringQuery(fulltextTerm.getFulltextSearchTerm())
+                .minimumShouldMatch(minimumShouldMatch); //mm
+        // Set fulltext fields
+        factory.getFields().values().stream()
+                .filter( FieldDescriptor::isFullText)
+                .map( field -> Pair.of(FieldUtil.getFieldName(field, UseCase.Fulltext, searchContext, indexFootPrint), field.getBoost()))
+                .filter( pair -> pair.getKey().isPresent())
+                .forEach( field -> fullTextStringQuery
+                        .field(field.getKey().get(),field.getValue()));
+
+        if(fullTextStringQuery.fields().isEmpty()) {
+            fullTextStringQuery.defaultField("full_text");
+        }
+
+        return QueryBuilders.disMaxQuery()
+          .add(fullTextStringQuery);
+    }
+
     public static SearchSourceBuilder buildPercolatorQueryReadiness(DocumentFactory factory) {
 
         final SearchSourceBuilder searchSource = new SearchSourceBuilder();
@@ -383,14 +388,14 @@ public class ElasticQueryBuilder {
             case "TermsQueryFilter":
                 final Filter.TermsQueryFilter termsQueryFilter = (Filter.TermsQueryFilter) filter;
 
-                final Optional<String> termsQueryFilterFieldName = 
+                final Optional<String> termsQueryFilterFieldName =
                         FieldUtil.getFieldName(factory.getField(termsQueryFilter.getField()), useCase,context, indexFootPrint);
                 return termsQueryFilterFieldName.map(s -> QueryBuilders
                         .termsQuery(s, termsQueryFilter.getTerm())).orElse(null);
 
             case "PrefixFilter":
                 final Filter.PrefixFilter prefixFilter = (Filter.PrefixFilter) filter;
-                final Optional<String> prefixQueryFilterFieldName = 
+                final Optional<String> prefixQueryFilterFieldName =
                         FieldUtil.getFieldName(factory.getField(prefixFilter.getField()), useCase,context, indexFootPrint)
                 ;
                 return prefixQueryFilterFieldName.map(s -> QueryBuilders
@@ -398,7 +403,7 @@ public class ElasticQueryBuilder {
 
             case "DescriptorFilter":
                 final Filter.DescriptorFilter descriptorFilter = (Filter.DescriptorFilter) filter;
-                final Optional<String> descriptorQueryFilterFieldName = 
+                final Optional<String> descriptorQueryFilterFieldName =
                         FieldUtil.getFieldName(descriptorFilter.getDescriptor(), useCase, context, indexFootPrint)
                 ;
                 return descriptorQueryFilterFieldName.map(s -> QueryBuilders
@@ -406,7 +411,7 @@ public class ElasticQueryBuilder {
 
             case "BetweenDatesFilter":
                 final Filter.BetweenDatesFilter betweenDatesFilter = (Filter.BetweenDatesFilter) filter;
-                final Optional<String> betweenDatesQueryFilterFieldName = 
+                final Optional<String> betweenDatesQueryFilterFieldName =
                         FieldUtil.getFieldName(factory.getField(betweenDatesFilter.getField()), useCase,context, indexFootPrint)
                 ;
                 return betweenDatesQueryFilterFieldName.map(s -> QueryBuilders
@@ -417,7 +422,7 @@ public class ElasticQueryBuilder {
 
             case "BeforeFilter":
                 final Filter.BeforeFilter beforeFilter = (Filter.BeforeFilter) filter;
-                final Optional<String> beforeQueryFilterFieldName = 
+                final Optional<String> beforeQueryFilterFieldName =
                         FieldUtil.getFieldName(factory.getField(beforeFilter.getField()), useCase,context, indexFootPrint)
                 ;
                 return beforeQueryFilterFieldName.map(s -> QueryBuilders
@@ -427,7 +432,7 @@ public class ElasticQueryBuilder {
 
             case "AfterFilter":
                 final Filter.AfterFilter afterFilter = (Filter.AfterFilter) filter;
-                final Optional<String> afterQueryFilterFieldName = 
+                final Optional<String> afterQueryFilterFieldName =
                         FieldUtil.getFieldName(factory.getField(afterFilter.getField()), useCase,context, indexFootPrint)
                 ;
                 return afterQueryFilterFieldName.map(s -> QueryBuilders
@@ -437,7 +442,7 @@ public class ElasticQueryBuilder {
 
             case "BetweenNumericFilter":
                 final Filter.BetweenNumericFilter betweenNumericFilter = (Filter.BetweenNumericFilter) filter;
-                final Optional<String> betweenNumericQueryFilterFieldName = 
+                final Optional<String> betweenNumericQueryFilterFieldName =
                         FieldUtil.getFieldName(factory.getField(betweenNumericFilter.getField()), useCase, context, indexFootPrint);
                 return betweenNumericQueryFilterFieldName.map(s -> QueryBuilders
                         .rangeQuery(betweenNumericQueryFilterFieldName.get())
@@ -446,7 +451,7 @@ public class ElasticQueryBuilder {
                         .orElse(null);
             case "LowerThanFilter":
                 final Filter.LowerThanFilter lowerThanFilter = (Filter.LowerThanFilter) filter;
-                final Optional<String> lowerThanQueryFilterFieldName = 
+                final Optional<String> lowerThanQueryFilterFieldName =
                         FieldUtil.getFieldName(factory.getField(lowerThanFilter.getField()), useCase, context, indexFootPrint);
                 return lowerThanQueryFilterFieldName.map(s -> QueryBuilders
                         .rangeQuery(lowerThanQueryFilterFieldName.get())
@@ -1203,6 +1208,11 @@ public class ElasticQueryBuilder {
                         .addSuggestion(
                                 FieldUtil.getSourceFieldName(fieldName.replaceAll("\\.suggestion", ""), searchContext),
                                 SuggestBuilders.termSuggestion(fieldName.concat("_experimental")).prefixLength(0)));
+
+        search.getFulltextTerm().ifPresent(fulltextTerm -> {
+            QueryBuilder query = createDisMaxQueryBuilder(fulltextTerm, factory, indexFootPrint, searchContext);
+            searchSource.query(query);
+        });
 
         searchSource.suggest(suggestBuilder);
         return searchSource;

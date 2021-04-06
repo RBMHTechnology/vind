@@ -418,8 +418,12 @@ public class ElasticSearchServer extends SmartSearchServerBase {
                     }
                     case cursor: {
                         if (!documents.isEmpty()) {
-                            ((Cursor) search.getResultSet()).setSearchAfter(documents.get(documents.size()-1).getSearchAfterCursor().get());
+                            // Get cursor from last document result
+                            final String searchAfterCursor = documents.get(documents.size() - 1).getSearchAfterCursor().get();
+                            // Update used search with next cursor
+                            ((Cursor) usedSearch.getResultSet()).setSearchAfter(searchAfterCursor);
                         }
+                        // Build result with used search
                         return new CursorResult(totalHits, queryTime, documents, usedSearch, facetResults, this, factory).setElapsedTime(elapsedtime.getTime());
                     }
                     default:

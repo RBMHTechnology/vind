@@ -1,13 +1,10 @@
-/*
- * Copyright (c) 2017 Redlink GmbH.
- */
+
 package com.rbmhtechnology.vind.test;
 
 import com.rbmhtechnology.vind.api.SearchServer;
+import com.rbmhtechnology.vind.api.query.FulltextTerm;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
-import com.rbmhtechnology.vind.api.query.sort.Sort;
-import com.rbmhtechnology.vind.api.result.SearchResult;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
@@ -19,9 +16,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.util.Locale;
-
-import static com.rbmhtechnology.vind.api.query.filter.Filter.eq;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.SpecialSort.numberOfMatchingTermsSort;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.desc;
 import static com.rbmhtechnology.vind.test.Backend.Elastic;
@@ -198,6 +192,7 @@ public class SuggestionSearchIT {
         server.delete(parent.createDoc("P_SPEC_CHAR"));
         server.commit();
     }
+
     @Test
     @RunWithBackend({Solr, Elastic})
     public void testMultiWordSuggestion() {
@@ -215,6 +210,26 @@ public class SuggestionSearchIT {
 
         Assert.assertEquals(3, suggestionResult.size());
 
+    }
+
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testMultiWordSuggestionWithBaseSearchTerm() {
+
+        server.index(
+                parent.createDoc("multi1").setValue(parent_value, "León city"));
+        server.index(
+                parent.createDoc("multi2").setValue(parent_value, "Lerida"));
+        server.index(
+                parent.createDoc("multi3").setValue(parent_value, "Oviedo city"));
+        server.index(
+                parent.createDoc("multi4").setValue(parent_value, "Oviñana"));
+        server.commit();
+
+        SuggestionResult suggestionResult = server.execute(Search.suggest("Ov").fulltextTerm(new FulltextTerm("city", "100%")).addField(parent_value), parent);
+
+        Assert.assertEquals(1, suggestionResult.size());
+        assertEquals("Oviedo city", suggestionResult.get(parent_value).getValues().get(0).getValue());
     }
 
     @Test

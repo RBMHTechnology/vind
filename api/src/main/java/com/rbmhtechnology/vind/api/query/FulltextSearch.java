@@ -19,7 +19,12 @@ import com.rbmhtechnology.vind.model.value.LatLng;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.rbmhtechnology.vind.api.query.filter.Filter.*;
@@ -30,7 +35,6 @@ import static com.rbmhtechnology.vind.api.query.filter.Filter.*;
  */
 public class FulltextSearch {
 
-    private String searchString = null;
     private Filter filter = null;
     private List<Sort> sorting = new ArrayList<>();
     private int facetMinCount =  SearchConfiguration.get(SearchConfiguration.SEARCH_RESULT_FACET_INCLUDE_EMPTY, false)? 0 : 1;
@@ -43,18 +47,17 @@ public class FulltextSearch {
     private DocumentFactory childrenFactory = null;
     private String timeZone = null;
     private Distance geoDistance = null;
-    private String minimumShouldMatch = "1";
     private String searchContext = null;
     private boolean strict = true;
     private boolean spellcheck = false;
     private boolean smartParsing = false;
     private boolean escapeCharacter = false;
+    private FulltextTerm fulltextSearchTerm = new FulltextTerm("*", "1");
 
     /**
      * Creates a new basic full text search query object.
      */
     FulltextSearch() {
-        this.searchString = "*";
         this.resultSet = new Page(1, SearchConfiguration.get(SearchConfiguration.SEARCH_RESULT_PAGESIZE,10));
     }
 
@@ -65,7 +68,7 @@ public class FulltextSearch {
     public FulltextSearch copy() {
         final FulltextSearch copy = new FulltextSearch();
 
-        copy.searchString = new String(this.searchString);
+        copy.fulltextSearchTerm = fulltextSearchTerm.copy();
         copy.resultSet = resultSet.copy();
         if (Objects.nonNull(this.getFilter())) {
             copy.filter = this.getFilter().clone();
@@ -89,7 +92,7 @@ public class FulltextSearch {
      * @return This {@link FulltextSearch} instance with the new text query.
      */
     public FulltextSearch text(String fullText) {
-        this.searchString = fullText;
+        this.fulltextSearchTerm = new FulltextTerm(fullText, this.fulltextSearchTerm.getMinimumMatch());
         return this;
     }
 
@@ -505,7 +508,7 @@ public class FulltextSearch {
      * @return String containing the query target.
      */
     public String getSearchString() {
-        return searchString;
+        return fulltextSearchTerm.getFulltextSearchTerm();
     }
 
     /**
@@ -513,7 +516,7 @@ public class FulltextSearch {
      * @return String containing the query target.
      */
     public String getEscapedSearchString() {
-        return StringEscapeUtils.escapeJava(searchString);
+        return StringEscapeUtils.escapeJava(fulltextSearchTerm.getFulltextSearchTerm());
     }
 
     /**
@@ -643,11 +646,11 @@ public class FulltextSearch {
     }
 
     public String getMinimumShouldMatch() {
-        return minimumShouldMatch;
+        return fulltextSearchTerm.getMinimumMatch();
     }
 
     public FulltextSearch setMinimumShouldMatch(String minimumShouldMatch) {
-        this.minimumShouldMatch = minimumShouldMatch;
+        this.fulltextSearchTerm = new FulltextTerm(fulltextSearchTerm.getFulltextSearchTerm(), minimumShouldMatch);
         return this;
     }
 
@@ -721,7 +724,7 @@ public class FulltextSearch {
                 "}";
 
         return String.format(searchString,
-                this.searchString,
+                this.fulltextSearchTerm.getFulltextSearchTerm(),
                 this.filter,
                 this.timeZone,
                 CollectionUtils.isNotEmpty(this.sorting) ? "[" + this.sorting.stream().map(f -> f.toString()).collect(Collectors.joining(", ")) +"]": "[]",
@@ -764,6 +767,14 @@ public class FulltextSearch {
     public FulltextSearch cursor(String searchAfter, long aliveMinutes) {
         this.resultSet = new Cursor(searchAfter, aliveMinutes, SearchConfiguration.get(SearchConfiguration.SEARCH_RESULT_PAGESIZE,10));
         return this;
+    }
+
+    public FulltextTerm getFulltextSearchTerm() {
+        return this.fulltextSearchTerm;
+    }
+
+    public void setFulltextSearchTerm(FulltextTerm fulltextSearchTerm) {
+        this.fulltextSearchTerm = fulltextSearchTerm;
     }
 
     public enum Operators {
