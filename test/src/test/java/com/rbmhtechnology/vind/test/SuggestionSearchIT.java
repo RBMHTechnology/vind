@@ -114,7 +114,7 @@ public class SuggestionSearchIT {
 
     @Test
     @RunWithBackend(Solr)
-    public void childrenSuggestionTest(){
+    public void childrenSuggestionTest() {
         SuggestionResult suggestionSearch = server.execute(Search.suggest("gree").fields(child_value), parent, child);
         assertEquals(1, suggestionSearch.get(child_value).getValues().size());
         assertEquals("green", suggestionSearch.get(child_value).getValues().get(0).getValue());
@@ -135,7 +135,7 @@ public class SuggestionSearchIT {
         assertEquals("black", suggestionSearch.get(shared_value).getValues().get(0).getValue());
         assertEquals(3, suggestionSearch.get(shared_value).getValues().get(0).getCount());
 
-        suggestionSearch = server.execute(Search.suggest("bl").fields(shared_value,parent_value), parent, child);
+        suggestionSearch = server.execute(Search.suggest("bl").fields(shared_value, parent_value), parent, child);
         assertEquals(1, suggestionSearch.get(shared_value).getValues().size());
         assertEquals("black", suggestionSearch.get(shared_value).getValues().get(0).getValue());
         assertEquals(3, suggestionSearch.get(shared_value).getValues().get(0).getCount());
@@ -144,23 +144,23 @@ public class SuggestionSearchIT {
         assertEquals(1, suggestionSearch.get(parent_value).getValues().get(0).getCount());
 
         suggestionSearch = server.execute(Search.suggest("bl")
-                .fields(shared_value,parent_value)
-                .filter(Filter.eq(parent_value,"orange")), parent, child);
+                .fields(shared_value, parent_value)
+                .filter(Filter.eq(parent_value, "orange")), parent, child);
         assertEquals(1, suggestionSearch.get(shared_value).getValues().size());
         assertEquals("black", suggestionSearch.get(shared_value).getValues().get(0).getValue());
         assertEquals(2, suggestionSearch.get(shared_value).getValues().get(0).getCount());
 
         suggestionSearch = server.execute(Search.suggest("bl")
-                .fields(shared_value,parent_value,child_value)
-                .filter(Filter.eq(child_value,"blue")), parent, child);
+                .fields(shared_value, parent_value, child_value)
+                .filter(Filter.eq(child_value, "blue")), parent, child);
         assertEquals(1, suggestionSearch.get(parent_value).getValues().size());
         assertEquals(1, suggestionSearch.get(child_value).getValues().size());
         assertEquals("blue", suggestionSearch.get(child_value).getValues().get(0).getValue());
         assertEquals(1, suggestionSearch.get(shared_value).getValues().size());
 
         suggestionSearch = server.execute(Search.suggest("bl")
-                .fields(shared_value,parent_value,child_value)
-                .filter(Filter.eq(shared_value,"yellow")), parent, child);
+                .fields(shared_value, parent_value, child_value)
+                .filter(Filter.eq(shared_value, "yellow")), parent, child);
         assertEquals(1, suggestionSearch.get(parent_value).getValues().size());
         assertEquals(1, suggestionSearch.get(child_value).getValues().size());
         assertEquals("blue", suggestionSearch.get(child_value).getValues().get(0).getValue());
@@ -171,10 +171,10 @@ public class SuggestionSearchIT {
     @RunWithBackend({Solr, Elastic})
     public void testSpecialCharacters() {
         server.index(
-               parent.createDoc("P_SPEC_CHAR").setValue(parent_value, "León"));
+                parent.createDoc("P_SPEC_CHAR").setValue(parent_value, "León"));
         server.commit();
 
-        SuggestionResult result = server.execute(Search.suggest("2015León, Mexico").fields(parent_value),parent);
+        SuggestionResult result = server.execute(Search.suggest("2015León, Mexico").fields(parent_value), parent);
         assertNotNull(result);
         assertEquals(1, result.size());
 
@@ -185,7 +185,7 @@ public class SuggestionSearchIT {
                 parent.createDoc("P_SPEC_CHAR").setValue(parent_value, "\"Film"));
         server.commit();
 
-        result = server.execute(Search.suggest("\"Film").fields(parent_value),parent);
+        result = server.execute(Search.suggest("\"Film").fields(parent_value), parent);
         assertNotNull(result);
         assertEquals(1, result.size());
 
@@ -239,7 +239,7 @@ public class SuggestionSearchIT {
                 parent.createDoc("P_SPEC_CHAR").setValue(parent_value, "Servus Nachrichten 19:20 -> Season 4 -> Episode 20 - January 20"));
         server.commit();
 
-        SuggestionResult result = server.execute(Search.suggest("Servus Nachrichten 19:20 Season 4 Episode 20").fields(parent_value),parent);
+        SuggestionResult result = server.execute(Search.suggest("Servus Nachrichten 19:20 Season 4 Episode 20").fields(parent_value), parent);
         assertNotNull(result);
         assertEquals(1, result.size());
 
@@ -285,5 +285,31 @@ public class SuggestionSearchIT {
                 .setSort(desc(numberOfMatchingTermsSort(multi_value))), parent);
         Assert.assertEquals(3, suggestionResult.size());
         Assert.assertEquals("Salzburg City", suggestionResult.get(multi_value).getValues().get(0).getValue());
+    }
+
+    @Test
+    @RunWithBackend({Elastic})
+    public void testSuggestionSortWithMultipleFields() {
+        server.index(
+                parent.createDoc("multi1").setValue(parent_value, "Lindsey Vonn"),
+                parent.createDoc("multi2").setValue(parent_value, "New Lockdown"),
+                parent.createDoc("multi3").setValue(parent_value, "Lindsay Lohan"),
+                parent.createDoc("multi4").setValue(parent_value, "New Lockdown")
+        );
+        server.commit();
+
+        server.index(
+                parent.createDoc("multi1").setValues(multi_value, "Madrid City", "Spain"),
+                parent.createDoc("multi2").setValues(multi_value, "Bologna City", "Italy"),
+                parent.createDoc("multi3").setValues(multi_value, "New York City", "USA")
+        );
+        server.commit();
+
+        final SuggestionResult suggestionResult = server.execute(Search.suggest("New")
+                .addField(parent_value)
+                .addField(multi_value)
+                .setSort(desc(numberOfMatchingTermsSort())), parent);
+        Assert.assertEquals("New Lockdown", suggestionResult.get(parent_value).getValues().get(0).getValue());
+        Assert.assertEquals("New York City", suggestionResult.get(multi_value).getValues().get(0).getValue());
     }
 }

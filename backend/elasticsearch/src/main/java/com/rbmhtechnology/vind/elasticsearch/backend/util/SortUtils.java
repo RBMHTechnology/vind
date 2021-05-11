@@ -154,17 +154,11 @@ public class SortUtils {
 
     protected static AggregationBuilder buildSuggestionSort(String name,
                                                             Sort sort,
-                                                            String searchContext,
-                                                            List<String> indexFootPrint,
-                                                            String input) {
+                                                            String input,
+                                                            String fieldName) {
         switch (sort.getType()) {
             case NUMBER_OF_MATCHING_TERMS_SORT:
-                return setNumberOfMatchingTermsSort(
-                        name,
-                        (Sort.SpecialSort.NumberOfMatchingTermsSort) sort,
-                        searchContext,
-                        indexFootPrint,
-                        input);
+                return setNumberOfMatchingTermsSort(name, input, fieldName);
             default:
                 throw new SearchServerException(String
                         .format("Unable to parse Vind sort '%s' to ElasticSearch sorting: sort type not supported.",
@@ -173,19 +167,10 @@ public class SortUtils {
     }
 
     private static MaxAggregationBuilder setNumberOfMatchingTermsSort(String name,
-                                                                      Sort.SpecialSort.NumberOfMatchingTermsSort sort,
-                                                                      String searchContext,
-                                                                      List<String> indexFootPrint,
-                                                                      String input) {
-        final FieldDescriptor descriptor = sort.getDescriptor();
-        final String matchingField = Optional.ofNullable(descriptor)
-                .filter(FieldDescriptor::isSort)
-                .map(field -> FieldUtil.getFieldName(descriptor, FieldDescriptor.UseCase.Sort, searchContext, indexFootPrint)
-                        .orElseThrow(() ->
-                                new SearchServerException("The field '" + descriptor.getName() + "' is not set for context ["+ searchContext +"]")))
-                .orElse(sort.getField());
+                                                                      String input,
+                                                                      String fieldName) {
         final Map<String, Object> parameters = new HashMap<>();
-        parameters.put("field",matchingField);
+        parameters.put("field",fieldName);
         parameters.put("input", Arrays.asList(input.split(" ")));
         final Script painlessMatchingSort = new Script(
                 ScriptType.INLINE,

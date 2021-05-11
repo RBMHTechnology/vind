@@ -83,6 +83,7 @@ public class StringSuggestionSearch implements ExecutableSuggestionSearch {
     public String getSearchContext() {
         return this.searchContext;
     }
+
     /**
      * Sets a basic {@link com.rbmhtechnology.vind.api.query.filter.Filter.TermFilter} for the suggestion search query.
      * @param field String name of the field to filter in.

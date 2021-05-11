@@ -149,6 +149,15 @@ public abstract class Sort {
         }
 
         /**
+         * Static method to instantiate a {@link Sort.SpecialSort.NumberOfMatchingTermsSort} sorting object,
+         * which sorts each field from the query for the number of matching terms.
+         * @return {@link Sort.SpecialSort.NumberOfMatchingTermsSort} sort query object.
+         */
+        public static NumberOfMatchingTermsSort numberOfMatchingTermsSort() {
+            return new NumberOfMatchingTermsSort();
+        }
+
+        /**
          * Static method to instantiate a {@link com.rbmhtechnology.vind.api.query.distance.Distance} object.
          * Be sure that geoDistance is set in search!
          * @return {@link Sort.SpecialSort.ScoredDate} sort query object.
@@ -226,6 +235,9 @@ public abstract class Sort {
              */
             protected NumberOfMatchingTermsSort(FieldDescriptor descriptor) {
                 this.descriptor = descriptor;
+            }
+
+            protected NumberOfMatchingTermsSort() {
             }
 
             /**
