@@ -382,7 +382,7 @@ public class ElasticQueryBuilder {
 
             case "TermFilter":
                 final Filter.TermFilter termFilter = (Filter.TermFilter) filter;
-                final Optional<String> termFilterFieldName = 
+                final Optional<String> termFilterFieldName =
                         FieldUtil.getFieldName(factory.getField(termFilter.getField()), useCase, context, indexFootPrint);
                 return termFilterFieldName.map(s -> QueryBuilders.termQuery(s, termFilter.getTerm())).orElse(null);
             case "TermsQueryFilter":
@@ -1166,7 +1166,8 @@ public class ElasticQueryBuilder {
         return searchSource;
     }
 
-    public static SearchSourceBuilder buildSuggestionQuery(ExecutableSuggestionSearch search, DocumentFactory factory,
+    public static SearchSourceBuilder buildSuggestionQuery(ExecutableSuggestionSearch search,
+                                                           DocumentFactory factory,
                                                            List<String> indexFootPrint) {
 
         final String searchContext = search.getSearchContext();
@@ -1196,7 +1197,7 @@ public class ElasticQueryBuilder {
                 )
                 .map(aggregation ->
                     search.getSort() != null && NUMBER_OF_MATCHING_TERMS_SORT.equals(search.getSort().getType())
-                            ? addSubAggregation(aggregation, search, searchContext, indexFootPrint)
+                            ? addSubAggregation(aggregation, search, aggregation.field())
                             : aggregation
                 )
                 .forEach(searchSource::aggregation);
@@ -1220,10 +1221,9 @@ public class ElasticQueryBuilder {
 
     private static AggregationBuilder addSubAggregation(TermsAggregationBuilder aggregation,
                                                         ExecutableSuggestionSearch search,
-                                                        String searchContext,
-                                                        List<String> indexFootPrint) {
+                                                        String fieldName) {
         return aggregation
-                .subAggregation(SortUtils.buildSuggestionSort(RELEVANCE, search.getSort(), searchContext, indexFootPrint, search.getInput()))
+                .subAggregation(SortUtils.buildSuggestionSort(RELEVANCE, search.getSort(), search.getInput(), fieldName))
                 .order(BucketOrder.aggregation(RELEVANCE, false));
     }
 
