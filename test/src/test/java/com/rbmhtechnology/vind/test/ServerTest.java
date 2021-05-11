@@ -82,6 +82,7 @@ import static com.rbmhtechnology.vind.api.query.filter.Filter.not;
 import static com.rbmhtechnology.vind.api.query.filter.Filter.or;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.Direction;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.SpecialSort.distance;
+import static com.rbmhtechnology.vind.api.query.sort.Sort.SpecialSort.numberOfMatchingTermsSort;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.SpecialSort.score;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.SpecialSort.scoredDate;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.asc;
@@ -3911,5 +3912,71 @@ public class ServerTest {
         SearchResult result = server.execute(Search.fulltext("Hell*").escapeCharacter(true), assets);
 
         assertEquals(1, result.getResults().size());
+    }
+
+    @Test
+    @RunWithBackend({Elastic, Solr})
+    public void testComplexContextSortedSuggestion() {
+
+
+        final MultiValuedComplexField.TextComplexField<Taxonomy, String, String> textMulti =
+                new ComplexFieldDescriptorBuilder<Taxonomy,String,String>()
+                        .setFullText(true, tx -> Collections.singletonList(tx.getLabel()))
+                        .setSuggest(true, tx -> Collections.singletonList(tx.getLabel()))
+                        .setStored(true, Taxonomy::getLabel)
+                        .buildMultivaluedTextComplexField("textMulti", Taxonomy.class,String.class,String.class);
+
+        final NumericFieldDescriptor<Integer> numMulti = new FieldDescriptorBuilder()
+                .buildMultivaluedNumericField("numMulti", Integer.class);
+
+        final Function<Collection<ZonedDateTime>, ZonedDateTime> dateSortFunction = txs -> txs.stream().max(Comparator.<ZonedDateTime>naturalOrder()).get();
+        final DateFieldDescriptor dateMulti = new FieldDescriptorBuilder()
+                .buildSortableMultivaluedDateField("dateMulti", dateSortFunction);
+
+        final SingleValuedComplexField.UtilDateComplexField<Taxonomy,Date,Date> dateSingle = new ComplexFieldDescriptorBuilder<Taxonomy,Date,Date>()
+                .setStored(true, tx -> tx.getUtilDate())
+                .buildUtilDateComplexField("singleDate", Taxonomy.class, Date.class, Date.class);
+
+        final MultiValuedComplexField.DateComplexField<Taxonomy,ZonedDateTime,ZonedDateTime> dateComplexMulti = new ComplexFieldDescriptorBuilder<Taxonomy,ZonedDateTime,ZonedDateTime>()
+                .setStored(true, tx -> tx.getDate())
+                .buildMultivaluedDateComplexField("dateComplexMulti", Taxonomy.class, ZonedDateTime.class, ZonedDateTime.class);
+
+        final DocumentFactory assets = new DocumentFactoryBuilder("asset")
+                .addField(textMulti)
+                .addField(numMulti)
+                .addField(dateMulti)
+                .addField(dateSingle)
+                .addField(dateComplexMulti)
+                .build();
+
+        final Document doc1 = assets.createDoc("1")
+                .setContextualizedValue(textMulti, "en", new Taxonomy("today", 2, "Servus Nachrichten 19:20 -> Season 4 -> Episode 20 - January 20", ZonedDateTime.now()))
+                .setValues(numMulti,6,7,8)
+                .setValue(dateSingle, new Taxonomy("today", 2, "todays date", ZonedDateTime.now()))
+                .setValues(dateComplexMulti, new Taxonomy("today", 2, "todays date", ZonedDateTime.now()), new Taxonomy("today", 2, "todays date", ZonedDateTime.now().minusDays(1)))
+                .setValues(dateMulti, ZonedDateTime.now().minusMonths(3));
+
+        final Document doc2 = assets.createDoc("2")
+                .setContextualizedValue(textMulti, "en", new Taxonomy("today", 2, "English", ZonedDateTime.now()))
+                .setValues(numMulti, 1, 2, 3)
+                .setValue(dateSingle, new Taxonomy("today", 1, "todays date", ZonedDateTime.now().plusDays(1)))
+                .setValues(dateComplexMulti, new Taxonomy("today", 2, "todays date", ZonedDateTime.now().plusDays(2)), new Taxonomy("today", 2, "todays date", ZonedDateTime.now().minusDays(1)))
+                .setValues(dateMulti, ZonedDateTime.now().plusMonths(1));
+
+
+        final SearchServer server = testBackend.getSearchServer();
+
+        server.index(doc1);
+        server.index(doc2);
+        server.commit();
+
+        //test empty filter in single valued field
+        DescriptorSuggestionSearch suggestion = Search.suggest("e nach")
+                .context("en")
+                .addField(textMulti)
+                .setSort(desc(numberOfMatchingTermsSort()));
+        final SuggestionResult suggestionResult = server.execute( suggestion, assets);
+        assertEquals( 2, suggestionResult.size());
+        assertEquals( "Servus Nachrichten 19:20 -> Season 4 -> Episode 20 - January 20", suggestionResult.get(textMulti).getValues().get(0).getValue());
     }
 }
