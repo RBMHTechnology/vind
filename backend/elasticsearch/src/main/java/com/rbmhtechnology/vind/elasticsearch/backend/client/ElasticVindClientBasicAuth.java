@@ -5,19 +5,17 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 
 import java.util.Objects;
 
-public  class ElasticVindClientBasicAuth extends ElasticVindClient{
+public class ElasticVindClientBasicAuth extends ElasticVindClient{
 
     private final String user;
     private final String key;
 
-    private ElasticVindClientBasicAuth(String defaultIndex, int port, String scheme, String host, String user, String key) {
+    private ElasticVindClientBasicAuth(String defaultIndex, int port, String scheme, String host, Long connectionTimeout, Long socketTimeout, String user, String key) {
         this.defaultIndex = defaultIndex;
         this.port = port;
         this.host = host;
@@ -36,31 +34,12 @@ public  class ElasticVindClientBasicAuth extends ElasticVindClient{
         this.client = new RestHighLevelClient(
                 RestClient.builder(
                         new HttpHost(host, port, scheme)
-                ).setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-                    @Override
-                    public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
-                        return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-                    }
-                })
+                ).setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider))
+                .setRequestConfigCallback(applyTimeouts(connectionTimeout, socketTimeout))
         );
     }
 
-    private ElasticVindClientBasicAuth(int port, String scheme, String host, String user, String key) {
-        this.port = port;
-        this.host = host;
-        this.scheme = scheme;
-        this.user = user;
-        this.key = key;
-
-        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(user, key));
-        final RestClientBuilder restClientBuilder = RestClient.builder(new HttpHost(host, port, scheme))
-                .setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider));
-
-        this.client = new RestHighLevelClient(restClientBuilder);
-    }
-
-    public static ElasticVindClientBasicAuth build(String defaultIndex, int port, String scheme, String host, String user, String key) {
-        return new ElasticVindClientBasicAuth(defaultIndex, port, scheme, host, user, key);
+    public static ElasticVindClientBasicAuth build(String defaultIndex, int port, String scheme, String host, Long connectionTimeout, Long socketTimeout, String user, String key) {
+        return new ElasticVindClientBasicAuth(defaultIndex, port, scheme, host, connectionTimeout, socketTimeout, user, key);
     }
 }
