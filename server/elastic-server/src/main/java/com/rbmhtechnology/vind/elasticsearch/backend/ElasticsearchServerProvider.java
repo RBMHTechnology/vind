@@ -34,6 +34,18 @@ public class ElasticsearchServerProvider implements ElasticServerProvider {
         if(collection != null) {
             ElasticVindClient client;
             final AuthTypes authType = AuthTypes.valueOf(SearchConfiguration.get(SearchConfiguration.SEARCH_AUTHENTICATION_METHOD, AuthTypes.NONE.name()));
+
+            final ElasticVindClient.Builder clientBuilder = new ElasticVindClient.Builder(host)
+                    .setDefaultIndex(collection);
+
+            if(StringUtils.isNotEmpty(connectionTimeout)) {
+                clientBuilder.setConnectionTimeout(Long.parseLong(connectionTimeout));
+            }
+
+            if(StringUtils.isNotEmpty(soTimeout)) {
+                clientBuilder.setSocketTimeout(Long.parseLong(soTimeout));
+            }
+
             switch (authType) {
                 case APIKEY:
                     final String id = SearchConfiguration.get(SearchConfiguration.SEARCH_API_KEY_ID);
@@ -44,9 +56,7 @@ public class ElasticsearchServerProvider implements ElasticServerProvider {
                                 "Missing API id or secret to authenticate with Elasticsearch backend",
                                 this.getClass());
                     }
-                    client = new ElasticVindClient.Builder(host)
-                            .setDefaultIndex(collection)
-                            .buildWithApiKeyAuth(id, key);
+                    client = clientBuilder.buildWithApiKeyAuth(id, key);
                     break;
                 case BASIC:
                     final String user = SearchConfiguration.get(SearchConfiguration.SEARCH_AUTHENTICATION_USER);
@@ -57,23 +67,19 @@ public class ElasticsearchServerProvider implements ElasticServerProvider {
                                 "Missing API user or password to authenticate with Elasticsearch backend",
                                 this.getClass());
                     }
-                    client = new ElasticVindClient.Builder(host)
-                                .setDefaultIndex(collection)
-                                .buildWithBasicAuth(user, pssw);
+                    client = clientBuilder.buildWithBasicAuth(user, pssw);
                     break;
                 default:
-                    client = new ElasticVindClient.Builder(host)
-                            .setDefaultIndex(collection)
-                            .build();
+                    client = clientBuilder.build();
                     break;
             }
 
             if(StringUtils.isNotEmpty(connectionTimeout)) {
-                client.setConnectionTimeOut(Long.parseLong(connectionTimeout));
+                client.setConnectionTimeout(Long.parseLong(connectionTimeout));
             }
 
             if(StringUtils.isNotEmpty(soTimeout)) {
-                client.setClientTimOut(Long.parseLong(soTimeout));
+                client.setClientTimeout(Long.parseLong(soTimeout));
             }
 
             return client;

@@ -3915,7 +3915,7 @@ public class ServerTest {
     }
 
     @Test
-    @RunWithBackend({Elastic, Solr})
+    @RunWithBackend({Elastic})
     public void testComplexContextSortedSuggestion() {
 
 

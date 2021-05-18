@@ -19,6 +19,7 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.BulkRequestBuilder;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
@@ -41,7 +42,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -54,9 +54,8 @@ public abstract class ElasticVindClient {
     protected int port;
     protected String host;
     protected String scheme;
-    private long connectionTimeOut = 1000;
-    private long clientTimOut = 1000;
-
+    private long connectionTimeout = 1000;
+    private long clientTimeout = 1000;
 
     public RestHighLevelClient getClient() {
         return client;
@@ -71,21 +70,21 @@ public abstract class ElasticVindClient {
         return this;
     }
 
-    public long getConnectionTimeOut() {
-        return connectionTimeOut;
+    public long getConnectionTimeout() {
+        return connectionTimeout;
     }
 
-    public ElasticVindClient setConnectionTimeOut(long connectionTimeOut) {
-        this.connectionTimeOut = connectionTimeOut;
+    public ElasticVindClient setConnectionTimeout(long connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
         return this;
     }
 
-    public long getClientTimeOut() {
-        return clientTimOut;
+    public long getClientTimeout() {
+        return clientTimeout;
     }
 
-    public ElasticVindClient setClientTimOut(long clientTimOut) {
-        this.clientTimOut = clientTimOut;
+    public ElasticVindClient setClientTimeout(long clientTimeout) {
+        this.clientTimeout = clientTimeout;
         return this;
     }
 
@@ -112,7 +111,7 @@ public abstract class ElasticVindClient {
     public BulkResponse add(Map<String, Object> jsonDoc) throws IOException {
         final BulkRequest bulkIndexRequest = new BulkRequest(defaultIndex);
         bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(jsonDoc));
-        bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
+        bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeout));
         bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
         return BulkRequestBuilder.executeBulk(bulkIndexRequest,RequestOptions.DEFAULT,defaultIndex,client);
     }
@@ -120,7 +119,7 @@ public abstract class ElasticVindClient {
     public BulkResponse add(List<Map<String, Object>> jsonDocs) throws IOException {
         final BulkRequest bulkIndexRequest = new BulkRequest(defaultIndex);
         jsonDocs.forEach( jsonDoc -> bulkIndexRequest.add(ElasticRequestUtils.getIndexRequest(jsonDoc)) );
-        bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
+        bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeout));
         bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
         return BulkRequestBuilder.executeBulk(bulkIndexRequest,RequestOptions.DEFAULT,defaultIndex,client);
     }
@@ -166,7 +165,7 @@ public abstract class ElasticVindClient {
 
         final BulkRequest bulkIndexRequest = new BulkRequest(defaultIndex);
         bulkIndexRequest.add(ElasticRequestUtils.addPercolatorQueryRequest(defaultIndex, queryId, queryDoc));
-        bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeOut));
+        bulkIndexRequest.timeout(TimeValue.timeValueMillis(connectionTimeout));
         bulkIndexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
         return client.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
     }
@@ -243,11 +242,26 @@ public abstract class ElasticVindClient {
         client.clearScroll(request, RequestOptions.DEFAULT);
     }
 
+    protected RestClientBuilder.RequestConfigCallback applyTimeouts(Long connectionTimeout, Long socketTimeout) {
+        return requestConfig -> {
+            if (connectionTimeout != null) {
+                requestConfig.setConnectTimeout(connectionTimeout.intValue());
+            }
+            if (socketTimeout != null) {
+                requestConfig.setSocketTimeout(socketTimeout.intValue());
+            }
+            return requestConfig;
+        };
+    }
+
     public static class Builder {
         private String defaultIndex;
         private final int port;
         private final String scheme;
         private final String host;
+
+        private Long connectionTimeout;
+        private Long socketTimeout;
 
         public Builder(String host) {
             final URI elasticUri = URI.create(host);
@@ -262,14 +276,24 @@ public abstract class ElasticVindClient {
             return this;
         }
 
+        public Builder setConnectionTimeout(Long connectionTimeout) {
+            this.connectionTimeout = connectionTimeout;
+            return this;
+        }
+
+        public Builder setSocketTimeout(Long socketTimeout) {
+            this.socketTimeout = socketTimeout;
+            return this;
+        }
+
         public ElasticVindClient buildWithBasicAuth(String user, String key) {
-            return ElasticVindClientBasicAuth.build(defaultIndex, port, scheme, host, user, key);
+            return ElasticVindClientBasicAuth.build(defaultIndex, port, scheme, host, connectionTimeout, socketTimeout, user, key);
         }
         public ElasticVindClient buildWithApiKeyAuth(String id, String key) {
-            return ElasticVindClientApiKeyAuth.build(defaultIndex, port, scheme, host, id, key);
+            return ElasticVindClientApiKeyAuth.build(defaultIndex, port, scheme, host, connectionTimeout, socketTimeout, id, key);
         }
         public ElasticVindClient build() {
-            return ElasticVindClientNoAuth.build(defaultIndex, port, scheme, host);
+            return ElasticVindClientNoAuth.build(defaultIndex, port, scheme, host, connectionTimeout, socketTimeout);
         }
     }
 }
