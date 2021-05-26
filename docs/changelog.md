@@ -316,3 +316,13 @@ context.
 * Feature: disable lucene syntax flag (#201)
 * Feature: Sorted Suggestions (#205)
 * Improvement: Suggestions can be limited by a full text search (#204)
+
+#3.1.12
+* Improvement: Suggestion sort is applied to all suggestion fields. 
+
+#3.1.14
+* Added support n elasticsearch for timeouts.
+
+#3.2.0
+* improved suggestions by adding default operator AND and extending API to 
+  allow the specification of the desired iterator. (#220)
