@@ -318,4 +318,34 @@ public class SuggestionSearchIT {
         Assert.assertEquals("New Lockdown", suggestionResult.get(parent_value).getValues().get(0).getValue());
         Assert.assertEquals("New York City", suggestionResult.get(multi_value).getValues().get(0).getValue());
     }
+
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testSuggestionOperator() {
+        server.index(
+                parent.createDoc("multi1").setValue(parent_value, "Lindsey Vonn"),
+                parent.createDoc("multi2").setValue(parent_value, "New Lockdown"),
+                parent.createDoc("multi3").setValue(parent_value, "Lindsay Lohan"),
+                parent.createDoc("multi4").setValue(parent_value, "New Lockdown")
+        );
+        server.commit();
+
+        server.index(
+                parent.createDoc("multi1").setValues(multi_value, "Madrid City", "Spain"),
+                parent.createDoc("multi2").setValues(multi_value, "Bologna City", "Italy"),
+                parent.createDoc("multi3").setValues(multi_value, "New York City", "USA")
+        );
+        server.commit();
+
+        SuggestionResult suggestionResult = server.execute(Search.suggest("New cit")
+                .addField(parent_value)
+                .addField(multi_value), parent);
+        Assert.assertEquals(1, suggestionResult.size());
+
+        suggestionResult = server.execute(Search.suggest("New cit")
+                .setOperator(OR)
+                .addField(parent_value)
+                .addField(multi_value), parent);
+        Assert.assertEquals(4, suggestionResult.size());
+    }
 }
