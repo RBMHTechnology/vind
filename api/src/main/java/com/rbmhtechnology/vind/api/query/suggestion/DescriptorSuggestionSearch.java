@@ -28,6 +28,7 @@ public class DescriptorSuggestionSearch implements ExecutableSuggestionSearch {
     private String searchContext = null;
     private Sort sort = null;
     private Optional<FulltextTerm> fulltextTerm = empty();
+    private SuggestionSearch.SuggestionOperator operator = SuggestionSearch.SuggestionOperator.AND;
 
     /**
      * Creates a new instance of {@link DescriptorSuggestionSearch}.
@@ -186,6 +187,15 @@ public class DescriptorSuggestionSearch implements ExecutableSuggestionSearch {
 
     public DescriptorSuggestionSearch fulltextTerm(final FulltextTerm fulltextTerm) {
         this.fulltextTerm = Optional.ofNullable(fulltextTerm);
+        return this;
+    }
+
+    public SuggestionSearch.SuggestionOperator getOperator() {
+        return operator;
+    }
+
+    public DescriptorSuggestionSearch setOperator(SuggestionSearch.SuggestionOperator operator) {
+        this.operator = operator;
         return this;
     }
 }

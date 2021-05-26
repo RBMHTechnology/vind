@@ -14,6 +14,7 @@ import com.rbmhtechnology.vind.api.query.facet.TermFacetOption;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.suggestion.DescriptorSuggestionSearch;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
+import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 import com.rbmhtechnology.vind.api.query.update.Update;
 import com.rbmhtechnology.vind.api.result.DeleteResult;
 import com.rbmhtechnology.vind.api.result.GetResult;
@@ -88,6 +89,7 @@ import static com.rbmhtechnology.vind.api.query.sort.Sort.SpecialSort.scoredDate
 import static com.rbmhtechnology.vind.api.query.sort.Sort.asc;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.desc;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.field;
+import static com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch.SuggestionOperator.*;
 import static com.rbmhtechnology.vind.model.MultiValueFieldDescriptor.DateFieldDescriptor;
 import static com.rbmhtechnology.vind.model.MultiValueFieldDescriptor.TextFieldDescriptor;
 import static com.rbmhtechnology.vind.test.Backend.Elastic;
@@ -3271,11 +3273,15 @@ public class ServerTest {
         assertEquals(0, result.getResults().size());
 
 
-        ExecutableSuggestionSearch suggest = Search.suggest("[Stept AND / AND (TierZero OR TierZero*)").addField(title);
+        ExecutableSuggestionSearch suggest = Search.suggest("[Stept AND / AND (TierZero OR TierZero*)")
+                .setOperator(OR)
+                .addField(title);
 
         SuggestionResult suggestionResult = server.execute(suggest,assets);
 
-        suggest = Search.suggest("Baptiste FAUCHILLE <baptiste.fauchille@gmail.com>").addField(title);
+        suggest = Search.suggest("Baptiste FAUCHILLE <baptiste.fauchille@gmail.com>")
+                .setOperator(OR)
+                .addField(title);
 
         suggestionResult = server.execute(suggest,assets);
     }
@@ -3658,6 +3664,7 @@ public class ServerTest {
 
         //test empty filter in single valued field
         DescriptorSuggestionSearch suggestion = Search.suggest("19:20")
+                .setOperator(OR)
                 .context("en")
                 .addField(textMulti);
         final SuggestionResult suggestionResult = server.execute( suggestion, assets);
@@ -3972,6 +3979,7 @@ public class ServerTest {
 
         //test empty filter in single valued field
         DescriptorSuggestionSearch suggestion = Search.suggest("e nach")
+                .setOperator(OR)
                 .context("en")
                 .addField(textMulti)
                 .setSort(desc(numberOfMatchingTermsSort()));

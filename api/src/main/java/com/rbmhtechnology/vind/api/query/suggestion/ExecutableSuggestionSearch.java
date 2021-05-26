@@ -36,4 +36,10 @@ public interface ExecutableSuggestionSearch {
     public int getLimit();
 
     String getSearchContext();
+
+    SuggestionSearch.SuggestionOperator getOperator();
+
+    ExecutableSuggestionSearch setOperator(SuggestionSearch.SuggestionOperator operator) ;
+
+
 }
