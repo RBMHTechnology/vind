@@ -131,7 +131,9 @@ public class Suggester {
                         .mapToObj(i -> (char)i)
                         .map(letter -> {
                             if(Character.isAlphabetic(letter)) {
-                                return  String.format(IGNORE_CASE_REGEX, letter, StringUtils.upperCase(letter.toString()));
+                                return  String.format(IGNORE_CASE_REGEX,
+                                        StringUtils.lowerCase(letter.toString()),
+                                        StringUtils.upperCase(letter.toString()));
                             } else {
                                 return escapeCharacter(letter.toString());
                             }

@@ -176,7 +176,7 @@ public class SuggestionSearchIT {
                 parent.createDoc("P_SPEC_CHAR").setValue(parent_value, "León"));
         server.commit();
 
-        SuggestionResult result = server.execute(Search.suggest("2015León, Mexico").setOperator(OR).fields(parent_value), parent);
+        SuggestionResult result = server.execute(Search.suggest("León, Mexico").setOperator(OR).fields(parent_value), parent);
         assertNotNull(result);
         assertEquals(1, result.size());
 
