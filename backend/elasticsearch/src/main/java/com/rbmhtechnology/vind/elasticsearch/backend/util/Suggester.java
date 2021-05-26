@@ -3,6 +3,7 @@ package com.rbmhtechnology.vind.elasticsearch.backend.util;
 import com.rbmhtechnology.vind.SearchServerException;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
 import com.rbmhtechnology.vind.api.query.suggestion.ExecutableSuggestionSearch;
+import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.api.result.facet.TermFacetResult;
 import com.rbmhtechnology.vind.elasticsearch.backend.ElasticSearchServer;
@@ -108,7 +109,7 @@ public class Suggester {
         }
     }
 
-    protected static String getSuggestionRegex(String input) {
+    protected static String getSuggestionRegex(String input, SuggestionSearch.SuggestionOperator op) {
 
         String escapedInput = Suggester.unescapeQuery(input);
         if (escapedInput.contains("<")) {
@@ -130,7 +131,9 @@ public class Suggester {
                         .mapToObj(i -> (char)i)
                         .map(letter -> {
                             if(Character.isAlphabetic(letter)) {
-                                return  String.format(IGNORE_CASE_REGEX, letter, StringUtils.upperCase(letter.toString()));
+                                return  String.format(IGNORE_CASE_REGEX,
+                                        StringUtils.lowerCase(letter.toString()),
+                                        StringUtils.upperCase(letter.toString()));
                             } else {
                                 return escapeCharacter(letter.toString());
                             }
@@ -139,7 +142,13 @@ public class Suggester {
                 .map(prefix -> String.format(Suggester.PREFIX_REGEX, prefix))
                 .collect(Collectors.toList());
 
-        return queryPreffixes.stream().collect(Collectors.joining("|"));
+        switch (op) {
+            case OR:
+                return queryPreffixes.stream().collect(Collectors.joining("|"));
+            default:
+            case AND:
+                return queryPreffixes.stream().collect(Collectors.joining("&"));
+        }
     }
 
     public static String unescapeQuery(String query) {

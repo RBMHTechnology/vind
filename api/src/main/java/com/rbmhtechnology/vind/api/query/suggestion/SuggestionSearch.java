@@ -25,6 +25,7 @@ public class SuggestionSearch {
     private String searchContext = null;
     private Sort sort = null;
     private Optional<FulltextTerm> fulltextTerm = empty();
+    private SuggestionOperator operator = SuggestionOperator.AND;
 
     /**
      * Creates a new instance of {@link SuggestionSearch}.
@@ -113,7 +114,10 @@ public class SuggestionSearch {
      * @return {@link ExecutableSuggestionSearch} with the added field.
      */
     public ExecutableSuggestionSearch addField(String field) {
-        return new StringSuggestionSearch(input,limit,filter,field).context(this.searchContext);
+        return new StringSuggestionSearch(input,limit,filter,field)
+                .setOperator(this.operator)
+                .context(this.searchContext)
+                .fulltextTerm(fulltextTerm.orElse(null));
     }
 
     /**
@@ -131,7 +135,10 @@ public class SuggestionSearch {
      */
     //FIXME: this supports also: fields()
     public StringSuggestionSearch fields(String... fields) {
-        return new StringSuggestionSearch(input,limit,filter,fields).context(this.searchContext).fulltextTerm(fulltextTerm.orElse(null));
+        return new StringSuggestionSearch(input,limit,filter,fields)
+                .setOperator(this.operator)
+                .context(this.searchContext)
+                .fulltextTerm(fulltextTerm.orElse(null));
     }
 
     /**
@@ -140,7 +147,10 @@ public class SuggestionSearch {
      * @return {@link DescriptorSuggestionSearch} with the added field.
      */
     public DescriptorSuggestionSearch addField(FieldDescriptor field) {
-        return new DescriptorSuggestionSearch(input,limit,filter,field).context(this.searchContext).fulltextTerm(fulltextTerm.orElse(null));
+        return new DescriptorSuggestionSearch(input,limit,filter,field)
+                .setOperator(this.operator)
+                .context(this.searchContext)
+                .fulltextTerm(fulltextTerm.orElse(null));
     }
     /**
      * Adds the fields to search for suggestions in.
@@ -149,7 +159,10 @@ public class SuggestionSearch {
      */
     //FIXME: this supports also: fields()
     public DescriptorSuggestionSearch fields(FieldDescriptor... fields) {
-        return new DescriptorSuggestionSearch(input,limit,filter,fields).context(this.searchContext).fulltextTerm(fulltextTerm.orElse(null));
+        return new DescriptorSuggestionSearch(input,limit,filter,fields)
+                .setOperator(this.operator)
+                .context(this.searchContext)
+                .fulltextTerm(fulltextTerm.orElse(null));
     }
 
     /**
@@ -206,5 +219,18 @@ public class SuggestionSearch {
     public SuggestionSearch fulltextTerm(final FulltextTerm fulltextTerm) {
         this.fulltextTerm = Optional.ofNullable(fulltextTerm);
         return this;
+    }
+
+    public SuggestionOperator getOperator() {
+        return operator;
+    }
+
+    public SuggestionSearch setOperator(SuggestionOperator operator) {
+        this.operator = operator;
+        return this;
+    }
+
+    public enum SuggestionOperator {
+        AND,OR
     }
 }

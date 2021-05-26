@@ -5,6 +5,7 @@ import com.rbmhtechnology.vind.api.SearchServer;
 import com.rbmhtechnology.vind.api.query.FulltextTerm;
 import com.rbmhtechnology.vind.api.query.Search;
 import com.rbmhtechnology.vind.api.query.filter.Filter;
+import com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch;
 import com.rbmhtechnology.vind.api.result.SuggestionResult;
 import com.rbmhtechnology.vind.model.DocumentFactory;
 import com.rbmhtechnology.vind.model.DocumentFactoryBuilder;
@@ -18,6 +19,7 @@ import org.junit.Test;
 
 import static com.rbmhtechnology.vind.api.query.sort.Sort.SpecialSort.numberOfMatchingTermsSort;
 import static com.rbmhtechnology.vind.api.query.sort.Sort.desc;
+import static com.rbmhtechnology.vind.api.query.suggestion.SuggestionSearch.SuggestionOperator.*;
 import static com.rbmhtechnology.vind.test.Backend.Elastic;
 import static com.rbmhtechnology.vind.test.Backend.Solr;
 import static org.junit.Assert.assertEquals;
@@ -174,7 +176,7 @@ public class SuggestionSearchIT {
                 parent.createDoc("P_SPEC_CHAR").setValue(parent_value, "León"));
         server.commit();
 
-        SuggestionResult result = server.execute(Search.suggest("2015León, Mexico").fields(parent_value), parent);
+        SuggestionResult result = server.execute(Search.suggest("León, Mexico").setOperator(OR).fields(parent_value), parent);
         assertNotNull(result);
         assertEquals(1, result.size());
 
@@ -206,9 +208,13 @@ public class SuggestionSearchIT {
                 parent.createDoc("multi3").setValue(parent_value, "Oviedo city"));
         server.commit();
 
-        SuggestionResult suggestionResult = server.execute(Search.suggest("le ci").addField(parent_value), parent);
+        SuggestionResult suggestionResult = server.execute(Search.suggest("le ci").setOperator(OR).addField(parent_value), parent);
 
         Assert.assertEquals(3, suggestionResult.size());
+
+        suggestionResult = server.execute(Search.suggest("le ci").addField(parent_value), parent);
+
+        Assert.assertEquals(1, suggestionResult.size());
 
     }
 
@@ -260,7 +266,7 @@ public class SuggestionSearchIT {
                 parent.createDoc("multi4").setValue(parent_value, "New Lockdown"));
         server.commit();
 
-        SuggestionResult suggestionResult = server.execute(Search.suggest("Lin Lo")
+        SuggestionResult suggestionResult = server.execute(Search.suggest("Lin Lo").setOperator(OR)
                         .addField(parent_value)
                         .setSort(desc(numberOfMatchingTermsSort(parent_value))),
                 parent);
@@ -268,7 +274,7 @@ public class SuggestionSearchIT {
         Assert.assertEquals(3, suggestionResult.size());
         Assert.assertEquals("Lindsay Lohan", suggestionResult.get(parent_value).getValues().get(0).getValue());
 
-        suggestionResult = server.execute(Search.suggest("Lin Lo").addField(parent_value), parent);
+        suggestionResult = server.execute(Search.suggest("Lin Lo").setOperator(OR).addField(parent_value), parent);
         Assert.assertEquals(3, suggestionResult.size());
         Assert.assertEquals("New Lockdown", suggestionResult.get(parent_value).getValues().get(0).getValue());
 
@@ -280,7 +286,7 @@ public class SuggestionSearchIT {
                 parent.createDoc("multi3").setValues(multi_value, "People", "Animals", "Flowers"));
         server.commit();
 
-        suggestionResult = server.execute(Search.suggest("Sal City")
+        suggestionResult = server.execute(Search.suggest("Sal City").setOperator(OR)
                 .addField(multi_value)
                 .setSort(desc(numberOfMatchingTermsSort(multi_value))), parent);
         Assert.assertEquals(3, suggestionResult.size());
@@ -311,5 +317,35 @@ public class SuggestionSearchIT {
                 .setSort(desc(numberOfMatchingTermsSort())), parent);
         Assert.assertEquals("New Lockdown", suggestionResult.get(parent_value).getValues().get(0).getValue());
         Assert.assertEquals("New York City", suggestionResult.get(multi_value).getValues().get(0).getValue());
+    }
+
+    @Test
+    @RunWithBackend({Solr, Elastic})
+    public void testSuggestionOperator() {
+        server.index(
+                parent.createDoc("multi1").setValue(parent_value, "Lindsey Vonn"),
+                parent.createDoc("multi2").setValue(parent_value, "New Lockdown"),
+                parent.createDoc("multi3").setValue(parent_value, "Lindsay Lohan"),
+                parent.createDoc("multi4").setValue(parent_value, "New Lockdown")
+        );
+        server.commit();
+
+        server.index(
+                parent.createDoc("multi1").setValues(multi_value, "Madrid City", "Spain"),
+                parent.createDoc("multi2").setValues(multi_value, "Bologna City", "Italy"),
+                parent.createDoc("multi3").setValues(multi_value, "New York City", "USA")
+        );
+        server.commit();
+
+        SuggestionResult suggestionResult = server.execute(Search.suggest("New cit")
+                .addField(parent_value)
+                .addField(multi_value), parent);
+        Assert.assertEquals(1, suggestionResult.size());
+
+        suggestionResult = server.execute(Search.suggest("New cit")
+                .setOperator(OR)
+                .addField(parent_value)
+                .addField(multi_value), parent);
+        Assert.assertEquals(4, suggestionResult.size());
     }
 }

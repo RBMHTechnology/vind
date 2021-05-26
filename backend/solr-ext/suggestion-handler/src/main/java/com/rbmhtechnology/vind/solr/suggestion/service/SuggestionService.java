@@ -266,7 +266,7 @@ public class SuggestionService {
                     collect(Collectors.toList());
 
             //Joining different search terms regex
-            final String fieldQueryRegex = String.join(" ", fieldQuery);
+            final String fieldQueryRegex = String.join(" " + params.get("q.op") + " ", fieldQuery);
 
             //Settings for the field term facet
             final Map<String,Object> fieldMap = new HashMap<>();

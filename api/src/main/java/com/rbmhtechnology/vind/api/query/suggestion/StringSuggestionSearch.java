@@ -27,6 +27,7 @@ public class StringSuggestionSearch implements ExecutableSuggestionSearch {
     private String searchContext = null;
     private Sort sort = null;
     private Optional<FulltextTerm> fulltextTerm = empty();
+    private SuggestionSearch.SuggestionOperator operator = SuggestionSearch.SuggestionOperator.AND;
 
     /**
      * Creates a new instance of {@link StringSuggestionSearch}.
@@ -188,6 +189,15 @@ public class StringSuggestionSearch implements ExecutableSuggestionSearch {
 
     public StringSuggestionSearch setSort(Sort sort) {
         this.sort = sort;
+        return this;
+    }
+
+    public SuggestionSearch.SuggestionOperator getOperator() {
+        return operator;
+    }
+
+    public StringSuggestionSearch setOperator(SuggestionSearch.SuggestionOperator operator) {
+        this.operator = operator;
         return this;
     }
 }

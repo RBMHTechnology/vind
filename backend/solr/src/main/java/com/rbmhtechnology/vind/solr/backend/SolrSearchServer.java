@@ -1027,6 +1027,7 @@ public class SolrSearchServer extends SmartSearchServerBase {
         }
 
         query.setParam("q", search.getInput());
+        query.setParam("q.op", search.getOperator().name());
         query.setParam("suggestion.df", SUGGESTION_DF_FIELD);//TODO: somehow this is still needed here, it should by configuration
 
         query.setParam("suggestion.limit", String.valueOf(search.getLimit()));
