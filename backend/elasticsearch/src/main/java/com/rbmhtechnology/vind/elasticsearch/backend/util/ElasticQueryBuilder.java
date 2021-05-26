@@ -1193,7 +1193,7 @@ public class ElasticQueryBuilder {
                         .terms(FieldUtil.getSourceFieldName(field.replaceAll("\\.suggestion", ""), searchContext))
                         .field(field)
                         .includeExclude(
-                                new IncludeExclude(Suggester.getSuggestionRegex(search.getInput()), null))
+                                new IncludeExclude(Suggester.getSuggestionRegex(search.getInput(), search.getOperator()), null))
                 )
                 .map(aggregation ->
                     search.getSort() != null && NUMBER_OF_MATCHING_TERMS_SORT.equals(search.getSort().getType())
