@@ -1,5 +1,8 @@
 # VIND
 
+Please note: This project is stopped, no bugfixes, features, etc. are done anymore.
+
+
 Vind (faɪnd) is a modular Java library which aims to lower the hurdle of integrating information discovery facilities in Java projects.
 It should help programmers to come to a good solution in an assessable amount of time, improve the 
 maintainability of software projects, and simplify a centralized information discovery service management including monitoring and reporting.
